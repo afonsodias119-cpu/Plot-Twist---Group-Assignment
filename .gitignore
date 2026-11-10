@@ -1,0 +1,8 @@
+__pycache__/
+.venv/
+.DS_Store
+.pytest_cache/
+
+# Local database: each person's game progress stays on their own computer
+data/*.db
+.env
