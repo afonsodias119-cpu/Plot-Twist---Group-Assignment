@@ -40,7 +40,7 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 
 | Fase | O quê | Quem | Estado |
 |---|---|---|---|
-| **A. Preparar** | Clonar o repositório, criar a estrutura e proteger o `main` | Afonso | 🔄 em curso |
+| **A. Preparar** | Clonar o repositório, criar a estrutura e proteger o `main` | Afonso | 🔄 quase pronta (falta o passo 5: os colegas clonarem) |
 | **B. Inventar a história** | Mistério, 5+ cenas, objetos, finais e personagens, tudo no papel | Grupo todo | ⏳ |
 | **C. Versão base** | Jogo mínimo que cumpre o brief, com testes | Afonso + revisão | ⏳ |
 | **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | ⏳ |
@@ -50,8 +50,8 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 
 1. ✅ Clonar o repositório com o GitHub Desktop.
 2. ✅ Criar a estrutura do projeto no branch `project-setup`: `pyproject.toml`, `uv.lock`, `.gitignore`, `.python-version`, `app.py` provisório, `tests/conftest.py`, `AGENTS.md`, `README.md` e `docs/`.
-3. 🔄 Confirmar que corre (`uv run streamlit run app.py`). Depois commit, publicar o branch e abrir Pull Request. **Só fazer merge quando o grupo concordar.**
-4. ⏳ Proteger o `main` no GitHub: Settings → Branches, exigir PR e 1 aprovação.
+3. ✅ Confirmar que corre (`uv run streamlit run app.py`). Commit, branch publicado e Pull Request #1 revisto pelo grupo e com merge feito (10/11/2026).
+4. ✅ Proteger o `main` no GitHub: ruleset "Main Protection" ativo (exige PR e 1 aprovação).
 5. ⏳ Cada colega: clonar no GitHub Desktop, correr `uv sync`, depois `uv run pytest` e por fim `uv run streamlit run app.py`.
 
 ### Como trabalhamos (todas as funcionalidades)
