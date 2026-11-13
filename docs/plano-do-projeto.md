@@ -1,7 +1,7 @@
 # Plano do projeto — Plot Twist (trabalho de grupo)
 
 Documento de referência da equipa. Resume o que foi decidido até agora e o que falta fazer.
-Última atualização: 10/11/2026.
+Última atualização: 13/11/2026.
 
 ## 1. O que o curso pede
 
@@ -21,6 +21,7 @@ A página da semana 8 (regras detalhadas do trabalho de grupo) ainda não estava
 ## 2. Decisões da equipa
 
 - **Jogo escolhido:** Plot Twist (mistério / escape room).
+- **História escolhida:** "O quinto elemento", passada na Nova SBE. Mapa completo em [historia.md](historia.md).
 - **Começamos do zero**, sem partir de um projeto a solo.
 - **Repositório:** https://github.com/afonsodias119-cpu/Plot-Twist---Group-Assignment
 - **Regra de ouro:** o `main` só muda através de Pull Requests revistos por outro membro.
@@ -41,7 +42,7 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 | Fase | O quê | Quem | Estado |
 |---|---|---|---|
 | **A. Preparar** | Clonar o repositório, criar a estrutura e proteger o `main` | Afonso | 🔄 quase pronta (falta o passo 5: os colegas clonarem) |
-| **B. Inventar a história** | Mistério, 5+ cenas, objetos, finais e personagens, tudo no papel | Grupo todo | ⏳ |
+| **B. Inventar a história** | Mistério, 5+ cenas, objetos, finais e personagens, tudo no papel | Grupo todo | 🔄 proposta escrita em [historia.md](historia.md), falta o grupo rever |
 | **C. Versão base** | Jogo mínimo que cumpre o brief, com testes | Afonso + revisão | ⏳ |
 | **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | ⏳ |
 | **E. Publicar e ensaiar** | Link público (semana 9, não no último dia) e ensaio de perguntas | Os 4 | ⏳ |
