@@ -218,18 +218,20 @@ Ilustrações detalhadas, todas no mesmo estilo, feitas antes e guardadas em `as
 
 | Imagem | Ficheiro sugerido |
 |---|---|
-| Capa do jogo (a fotografia de grupo com cinco pessoas) | `assets/cover.png` |
-| Sala de estudo | `assets/study_room.png` |
-| Reprografia | `assets/print_shop.png` |
-| Biblioteca | `assets/library.png` |
-| Sala de informática | `assets/computer_lab.png` |
-| Auditório | `assets/auditorium.png` |
-| Pen | `assets/usb_stick.png` |
-| Fotografia original | `assets/original_photo.png` |
-| Final "O impostor" | `assets/ending_impostor.png` |
-| Final "Créditos roubados" | `assets/ending_stolen_credits.png` |
+| Capa do jogo (a fotografia de grupo com cinco pessoas) | `assets/cover.jpg` |
+| Sala de estudo | `assets/study_room.jpg` |
+| Reprografia | `assets/print_shop.jpg` |
+| Biblioteca | `assets/library.jpg` |
+| Sala de informática | `assets/computer_lab.jpg` |
+| Auditório | `assets/auditorium.jpg` |
+| Pen | `assets/usb_stick.jpg` |
+| Fotografia original | `assets/original_photo.jpg` |
+| Final "O impostor" | `assets/ending_impostor.jpg` |
+| Final "Créditos roubados" | `assets/ending_stolen_credits.jpg` |
 
-**Estilo comum (a confirmar):** ilustração digital detalhada, ambiente de mistério, campus universitário moderno à noite, luz fria azulada com pontos de luz quente, sem texto na imagem. As pessoas aparecem de costas ou em silhueta, para não parecerem ninguém real.
+**Estilo comum (a confirmar):** ilustração digital detalhada, ambiente de mistério, campus universitário moderno à noite, sombras em azul-escuro com pontos de luz quente, sem texto na imagem. As pessoas aparecem de costas ou em silhueta, para não parecerem ninguém real.
+
+Os prompts para gerar cada imagem, e as instruções para as guardar, estão em [imagens.md](imagens.md).
 
 ## 11. Em aberto — para o grupo decidir
 
