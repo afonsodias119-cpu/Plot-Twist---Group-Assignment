@@ -7,7 +7,7 @@ Team project for Introduction to Programming, Nova SBE 2026/27.
 
 - Afonso Mendo Dias
 - Guilherme Osório
-- _(add your name)_
+- Maria da Cunha
 - _(add your name)_
 
 ## Getting started
