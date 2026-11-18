@@ -12,8 +12,11 @@ Team project (4 people) for Introduction to Programming, Nova SBE 2026/27. The t
 ## Structure
 
 - `app.py` — the screens (Streamlit). Reads input, calls `logic.py`, shows results.
+- `story.py` — the story content (scenes, items, endings, texts) in English and Portuguese. Data only, no functions.
 - `logic.py` — the rules (moving between scenes, items, conditions, endings). No Streamlit and no database code here.
-- `db.py` — saving and loading the game in SQLite (`data/*.db`, not committed to git).
+- `db.py` — saving and loading the game in SQLite (`data/*.db`, not committed to git). The only file that uses `sqlite3`.
+- `game.py` — one turn of the game: loads the save, asks `logic.py`, saves with `db.py`. The screens call this file.
+- To reset your local saved games: stop the app and delete `data/plot_twist.db`.
 - `tests/` — pytest tests. They are the acceptance checks.
 - `specs/` — one spec per feature, written before the code.
 - `docs/plot-twist-brd.md` — the product brief from the course.
