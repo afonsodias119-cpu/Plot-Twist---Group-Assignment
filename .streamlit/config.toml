@@ -1,0 +1,7 @@
+# The mystery theme: a dark navy page with amber as the accent colour (the colours of the illustrations).
+[theme]
+base = "dark"
+primaryColor = "#E8A33D"
+backgroundColor = "#0B1B2B"
+secondaryBackgroundColor = "#12304A"
+textColor = "#F2EEE3"

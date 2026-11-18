@@ -85,13 +85,25 @@ def show_message():
         MESSAGE_BOXES[message["kind"]](message["text"])
 
 
+def show_image(name):
+    """Draw assets/<name>.jpg if the file exists. A missing picture draws nothing, never an error."""
+    picture = game.image_file(name)
+    if picture:
+        st.image(picture, width="stretch")
+
+
 def show_inventory(story, ui, state):
     st.subheader(ui["inventory"])
-    if state["inventory"]:
-        for item_id in state["inventory"]:
-            st.write(f"- {story['items'][item_id]}")
-    else:
+    if not state["inventory"]:
         st.write(ui["inventory_empty"])
+    for item_id in state["inventory"]:
+        picture = game.image_file(item_id)
+        if picture:
+            picture_column, name_column = st.columns([1, 5], vertical_alignment="center")
+            picture_column.image(picture, width=80)
+            name_column.write(story["items"][item_id])
+        else:
+            st.write(f"- {story['items'][item_id]}")
 
 
 def show_new_game(ui):
@@ -110,6 +122,7 @@ def show_start():
     language = st.radio("Language / Língua", list(LANGUAGES), format_func=LANGUAGES.get, key="language", horizontal=True)
     ui = UI_TEXTS[language]
     st.title(ui["title"])
+    show_image("cover")
     st.write(ui["premise"])
     st.write(ui["continue_hint"])
     show_message()
@@ -126,6 +139,7 @@ def show_game(state):
 
     if state["ending"] == "none":
         st.header(story["scenes"][state["scene"]]["title"])
+        show_image(state["scene"])
         show_message()
         for paragraph in logic.scene_text(story, state):
             st.write(paragraph)
@@ -137,6 +151,7 @@ def show_game(state):
     else:
         ending = next(e for e in story["endings"] if e["id"] == state["ending"])
         st.header(ending["title"])
+        show_image(f"ending_{state['ending']}")
         st.write(ending["text"])
         st.subheader(ui["the_end"])
         show_inventory(story, ui, state)
