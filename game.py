@@ -5,6 +5,7 @@ is in db.py. See specs/base-game.md, section 5.
 """
 
 import re
+from pathlib import Path
 
 import db
 import logic
@@ -14,6 +15,12 @@ DEFAULT_LANGUAGE = "en"
 
 # 1 to 20 characters: letters (accented ones too), digits, space, "-" and "_".
 NAME_PATTERN = re.compile(r"[\w -]{1,20}")
+
+# The illustrations. Read every time image_file runs, so the tests can point it elsewhere.
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+
+# An image name is a story id: lower-case letters, digits and "_" only.
+IMAGE_NAME_PATTERN = re.compile(r"[a-z0-9_]+")
 
 
 def clean_name(text) -> str | None:
@@ -86,3 +93,16 @@ def restart(player: str) -> dict:
     state = logic.new_game(STORIES[language])
     db.save_game(player, state, language)
     return state
+
+
+def image_file(name) -> str | None:
+    """The path of assets/<name>.jpg as text, or None if the name is not an id or the file is missing.
+
+    The names come from story ids, never from what the player types. Anything that is not
+    lower-case letters, digits and "_" (such as "../secret") is refused, so a name can never
+    point outside the assets folder.
+    """
+    if not isinstance(name, str) or not IMAGE_NAME_PATTERN.fullmatch(name):
+        return None
+    path = ASSETS_DIR / f"{name}.jpg"
+    return str(path) if path.is_file() else None

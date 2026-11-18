@@ -29,7 +29,7 @@ As a player, I want to see where I am, so that the story feels like a place and 
 
 ### 2. Image names
 
-Ten files, 1280 x 720 for scenes, endings and cover, and about 400 x 400 for items, each under 400 KB:
+Ten files, 1280 x 720 for scenes, endings and cover, and 512 x 512 for items, each under 300 KB:
 
 | Where it is shown | File |
 |---|---|
@@ -73,7 +73,7 @@ The pictures are the same in both languages: they contain no text.
 ## Done when
 
 - `uv run pytest` is green, with the tests written from the checklist and reviewed before the code.
-- The 10 files are in `assets/`, each under 400 KB, made with one tool and one style as `docs/imagens.md` explains. Missing images are allowed for the first deploy: the app must still work.
+- The 10 files are in `assets/`, each under 300 KB, made with one tool and one style as `docs/imagens.md` explains. Missing images are allowed for the first deploy: the app must still work.
 - By clicking, in both languages: every scene, both endings and the Start screen show their picture, and the text is readable on the dark theme.
 - `pyproject.toml` and `uv.lock` are unchanged.
 - The work is on its own branch, pushed, and reviewed by another member.
@@ -84,4 +84,4 @@ The pictures are the same in both languages: they contain no text.
 |---|---|
 | The pictures are made by AI tools and may need two to four tries each. | The app does not depend on them: any missing file is just not shown. |
 | One picture per scene, whatever the player did. | `image_file` could take a state and choose a variant. Only `game.py` and `app.py` change. |
-| The files are in the repository, so they count for its size and for the deploy. | Keep each file under 400 KB. |
+| The files are in the repository, so they count for its size and for the deploy. | Keep each file under 300 KB (the ten files together are about 370 KB). |
