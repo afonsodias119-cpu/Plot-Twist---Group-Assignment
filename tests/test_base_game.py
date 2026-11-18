@@ -9,8 +9,11 @@ story, never typed here. In these tests STORY means STORIES["en"].
 
 import copy
 import json
+import sqlite3
 from pathlib import Path
 
+import db
+import game
 import logic
 from story import STORIES, UI_TEXTS
 
@@ -394,3 +397,229 @@ def test_logic_imports_nothing_from_the_project():
         words = line.replace(",", " ").replace(".", " ").split()
         if words and words[0] in ("import", "from"):
             assert not forbidden & set(words), line
+
+
+# ---------- Saving ----------
+# conftest.py points db.DB_PATH at a throwaway file for every test.
+
+def play_saved(player, path, language="en"):
+    """Play every action of `path` through game.play; each must be accepted. Returns the last result."""
+    result = None
+    for action_id in path:
+        result = game.play(player, action_id, language)
+        assert result["accepted"], f"{action_id} was rejected: {result['reason']}"
+    return result
+
+
+def assert_saved_game_unchanged(player, action_id, reason):
+    """game.play rejects the action with `reason`, and the saved game and its language stay the same."""
+    saved_before = db.load_game(player)
+    language_before = db.load_language(player)
+    result = game.play(player, action_id)
+    assert result["accepted"] is False
+    assert result["reason"] == reason
+    assert db.load_game(player) == saved_before
+    assert db.load_language(player) == language_before
+
+
+def write_row(player, scene, flags_text, language="en"):
+    """Write one row with plain SQL, the way a broken or old save could look."""
+    db.init_db()
+    connection = sqlite3.connect(db.DB_PATH)
+    connection.execute(
+        "INSERT INTO games (player, scene, inventory, flags, ending, language) VALUES (?, ?, ?, ?, ?, ?)",
+        (player, scene, "[]", flags_text, "none", language),
+    )
+    connection.commit()
+    connection.close()
+
+
+def test_first_run_creates_the_folder_and_table(tmp_path, monkeypatch):
+    """With no data folder yet, init_db creates it and the table, and can run twice."""
+    folder = tmp_path / "not_there_yet"
+    monkeypatch.setattr(db, "DB_PATH", folder / "plot_twist.db")
+    assert not folder.exists()
+    db.init_db()
+    db.init_db()
+    assert folder.is_dir()
+    assert db.DB_PATH.is_file()
+    assert db.load_game("ana") is None
+
+
+def test_clean_name_accepts_valid_names():
+    """Names are trimmed and lower-cased; accented letters, digits, - and _ are allowed."""
+    assert game.clean_name("  Ana ") == "ana"
+    assert game.clean_name("João") == "joão"
+    assert game.clean_name("Ana-Rita_2") == "ana-rita_2"
+
+
+def test_clean_name_rejects_invalid_names():
+    """Empty, blank, too long, markup, punctuation and non-text names are all rejected."""
+    for name in ["", "   ", "a" * 21, "<b>", "a;b", None]:
+        assert game.clean_name(name) is None, name
+
+
+def test_open_game_starts_then_continues():
+    """The first open starts and saves a new game; opening again continues it."""
+    first = game.open_game("ana", "en")
+    assert first["continued"] is False
+    assert first["state"] == logic.new_game(STORY)
+    assert db.load_game("ana") == logic.new_game(STORY)
+
+    play_saved("ana", ["open_drawer"])
+    again = game.open_game("ana", "en")
+    assert again["continued"] is True
+    assert again["state"]["inventory"] == ["usb_stick"]
+
+
+def test_every_accepted_action_is_saved():
+    """After each step of the longest path, what is saved equals the state that play returned."""
+    game.open_game("ana", "en")
+    for action_id in P_HELP:
+        result = game.play("ana", action_id)
+        assert result["accepted"], action_id
+        assert db.load_game("ana") == result["state"]
+
+
+def test_rejected_actions_leave_the_saved_game_unchanged():
+    """A blocked, not offered, not here and game over action each leave the save exactly as it was."""
+    game.open_game("ana", "en")
+    play_saved("ana", ["open_drawer"])
+    assert_saved_game_unchanged("ana", "go_auditorium", "blocked")
+    assert_saved_game_unchanged("ana", "open_drawer", "not_offered")
+    assert_saved_game_unchanged("ana", "request_copy", "not_here")
+
+    game.open_game("rui", "en")
+    play_saved("rui", P_SHORT)
+    assert_saved_game_unchanged("rui", "open_drawer", "game_over")
+
+
+def test_play_without_a_save_is_rejected():
+    """With no saved game, play says no_game, returns no state and saves nothing."""
+    result = game.play("rui", "open_drawer")
+    assert result["accepted"] is False
+    assert result["reason"] == "no_game"
+    assert result["message"] == STORY["messages"]["no_game"]
+    assert result["state"] is None
+    assert db.load_game("rui") is None
+
+
+def test_a_save_keeps_its_language():
+    """The language chosen when the game started is saved with it, and restart keeps it."""
+    assert game.open_game("ana", "pt")["language"] == "pt"
+    play_saved("ana", ["open_drawer"])
+    again = game.open_game("ana", "en")
+    assert again["continued"] is True
+    assert again["language"] == "pt"
+    assert db.load_language("ana") == "pt"
+
+    # The language argument of play is ignored when a save exists: the text is Portuguese.
+    result = play_saved("ana", ["go_computer_lab", "view_files"], "en")
+    expected = STORIES["pt"]["scenes"]["computer_lab"]["actions"]["view_files"]["result_text"]
+    assert result["message"] == expected
+    assert db.load_language("ana") == "pt"
+
+    assert game.restart("ana") == logic.new_game(STORY)
+    assert db.load_language("ana") == "pt"
+
+
+def test_unknown_saved_language_falls_back():
+    """A saved language that is not in LANGUAGES is replaced by the one given, and the progress stays."""
+    progress = play_path(["open_drawer"])
+    db.save_game("ana", progress, "xx")
+    result = game.open_game("ana", "en")
+    assert result["continued"] is True
+    assert result["state"] == progress
+    assert result["language"] == "en"
+    assert db.load_language("ana") == "en"
+
+
+def test_play_without_a_save_uses_the_given_language():
+    """The no_game message is in the language the screen passes, and nothing is saved."""
+    result = game.play("rui", "open_drawer", "pt")
+    assert result["reason"] == "no_game"
+    assert result["message"] == STORIES["pt"]["messages"]["no_game"]
+    assert db.load_game("rui") is None
+
+
+def test_resumed_game_offers_the_same_actions():
+    """Brief A4: after a restart of the app the scene, items, decision and routes are all back."""
+    game.open_game("ana", "en")
+    last = play_saved("ana", P_HELP[:9])
+    resumed = game.load("ana")
+    assert resumed == last["state"]
+    assert resumed["scene"] == "computer_lab"
+    assert resumed["inventory"] == ["usb_stick", "original_photo"]
+    assert resumed["flags"]["colleague_choice"] == "help"
+    assert resumed["flags"]["files_viewed"] is True
+    assert logic.available_actions(STORY, resumed) == logic.available_actions(STORY, last["state"])
+    play_saved("ana", ["go_study_room", "go_auditorium"])
+
+
+def test_finished_game_loads_back_finished():
+    """After an ending is saved, the game loads back finished and rejects every action."""
+    game.open_game("ana", "en")
+    play_saved("ana", P_SHORT)
+    assert game.load("ana")["ending"] == "stolen_credits"
+    assert_saved_game_unchanged("ana", "open_drawer", "game_over")
+
+
+def test_restart_resets_only_this_player():
+    """Restarting one player's game does not touch another player's save."""
+    for player in ["ana", "rui"]:
+        game.open_game(player, "en")
+    play_saved("ana", ["open_drawer"])
+    play_saved("rui", ["go_print_shop", "request_copy"])
+    rui_before = db.load_game("rui")
+
+    assert game.restart("ana") == logic.new_game(STORY)
+    assert db.load_game("ana") == logic.new_game(STORY)
+    assert db.load_game("rui") == rui_before
+
+
+def test_new_game_after_an_ending_reaches_the_other_ending():
+    """After one ending, a restart lets the player reach the other one."""
+    game.open_game("ana", "en")
+    play_saved("ana", P_HELP)
+    assert game.load("ana")["ending"] == "impostor"
+    game.restart("ana")
+    play_saved("ana", P_SHORT)
+    assert game.load("ana")["ending"] == "stolen_credits"
+
+
+def test_players_have_separate_saves():
+    """Two players taking turns each keep only their own progress."""
+    for player in ["ana", "rui"]:
+        game.open_game(player, "en")
+    play_saved("ana", ["open_drawer"])
+    play_saved("rui", ["go_print_shop"])
+    play_saved("ana", ["go_computer_lab"])
+    play_saved("rui", ["request_copy"])
+
+    ana = db.load_game("ana")
+    rui = db.load_game("rui")
+    assert (ana["scene"], ana["inventory"]) == ("computer_lab", ["usb_stick"])
+    assert (rui["scene"], rui["inventory"]) == ("print_shop", ["original_photo"])
+
+
+def test_hostile_text_is_saved_as_plain_data():
+    """A name that looks like SQL is stored as text: it loads back and the table is still there."""
+    hostile = "x'; DROP TABLE games; --"
+    state = play_path(["open_drawer"])
+    db.save_game(hostile, state, "en")
+    assert db.load_game(hostile) == state
+
+    db.save_game("ana", logic.new_game(STORY), "en")
+    assert db.load_game("ana") == logic.new_game(STORY)
+
+
+def test_broken_save_counts_as_no_save():
+    """A row with an unknown scene, or with flags that are not JSON, is treated as no save at all."""
+    flags_text = json.dumps(STORY["start"]["flags"])
+    write_row("ana", "cafeteria", flags_text)
+    write_row("rui", "study_room", "this is not json")
+    for player in ["ana", "rui"]:
+        assert game.load(player) is None
+        result = game.open_game(player, "en")
+        assert result["continued"] is False
+        assert result["state"] == logic.new_game(STORY)
