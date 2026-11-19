@@ -1,0 +1,123 @@
+/* Plot Twist — campus visuals (specs/campus-visuals.md, section 5) */
+
+/* How this file works: app_campus.py puts it inside <style> on every screen.
+   It only changes how things look; the game works the same without it.
+   Selectors like [data-testid="stImage"] are names Streamlit gives to its own parts.
+   .st-key-xxx is the class Streamlit adds to a container created with key="xxx". */
+
+/* ---------- colours used below (the same as .streamlit/config.toml) ---------- */
+:root {
+  --navy: #0B1B2B;
+  --navy-deep: #050d16;
+  --amber: #E8A33D;
+  --paper: #F2EEE3;
+}
+
+/* ---------- page: a soft dark vignette around the whole screen ---------- */
+[data-testid="stAppViewContainer"] {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(232, 163, 61, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, var(--navy) 55%, var(--navy-deep) 100%);
+}
+
+/* ---------- titles: a serif font that every computer already has (no web fonts) ---------- */
+h1, h2, h3 {
+  font-family: Georgia, "Times New Roman", serif !important;
+  letter-spacing: 0.01em;
+}
+h1 { color: var(--amber) !important; }
+
+/* ---------- pictures: rounded corners and a dark vignette on the edges ---------- */
+[data-testid="stImage"] {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+[data-testid="stImage"]::after {          /* a dark frame drawn on top of the picture */
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 70px 18px rgba(2, 6, 12, 0.75);
+}
+
+/* ---------- message boxes: an amber edge on the left ---------- */
+[data-testid="stAlert"] {
+  border-left: 4px solid var(--amber);
+  border-radius: 6px;
+}
+
+/* ---------- inventory items: small cards ---------- */
+[class*="st-key-item_"] {
+  background: rgba(18, 48, 74, 0.55);
+  border-color: rgba(232, 163, 61, 0.35) !important;
+}
+
+/* ---------- hallway: each door card looks like a lit doorway ---------- */
+[class*="st-key-door_"] {
+  background: linear-gradient(180deg, rgba(232, 163, 61, 0.10) 0%, rgba(11, 27, 43, 0.85) 60%);
+  border: 2px solid rgba(232, 163, 61, 0.55) !important;
+  border-radius: 14px 14px 4px 4px !important;   /* rounder at the top, like a door frame */
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+[class*="st-key-door_"]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(232, 163, 61, 0.18);
+}
+[class*="st-key-door_"] [data-testid="stImage"] { box-shadow: none; }
+
+/* a locked door: grey frame and a darker, greyer picture */
+[class*="_locked"] {
+  border-color: rgba(242, 238, 227, 0.25) !important;
+  background: rgba(11, 27, 43, 0.85);
+}
+[class*="_locked"] img { filter: grayscale(0.7) brightness(0.6); }
+
+/* ---------- the entering moment (shown once after Play) ---------- */
+/* A layer over the whole screen. The animation makes it appear, stay and disappear by
+   itself in about 4 seconds; pointer-events: none lets every click go through it. */
+.entering {
+  position: fixed;
+  inset: 0;
+  z-index: 999990;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--navy-deep);
+  pointer-events: none;
+  animation: entering-fade 4.2s ease forwards;
+}
+.entering img {                            /* the entrance hall, slowly coming closer */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+  animation: entering-walk 4.2s ease-out forwards;
+}
+.entering p {
+  position: relative;                      /* stays above the picture */
+  max-width: 36rem;
+  margin: 0 1rem 14vh;
+  font: italic 1.35rem/1.5 Georgia, "Times New Roman", serif;
+  color: var(--paper);
+  text-align: center;
+  text-shadow: 0 2px 12px #000;
+}
+@keyframes entering-fade {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+@keyframes entering-walk {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+/* "Reduce motion" turned on in the computer: no fade and no movement, just shown and hidden. */
+@media (prefers-reduced-motion: reduce) {
+  .entering { animation: entering-fade 4.2s step-end forwards; }
+  .entering img { animation: none; }
+}

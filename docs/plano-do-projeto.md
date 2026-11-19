@@ -44,7 +44,7 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 | **A. Preparar** | Clonar o repositório, criar a estrutura e proteger o `main` | Afonso | 🔄 quase pronta (falta o passo 5: os colegas clonarem) |
 | **B. Inventar a história** | Mistério, 5+ cenas, objetos, finais e personagens, tudo no papel | Grupo todo | 🔄 proposta escrita em [historia.md](historia.md), falta o grupo rever |
 | **C. Versão base** | Jogo mínimo que cumpre o brief, com testes | Afonso + revisão | ⏳ |
-| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | ⏳ |
+| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | 🔄 imagens e tema feitos (PR #12); pré-visualização do visual do campus no branch `campus-visuals` (`app_campus.py`, [spec](../specs/campus-visuals.md)), à espera de o grupo experimentar |
 | **E. Publicar e ensaiar** | Link público (semana 9, não no último dia) e ensaio de perguntas | Os 4 | ⏳ |
 
 ### Fase A — passos

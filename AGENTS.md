@@ -12,6 +12,7 @@ Team project (4 people) for Introduction to Programming, Nova SBE 2026/27. The t
 ## Structure
 
 - `app.py` — the screens (Streamlit). Reads input, calls `logic.py`, shows results.
+- `app_campus.py`, `campus_texts.py`, `style.css` — preview of the campus visuals (`specs/campus-visuals.md`). Run with `uv run streamlit run app_campus.py --server.port 8502`. Not the real game yet: `app.py` is.
 - `story.py` — the story content (scenes, items, endings, texts) in English and Portuguese. Data only, no functions.
 - `logic.py` — the rules (moving between scenes, items, conditions, endings). No Streamlit and no database code here.
 - `db.py` — saving and loading the game in SQLite (`data/*.db`, not committed to git). The only file that uses `sqlite3`.
