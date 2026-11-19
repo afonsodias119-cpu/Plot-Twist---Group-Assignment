@@ -191,6 +191,7 @@
     $("premise").addEventListener("click", finish);
     $("back").addEventListener("click", () => { clearTimeout(timer); go($("stepCase"), $("stepLang")); });
     $("accept").addEventListener("click", () => {
+      if (window.campusStart) { window.campusStart(); return; }
       $("intro").classList.add("gone");
       setTimeout(() => { $("intro").style.display = "none"; }, 1200);
       window.playing = true;
@@ -227,7 +228,13 @@ let SCENES = DATA[LANG].scenes;   // {id: {title, text}}; pictures are in DATA.i
 // 1. Renderer, camera, post-processing (the "film look")
 // =====================================================================
 const wrap = document.getElementById("wrap");
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ antialias: true }); }
+catch (error) {
+  window.campusRenderFailed = true;
+  window.dispatchEvent(new Event("campus-renderer-failed"));
+  throw error;
+}
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -903,7 +910,7 @@ function placeNpc(look, x, z, angle, name, y = 0) {
   const n = makePerson(look);
   n.position.set(x, y, z); n.rotation.y = angle; scene.add(n);
   block(x, z, 0.6, 0.6);
-  label(name, x, y + 2.35, z, true);
+  n.userData.sign = label(name, x, y + 2.35, z, true);
   n.userData.baseAngle = angle;
   npcs.push(n);
 }
@@ -929,7 +936,7 @@ scene.add(dust);
 // =====================================================================
 const keys = {};
 const KEYMAP = { ArrowUp: "up", KeyW: "up", ArrowDown: "down", KeyS: "down", ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right" };
-window.addEventListener("keydown", e => { if (KEYMAP[e.code] && window.playing) { keys[KEYMAP[e.code]] = true; e.preventDefault(); } });
+window.addEventListener("keydown", e => { if (KEYMAP[e.code] && window.playing && !window.campusBusy && !window.campusState?.ending && !e.target.closest("input, button, dialog, textarea")) { keys[KEYMAP[e.code]] = true; e.preventDefault(); } });
 window.addEventListener("keyup", e => { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; });
 window.addEventListener("blur", () => { for (const k in keys) keys[k] = false; });
 window.addEventListener("start-game", () => { renderer.domElement.focus(); window.focus(); });
@@ -937,7 +944,12 @@ if (window.playing) renderer.domElement.focus();
 renderer.domElement.addEventListener("click", () => renderer.domElement.focus());
 
 const RADIUS = 0.3, SPEED = 3.6;
-const blocked = (x, z) => colliders.some(c => x + RADIUS > c.minX && x - RADIUS < c.maxX && z + RADIUS > c.minZ && z - RADIUS < c.maxZ);
+const blocked = (x, z) => {
+  // In playable mode, only the Python-authorised travel buttons change rooms.
+  const room = window.campusState && ROOMS.find(r => r.id === window.campusState.scene);
+  if (room && (x < room.minX + RADIUS || x > room.maxX - RADIUS || z < room.minZ + RADIUS || z > room.maxZ - RADIUS)) return true;
+  return colliders.some(c => x + RADIUS > c.minX && x - RADIUS < c.maxX && z + RADIUS > c.minZ && z - RADIUS < c.maxZ);
+};
 const OUTSIDE_AREA = { id: "outside", icon: "🌊" };
 function applyLanguage() {   // called when the player picks a language on the first screen
   LANG = window.lang || "pt"; SCENES = DATA[LANG].scenes;
@@ -951,6 +963,7 @@ const roomAt = (x, z) => x < -13.1 ? OUTSIDE_AREA : ROOMS.find(r => x > r.minX &
 let currentRoom;
 const card = document.getElementById("card"), where = document.getElementById("where");
 function showRoom(room) {
+  if (window.campusState) { card.classList.remove("show"); return; }
   if (room === currentRoom) return;
   currentRoom = room;
   ROOMS.forEach(r => { r.sign.visible = r !== room; });
@@ -978,6 +991,31 @@ facing = Math.PI / 2; player.rotation.y = facing;  // looking towards the campus
 camera.position.set(-36, 10.5, -0.3);
 lookAt.set(-36, 0.8, -9.4);
 
+// Position the character in the saved room after an accepted server response.
+let savedScene = null;
+function syncCampus() {
+  const state = window.campusState;
+  if (!state) return;
+  if (state.scene !== savedScene) {
+    const room = ROOMS.find(r => r.id === state.scene);
+    player.position.set((room.minX + room.maxX) / 2, 0, room.maxZ < 0 ? room.maxZ - 1 : room.minZ + 1);
+    savedScene = state.scene;
+    currentRoom = room;
+    camera.position.set(player.position.x, 10.5, player.position.z + 8.5);
+    lookAt.set(player.position.x, 0.8, player.position.z);
+  }
+  for (const k in keys) keys[k] = false;
+  npcs[0].visible = state.leonor_present;
+  npcs[0].userData.sign.visible = state.leonor_present;
+  npcs[1].visible = state.ending?.id !== "impostor";
+  npcs[1].userData.sign.visible = npcs[1].visible;
+  where.textContent = state.title;
+}
+window.addEventListener("campus-state", syncCampus);
+syncCampus();
+window.campus3dReady = true;
+window.dispatchEvent(new Event("campus-renderer-ready"));
+
 function animatePerson(p, t, amount, phase) {
   const s = Math.sin(phase) * 0.6 * amount;
   const { legs, arms, body, torso, head } = p.userData;
@@ -993,6 +1031,7 @@ function loop() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   let dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
   let dz = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
+  if (window.campusState && (!window.playing || window.campusBusy || window.campusState.ending)) { dx = 0; dz = 0; }
   const moving = dx !== 0 || dz !== 0;
   moveAmount += ((moving ? 1 : 0) - moveAmount) * Math.min(1, dt * 10);
   if (moving) {
