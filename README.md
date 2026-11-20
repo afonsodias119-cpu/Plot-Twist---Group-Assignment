@@ -3,12 +3,20 @@
 A short mystery game where clues unlock paths and choices change the ending.
 Team project for Introduction to Programming, Nova SBE 2026/27.
 
+## Play online
+
+**https://plot-twist.streamlit.app/**
+
+The online app runs the code on the `main` branch. Its saved games are temporary: they can be lost when the app restarts.
+
 ## Team
 
-- Afonso Mendo Dias
-- Guilherme Osório
-- Maria da Cunha
-- _(add your name)_
+| Name | Student number |
+|---|---|
+| Afonso Mendo Dias | _(add)_ |
+| Guilherme Osório | _(add)_ |
+| Maria da Cunha | _(add)_ |
+| _(add your name)_ | _(add)_ |
 
 ## Getting started
 
