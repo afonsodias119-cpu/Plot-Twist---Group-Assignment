@@ -182,7 +182,7 @@ def test_every_action_is_rejected_after_an_ending():
 
 
 def test_every_ending_is_reachable_from_a_new_game():
-    """Trying every offered action from every reachable state finds exactly the two endings."""
+    """Trying every offered action from every reachable state finds exactly the three endings."""
     start = logic.new_game(STORY)
     seen = {json.dumps(start, sort_keys=True)}
     to_visit = [start]
@@ -199,7 +199,8 @@ def test_every_ending_is_reachable_from_a_new_game():
                 if key not in seen:
                     seen.add(key)
                     to_visit.append(result["state"])
-    assert endings_found == {"impostor", "stolen_credits"}
+    # Changed by specs/spot-the-fake.md ("Reviewed tests that change"): the group chat adds full_case.
+    assert endings_found == {"impostor", "stolen_credits", "full_case"}
 
 
 def test_playing_never_changes_the_story():
@@ -623,3 +624,72 @@ def test_broken_save_counts_as_no_save():
         result = game.open_game(player, "en")
         assert result["continued"] is False
         assert result["state"] == logic.new_game(STORY)
+
+
+# ---------- Group chat puzzle (specs/spot-the-fake.md) ----------
+
+P_FULL = P_HELP[:9] + [
+    "open_chat", "flag_2", "flag_4", "flag_5",
+    "go_computer_lab", "go_study_room", "go_auditorium", "present_evidence",
+]
+
+
+def test_chat_is_offered_only_after_the_files_are_viewed():
+    """The group chat appears in the computer lab only once the old files were viewed."""
+    before_files = play_path(["go_computer_lab"])
+    assert "open_chat" not in offered_ids(before_files)
+    after_files = play_path(P_SHORT[:3])
+    assert "open_chat" in offered_ids(after_files)
+    assert play_path(["open_chat"], state=after_files)["scene"] == "group_chat"
+
+
+def test_a_message_is_flagged_once_and_remembered():
+    """A flag is remembered, cannot be given twice, and shows "Flagged." right after its message."""
+    state = play_path(P_SHORT[:3] + ["open_chat", "flag_2"])
+    assert state["flags"]["flagged_2"] is True
+    assert "flag_2" not in offered_ids(state)
+    result = assert_rejected(state, "flag_2", "not_offered")
+    assert result["message"] == STORY["messages"]["not_offered"]
+
+    texts = STORY["scenes"]["group_chat"]["texts"]
+    flagged_line = next(i for i, entry in enumerate(texts) if entry["when"] == {"flags": {"flagged_2": True}})
+    message_2 = texts[flagged_line - 1]["text"]
+    shown = logic.scene_text(STORY, state)
+    assert shown[shown.index(message_2) + 1] == texts[flagged_line]["text"]
+    assert shown.count(texts[flagged_line]["text"]) == 1
+
+
+def test_a_perfect_report_with_help_reaches_full_case():
+    """Flagging exactly the three fake messages, with Leonor's help, ends in full_case."""
+    assert play_path(P_FULL)["ending"] == "full_case"
+
+
+def test_flagging_a_real_message_loses_the_full_case():
+    """Flagging a real message as well ends in impostor instead."""
+    path = P_FULL[:10] + ["flag_1"] + P_FULL[10:]
+    assert play_path(path)["ending"] == "impostor"
+
+
+def test_missing_a_fake_message_loses_the_full_case():
+    """Leaving one fake message unflagged ends in impostor instead."""
+    path = [action for action in P_FULL if action != "flag_5"]
+    assert play_path(path)["ending"] == "impostor"
+
+
+def test_a_perfect_report_without_help_does_not_reach_full_case():
+    """The right flags without Leonor's help end in stolen_credits."""
+    path = ["accuse" if action == "ask_for_help" else action for action in P_FULL]
+    assert play_path(path)["ending"] == "stolen_credits"
+
+
+def test_the_chat_works_in_both_languages():
+    """The perfect report reaches full_case in every language."""
+    for story in STORIES.values():
+        assert play_path(P_FULL, story)["ending"] == "full_case"
+
+
+def test_a_save_without_the_new_flags_starts_again():
+    """A game saved before the chat existed (only two flags) no longer counts as a valid save."""
+    old_save = logic.new_game(STORY)
+    old_save["flags"] = {"colleague_choice": "none", "files_viewed": False}
+    assert logic.is_valid_state(STORY, old_save) is False
