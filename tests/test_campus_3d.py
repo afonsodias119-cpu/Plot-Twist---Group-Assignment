@@ -322,3 +322,32 @@ def test_the_3d_campus_offers_only_rooms_it_can_draw():
     result = call("play", language="en", player="chat tester", action="open_chat")
     assert result["accepted"] is False
     assert game.load("chat tester") == before
+
+
+# ---------- 3D inside Streamlit (specs/campus-3d-streamlit.md) ----------
+
+def test_inline_page_has_no_external_ui_files():
+    """The component page carries play.js and play.css itself; there is no server to fetch them from."""
+    page = page3d.build_page(playable=True, inline=True)
+    assert 'src="/play.js"' not in page and 'href="/play.css"' not in page
+    assert "window.campusBridge" in page  # play.js is inside (the bridge branch of send())
+    assert page.count("</script>") == page3d.build_page().count("</script>") + 1  # exactly the one script we added
+
+
+def test_default_pages_are_unchanged_by_inline_option():
+    assert page3d.build_page(playable=True) == page3d.build_page(playable=True, inline=False)
+    assert 'src="/play.js"' in page3d.build_page(playable=True)
+
+
+def test_play_js_uses_http_when_there_is_no_bridge():
+    source = (Path(page3d.HERE) / "play.js").read_text(encoding="utf-8")
+    assert 'fetch("/api/command"' in source  # local server path still exists
+    assert source.index("window.campusBridge") < source.index('fetch("/api/command"')
+
+
+def test_app_3d_runs_without_error():
+    from streamlit.testing.v1 import AppTest
+
+    app = AppTest.from_file(str(Path(__file__).resolve().parent.parent / "app_3d.py"), default_timeout=30)
+    app.run()
+    assert not app.exception

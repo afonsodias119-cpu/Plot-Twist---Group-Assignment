@@ -14,7 +14,8 @@ Team project for Introduction to Programming, Nova SBE 2026/27.
 
 1. Clone this repository with GitHub Desktop.
 2. Open a terminal in the project folder and run `uv sync` (installs Python and the libraries).
-3. Start the game: `uv run streamlit run app.py`
+3. Start the 3D game: `uv run streamlit run app_3d.py`
+   (the plain version without 3D is `uv run streamlit run app.py`)
 4. Run the tests: `uv run pytest`
 
 ## How we work

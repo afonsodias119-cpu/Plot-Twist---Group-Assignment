@@ -73,12 +73,18 @@ def language_data(language):
     }
 
 
-def build_page(playable=False):
+def build_page(playable=False, inline=False):
     images = {s: picture(s) for s in SCENES}
     images["outside"] = images["cover"] = picture("cover")
     data = {"pt": language_data("pt"), "en": language_data("en"), "images": images}
     page = (HERE / "game3d.html").read_text(encoding="utf-8").replace("__DATA__", json.dumps(data).replace("<", "\\u003c"))
-    if playable:
+    if playable and inline:
+        # Streamlit component: there is no server to fetch /play.js from, so the files go inside the page.
+        css = (HERE / "play.css").read_text(encoding="utf-8")
+        js = (HERE / "play.js").read_text(encoding="utf-8").replace("</script", r"<\/script")
+        # An inline script ignores "defer", so it goes at the end of the body, when the page elements exist.
+        page = page.replace("</head>", f"<style>{css}</style></head>").replace("</body>", f"<script>{js}</script></body>")
+    elif playable:
         page = page.replace("</head>", '<link rel="stylesheet" href="/play.css"><script defer src="/play.js"></script></head>')
     return page
 

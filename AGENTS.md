@@ -5,13 +5,14 @@ Team project (4 people) for Introduction to Programming, Nova SBE 2026/27. The t
 ## Running things
 
 - Install / update libraries: `uv sync`.
-- Run the app: `uv run streamlit run app.py` (opens http://localhost:8501, stop with Ctrl+C).
+- Run the 3D app (the one to publish): `uv run streamlit run app_3d.py`. The plain version is `uv run streamlit run app.py` (opens http://localhost:8501, stop with Ctrl+C).
 - Tests: `uv run pytest`.
 - Never use `pip` or `python -m venv` — uv handles Python and libraries.
 
 ## Structure
 
-- `app.py` — the screens (Streamlit). Reads input, calls `logic.py`, shows results.
+- `app_3d.py` — the 3D campus game inside Streamlit (specs/campus-3d-streamlit.md); same rules, saves in `data/campus3d.db`.
+- `app.py` — the plain screens (Streamlit). Reads input, calls `logic.py`, shows results.
 - `story.py` — the story content (scenes, items, endings, texts) in English and Portuguese. Data only, no functions.
 - `logic.py` — the rules (moving between scenes, items, conditions, endings). No Streamlit and no database code here.
 - `db.py` — saving and loading the game in SQLite (`data/*.db`, not committed to git). The only file that uses `sqlite3`.

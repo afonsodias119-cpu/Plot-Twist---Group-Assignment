@@ -104,14 +104,20 @@
     if (location.protocol === "file:") { startError.textContent = ui().local_only; return; }
     setBusy(true);
     try {
-      const response = await fetch("/api/command", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ operation, player: current?.player || name.value,
-          language: window.lang || "pt", ...extra }),
-        signal: AbortSignal.timeout(12000),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || ui().network_error);
+      const payload = { operation, player: current?.player || name.value,
+        language: window.lang || "pt", ...extra };
+      let result;
+      if (window.campusBridge) {
+        // Inside Streamlit (app_3d.py): the command goes to Python through the component, not over HTTP.
+        result = await window.campusBridge.call(payload);
+      } else {
+        const response = await fetch("/api/command", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload), signal: AbortSignal.timeout(12000),
+        });
+        result = await response.json();
+        if (!response.ok) throw new Error(result.error || ui().network_error);
+      }
       uncertain = false;
       render(result);
       return true;
