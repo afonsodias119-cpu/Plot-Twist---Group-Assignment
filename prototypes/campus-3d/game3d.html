@@ -213,7 +213,6 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { VignetteShader } from "three/addons/shaders/VignetteShader.js";
@@ -229,15 +228,16 @@ let SCENES = DATA[LANG].scenes;   // {id: {title, text}}; pictures are in DATA.i
 // =====================================================================
 const wrap = document.getElementById("wrap");
 let renderer;
-try { renderer = new THREE.WebGLRenderer({ antialias: true }); }
+// No antialias: the picture goes through the post-processing passes below, which ignore it anyway.
+try { renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" }); }
 catch (error) {
   window.campusRenderFailed = true;
   window.dispatchEvent(new Event("campus-renderer-failed"));
   throw error;
 }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));   // fewer pixels to draw: the biggest saving on big screens
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;                       // cheaper than the soft version
 renderer.toneMapping = THREE.ACESFilmicToneMapping;   // realistic light response
 renderer.toneMappingExposure = 0.95;
 wrap.prepend(renderer.domElement);
@@ -257,9 +257,7 @@ scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const ao = new GTAOPass(scene, camera, 1, 1);          // contact shadows in corners
-ao.updateGtaoMaterial({ radius: 0.45, distanceExponent: 1.5, thickness: 1.0, scale: 1.0 });
-composer.addPass(ao);
+// (The ambient-occlusion pass that darkened the corners was removed: it was the most expensive pass.)
 const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.55, 0.6, 0.9);   // glow on lamps and screens
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
@@ -419,13 +417,17 @@ scene.add(new THREE.HemisphereLight(0x9db8e0, 0x2a1d10, 0.35));
 const moon = new THREE.DirectionalLight(0xbcd3ff, 1.1);   // moonlight through the windows
 moon.position.set(-9, 20, -16);
 moon.castShadow = true;
-moon.shadow.mapSize.set(2048, 2048);
+moon.shadow.mapSize.set(1024, 1024);
 moon.shadow.bias = -0.0004; moon.shadow.normalBias = 0.02;
 Object.assign(moon.shadow.camera, { left: -17, right: 17, top: 17, bottom: -17, near: 1, far: 60 });
 scene.add(moon);
+// Every point light makes every surface more expensive to draw, and there are about twenty of them.
+// So they are kept in a list, and only the ones nearest to the character are switched on (updateLights).
+const lampList = [];
 function lamp(color, intensity, x, y, z, distance = 9) {
   const l = new THREE.PointLight(color, intensity, distance, 2);
   l.position.set(x, y, z); scene.add(l);
+  lampList.push({ light: l, base: intensity, d: 0 });
   return l;
 }
 
@@ -694,7 +696,7 @@ slats.castShadow = slats.receiveShadow = true; scene.add(slats);
 walls.push({ materials: [slatMaterial], cx: 6.55, cz: 11.8, half: 6.2, horizontal: true, opacity: 1 });   // fades like a wall
 rbox(0.9, 1.15, 0.6, 6.5, 0.4, 10.0, walnut, { radius: 0.04 });   // podium
 const spot = new THREE.SpotLight(0xffe6c0, 60, 14, 0.42, 0.5, 1.5);
-spot.position.set(6.5, 7, 6); spot.target.position.set(6.5, 0.4, 10); spot.castShadow = true; spot.shadow.mapSize.set(1024, 1024);
+spot.position.set(6.5, 7, 6); spot.target.position.set(6.5, 0.4, 10); spot.castShadow = false;   // its shadow made the whole scene be drawn one more time every frame
 scene.add(spot, spot.target);
 // an easel near the door with tomorrow's schedule
 const schedule = textPanel(512, 340, (g, w, h) => {
@@ -801,16 +803,43 @@ const doorBlock = { minX: -13.15, maxX: -12.85, minZ: -1.3, maxZ: 1.3 };   // cl
 colliders.push(doorBlock);
 let doorOpen = 0;
 
-// a lit sign on a white block, as on many university plazas
-const signTexture = textPanel(1024, 256, (g, w, h) => {
-  g.clearRect(0, 0, w, h);
-  g.fillStyle = "#ffffff"; g.font = "bold 150px Helvetica, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillText("NOVA SBE", w / 2, h / 2 + 8);
-});
-rbox(5.2, 1.0, 0.7, -27, 0, -3.2, mat(0xe9e7e1, { roughness: 0.5 }), { collide: true, radius: 0.05 });
-const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 1.15), new THREE.MeshStandardMaterial({ map: signTexture, emissive: 0xffffff, emissiveMap: signTexture, emissiveIntensity: 1.6, transparent: true }));
-sign.position.set(-27, 1.6, -3.2); scene.add(sign);
-lamp(0xfff4e0, 6, -27, 1.0, -1.5, 5);
+// A big lit "NOVA" sign on the plaza: chunky white letters standing on a low base, facing south
+// (towards the camera), with the O as a thick ring. Every letter is built from a few simple shapes.
+const SIGN_X = -27, SIGN_Z = -3.2;                 // centre of the sign
+const LETTER_H = 2.4, STROKE = 0.55, DEPTH = 0.7;  // height, thickness of a stroke, depth
+const BASE_H = 0.14;                               // the low white base under the letters
+const letterMaterial = mat(0xf4f3ef, { roughness: 0.5, emissive: 0xffffff, emissiveIntensity: 0.1 });
+rbox(10.6, BASE_H, 1.1, SIGN_X, 0, SIGN_Z, mat(0xe9e7e1, { roughness: 0.5 }), { collide: true, radius: 0.03 });
+// one stroke of a letter: a rounded bar of width w and height h, centred on (x, y), turned by `angle`
+function stroke(w, h, x, y, angle = 0) {
+  const bar = add(new THREE.Mesh(new RoundedBoxGeometry(w, h, DEPTH, 3, 0.06), letterMaterial), SIGN_X + x, BASE_H + y, SIGN_Z);
+  bar.rotation.z = angle;
+}
+// a straight stroke from point (x1, y1) to point (x2, y2), both measured from the sign centre and the floor
+function line(x1, y1, x2, y2) {
+  const length = Math.hypot(x2 - x1, y2 - y1);
+  // an upright bar turned by this angle lies along the line (the bar looks the same turned half a circle)
+  stroke(STROKE, length, (x1 + x2) / 2, (y1 + y2) / 2, Math.atan2(x1 - x2, y2 - y1));
+}
+{
+  const x0 = -5.1, H = LETTER_H, half = (2.3 - STROKE) / 2;
+  // N: two uprights and a diagonal from the top left to the bottom right
+  stroke(STROKE, H, x0 + STROKE / 2, H / 2);
+  stroke(STROKE, H, x0 + 2.0 - STROKE / 2, H / 2);
+  line(x0 + STROKE / 2, H, x0 + 2.0 - STROKE / 2, 0);
+  // O: a thick ring
+  const ring = add(new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.3, 24, 64), letterMaterial), SIGN_X + x0 + 3.6, BASE_H + H / 2, SIGN_Z);
+  ring.scale.z = 1.1;
+  // V: two strokes meeting at the bottom centre
+  const vx = x0 + 6.35;
+  line(vx - half, H, vx, 0); line(vx + half, H, vx, 0);
+  // A: two strokes meeting at the top centre, and a crossbar
+  const ax = x0 + 9.05;
+  line(ax - half, 0, ax, H); line(ax + half, 0, ax, H);
+  stroke(1.1, 0.4, ax, 0.75);
+}
+// the light on the sign: soft uplights on the ground and a cool glow behind the letters
+for (const dx of [-3.6, 0, 3.6]) lamp(0xfff4e0, 3, SIGN_X + dx, 0.4, SIGN_Z + 1.6, 5.5);
 
 // street lamps along the boardwalk and pine trees
 function streetLamp(x, z, withLight) {
@@ -943,13 +972,11 @@ window.addEventListener("start-game", () => { renderer.domElement.focus(); windo
 if (window.playing) renderer.domElement.focus();
 renderer.domElement.addEventListener("click", () => renderer.domElement.focus());
 
-const RADIUS = 0.3, SPEED = 3.6;
-const blocked = (x, z) => {
-  // In playable mode, only the Python-authorised travel buttons change rooms.
-  const room = window.campusState && ROOMS.find(r => r.id === window.campusState.scene);
-  if (room && (x < room.minX + RADIUS || x > room.maxX - RADIUS || z < room.minZ + RADIUS || z > room.maxZ - RADIUS)) return true;
-  return colliders.some(c => x + RADIUS > c.minX && x - RADIUS < c.maxX && z + RADIUS > c.minZ && z - RADIUS < c.maxZ);
-};
+const RADIUS = 0.3, SPEED = 4.8;   // a third faster than the original 3.6
+// The character walks freely: only the walls block it. The saved room still changes only through
+// the server (see checkEnter below), so a locked door cannot be bypassed by walking.
+const blocked = (x, z) =>
+  colliders.some(c => x + RADIUS > c.minX && x - RADIUS < c.maxX && z + RADIUS > c.minZ && z - RADIUS < c.maxZ);
 const OUTSIDE_AREA = { id: "outside", icon: "🌊" };
 function applyLanguage() {   // called when the player picks a language on the first screen
   LANG = window.lang || "pt"; SCENES = DATA[LANG].scenes;
@@ -959,6 +986,45 @@ function applyLanguage() {   // called when the player picks a language on the f
 }
 window.addEventListener("language", applyLanguage);
 const roomAt = (x, z) => x < -13.1 ? OUTSIDE_AREA : ROOMS.find(r => x > r.minX && x < r.maxX && z > r.minZ && z < r.maxZ && Math.abs(z) > 3.2) || null;
+
+// The phone's map: where the rooms are, and where the character stands right now.
+window.campusMap = () => {
+  const here = roomAt(player.position.x, player.position.z);
+  return {
+    rooms: ROOMS.map(r => ({ id: r.id, icon: r.icon, minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ })),
+    player: { x: player.position.x, z: player.position.z },
+    here: here ? here.id : null,   // a room id, "outside" on the plaza, or null in the corridor
+  };
+};
+
+// Crossing a door into another room asks the server to travel there with the story's own actions.
+// If it refuses (a locked door), the character steps back into the corridor.
+let entering = false;
+async function checkEnter() {
+  const state = window.campusState;
+  if (!state || state.ending || entering || window.campusBusy || !window.campusEnter) return;
+  const room = roomAt(player.position.x, player.position.z);
+  if (!ROOMS.includes(room) || room.id === state.scene) return;
+  entering = true;
+  await window.campusEnter(room.id);
+  entering = false;
+  if (window.campusState.scene === state.scene) {   // refused, or the request failed: stay outside
+    player.position.z = room.maxZ < 0 ? -2 : 2;
+    for (const k in keys) keys[k] = false;
+  }
+}
+
+// Investigating only works while the character stands in the room of the saved scene.
+function updateInside() {
+  const state = window.campusState;
+  if (!state) return;
+  const room = roomAt(player.position.x, player.position.z);
+  const inside = Boolean(room && room.id === state.scene);
+  if (inside !== window.campusInside) {
+    window.campusInside = inside;
+    window.dispatchEvent(new Event("campus-inside"));
+  }
+}
 
 let currentRoom;
 const card = document.getElementById("card"), where = document.getElementById("where");
@@ -984,19 +1050,48 @@ applyLanguage();
 // 9. Game loop
 // =====================================================================
 const clock = new THREE.Clock();
-let walk = 0, facing = 0, moveAmount = 0;
+let walk = 0, facing = 0, moveAmount = 0, frameCount = 0;
+
+// Only the LIGHT_BUDGET lamps nearest to the character are on. The number of lamps that are on never
+// changes, so the shaders are not rebuilt. A lamp fades out as it gets close to being swapped, so no
+// light pops on or off.
+const LIGHT_BUDGET = 10;
+function updateLights() {
+  const px = player.position.x, pz = player.position.z;
+  for (const item of lampList) item.d = Math.hypot(item.light.position.x - px, item.light.position.z - pz);
+  lampList.sort((a, b) => a.d - b.d);
+  const edge = lampList.length > LIGHT_BUDGET ? lampList[LIGHT_BUDGET].d : Infinity;
+  lampList.forEach((item, i) => {
+    const on = i < LIGHT_BUDGET;
+    item.light.visible = on;
+    item.light.intensity = on ? item.base * Math.min(1, (edge - item.d) / 4) : 0;
+  });
+}
 const lookAt = new THREE.Vector3(0, 0.8, -0.6);
 player.position.set(-36, 0, -11);            // the game starts outside, on the beach by the sea
 facing = Math.PI / 2; player.rotation.y = facing;  // looking towards the campus
 camera.position.set(-36, 10.5, -0.3);
 lookAt.set(-36, 0.8, -9.4);
 
-// Position the character in the saved room after an accepted server response.
-let savedScene = null;
+// A new game starts outside, on the plaza, looking at the lit NOVA sign. The character has to walk
+// in through the entrance doors to reach the study room.
+function placeOutside() {
+  player.position.set(SIGN_X, 0, 0);                  // in line with the entrance doors, in front of the sign
+  facing = Math.PI; player.rotation.y = facing;      // looking north, at the sign
+  currentRoom = null;
+  camera.position.set(player.position.x, 10.5, player.position.z + 8.5);
+  lookAt.set(player.position.x, 0.8, player.position.z - 0.6);
+}
+
+// Position the character after an accepted server response: outside for a new game, otherwise in the saved room.
+let savedScene = null, wasFresh = false;
 function syncCampus() {
   const state = window.campusState;
   if (!state) return;
-  if (state.scene !== savedScene) {
+  if (state.fresh && !wasFresh) {
+    placeOutside();
+    savedScene = state.scene;
+  } else if (state.scene !== savedScene) {
     const room = ROOMS.find(r => r.id === state.scene);
     player.position.set((room.minX + room.maxX) / 2, 0, room.maxZ < 0 ? room.maxZ - 1 : room.minZ + 1);
     savedScene = state.scene;
@@ -1004,6 +1099,7 @@ function syncCampus() {
     camera.position.set(player.position.x, 10.5, player.position.z + 8.5);
     lookAt.set(player.position.x, 0.8, player.position.z);
   }
+  wasFresh = state.fresh;
   for (const k in keys) keys[k] = false;
   npcs[0].visible = state.leonor_present;
   npcs[0].userData.sign.visible = state.leonor_present;
@@ -1079,7 +1175,8 @@ function loop() {
     const x = seaBase[i * 3], y = seaBase[i * 3 + 1];
     sp.array[i * 3 + 2] = Math.sin(x * 0.35 + t * 1.1) * 0.06 + Math.sin(y * 0.6 - t * 1.6) * 0.05;
   }
-  sp.needsUpdate = true; seaGeo.computeVertexNormals();
+  sp.needsUpdate = true;
+  if (frameCount++ % 4 === 0) seaGeo.computeVertexNormals();   // the slow part: only every fourth frame
   foam.material.opacity = 0.12 + Math.sin(t * 1.6) * 0.08; foam.position.z = -15.1 + Math.sin(t * 1.6) * 0.25;
 
   // screens flicker a little, dust drifts
@@ -1092,6 +1189,9 @@ function loop() {
   lookAt.lerp(new THREE.Vector3(player.position.x, 0.8, player.position.z - 0.6 + shift), Math.min(1, dt * 4));
   camera.lookAt(lookAt);
 
+  updateLights();
+  checkEnter();
+  updateInside();
   showRoom(roomAt(player.position.x, player.position.z));
   composer.render();
   labelRenderer.render(scene, camera);

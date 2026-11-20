@@ -16,6 +16,7 @@ from story import STORIES
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "prototypes" / "campus-3d"))
 campus = importlib.import_module("campus_game")
+TEXT = importlib.import_module("campus_text").TEXT
 server3d = importlib.import_module("server3d")
 page3d = importlib.import_module("page3d")
 
@@ -28,7 +29,8 @@ def call(operation="open", language="pt", player="test detective", **extra):
 
 
 @pytest.mark.parametrize("language", ["en", "pt"])
-@pytest.mark.parametrize("path,ending", [(SHORT, "stolen_credits"), (HELP, "impostor"), (["accuse" if a == "ask_for_help" else a for a in HELP], "stolen_credits")])
+# In the 3D version the auditorium needs every clue, so the short path (no photo, no Leonor) is not played here.
+@pytest.mark.parametrize("path,ending", [(HELP, "impostor"), (["accuse" if a == "ask_for_help" else a for a in HELP], "stolen_credits")])
 def test_both_endings_and_accusation_use_the_original_rules(language, path, ending):
     call(language=language)
     for action in path:
@@ -98,6 +100,157 @@ def test_bad_requests_never_create_a_saved_game(payload):
     with pytest.raises(ValueError):
         campus.command(payload)
     assert db.load_game("maria") is None
+
+
+def saved_bytes():
+    return db.DB_PATH.read_bytes()
+
+
+def test_entering_a_room_uses_the_original_travel_actions():
+    """Walking through a door is a request to travel: the server uses the story's own go_ action."""
+    call()
+    result = call("enter", room="library")
+    assert result["accepted"] and result["scene"] == "library"
+    assert game.load("test detective")["scene"] == "library"
+    assert game.load("test detective")["inventory"] == []
+
+
+def test_walking_between_two_rooms_goes_through_the_study_room():
+    """Every room connects only to the study room, so the walk is two saved moves."""
+    call(); call("play", action="go_print_shop")
+    result = call("enter", room="library")
+    assert result["accepted"] and result["scene"] == "library"
+    assert call("enter", room="print_shop")["scene"] == "print_shop"
+
+
+def test_entering_the_auditorium_is_refused_without_the_clues():
+    """The door explains itself with a note that lists every missing clue, and nothing is saved."""
+    call()
+    before = saved_bytes()
+    result = call("enter", room="auditorium")
+    t = TEXT["pt"]
+    assert not result["accepted"] and result["scene"] == "study_room"
+    assert result["message"].startswith(t["auditorium_note"])
+    assert all(t["clues"][clue] in result["message"] for clue in t["clues"])   # all four are missing
+    assert saved_bytes() == before
+
+
+def test_a_blocked_second_step_leaves_you_in_the_study_room():
+    """From the library to the locked auditorium: the first move is accepted, the second is refused."""
+    call(); call("play", action="go_library")
+    result = call("enter", room="auditorium")
+    assert not result["accepted"] and result["scene"] == "study_room"
+    assert result["message"].startswith(TEXT["pt"]["auditorium_note"])
+    assert game.load("test detective")["scene"] == "study_room"
+
+
+def test_the_story_rule_alone_is_not_enough_for_the_auditorium():
+    """With the old files viewed (the story's own rule) but no photo and no talk with Leonor, it stays closed."""
+    call()
+    for action in SHORT[:3]:
+        call("play", action=action)
+    before = game.load("test detective")
+    result = call("enter", room="auditorium")
+    t = TEXT["pt"]
+    assert not result["accepted"] and result["scene"] == "study_room"   # the walk went through the hub, then stopped
+    assert t["clues"]["original_photo"] in result["message"] and t["clues"]["leonor"] in result["message"]
+    assert t["clues"]["usb_stick"] not in result["message"] and t["clues"]["files_viewed"] not in result["message"]
+    after = game.load("test detective")
+    assert after["scene"] == "study_room" and dict(after, scene=None) == dict(before, scene=None)   # only the room changed
+
+
+def test_the_auditorium_opens_once_every_clue_is_done():
+    """Pen, photo, old files and Leonor: then the same door opens, even coming from another room."""
+    call()
+    for action in HELP[:9]:
+        call("play", action=action)
+    result = call("enter", room="auditorium")
+    assert result["accepted"] and result["scene"] == "auditorium"
+
+
+def test_the_auditorium_button_needs_every_clue_too():
+    """The on-screen travel button follows the same rule as walking in through the door."""
+    call()
+    for action in SHORT[:4]:
+        call("play", action=action)
+    before = saved_bytes()
+    result = call("play", action="go_auditorium")
+    assert not result["accepted"] and result["scene"] == "study_room"
+    assert result["message"].startswith(TEXT["pt"]["auditorium_note"])
+    assert saved_bytes() == before
+
+
+def test_the_clue_list_and_the_auditorium_button_follow_the_progress():
+    """The snapshot carries the phone's to-do list, and locks the auditorium button until it is complete."""
+    start = call()
+    assert [c["id"] for c in start["clues"]] == ["usb_stick", "original_photo", "files_viewed", "leonor"]
+    assert not any(c["done"] for c in start["clues"])
+    assert [c["room"] for c in start["clues"]] == [STORIES["pt"]["scenes"][r]["title"]
+                                                    for r in ["study_room", "print_shop", "computer_lab", "library"]]
+    button = next(a for a in start["actions"] if a["id"] == "go_auditorium")
+    assert button["allowed"] is False and button["blocked_text"].startswith(TEXT["pt"]["auditorium_note"])
+
+    for action in HELP[:9]:
+        done = call("play", action=action)
+    assert all(c["done"] for c in done["clues"])
+    study = call("play", action="go_study_room")
+    assert next(a for a in study["actions"] if a["id"] == "go_auditorium")["allowed"] is True
+
+
+def test_leonor_counts_whether_you_ask_for_help_or_accuse():
+    """The clue is the conversation: both choices complete it (the choice only changes the ending)."""
+    call()
+    for choice, path in [("help", HELP[:6]), ("accused", ["accuse" if a == "ask_for_help" else a for a in HELP[:6]])]:
+        call("restart", confirmed=True)
+        for action in path:
+            result = call("play", action=action)
+        assert next(c for c in result["clues"] if c["id"] == "leonor")["done"], choice
+
+
+def test_phone_texts_exist_in_both_languages():
+    """Every label of the phone, the map and the panel button exists in English and in Portuguese."""
+    assert set(TEXT["pt"]) == set(TEXT["en"])
+    assert set(TEXT["pt"]["clues"]) == set(TEXT["en"]["clues"]) == {"usb_stick", "original_photo", "files_viewed", "leonor"}
+    for language in TEXT:
+        assert all(isinstance(v, (str, dict)) and v for v in TEXT[language].values())
+
+
+def test_entering_the_current_room_changes_nothing():
+    call()
+    before = saved_bytes()
+    result = call("enter", room="study_room")
+    assert result["accepted"] and result["scene"] == "study_room" and result["message"] == ""
+    assert saved_bytes() == before
+
+
+def test_entering_after_an_ending_is_refused():
+    call()
+    for action in HELP:
+        call("play", action=action)
+    before = saved_bytes()
+    result = call("enter", room="library")
+    assert not result["accepted"] and result["ending"]["id"] == "impostor"
+    assert saved_bytes() == before
+
+
+@pytest.mark.parametrize("extra", [{"room": "cafeteria"}, {"room": 7}, {"room": None}, {"room": ["library"]},
+                                   {}, {"room": "library", "state": {"scene": "auditorium"}}])
+def test_enter_rejects_bad_rooms_and_extra_fields(extra):
+    call()
+    before = saved_bytes()
+    with pytest.raises(ValueError):
+        call("enter", **extra)
+    assert saved_bytes() == before
+
+
+def test_a_new_game_is_marked_fresh_until_something_is_saved():
+    """The 3D scene starts the character outside only while the game is untouched."""
+    assert call()["fresh"] is True
+    assert call("enter", room="study_room")["fresh"] is True              # walking into the hub changes nothing
+    assert call("enter", room="auditorium")["fresh"] is True              # a refused door changes nothing
+    assert call("play", action="go_library")["fresh"] is False            # any accepted move ends it
+    assert call(language="en")["fresh"] is False                          # and a resumed game is not fresh
+    assert call("restart", confirmed=True)["fresh"] is True               # a restart makes it fresh again
 
 
 def test_generated_pages_preserve_walkthrough_and_escape_script_data(monkeypatch):

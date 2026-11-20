@@ -16,7 +16,17 @@ A aplicação Streamlit e o passeio visual original continuam disponíveis.
 - Confirmação antes de recomeçar, com opção de cancelar.
 - Interface em português e inglês, foco de teclado e layout adaptável.
 - Modo de texto automático quando o cenário 3D não carrega; também pode ser escolhido.
-- Movimento 3D limitado à sala atual para não ultrapassar as condições do jogo.
+- Movimento 3D livre por todo o mapa. Ao atravessar a porta de uma sala, o ecrã pede ao servidor
+  (`enter` em `campus_game.py`) para viajar com as ações do próprio jogo. Se a porta estiver
+  bloqueada, aparece a explicação, nada muda e o boneco volta ao corredor. Investigar só funciona
+  com o boneco dentro da sala da cena guardada.
+- Um jogo novo começa no exterior, na praça, à frente de um letreiro **NOVA** grande, em 3D e
+  iluminado (construído com formas simples em `game3d.html`). O boneco entra no edifício pelas
+  portas de vidro. Um jogo retomado começa na sala guardada (`fresh` em `campus_game.py`).
+- Menos lag no 3D: sem o passo de oclusão ambiente (o mais pesado), só as 10 luzes mais próximas do
+  boneco ficam acesas (`updateLights`), resolução limitada a 1,25×, sombras mais leves e o mar a
+  recalcular normais a cada 4 imagens. Num browser sem placa gráfica, o tempo por imagem desceu de
+  cerca de 1040 ms para 465 ms. O boneco anda a 4,8 (antes 3,6).
 
 ## Como experimentar
 
