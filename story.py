@@ -512,6 +512,9 @@ UI_EN = {
     "confirm_yes": "Yes, start again",
     "confirm_cancel": "Cancel",
     "the_end": "The end",
+    "phone": "📱 Phone: campus map",
+    "map_here": "You are here",
+    "map_locked": "Locked",
 }
 
 UI_PT = {
@@ -532,7 +535,21 @@ UI_PT = {
     "confirm_yes": "Sim, recomeçar",
     "confirm_cancel": "Cancelar",
     "the_end": "Fim",
+    "phone": "📱 Telemóvel: mapa do campus",
+    "map_here": "Estás aqui",
+    "map_locked": "Fechado",
 }
+
+
+# The campus map on the player's phone (specs/phone-map.md): the layout of docs/historia.md,
+# section 3, as three rows of three cells. None is an empty cell.
+CAMPUS_MAP = [
+    [None, "library", None],
+    ["print_shop", "study_room", "computer_lab"],
+    [None, "auditorium", None],
+]
+# Scenes with no place of their own, and the room where the map shows them.
+MAP_LOCATION = {"group_chat": "computer_lab"}
 
 
 STORIES = {"en": STORY_EN, "pt": STORY_PT}
