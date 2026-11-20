@@ -1,7 +1,7 @@
 # Plano do projeto — Plot Twist (trabalho de grupo)
 
 Documento de referência da equipa. Resume o que foi decidido até agora e o que falta fazer.
-Última atualização: 19/11/2026 (estado do código e proposta 3D).
+Última atualização: 20/11/2026 (3D publicado, entrega no Moodle e estado das fases).
 
 ## 1. O que o curso pede
 
@@ -9,13 +9,13 @@ Fonte: [site do curso](https://nova-sbe-introduction-to-programming.github.io/in
 A página da semana 8 (regras detalhadas do trabalho de grupo) ainda não estava publicada a 10/11 — confirmar quando sair.
 
 - **Calendário:** trabalho de grupo nas semanas 8–10; apresentações nas semanas 11–12 (metade dos grupos em cada semana).
-- **Nota:** a apresentação vale **40%** da nota final. Nota de grupo, ajustada por pessoa conforme a explicação do código.
+- **Nota:** a apresentação vale **40%** da nota final. Todos os membros recebem a mesma nota (nota de grupo).
 - **Formato da apresentação:**
   - **Demo ao vivo num link público** (app publicada). Não são slides nem vídeo.
   - **Explicação do código:** os professores abrem o repositório e fazem perguntas.
 - **Critérios:** funciona · design · âmbito e ambição · verificação (testes) · explicação do código.
 - ⚠️ **Cada membro é questionado sobre código que NÃO escreveu.** Todos têm de perceber o projeto inteiro.
-- Nada se entrega no Moodle: o trabalho vive no GitHub.
+- **Entrega:** um membro submete o link do repositório no Moodle até **23/11/2026, 23:59**. O repositório é público, o `main` tem a app publicada e o README tem o URL, os nomes e os números de aluno de todos.
 - **Tecnologia:** Python, Streamlit, SQLite e pytest, tudo corrido com `uv`.
 
 ## 2. Decisões da equipa
@@ -43,16 +43,16 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 |---|---|---|---|
 | **A. Preparar** | Clonar o repositório, criar a estrutura e proteger o `main` | Afonso | 🔄 quase pronta (falta o passo 5: os colegas clonarem) |
 | **B. Inventar a história** | Mistério, 5+ cenas, objetos, finais e personagens, tudo no papel | Grupo todo | ✅ história revista e integrada na main (#3, #4 e #6) |
-| **C. Versão base** | Jogo mínimo que cumpre o brief, com testes | Afonso + revisão | ✅ implementada; 56 testes existentes passaram nesta revisão |
-| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | 🔄 protótipo 3D do colega; ligação jogável proposta na branch de Maria, a rever |
-| **E. Publicar e ensaiar** | Link público (semana 9, não no último dia) e ensaio de perguntas | Os 4 | ⏳ |
+| **C. Versão base** | Jogo mínimo que cumpre o brief, com testes | Afonso + revisão | ✅ implementada e no `main` (107 testes a passar) |
+| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | ✅ 3D jogável no `main` (Maria + Afonso) e puzzle do chat de grupo (Guilherme) |
+| **E. Publicar e ensaiar** | Link público (semana 9, não no último dia) e ensaio de perguntas | Os 4 | 🔄 publicado em https://plot-twist.streamlit.app/ (`app_3d.py`); falta ensaio e dados da equipa no README |
 
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.
 2. ✅ Criar a estrutura do projeto no branch `project-setup`: `pyproject.toml`, `uv.lock`, `.gitignore`, `.python-version`, `app.py` provisório, `tests/conftest.py`, `AGENTS.md`, `README.md` e `docs/`.
 3. ✅ Confirmar que corre (`uv run streamlit run app.py`). Commit, branch publicado e Pull Request #1 revisto pelo grupo e com merge feito (10/11/2026).
-4. ✅ Proteger o `main` no GitHub: ruleset "Main Protection" ativo (exige PR e 1 aprovação).
+4. ✅ Proteger o `main` no GitHub: ruleset "Main Protection" ativo (exige PR; as aprovações estão a 0 por decisão da equipa).
 5. ⏳ Cada colega: clonar no GitHub Desktop, correr `uv sync`, depois `uv run pytest` e por fim `uv run streamlit run app.py`.
 
 ### Como trabalhamos (todas as funcionalidades)
