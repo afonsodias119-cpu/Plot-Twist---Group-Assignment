@@ -14,6 +14,7 @@ from pathlib import Path
 PROJECT = Path(__file__).resolve().parents[2]  # the project folder, two levels up
 sys.path.insert(0, str(PROJECT))
 from story import STORIES, UI_TEXTS  # noqa: E402
+from campus_text import TEXT  # noqa: E402
 
 HERE = Path(__file__).parent
 SCENES = ["print_shop", "study_room", "library", "computer_lab", "auditorium"]
@@ -68,17 +69,21 @@ def language_data(language):
         "scenes": scenes,
         "intro": dict(extra, title=ui["title"], premise=ui["premise"]),
         "ui": {"help": extra["help"], "corridor": extra["corridor"]},
+        "play_ui": dict(ui, **TEXT[language]),
     }
 
 
-def build_page():
+def build_page(playable=False):
     images = {s: picture(s) for s in SCENES}
     images["outside"] = images["cover"] = picture("cover")
     data = {"pt": language_data("pt"), "en": language_data("en"), "images": images}
-    return (HERE / "game3d.html").read_text().replace("__DATA__", json.dumps(data))
+    page = (HERE / "game3d.html").read_text(encoding="utf-8").replace("__DATA__", json.dumps(data).replace("<", "\\u003c"))
+    if playable:
+        page = page.replace("</head>", '<link rel="stylesheet" href="/play.css"><script defer src="/play.js"></script></head>')
+    return page
 
 
 if __name__ == "__main__":
     out = HERE / "campus3d.html"
-    out.write_text(build_page())
+    out.write_text(build_page(), encoding="utf-8")
     print(out)

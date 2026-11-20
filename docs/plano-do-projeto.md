@@ -1,7 +1,7 @@
 # Plano do projeto — Plot Twist (trabalho de grupo)
 
 Documento de referência da equipa. Resume o que foi decidido até agora e o que falta fazer.
-Última atualização: 13/11/2026.
+Última atualização: 19/11/2026 (estado do código e proposta 3D).
 
 ## 1. O que o curso pede
 
@@ -42,9 +42,9 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 | Fase | O quê | Quem | Estado |
 |---|---|---|---|
 | **A. Preparar** | Clonar o repositório, criar a estrutura e proteger o `main` | Afonso | 🔄 quase pronta (falta o passo 5: os colegas clonarem) |
-| **B. Inventar a história** | Mistério, 5+ cenas, objetos, finais e personagens, tudo no papel | Grupo todo | 🔄 proposta escrita em [historia.md](historia.md), falta o grupo rever |
-| **C. Versão base** | Jogo mínimo que cumpre o brief, com testes | Afonso + revisão | ⏳ |
-| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | ⏳ |
+| **B. Inventar a história** | Mistério, 5+ cenas, objetos, finais e personagens, tudo no papel | Grupo todo | ✅ história revista e integrada na main (#3, #4 e #6) |
+| **C. Versão base** | Jogo mínimo que cumpre o brief, com testes | Afonso + revisão | ✅ implementada; 56 testes existentes passaram nesta revisão |
+| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | 🔄 protótipo 3D do colega; ligação jogável proposta na branch de Maria, a rever |
 | **E. Publicar e ensaiar** | Link público (semana 9, não no último dia) e ensaio de perguntas | Os 4 | ⏳ |
 
 ### Fase A — passos
