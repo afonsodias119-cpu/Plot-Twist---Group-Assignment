@@ -12,6 +12,14 @@ from story import LANGUAGES, STORIES, UI_TEXTS
 CLUES = [("usb_stick", "study_room"), ("original_photo", "print_shop"),
          ("files_viewed", "computer_lab"), ("leonor", "library")]
 FINAL_ROOM = "auditorium"
+# The scenes that have a room in the 3D campus (game3d.html, ROOMS). The group chat has none, so the
+# 3D version never offers or accepts a move there; the chat puzzle is played in the Streamlit app.
+ROOMS_3D = {"study_room", "print_shop", "library", "computer_lab", "auditorium"}
+
+
+def leads_outside_3d(definition):
+    """True when the action moves the player to a scene that has no room in the 3D campus."""
+    return "go_to" in definition and definition["go_to"] not in ROOMS_3D
 
 
 def clue_done(state, clue):
@@ -43,6 +51,8 @@ def snapshot(player, language, message="", accepted=True):
     actions = []
     for action in logic.available_actions(story, state):
         definition = scene["actions"][action["id"]]
+        if leads_outside_3d(definition):
+            continue
         row = dict(
             action,
             kind="travel" if "go_to" in definition else "investigate",
@@ -167,6 +177,8 @@ def command(payload):
     state = game.load(player)
     saved_language = db.load_language(player) or language
     definition = STORIES[saved_language]["scenes"][state["scene"]]["actions"].get(payload["action"], {})
+    if leads_outside_3d(definition):
+        return snapshot(player, language, STORIES[saved_language]["messages"]["not_here"], accepted=False)
     if definition.get("go_to") == FINAL_ROOM and state["ending"] == "none":
         note = missing_clues_note(state, saved_language)
         if note:

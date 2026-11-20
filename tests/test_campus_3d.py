@@ -306,3 +306,19 @@ def test_http_commands_save_and_resume_after_server_restart(http_server):
                 assert json.load(response)["inventory"][0]["id"] == "usb_stick"
         finally:
             second.shutdown(); thread.join()
+
+
+
+def test_the_3d_campus_offers_only_rooms_it_can_draw():
+    """The group chat has no 3D room: the campus does not offer it, refuses it, and saves nothing."""
+    call("open", language="en", player="chat tester")
+    for action in SHORT[:3]:
+        call("play", language="en", player="chat tester", action=action)
+    shown = call("play", language="en", player="chat tester", action="go_study_room")
+    shown = call("play", language="en", player="chat tester", action="go_computer_lab")
+    assert shown["scene"] == "computer_lab"
+    assert "open_chat" not in [a["id"] for a in shown["actions"]]
+    before = game.load("chat tester")
+    result = call("play", language="en", player="chat tester", action="open_chat")
+    assert result["accepted"] is False
+    assert game.load("chat tester") == before
