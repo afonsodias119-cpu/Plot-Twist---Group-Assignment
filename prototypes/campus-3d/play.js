@@ -192,15 +192,20 @@
   // rest as a short narration line outside the bubbles (specs/chat-dialogues.md).
   function partsOf(text) {
     const parts = [];
-    let last = 0;
+    let last = 0, narration = "";
     for (const match of text.matchAll(/"([^"]+)"|«([^»]+)»|“([^”]+)”/g)) {
-      const before = text.slice(last, match.index).trim();
-      if (before) parts.push({ kind: "narration", text: before });
-      parts.push({ kind: "speech", text: (match[1] || match[2] || match[3]).trim() });
+      const said = (match[1] || match[2] || match[3]).trim();
+      narration += text.slice(last, match.index);
       last = match.index + match[0].length;
+      // A short quote without a full stop is a name or a title (someone added "Duarte Sequeira" to the
+      // report), not a line someone says: it stays in the narration, with its quotation marks.
+      if (said.split(/\s+/).length <= 3 && !/[.!?…]/.test(said)) { narration += match[0]; continue; }
+      if (narration.trim()) parts.push({ kind: "narration", text: narration.trim() });
+      narration = "";
+      parts.push({ kind: "speech", text: said });
     }
-    const after = text.slice(last).trim();
-    if (after) parts.push({ kind: "narration", text: after });
+    narration += text.slice(last);
+    if (narration.trim()) parts.push({ kind: "narration", text: narration.trim() });
     return parts;
   }
   const quotesOf = text => partsOf(text).filter(part => part.kind === "speech").map(part => part.text);
@@ -534,9 +539,11 @@
     $("talk-log").append(bubble);
     $("talk-log").scrollTop = $("talk-log").scrollHeight;
   }
+  const asked = new Set();   // the questions (node ids) already chosen in the open conversation
   function closeTalk() {
     const was = talking;
     talking = null;
+    asked.clear();
     stopSpeaking();
     $("talk").hidden = true;
     $("talk-log").replaceChildren();   // the next conversation starts empty
@@ -545,7 +552,7 @@
   }
   function showLine(line) {
     const t = ui();
-    if (talking !== line.npc) $("talk-log").replaceChildren();   // a different person: a new conversation
+    if (talking !== line.npc) { $("talk-log").replaceChildren(); asked.clear(); }   // a different person: a new conversation
     talking = line.npc;
     window.playing = false;   // the character stands still while talking
     $("talk-name").textContent = line.name;
@@ -561,10 +568,12 @@
       $("talk-trust").textContent = "";
       $("talk-trust").className = "trust trust-none";
     }
-    const answers = line.options.map(option => {
+    // "Goodbye" (an answer that ends the talk) is not shown: the header has "End conversation".
+    // A question already chosen in this conversation is not offered again.
+    const answers = line.options.filter(option => option.next !== null && !asked.has(option.next)).map(option => {
       const button = make("button", option.label, "answer");
       button.addEventListener("click", () => {
-        if (option.next === null) { closeTalk(); return; }
+        asked.add(option.next);
         addBubble(option.label, "me");   // the player's answer goes on the right, like a sent message
         talkStep(line.npc, option.next);
       });
@@ -583,6 +592,8 @@
     }
     if (doing.children.length && window.campusInside === false) doing.append(make("p", t.outside_hint, "muted"));
     $("talk-options").replaceChildren(...(doing.children.length ? [doing] : []), ...answers);
+    $("talk-options").hidden = !doing.children.length && !answers.length;
+    $("talk-close").classList.toggle("only-way", !doing.children.length && !answers.length);   // the way out stands out
     applyInside();
     if (line.note) saveDiary(line.name, line.note);
     $("talk").hidden = false;
@@ -601,7 +612,7 @@
     if (!talking || current.scene !== scene) return;   // the scene changed (for example the chat opened): the conversation is over
     // The person answers with the result (or why it is refused). Only goodbye is offered: no "continue" (specs/chat-dialogues.md).
     showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [],
-               options: [{ label: ui().talk_bye, next: null }] });
+               options: [] });
   }
   async function talkStep(npc, node) {
     if (window.campusBusy || !current) return;

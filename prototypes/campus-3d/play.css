@@ -280,3 +280,6 @@ body:has(#ending-card:not([hidden])) .sign { visibility: hidden; }
 /* The description of the scene is not shown in the 3D game: the player has to look and talk (specs/chat-dialogues.md).
    The text mode keeps it, because there it is the only way to know where you are. */
 body:not(.text-mode) #scene-paragraphs { display: none; }
+
+/* nothing left to answer: "End conversation" in the header is the way out */
+#talk #talk-close.only-way { background: var(--gold); color: #101c25; border-color: var(--gold); }

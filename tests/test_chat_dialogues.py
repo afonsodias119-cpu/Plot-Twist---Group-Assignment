@@ -101,3 +101,19 @@ def test_the_start_screen_remembers_the_last_name():
     js = source("play.js")
     assert 'const LAST_NAME_KEY = "plot-twist-last-name";' in js
     assert "localStorage.setItem(LAST_NAME_KEY, current.player)" in js
+
+
+# ---------- no goodbye buttons, no question twice, names are not speech ----------
+
+def test_goodbye_answers_and_questions_already_asked_are_not_shown():
+    js = source("play.js")
+    assert "line.options.filter(option => option.next !== null && !asked.has(option.next))" in js
+    assert "asked.add(option.next)" in js
+    for language in ("en", "pt"):
+        assert "talk_bye" not in campus_text.TEXT[language]
+    assert "talk_bye" not in js
+
+
+def test_a_short_quoted_name_stays_in_the_narration():
+    js = source("play.js")
+    assert "if (said.split(/\\s+/).length <= 3 && !/[.!?…]/.test(said)) { narration += match[0]; continue; }" in js
