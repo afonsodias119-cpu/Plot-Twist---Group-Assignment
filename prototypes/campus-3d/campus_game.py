@@ -146,6 +146,7 @@ def snapshot(player, language, message="", accepted=True):
         "people": people_in_room(state["scene"], state, language),
         "clock": clock_text(state),
         "chat": chat_view(story, state),
+        "flagged": sum(1 for n in range(1, 6) if state["flags"].get(f"flagged_{n}")),   # for the unknown number's messages and the share card
         "leonor_present": choice != "accused",
         # True while the game is untouched: the 3D scene then starts the character outside.
         "fresh": state == story["start"],

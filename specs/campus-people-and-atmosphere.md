@@ -34,3 +34,10 @@ A real time limit, saving conversations on the server, new endings, changing the
 ## Computer 12 and the chat screen (same feature)
 - Computer 12 (the right-hand screen of the sixth desk of the lab) is an object the player uses, not a person: walking up to it shows "Press the K key to use computer 12" (the panel lists "Use Computer 12"). Looking at the old files and opening the group chat are choices in its menu (`ACTION_PERSON`), no longer asked of Tomás.
 - In the group chat the five messages are shown on a computer screen over the 3D picture, each with a "Flag as fake" button, so the side panel does not have to be open. The snapshot has `chat` (the intro and the five messages with their flagged state, never which are fake) only in the chat scene; the flag actions have `kind: "chat"`. "Close the computer" (or Esc) goes back to the lab.
+
+## Messages, collection, share card and music (same feature, all on the screen)
+No change to the story, the rules or the saved game. The browser keeps small notes in `localStorage` (never trusted by the server).
+- **Unknown number**: the phone buzzes with a banner and a Messages app. One message arrives for each clue done (the fourth says "I know what you found") and one when the first chat message is flagged; only the newest pops up, all stay in the app. They come from the snapshot (`clues`, `flagged`), so reloading never repeats them. A new game forgets them.
+- **Collection of endings**: the first screen and the ending screen show "Endings found: n/4" with the endings found in this browser (the others as 🔒). `data[lang].endings` lists them.
+- **Share card**: the ending screen shows a short text (ending, one square per clue, clues done, time, endings found) and a "Copy result" button; if the page may not use the clipboard, the text is selected for Ctrl+C.
+- **Music**: a low drone and a pulse, generated in the browser, that get faster (52 to 130 beats a minute) and darker as the clock goes from 22:15 towards the morning; it stops at an ending and follows the sound button.
