@@ -371,5 +371,6 @@ def test_http_talk_reads_and_never_writes_and_rejects_bad_requests(http_server):
 
 def test_the_page_has_the_conversation_card_and_the_sound_and_diary_code():
     page = page3d.build_page(playable=True, inline=True)
+    assert '"actions people"' in page and "actions investigate people" not in page   # talking is not blocked outside the room
     for needle in ('id="talk"', "operation: \"talk\"", "AudioContext", "plot-twist-diary", "campusMoving"):
         assert needle in page

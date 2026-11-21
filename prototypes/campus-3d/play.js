@@ -219,8 +219,8 @@
     $("scene-paragraphs").replaceChildren(...(state.ending ? [state.ending.text] : state.texts).map(p => make("p", p)));
     $("action-groups").replaceChildren();
     if (!state.ending) {
-      if (state.people.length) {   // the people in this room; reuses the investigate rules (the character must be inside)
-        const group = make("section", undefined, "actions investigate people");
+      if (state.people.length) {   // the people in this room; reuses the investigate rules (talking only reads the saved game)
+        const group = make("section", undefined, "actions people");   // not "investigate": talking works from outside the room too
         group.append(make("h3", t.people));
         for (const person of state.people) {
           const box = make("div", undefined, "action-row");
