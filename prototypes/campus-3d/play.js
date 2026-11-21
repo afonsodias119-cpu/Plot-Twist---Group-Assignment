@@ -25,17 +25,21 @@
   shell.innerHTML = `
     <header class="case-bar"><div><p id="case-eyebrow" class="label"></p><h1 id="game-title"></h1></div>
       <div class="bar-tools"><span id="clock" class="clock"></span><span id="save-status" role="status"></span>
-        <div class="tool-row"><button id="sound-toggle" class="secondary"></button><button id="phone-open" class="secondary"></button><button id="panel-toggle" class="secondary" aria-expanded="true"></button></div></div></header>
+        <div class="tool-row"><button id="sound-toggle" class="secondary"></button><button id="phone-open" class="secondary"></button></div></div></header>
     <section class="scene-panel" aria-labelledby="scene-heading">
       <div class="scene-top"><span id="scene-label" class="label"></span><span id="player-label" class="muted"></span></div>
       <h2 id="scene-heading" tabindex="-1"></h2><p id="feedback" role="status"></p>
-      <div id="scene-paragraphs"></div><p id="outside-hint" class="muted" hidden></p><div id="action-groups"></div>
+      <div id="scene-paragraphs"></div><div id="action-groups"></div>
       <details id="notebook"><summary id="notebook-label"></summary><p id="notebook-hint" class="muted"></p><div id="notes"></div></details>
       <section aria-labelledby="inventory-label" class="inventory"><h3 id="inventory-label"></h3><ul id="inventory-list"></ul></section>
       <footer class="panel-foot"><button id="restart" class="secondary"></button><span id="controls" class="muted"></span></footer>
     </section>
     <div id="toast" role="status" aria-live="polite" hidden></div>
-    <button id="near-hint" class="near-hint" hidden></button>
+    <button id="panel-toggle" class="panel-tab" aria-expanded="true"></button>
+    <div id="hud-bottom" class="hud-bottom">
+      <button id="near-hint" class="near-hint" hidden></button>
+      <div id="action-bar" class="action-bar" hidden><p id="outside-hint" class="muted" hidden></p><div id="bar-actions" class="actions investigate"></div></div>
+    </div>
     <section id="talk" class="talk-card" role="dialog" aria-labelledby="talk-name" aria-live="polite" hidden>
       <header><h3 id="talk-name"></h3><span id="talk-trust" class="trust"></span><button id="talk-close" class="secondary"></button></header>
       <p id="talk-text"></p><div id="talk-options"></div></section>
@@ -45,7 +49,7 @@
   dialog.setAttribute("aria-labelledby", "restart-question");
   dialog.innerHTML = '<h2 id="restart-question"></h2><div class="dialog-actions"><button id="cancel-restart" class="secondary"></button><button id="confirm-restart"></button></div>';
   document.body.append(dialog);
-  let current = null, textMode = false, uncertain = false;
+  let current = null, textMode = false, uncertain = false, talking = null;   // talking: the person being talked to
   // ---------- sound: everything is generated in the browser, there are no sound files ----------
   const sound = (() => {
     let ctx = null, master = null, seaGain = null, muted = false, lastStep = 0;
@@ -128,7 +132,7 @@
     $("outside-hint").textContent = t.outside_hint;
     $("phone-open").textContent = `📱 ${t.phone}`;
     $("phone-open").setAttribute("aria-label", t.phone_open);
-    $("panel-toggle").textContent = document.body.classList.contains("panel-hidden") ? t.show_panel : t.hide_panel;
+    paintPanelTab();
     $("talk-close").textContent = t.talk_close;
     $("sound-toggle").textContent = sound.isMuted() ? "🔇" : "🔊";
     $("sound-toggle").setAttribute("aria-label", sound.isMuted() ? t.sound_off : t.sound_on);
@@ -219,6 +223,7 @@
     $("feedback").hidden = !state.message;
     $("scene-paragraphs").replaceChildren(...(state.ending ? [state.ending.text] : state.texts).map(p => make("p", p)));
     $("action-groups").replaceChildren();
+    let bar = [];   // the investigation buttons shown over the picture
     if (!state.ending) {
       if (state.people.length) {   // the people in this room; reuses the investigate rules (talking only reads the saved game)
         const group = make("section", undefined, "actions people");   // not "investigate": talking works from outside the room too
@@ -232,30 +237,31 @@
         }
         $("action-groups").append(group);
       }
-      for (const kind of ["investigate", "travel"]) {
-        const group = make("section", undefined, `actions ${kind}`);
-        group.append(make("h3", t[kind]));
-        const actions = state.actions.filter(a => a.kind === kind);
-        if (!actions.length && kind === "travel") continue;
-        if (!actions.length) group.append(make("p", t.no_actions, "muted"));
-        for (const action of actions) {
-          const box = make("div", undefined, "action-row");
-          const button = make("button", action.label, action.allowed ? "" : "locked");
-          button.dataset.action = action.id;
-          button.addEventListener("click", () => send("play", { action: action.id }));
-          box.append(button);
-          // A blocked button still explains the rule if clicked; it never moves or saves.
-          if (action.blocked_text || action.decision) {
-            const hint = make("p", action.allowed ? t.decision : `${t.locked}: ${action.blocked_text}`, "action-hint");
-            hint.id = `hint-${action.id}`;
-            button.setAttribute("aria-describedby", hint.id);
-            box.append(hint);
-          }
-          group.append(box);
+      const actionRow = action => {
+        const box = make("div", undefined, "action-row");
+        const button = make("button", action.label, action.allowed ? "" : "locked");
+        button.dataset.action = action.id;
+        button.addEventListener("click", () => send("play", { action: action.id }));
+        box.append(button);
+        // A blocked button still explains the rule if clicked; it never moves or saves.
+        if (action.blocked_text || action.decision) {
+          const hint = make("p", action.allowed ? t.decision : `${t.locked}: ${action.blocked_text}`, "action-hint");
+          hint.id = `hint-${action.id}`;
+          button.setAttribute("aria-describedby", hint.id);
+          box.append(hint);
         }
+        return box;
+      };
+      const travel = state.actions.filter(a => a.kind === "travel");
+      if (travel.length) {
+        const group = make("section", undefined, "actions travel");
+        group.append(make("h3", t.travel), ...travel.map(actionRow));
         $("action-groups").append(group);
       }
+      bar = state.actions.filter(a => a.kind === "investigate").map(actionRow);
     }
+    $("bar-actions").replaceChildren(...bar);
+    $("action-bar").hidden = !bar.length;
     $("inventory-list").replaceChildren(...(state.inventory.length
       ? state.inventory.map(item => make("li", item.label)) : [make("li", t.inventory_empty, "muted")]));
     $("notes").replaceChildren();
@@ -278,14 +284,21 @@
   }
 
   // ---------- hide the side panel ----------
-  function setPanelHidden(hidden) {
-    document.body.classList.toggle("panel-hidden", hidden);
-    $("panel-toggle").textContent = hidden ? ui().show_panel : ui().hide_panel;
+  function paintPanelTab() {
+    const hidden = document.body.classList.contains("panel-hidden");
+    $("panel-toggle").textContent = hidden ? "‹" : "›";
+    $("panel-toggle").setAttribute("aria-label", hidden ? ui().show_panel : ui().hide_panel);
     $("panel-toggle").setAttribute("aria-expanded", String(!hidden));
+  }
+  function setPanelHidden(hidden, remember = false) {
+    document.body.classList.toggle("panel-hidden", hidden);
+    paintPanelTab();
+    if (remember) { try { localStorage.setItem("plot-twist-panel", hidden ? "closed" : "open"); } catch (error) { /* no storage */ } }
     window.dispatchEvent(new Event("resize"));   // the 3D picture takes the new width
   }
   $("sound-toggle").addEventListener("click", () => { sound.toggle(); updateLabels(); });
-  $("panel-toggle").addEventListener("click", () => setPanelHidden(!document.body.classList.contains("panel-hidden")));
+  $("panel-toggle").addEventListener("click", () => setPanelHidden(!document.body.classList.contains("panel-hidden"), true));
+  try { if (localStorage.getItem("plot-twist-panel") === "closed") setPanelHidden(true); } catch (error) { /* no storage */ }
 
   // ---------- a note over the 3D picture: it stays visible even when the panel is hidden ----------
   let toastTimer;
@@ -298,7 +311,6 @@
 
 
   // ---------- conversations ----------
-  let talking = null;   // the person the player is talking to
   function closeTalk() {
     const was = talking;
     talking = null;
@@ -340,6 +352,7 @@
   // ---------- walking up to a person: a note says which key starts the conversation ----------
   // The 3D scene sets window.campusNear (the id of the person close enough, or null).
   function updateNear() {
+    $("hud-bottom").classList.toggle("talking", Boolean(talking));
     const person = window.campusNear && current?.people.find(p => p.id === window.campusNear);
     $("near-hint").hidden = !person || Boolean(talking);
     if (!person) return;

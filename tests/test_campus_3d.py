@@ -382,3 +382,11 @@ def test_people_are_reached_by_walking_up_and_pressing_k_and_there_is_no_play_wi
     assert 'id="view-toggle"' not in page            # the "play without 3D" button was removed on purpose
     for language in ("pt", "en"):
         assert "{name}" in TEXT[language]["press_talk"] and "K" in TEXT[language]["press_talk"]
+
+
+def test_investigation_buttons_are_over_the_picture_and_the_panel_has_only_an_arrow():
+    page = page3d.build_page(playable=True, inline=True)
+    assert 'id="action-bar"' in page and 'id="bar-actions"' in page        # the buttons over the 3D picture
+    assert 'id="panel-toggle" class="panel-tab"' in page                   # the arrow on the panel's edge
+    assert 'id="panel-toggle" class="secondary"' not in page               # no "hide panel" button in the header
+    assert "plot-twist-panel" in page                                      # the open/closed choice is remembered
