@@ -372,6 +372,21 @@
         }
         $("action-groups").append(group);
       }
+      // Searching the study room for the USB stick (specs/pen-and-code.md). In 3D the objects are clicked
+      // in the picture; the text mode lists the same places as buttons.
+      if (state.scene === "study_room" && !state.inventory.some(item => item.id === "usb_stick")) {
+        const group = make("section", undefined, "actions search");
+        group.append(make("h3", t.search_title), make("p", t.search_hint, "muted"));
+        if (textMode) {
+          for (const [spot, label] of Object.entries(t.spots)) {
+            const box = make("div", undefined, "action-row");
+            const button = make("button", label, "locked");
+            button.addEventListener("click", () => window.campusSearch(spot));
+            box.append(button); group.append(box);
+          }
+        }
+        $("action-groups").append(group);
+      }
       const actionRow = action => {
         const box = make("div", undefined, "action-row");
         const button = make("button", action.label, action.allowed ? "" : "locked");
@@ -586,10 +601,12 @@
     // What can be done by talking to this person (ask for the copy, take the decision...): choices inside the conversation.
     const doing = make("div", undefined, "actions investigate talk-actions");
     for (const action of line.actions || []) {
+      if (action.id === "open_drawer") continue;   // the USB stick has to be found in the room (specs/pen-and-code.md)
       const row = make("div", undefined, "talk-action");
-      const button = make("button", `▶ ${action.label}`, action.allowed ? "" : "locked");
+      const isCode = action.id === "view_files";   // computer 12 asks for its code first
+      const button = make("button", isCode ? t.code_enter : `▶ ${action.label}`, action.allowed ? "" : "locked");
       button.dataset.action = action.id;
-      button.addEventListener("click", () => talkAction(line, action));
+      button.addEventListener("click", () => isCode ? askCode(line) : talkAction(line, action));
       row.append(button);
       if (action.decision) row.append(make("p", t.decision, "action-hint"));
       doing.append(row);
@@ -618,6 +635,54 @@
     showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [],
                options: [] });
   }
+  // ---------- the code of computer 12 (specs/pen-and-code.md) ----------
+  // A small field for 4 digits replaces the answers. The server checks the code; a wrong one costs 1 minute.
+  function askCode(line) {
+    const t = ui();
+    const form = make("form", undefined, "code-form");
+    const input = make("input");
+    Object.assign(input, { inputMode: "numeric", maxLength: 4, autocomplete: "off", placeholder: "• • • •" });
+    input.setAttribute("aria-label", t.code_label);
+    const unlock = make("button", t.code_unlock); unlock.type = "submit";
+    const leave = make("button", t.talk_bye, "answer"); leave.type = "button";
+    leave.addEventListener("click", closeTalk);
+    form.append(input, unlock, leave);
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const code = input.value.trim();
+      if (!/^\d{4}$/.test(code) || window.campusBusy) { input.focus(); return; }
+      addBubble("••••", "me");
+      showTyping();
+      const scene = current.scene;
+      if (!await send("unlock", { code })) { $("talk-log").querySelector(".typing")?.remove(); return; }
+      if (!current.unlocked) {   // wrong code: the computer stays locked, and it costs time
+        addSaid(current.message);
+        penalize(1, t.time_penalty_code);
+        input.value = ""; input.focus();
+        return;
+      }
+      if (!talking || current.scene !== scene) return;
+      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [],
+                 options: [{ label: t.talk_bye, next: null }] });
+    });
+    $("talk-options").replaceChildren(form);
+    input.focus();
+  }
+  // ---------- searching the study room (specs/pen-and-code.md) ----------
+  // The 3D scene calls this when an object of the study room is clicked; the text mode calls it from its buttons.
+  window.campusSearch = async spot => {
+    if (window.campusBusy || !current || current.ending) return;
+    const t = ui();
+    if (current.scene !== "study_room" || window.campusInside === false) { toast(t.search_where); return; }
+    if (current.inventory.some(item => item.id === "usb_stick")) { toast(t.search_done); return; }
+    if (!await send("search", { spot })) return;
+    if (current.found) {
+      toast(current.message);
+      window.dispatchEvent(new CustomEvent("campus-found", { detail: spot }));   // the 3D scene opens the box
+    } else if (current.message !== t.search_where && current.message !== t.search_done) {
+      penalize(1, `${current.message} (${t.time_penalty_search})`);   // a wrong place costs 1 minute
+    }
+  };
   async function talkStep(npc, node) {
     if (window.campusBusy || !current) return;
     if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)

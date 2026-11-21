@@ -50,12 +50,15 @@ PEOPLE = {
             "start": {"text": "Rita looks up from her laptop. \"You look awful. Did you sleep at all?\"", "options": [
                 {"label": "Ask about the group photo", "next": "photo"},
                 {"label": "Ask what she remembers about Duarte", "next": "duarte"},
+                {"label": "Ask where the USB stick is", "next": "pen"},
                 {"label": "Ask about the chat messages", "next": "chat", "if": {"flags": {"files_viewed": True}}},
                 _bye("Goodbye."),
             ]},
             "photo": {"text": "\"The photo? We took it after the last meeting. Four of us, Leonor held the timer. I remember counting heads.\"",
                       "note": "Rita remembers four people in the group photo.", "options": [
                 _bye("Goodbye.")]},
+            "pen": {"text": "\"The USB stick? It should be in the group drawer, but it is not.\" She looks at the table. \"We stayed here late last night eating pizza. With this mess, it could be anywhere.\"",
+                    "note": "Rita: the USB stick is not in the drawer. The group ate pizza here last night.", "options": [_bye("Goodbye.")]},
             "duarte": {"text": "\"Duarte... honestly, I cannot picture him. Every time I try, I only see the name on the cover.\"", "options": [
                 {"label": "Say you think the name was added last night", "next": "warned"}]},
             "warned": {"text": "Rita goes quiet. \"If that is true, somebody wanted us to doubt ourselves.\"",
@@ -71,8 +74,8 @@ PEOPLE = {
                 {"label": "Ask if anyone else came asking", "next": "visitor"},
                 _bye("Goodbye."),
             ]},
-            "order": {"text": "\"Last week. Four people in the photo, I remember because I had to crop the print. The original order file is still saved.\"",
-                      "note": "The print shop still has the original order file.", "options": [
+            "order": {"text": "\"On 14 November, last week. You took the photo and had it printed the same day. Four people in it, I remember because I had to crop the print. The original order file is still saved.\"",
+                      "note": "The cover photo was taken and printed on 14 November. The print shop still has the original order file.", "options": [
                 _bye("Goodbye.")]},
             "visitor": {"text": "\"A young man in a hood came by yesterday evening. He asked to reprint the cover with a different photo.\"",
                         "note": "A hooded stranger asked the print shop to change the cover photo.", "options": [
@@ -108,7 +111,10 @@ PEOPLE = {
             ]},
             "kind": {"text": "\"Could not sleep. I came to finish the slides. And... I saw someone at computer 12 last night, near midnight.\"", "trust": 3, "options": [
                 {"label": "Ask who it was", "next": "who"},
+                {"label": "Ask for the password of computer 12", "next": "password"},
                 {"label": "Ask about message 5, the one with his name", "next": "msg5", "if": {"flags": {"files_viewed": True}}}]},
+            "password": {"text": "\"The password of computer 12? It is the group's: the day and the month we took the cover photo. Four digits. I can never remember the date.\"", "trust": 3,
+                         "note": "Tomás: the password of computer 12 is the day and month the cover photo was taken (4 digits).", "options": [_bye("Goodbye.")]},
             "who": {"text": "\"Only a hood. Like the one Duarte wears. But nobody ever saw him arrive.\"", "trust": 3,
                     "note": "Tomás saw someone in a hood at computer 12 near midnight.", "options": [
                 _bye("Goodbye.")]},
@@ -128,7 +134,7 @@ PEOPLE = {
             "closed": {"text": "Tomás crosses his arms. \"We are done here.\"", "trust": 0, "options": [_bye("Leave.")]},
         }},
         "computer12": {"name": "Computer 12", "nodes": {
-            "start": {"text": "Computer 12 is still on, with the group's session open.", "options": [_bye("Step away from the computer.")]},
+            "start": {"text": "Computer 12 is still on, with the group's session open. It asks for a 4-digit password.", "options": [_bye("Step away from the computer.")]},
         }},
         "professor": {"name": "Professor", "nodes": {
             "start": {"text": "The professor looks up from the list of groups. \"Is this about tomorrow's presentations?\"", "options": [
@@ -166,12 +172,15 @@ PEOPLE = {
             "start": {"text": "A Rita levanta os olhos do portátil. \"Estás com um ar péssimo. Dormiste alguma coisa?\"", "options": [
                 {"label": "Perguntar pela fotografia do grupo", "next": "photo"},
                 {"label": "Perguntar o que ela se lembra do Duarte", "next": "duarte"},
+                {"label": "Perguntar onde está a pen", "next": "pen"},
                 {"label": "Perguntar pelas mensagens do chat", "next": "chat", "if": {"flags": {"files_viewed": True}}},
                 _bye("Até já."),
             ]},
             "photo": {"text": "\"A fotografia? Tirámo-la depois da última reunião. Quatro pessoas, a Leonor ficou com o temporizador. Lembro-me de contar as cabeças.\"",
                       "note": "A Rita lembra-se de quatro pessoas na fotografia do grupo.", "options": [
                 _bye("Até já.")]},
+            "pen": {"text": "\"A pen? Devia estar na gaveta do grupo, mas não está.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza. Com esta confusão, pode estar em qualquer lado.\"",
+                    "note": "Rita: a pen não está na gaveta. O grupo comeu pizza aqui ontem à noite.", "options": [_bye("Até já.")]},
             "duarte": {"text": "\"O Duarte... sinceramente, não o consigo imaginar. Sempre que tento, só vejo o nome na capa.\"", "options": [
                 {"label": "Dizer que achas que o nome foi acrescentado ontem à noite", "next": "warned"}]},
             "warned": {"text": "A Rita fica calada. \"Se for verdade, alguém quis que duvidássemos de nós próprios.\"",
@@ -187,8 +196,8 @@ PEOPLE = {
                 {"label": "Perguntar se mais alguém veio perguntar", "next": "visitor"},
                 _bye("Até já."),
             ]},
-            "order": {"text": "\"Na semana passada. Quatro pessoas na fotografia, lembro-me porque tive de cortar a impressão. O ficheiro original do pedido ainda está guardado.\"",
-                      "note": "A reprografia ainda tem o ficheiro original do pedido.", "options": [
+            "order": {"text": "\"A 14 de novembro, na semana passada. Tiraram a fotografia e mandaram-na imprimir no mesmo dia. Quatro pessoas, lembro-me porque tive de cortar a impressão. O ficheiro original do pedido ainda está guardado.\"",
+                      "note": "A fotografia da capa foi tirada e impressa a 14 de novembro. A reprografia ainda tem o ficheiro original do pedido.", "options": [
                 _bye("Até já.")]},
             "visitor": {"text": "\"Ontem ao fim da tarde passou por aqui um rapaz de capuz. Pediu para reimprimir a capa com outra fotografia.\"",
                         "note": "Um desconhecido de capuz pediu à reprografia para mudar a fotografia da capa.", "options": [
@@ -224,7 +233,10 @@ PEOPLE = {
             ]},
             "kind": {"text": "\"Não conseguia dormir. Vim acabar os slides. E... vi alguém no computador 12 ontem à noite, perto da meia-noite.\"", "trust": 3, "options": [
                 {"label": "Perguntar quem era", "next": "who"},
+                {"label": "Perguntar a password do computador 12", "next": "password"},
                 {"label": "Perguntar pela mensagem 5, a que tem o nome dele", "next": "msg5", "if": {"flags": {"files_viewed": True}}}]},
+            "password": {"text": "\"A password do 12? É a do grupo: o dia e o mês em que tirámos a fotografia da capa. Quatro algarismos. Eu nunca me lembro da data.\"", "trust": 3,
+                         "note": "Tomás: a password do computador 12 é o dia e o mês em que foi tirada a fotografia da capa (4 algarismos).", "options": [_bye("Até já.")]},
             "who": {"text": "\"Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar.\"", "trust": 3,
                     "note": "O Tomás viu alguém de capuz no computador 12 perto da meia-noite.", "options": [
                 _bye("Até já.")]},
@@ -244,7 +256,7 @@ PEOPLE = {
             "closed": {"text": "O Tomás cruza os braços. \"Ficamos por aqui.\"", "trust": 0, "options": [_bye("Sair.")]},
         }},
         "computer12": {"name": "Computador 12", "nodes": {
-            "start": {"text": "O computador 12 ainda está ligado, com a sessão do grupo aberta.", "options": [_bye("Afastar-me do computador.")]},
+            "start": {"text": "O computador 12 ainda está ligado, com a sessão do grupo aberta. Pede uma password de 4 algarismos.", "options": [_bye("Afastar-me do computador.")]},
         }},
         "professor": {"name": "Professor", "nodes": {
             "start": {"text": "O professor levanta os olhos da lista de grupos. \"É sobre as apresentações de amanhã?\"", "options": [

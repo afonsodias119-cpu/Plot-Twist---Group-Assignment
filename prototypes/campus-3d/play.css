@@ -290,3 +290,9 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 @keyframes clock-pulse { 50% { opacity: .55; } }
 .timeup-card { --accent: #ff8c7a; text-align: center; }
 .timeup-card .stamp { font-size: 22px; letter-spacing: .1em; color: var(--accent); }
+
+/* ---------- the code of computer 12 (specs/pen-and-code.md) ---------- */
+#talk .code-form { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+#talk .code-form input { flex: 0 0 132px; padding: 9px 12px; border: 1px solid #2f3e47; border-radius: 18px; background: #0b141a; color: #e9edef; font: 600 18px/1 Inter, ui-monospace, monospace; letter-spacing: .4em; text-align: center; }
+#talk .code-form input:focus { outline: none; border-color: #00a884; }
+#talk .code-form button[type="submit"] { border-radius: 18px; padding: 8px 16px; }
