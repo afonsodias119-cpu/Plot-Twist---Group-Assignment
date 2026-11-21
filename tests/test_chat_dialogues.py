@@ -1,7 +1,6 @@
 """Chat-style conversations and room plaques (specs/chat-dialogues.md)."""
 
 import importlib
-import re
 import sys
 from pathlib import Path
 
@@ -53,12 +52,15 @@ def test_the_conversation_is_a_message_log_with_bubbles():
 
 # ---------- room plaques ----------
 
-def test_room_signs_are_plaques_with_a_code_and_no_emoji():
+def test_room_signs_are_plaques_with_only_the_name():
     html = source("game3d.html")
-    rooms = re.search(r"const ROOMS = \[(.*?)\];", html, re.S).group(1)
-    assert len(re.findall(r'code: "0\.0[1-5]"', rooms)) == 5
-    assert "${r.icon} ${SCENES[r.id].title}" not in html   # the old sign text with an emoji
+    assert 'r.sign = label(SCENES[r.id].title, cx, 2.6, doorZ, "room");' in html   # the name, no emoji, no number
+    assert "${r.icon} ${SCENES[r.id].title}" not in html and "data-code" not in html
     assert ".sign.room" in html
+
+
+def test_computer_12_has_no_label():
+    assert 'label("💻 12"' not in source("game3d.html")
 
 
 # ---------- only what is said goes in a bubble ----------

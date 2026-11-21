@@ -22,12 +22,11 @@
   #card p { margin: 0; font-size: 13px; line-height: 1.4; }
   /* labels drawn over the 3D picture (specs/chat-dialogues.md) */
   .sign { font: 600 12px/1.2 "Inter", system-ui, sans-serif; color: #f2eee3; white-space: nowrap; transition: opacity .3s; }
-  /* room plaque: like the sign of a real building, a room number over the name in capitals */
+  /* room plaque: like the sign of a real building, only the name in capitals */
   .sign.room { padding: 7px 13px 8px 11px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
                background: linear-gradient(180deg, #1c2733, #0d151e); border: 1px solid #ffffff24; border-left: 3px solid #E8A33D;
                border-radius: 3px; box-shadow: 0 8px 18px #000a, inset 0 1px 0 #ffffff17; }
-  .sign.room::before { content: attr(data-code); display: block; margin-bottom: 4px; font-size: 8.5px; font-weight: 700; letter-spacing: .26em; color: #E8A33D; }
-  /* people and computer 12: a small dark name tag */
+  /* people: a small dark name tag */
   .sign.small { padding: 3px 8px; font-size: 11px; font-weight: 500; background: #0b141ad9; border-radius: 6px; box-shadow: 0 2px 8px #0009; }
   /* ---------- start screens: language, then the case file ---------- */
   #intro { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; overflow: auto; padding: 16px; box-sizing: border-box;
@@ -446,11 +445,11 @@ function lamp(color, intensity, x, y, z, distance = 9) {
 // x goes right, z goes down. Corridor in the middle, three rooms above, two below.
 const WALL_H = 2.2, WALL_T = 0.25, DOOR_W = 2.4;
 const ROOMS = [
-  { id: "print_shop",   code: "0.01", icon: "🖨️", minX: -13, maxX: -4.5, minZ: -12, maxZ: -3, light: 0xf3eeff, floor: tiles("#bdbbb5", 3, 3) },
-  { id: "study_room",   code: "0.02", icon: "📖", minX: -4.5, maxX: 4.5,  minZ: -12, maxZ: -3, light: 0xffe4bf, floor: wood("#c9a274", 3, 3) },
-  { id: "library",      code: "0.03", icon: "📚", minX: 4.5,  maxX: 13,   minZ: -12, maxZ: -3, light: 0xffdcae, floor: wood("#b8895a", 3, 3) },
-  { id: "computer_lab", code: "0.04", icon: "💻", minX: -13, maxX: 0,     minZ: 3,   maxZ: 12, light: 0xe3f1ff, floor: carpet("#454c55", null, 4, 3) },
-  { id: "auditorium",   code: "0.05", icon: "🎤", minX: 0,   maxX: 13,    minZ: 3,   maxZ: 12, light: 0xffe6cc, floor: carpet("#2b3440", null, 4, 3) },
+  { id: "print_shop",   icon: "🖨️", minX: -13, maxX: -4.5, minZ: -12, maxZ: -3, light: 0xf3eeff, floor: tiles("#bdbbb5", 3, 3) },
+  { id: "study_room",   icon: "📖", minX: -4.5, maxX: 4.5,  minZ: -12, maxZ: -3, light: 0xffe4bf, floor: wood("#c9a274", 3, 3) },
+  { id: "library",      icon: "📚", minX: 4.5,  maxX: 13,   minZ: -12, maxZ: -3, light: 0xffdcae, floor: wood("#b8895a", 3, 3) },
+  { id: "computer_lab", icon: "💻", minX: -13, maxX: 0,     minZ: 3,   maxZ: 12, light: 0xe3f1ff, floor: carpet("#454c55", null, 4, 3) },
+  { id: "auditorium",   icon: "🎤", minX: 0,   maxX: 13,    minZ: 3,   maxZ: 12, light: 0xffe6cc, floor: carpet("#2b3440", null, 4, 3) },
 ];
 
 floorPlane(90, 90, 0, 0, mat(0x0f1a14, { roughness: 1 }), -0.02);                  // the ground outside
@@ -461,7 +460,6 @@ for (const r of ROOMS) {
   lamp(r.light, 11, cx, 3.2, cz, 11);
   const doorZ = r.maxZ === -3 ? -3 : 3;
   r.sign = label(SCENES[r.id].title, cx, 2.6, doorZ, "room");
-  r.sign.element.dataset.code = r.code;   // shown above the name by the CSS (.sign.room::before)
 }
 for (const x of [-8, 0, 8]) lamp(0xffe2b0, 4, x, 3.4, 0, 9);   // corridor lights
 
@@ -688,7 +686,6 @@ for (const z of [6, 9]) for (const x of [-10.5, -6.5, -2.5]) {
     officeChair(mx, z + 0.75, Math.PI);
     if (isTwelve) {
       lamp(0x59ff9c, 6, mx, 1.4, z + 0.3, 4);
-      label("💻 12", mx, 2.0, z - 0.2, "small");
     }
   }
   pcNumber++;
