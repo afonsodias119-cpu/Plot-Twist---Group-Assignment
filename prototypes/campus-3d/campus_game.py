@@ -56,6 +56,18 @@ def chat_notes(story, state):
             if state["flags"].get(f"flagged_{n}")]
 
 
+def chat_view(story, state):
+    """What the chat screen of computer 12 shows: the five messages and which ones are flagged.
+    It never says which messages are fake."""
+    if state["scene"] != "group_chat":
+        return None
+    texts = story["scenes"]["group_chat"]["texts"]
+    messages = [t["text"] for t in texts if t["when"] == {}]
+    return {"intro": messages[0], "messages": [
+        {"n": n, "text": messages[n], "flagged": bool(state["flags"].get(f"flagged_{n}")), "action": f"flag_{n}"}
+        for n in range(1, 6)]}
+
+
 def route(story, start, goal):
     """The scenes to pass through, in order, from `start` to `goal` using the story's own go_to actions."""
     seen, queue = {start: []}, [start]
@@ -80,7 +92,8 @@ def action_rows(story, state, language):
             continue
         row = dict(
             action,
-            kind="travel" if "go_to" in definition and definition["go_to"] != "group_chat" else "investigate",
+            kind="travel" if "go_to" in definition and definition["go_to"] != "group_chat"
+                 else "chat" if action["id"].startswith("flag_") else "investigate",
             blocked_text=definition.get("blocked_text", "") if not action["allowed"] else "",
             decision="colleague_choice" in definition.get("sets", {}),
             person=ACTION_PERSON.get(action["id"]),
@@ -132,6 +145,7 @@ def snapshot(player, language, message="", accepted=True):
         "room": room_of_scene(state["scene"]),
         "people": people_in_room(state["scene"], state, language),
         "clock": clock_text(state),
+        "chat": chat_view(story, state),
         "leonor_present": choice != "accused",
         # True while the game is untouched: the 3D scene then starts the character outside.
         "fresh": state == story["start"],

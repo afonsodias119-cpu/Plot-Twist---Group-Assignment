@@ -63,7 +63,7 @@ def test_each_room_shows_its_people_and_only_theirs():
     assert [p["id"] for p in play(player="a")["people"]] == ["rita"]
     assert [p["id"] for p in play("go_print_shop", player="b")["people"]] == ["amelia"]
     assert [p["id"] for p in play("go_print_shop", "go_study_room", "go_library", player="c")["people"]] == ["leonor"]
-    assert [p["id"] for p in play("go_computer_lab", player="d")["people"]] == ["tomas"]
+    assert [p["id"] for p in play("go_computer_lab", player="d")["people"]] == ["tomas", "computer12"]
 
 
 def test_talking_offers_answers_and_writes_nothing():
@@ -239,10 +239,11 @@ def test_blocked_actions_are_still_offered_with_their_reason_and_change_nothing(
 
 def test_computer_lab_actions_unlock_in_order_and_the_chat_comes_after_the_files():
     play("go_computer_lab", player="c")
-    lab = offered("tomas", "c")
+    lab = offered("computer12", "c")          # the old files and the chat are used at computer 12, not asked of Tomás
     assert set(lab) == {"view_files"} and not lab["view_files"]["allowed"]
+    assert offered("tomas", "c") == {}
     play("open_drawer", "go_computer_lab", "view_files", player="d")
-    assert "open_chat" in offered("tomas", "d")
+    assert "open_chat" in offered("computer12", "d")
 
 
 def test_the_professor_offers_the_final_presentation():
@@ -256,3 +257,36 @@ def test_the_snapshot_says_who_offers_each_action_and_the_chat_flags_have_nobody
     by_id = {a["id"]: a for a in state["actions"]}
     assert by_id["flag_1"]["person"] is None and by_id["go_computer_lab"]["person"] is None
     assert {a["id"]: a["person"] for a in play(player="g")["actions"]}["open_drawer"] == "rita"
+
+
+# ---------- computer 12 and the chat screen ----------
+
+def test_computer_12_is_an_object_that_is_used_not_a_person_that_is_talked_to():
+    people_here = {p["id"]: p for p in play("go_computer_lab", player="h")["people"]}
+    assert people_here["computer12"]["object"] is True and people_here["tomas"]["object"] is False
+    reply = call("talk", player="h", npc="computer12", node="start")
+    assert reply["name"] == "Computer 12" and [o["next"] for o in reply["options"]] == [None]
+
+
+def test_the_chat_screen_shows_the_five_messages_and_which_are_flagged_without_saying_which_are_fake():
+    state = play("open_drawer", "go_computer_lab", "view_files", "open_chat", "flag_2", player="i")
+    chat = state["chat"]
+    assert [m["n"] for m in chat["messages"]] == [1, 2, 3, 4, 5]
+    assert [m["flagged"] for m in chat["messages"]] == [False, True, False, False, False]
+    assert all(m["text"].strip() and m["action"] == f"flag_{m['n']}" for m in chat["messages"])
+    assert "fake" not in " ".join(m["text"] for m in chat["messages"]).lower().replace("flag the messages you think are fake", "")
+    assert chat["intro"] == STORIES["en"]["scenes"]["group_chat"]["texts"][0]["text"]
+
+
+def test_the_chat_screen_exists_only_in_the_chat_and_its_buttons_are_not_ordinary_actions():
+    assert play(player="j")["chat"] is None
+    state = play("open_drawer", "go_computer_lab", "view_files", "open_chat", player="k")
+    kinds = {a["id"]: a["kind"] for a in state["actions"]}
+    assert all(kinds[f"flag_{n}"] == "chat" for n in range(1, 6)) and kinds["go_computer_lab"] == "travel"
+
+
+def test_the_page_has_the_chat_screen_and_the_computer_hint():
+    page3d = importlib.import_module("page3d")
+    page = page3d.build_page(playable=True, inline=True)
+    for needle in ('id="chat-card"', 'id="chat-messages"', "showChat", "press_use", 'id: "computer12"'):
+        assert needle in page

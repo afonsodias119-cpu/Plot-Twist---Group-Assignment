@@ -36,6 +36,9 @@
     </section>
     <div id="toast" role="status" aria-live="polite" hidden></div>
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
+    <section id="chat-card" class="chat-card" role="dialog" aria-labelledby="chat-title" hidden>
+      <header><h3 id="chat-title"></h3><button id="chat-close" class="secondary"></button></header>
+      <p id="chat-intro" class="muted"></p><ol id="chat-messages"></ol></section>
     <section id="ending-card" class="ending-card" role="dialog" aria-labelledby="ending-title" hidden>
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
       <div class="ending-actions"><button id="ending-again"></button><button id="ending-hide" class="secondary"></button></div></section>
@@ -165,6 +168,7 @@
     const outside = window.campusInside === false && !current?.ending;
     $("outside-hint").hidden = !outside;
     shell.querySelectorAll(".actions.investigate button").forEach(b => { b.disabled = outside || Boolean(window.campusBusy); });
+    shell.querySelectorAll("#chat-messages li.flagged button").forEach(b => { b.disabled = true; });   // a flag cannot be undone
   }
   window.addEventListener("campus-inside", applyInside);
 
@@ -234,7 +238,7 @@
         group.append(make("h3", t.people));
         for (const person of state.people) {
           const box = make("div", undefined, "action-row");
-          const button = make("button", `💬 ${t.talk_to} ${person.name}`);
+          const button = make("button", person.object ? `🖥️ ${t.use} ${person.name}` : `💬 ${t.talk_to} ${person.name}`);
           button.dataset.talk = person.id;
           button.addEventListener("click", () => talkStep(person.id, "start"));
           box.append(button); group.append(box);
@@ -281,12 +285,42 @@
     if (!state.accepted && state.message) { toast(state.message); sound.refuse(); }   // a refusal also shows as a note over the picture
     else if (gotItem) sound.chime();
     showEnding(state.ending);
+    showChat(state.chat);
     if (roomChanged) closeTalk();
     if (roomChanged) {
       $("scene-heading").focus({ preventScroll: true });
       document.querySelector(".scene-panel").scrollTop = 0;
     }
   }
+
+  // ---------- computer 12: the group chat is read and flagged on a screen over the picture ----------
+  function showChat(chat) {
+    const card = $("chat-card"), t = ui();
+    const wasOpen = !card.hidden;
+    $("hud-bottom").classList.toggle("chatting", Boolean(chat));
+    if (!chat) {
+      card.hidden = true;
+      if (wasOpen && !talking && !phone.open && !dialog.open) window.playing = true;
+      return;
+    }
+    window.playing = false;   // the character stands at the computer
+    $("chat-title").textContent = t.chat_title;
+    $("chat-close").textContent = t.chat_close;
+    $("chat-intro").textContent = chat.intro;
+    $("chat-messages").replaceChildren(...chat.messages.map(message => {
+      const row = make("li", undefined, message.flagged ? "flagged" : "");
+      const button = make("button", message.flagged ? t.chat_flagged : t.chat_flag, message.flagged ? "secondary" : "");
+      button.disabled = message.flagged;
+      button.dataset.action = message.action;
+      button.addEventListener("click", () => send("play", { action: message.action }));
+      row.append(make("p", message.text), button);
+      return row;
+    }));
+    card.hidden = false;
+    if (!wasOpen) $("chat-messages").querySelector("button:not(:disabled)")?.focus({ preventScroll: true });
+  }
+  $("chat-close").addEventListener("click", () => send("play", { action: "go_computer_lab" }));
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("chat-card").hidden && !dialog.open) $("chat-close").click(); });
 
   // ---------- the ending: a screen over the picture, with a stamp and confetti ----------
   const CONFETTI = { full_case: ["#e8b45c", "#f4e3b0", "#7fd6a0"], impostor: ["#7fd6a0", "#e8b45c", "#cfe8d8"],
@@ -416,7 +450,8 @@
     $("near-hint").hidden = !person || Boolean(talking);
     if (!person) return;
     const key = make("kbd", "K");
-    $("near-hint").replaceChildren(key, document.createTextNode(" " + ui().press_talk.replace("{name}", person.name)));
+    const sentence = person.object ? ui().press_use.replace("{name}", person.name.toLowerCase()) : ui().press_talk.replace("{name}", person.name);
+    $("near-hint").replaceChildren(key, document.createTextNode(" " + sentence));
   }
   window.addEventListener("campus-near", updateNear);
   $("near-hint").addEventListener("click", () => { if (window.campusNear) talkStep(window.campusNear, "start"); });
