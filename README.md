@@ -17,7 +17,7 @@ The plain version without 3D is `app.py`.
 | Afonso Mendo Dias | 78097 |
 | Guilherme Osório | 56699 |
 | Maria da Cunha | 62123 |
-| _(add your name)_ | _(add)_ |
+| Mariana Silva | 74705 |
 
 ## Getting started
 
