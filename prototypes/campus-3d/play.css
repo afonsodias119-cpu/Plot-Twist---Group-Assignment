@@ -143,3 +143,22 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
   .tool-row { justify-content: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* people, conversations, clock, diary */
+.clock { font: 600 13px/1 Inter, system-ui, sans-serif; letter-spacing: .08em; color: var(--gold); }
+.talk-card { position: absolute; left: 26px; bottom: 34px; width: min(560px, calc(100% - 520px)); padding: 18px 20px; border: 1px solid #e8b45c66; border-radius: 14px; background: #0a1826f2; box-shadow: 0 18px 50px #000a; pointer-events: auto; z-index: 11; }
+.talk-card header { display: flex; align-items: center; gap: 12px; }
+.talk-card h3 { margin: 0 !important; font: 400 22px/1.2 "DM Serif Display", Georgia, serif !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--ink) !important; flex: 1; }
+.talk-card #talk-text { margin: 12px 0 14px; font-size: 15px; line-height: 1.6; }
+.talk-card #talk-options { display: grid; gap: 8px; }
+.talk-card #talk-options button { text-align: left; width: 100%; }
+.talk-card #talk-close { padding: 6px 10px; font-size: 12px; }
+.trust { letter-spacing: .12em; font-size: 15px; color: #ff8c7a; }
+.trust-3 { color: #7fd6a0; } .trust-2 { color: #e8b45c; } .trust-1 { color: #ff8c7a; } .trust-0 { color: #c0554a; } .trust-none { display: none; }
+.panel-hidden .talk-card { width: min(560px, calc(100% - 52px)); }
+.actions.people button { background: #e8b45c1f !important; color: var(--ink) !important; border-color: #e8b45c66 !important; }
+.diary-heading { margin-top: 18px !important; }
+.diary-note { border-left: 2px solid #e8b45c66; padding-left: 10px; margin: 10px 0; }
+.diary-note h4 { margin: 0 0 4px; font-size: 12px; color: var(--gold); }
+.diary-note p { margin: 0; font-size: 13px !important; line-height: 1.5 !important; }
+@media (max-width: 900px) { .talk-card { left: 12px; right: 12px; width: auto; bottom: 12px; } }

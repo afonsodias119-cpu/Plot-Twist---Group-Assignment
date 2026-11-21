@@ -351,3 +351,25 @@ def test_app_3d_runs_without_error():
     app = AppTest.from_file(str(Path(__file__).resolve().parent.parent / "app_3d.py"), default_timeout=30)
     app.run()
     assert not app.exception
+
+
+# ---------- people and conversations over HTTP (specs/campus-people-and-atmosphere.md) ----------
+
+def test_http_talk_reads_and_never_writes_and_rejects_bad_requests(http_server):
+    post(http_server, {"operation": "open", "language": "en", "player": "http talker"})
+    before = db.DB_PATH.read_bytes()
+    reply = json.loads(post(http_server, {"operation": "talk", "language": "en", "player": "http talker",
+                                          "npc": "rita", "node": "start"}).read())
+    assert reply["name"] == "Rita" and reply["options"]
+    assert db.DB_PATH.read_bytes() == before
+    for bad in ({"npc": "tomas", "node": "start"}, {"npc": "rita", "node": "../x"}, {"npc": "rita"}):
+        with pytest.raises(HTTPError) as error:
+            post(http_server, {"operation": "talk", "language": "en", "player": "http talker", **bad})
+        assert error.value.code == 400
+    assert db.DB_PATH.read_bytes() == before
+
+
+def test_the_page_has_the_conversation_card_and_the_sound_and_diary_code():
+    page = page3d.build_page(playable=True, inline=True)
+    for needle in ('id="talk"', "operation: \"talk\"", "AudioContext", "plot-twist-diary", "campusMoving"):
+        assert needle in page

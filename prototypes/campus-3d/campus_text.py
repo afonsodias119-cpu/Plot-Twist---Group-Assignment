@@ -33,6 +33,10 @@ TEXT = {
         "no_actions": "Já investigaste o que estava disponível nesta sala.",
         "notebook_hint": "Apenas as provas e decisões que já descobriste.",
         "no_spoilers": "Investiga as cinco salas. Recolhe provas. Escolhe em quem confiar.",
+        "people": "Pessoas aqui", "talk_to": "Falar com", "talk_close": "Terminar conversa", "trust": "Confiança",
+        "app_diary": "Diário", "diary_title": "Diário do detetive", "diary_evidence": "Provas e pistas",
+        "diary_people": "O que te disseram", "diary_empty": "Ainda não tens notas.",
+        "clock": "Hora", "sound_on": "Som ligado", "sound_off": "Som desligado",
     },
     "en": {
         "investigate": "Investigate", "travel": "Change room", "notebook": "Detective notebook",
@@ -66,5 +70,9 @@ TEXT = {
         "no_actions": "You have investigated everything available in this room.",
         "notebook_hint": "Only the evidence and decisions you have already discovered.",
         "no_spoilers": "Explore five rooms. Collect evidence. Choose whom to trust.",
+        "people": "People here", "talk_to": "Talk to", "talk_close": "End conversation", "trust": "Trust",
+        "app_diary": "Diary", "diary_title": "Detective diary", "diary_evidence": "Evidence and clues",
+        "diary_people": "What people told you", "diary_empty": "No notes yet.",
+        "clock": "Time", "sound_on": "Sound on", "sound_off": "Sound off",
     },
 }

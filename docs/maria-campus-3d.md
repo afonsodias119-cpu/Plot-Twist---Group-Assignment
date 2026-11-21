@@ -81,3 +81,13 @@ não substituem a história, os finais ou as regras dos colegas.
 
 As alterações foram preparadas com apoio de IA. A Maria e o grupo devem compreender
 a ligação entre os botões, `campus_game.py` e as funções existentes antes da apresentação.
+
+## Pessoas, conversas, relógio, diário, som e luz (spec: specs/campus-people-and-atmosphere.md)
+
+- **Pessoas em cada sala** (`campus_people.py`): Rita (sala de estudo), Amélia (reprografia), Leonor (biblioteca), Tomás (sala de informática), Professor e Duarte (auditório). O painel mostra "Falar com …" e abre uma caixa de conversa com várias respostas.
+- **Conversas** são árvores pequenas em PT e EN (mesmos ids e condições). Há respostas que só aparecem se tiveres o objeto certo ou já tiveres visto os ficheiros. Tomás, Leonor e Duarte têm confiança (♥): uma resposta dura baixa-a e a 0 a pessoa termina a conversa. Falar **não grava nada** no jogo, por isso não muda os finais.
+- **Relógio** (`clock_text` em `campus_game.py`): 22:15 mais 40 min por pista e 5 min por mensagem assinalada. Só mostra a hora; não termina o jogo.
+- **Diário** (3.ª app do telemóvel): provas do servidor, mensagens do chat assinaladas e o que as pessoas disseram (este último fica só no browser, em `localStorage`).
+- **Chat de grupo no 3D**: joga-se dentro da sala de informática (`room` no snapshot). Andar entre salas usa o caminho mais curto das ações `go_` da própria história (`route`).
+- **Som** gerado no browser (Web Audio, sem ficheiros): mar, passos, cliques, sino ao apanhar um objeto, tom grave numa recusa. Botão 🔊/🔇 no topo. **Luz**: no auditório o corredor escurece e o palco acende.
+- **Limitações**: sem limite de tempo real; as notas das conversas não são guardadas no servidor; o som e a luz foram testados sem erros de código, mas só se confirmam a ouvir/ver num browser normal.

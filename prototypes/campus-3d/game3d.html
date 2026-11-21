@@ -427,7 +427,8 @@ const lampList = [];
 function lamp(color, intensity, x, y, z, distance = 9) {
   const l = new THREE.PointLight(color, intensity, distance, 2);
   l.position.set(x, y, z); scene.add(l);
-  lampList.push({ light: l, base: intensity, d: 0 });
+  const zone = x >= 0 && x <= 13 && z >= 3 && z <= 12 ? "aud" : Math.abs(z) < 3 ? "corr" : "";
+  lampList.push({ light: l, base: intensity, d: 0, zone });
   return l;
 }
 
@@ -935,18 +936,23 @@ function makePerson(o) {
 }
 
 const npcs = [];
-function placeNpc(look, x, z, angle, name, y = 0) {
+function placeNpc(look, x, z, angle, name, y = 0, id = "") {
   const n = makePerson(look);
+  n.userData.id = id;
   n.position.set(x, y, z); n.rotation.y = angle; scene.add(n);
   block(x, z, 0.6, 0.6);
   n.userData.sign = label(name, x, y + 2.35, z, true);
   n.userData.baseAngle = angle;
   npcs.push(n);
 }
-placeNpc({ topColor: 0x2f7a5a, hair: 0x5a2a12, hairStyle: "long", skin: 0xd9a27e }, 10.6, -7.6, -Math.PI / 2, "Leonor");
-placeNpc({ topColor: 0x1d2025, hood: true, hair: 0x0e0b09, smug: true }, 4.0, 4.4, Math.PI, "Duarte");
-placeNpc({ topColor: 0x5a5070, pants: 0x3a3a44, hair: 0xb8b8b8, glasses: true, skin: 0xf0c8a8 }, 7.6, 10.2, Math.PI, "Professor", 0.4);
+placeNpc({ topColor: 0x2f7a5a, hair: 0x5a2a12, hairStyle: "long", skin: 0xd9a27e }, 10.6, -7.6, -Math.PI / 2, "Leonor", 0, "leonor");
+placeNpc({ topColor: 0x1d2025, hood: true, hair: 0x0e0b09, smug: true }, 4.0, 4.4, Math.PI, "Duarte", 0, "duarte");
+placeNpc({ topColor: 0x5a5070, pants: 0x3a3a44, hair: 0xb8b8b8, glasses: true, skin: 0xf0c8a8 }, 7.6, 10.2, Math.PI, "Professor", 0.4, "professor");
+placeNpc({ topColor: 0xc2566b, hair: 0x1c1410, hairStyle: "long", skin: 0xe8b896 }, 3.3, -6.0, -Math.PI / 2, "Rita", 0, "rita");          // study room
+placeNpc({ topColor: 0x3b6a8c, pants: 0x5a4a3a, hair: 0x8a8a8a, glasses: true, skin: 0xe2b08a }, -8.5, -7.4, 0, "Amélia", 0, "amelia");   // print shop
+placeNpc({ topColor: 0x6a7a3a, hair: 0x2a1a0a, skin: 0xd9a27e }, -6.5, 7.6, Math.PI, "Tomás", 0, "tomas");                                  // computer lab
 
+lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stage";   // the stage light
 const player = makePerson({ topColor: 0xb3895a, long: true, hat: 0x3a2a1e, scarf: 0x8a1f24 });
 scene.add(player);
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 48), new THREE.MeshBasicMaterial({ color: 0xE8A33D, transparent: true, opacity: 0.6, toneMapped: false }));
@@ -1004,7 +1010,7 @@ async function checkEnter() {
   const state = window.campusState;
   if (!state || state.ending || entering || window.campusBusy || !window.campusEnter) return;
   const room = roomAt(player.position.x, player.position.z);
-  if (!ROOMS.includes(room) || room.id === state.scene) return;
+  if (!ROOMS.includes(room) || room.id === state.room) return;
   entering = true;
   await window.campusEnter(room.id);
   entering = false;
@@ -1019,7 +1025,7 @@ function updateInside() {
   const state = window.campusState;
   if (!state) return;
   const room = roomAt(player.position.x, player.position.z);
-  const inside = Boolean(room && room.id === state.scene);
+  const inside = Boolean(room && room.id === state.room);
   if (inside !== window.campusInside) {
     window.campusInside = inside;
     window.dispatchEvent(new Event("campus-inside"));
@@ -1056,6 +1062,7 @@ let walk = 0, facing = 0, moveAmount = 0, frameCount = 0;
 // changes, so the shaders are not rebuilt. A lamp fades out as it gets close to being swapped, so no
 // light pops on or off.
 const LIGHT_BUDGET = 10;
+let stage = 0;   // 0 = normal night, 1 = in the auditorium: the stage is lit and the corridor is dimmed
 function updateLights() {
   const px = player.position.x, pz = player.position.z;
   for (const item of lampList) item.d = Math.hypot(item.light.position.x - px, item.light.position.z - pz);
@@ -1064,7 +1071,8 @@ function updateLights() {
   lampList.forEach((item, i) => {
     const on = i < LIGHT_BUDGET;
     item.light.visible = on;
-    item.light.intensity = on ? item.base * Math.min(1, (edge - item.d) / 4) : 0;
+    const mood = item.zone === "aud" ? 1 + stage * 0.8 : item.zone === "corr" ? 1 - stage * 0.7 : item.zone === "stage" ? stage : 1;
+    item.light.intensity = on ? item.base * mood * Math.min(1, (edge - item.d) / 4) : 0;
   });
 }
 const lookAt = new THREE.Vector3(0, 0.8, -0.6);
@@ -1090,11 +1098,11 @@ function syncCampus() {
   if (!state) return;
   if (state.fresh && !wasFresh) {
     placeOutside();
-    savedScene = state.scene;
-  } else if (state.scene !== savedScene) {
-    const room = ROOMS.find(r => r.id === state.scene);
+    savedScene = state.room;
+  } else if (state.room !== savedScene) {
+    const room = ROOMS.find(r => r.id === state.room);
     player.position.set((room.minX + room.maxX) / 2, 0, room.maxZ < 0 ? room.maxZ - 1 : room.minZ + 1);
-    savedScene = state.scene;
+    savedScene = state.room;
     currentRoom = room;
     camera.position.set(player.position.x, 10.5, player.position.z + 8.5);
     lookAt.set(player.position.x, 0.8, player.position.z);
@@ -1129,6 +1137,8 @@ function loop() {
   let dz = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
   if (window.campusState && (!window.playing || window.campusBusy || window.campusState.ending)) { dx = 0; dz = 0; }
   const moving = dx !== 0 || dz !== 0;
+  window.campusMoving = moving;
+  stage += ((currentRoom && currentRoom.id === "auditorium" ? 1 : 0) - stage) * Math.min(1, dt * 2.5);
   moveAmount += ((moving ? 1 : 0) - moveAmount) * Math.min(1, dt * 10);
   if (moving) {
     const len = Math.hypot(dx, dz); dx /= len; dz /= len;
