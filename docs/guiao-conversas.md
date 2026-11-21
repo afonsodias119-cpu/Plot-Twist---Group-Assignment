@@ -62,7 +62,7 @@ Onde está: **Sala de estudo** (`study_room`).
   - Se resultar 🇵🇹: Encontras a pen onde o grupo guardava as cópias de segurança do projeto. Guardas a pen.
   - Se resultar 🇬🇧: You find the USB stick where the group kept the project backups. You take the USB stick.
 
-## Funcionária da reprografia
+## Funcionária
 Onde está: **Reprografia** (`print_shop`).
 
 ### `start`

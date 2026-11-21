@@ -80,7 +80,24 @@ def test_the_scene_description_is_hidden_outside_the_text_mode():
 # ---------- only the people of the group have names ----------
 
 def test_the_print_shop_clerk_has_no_name():
-    assert people.PEOPLE["en"]["amelia"]["name"] == "Print shop clerk"
-    assert people.PEOPLE["pt"]["amelia"]["name"] == "Funcionária da reprografia"
+    assert people.PEOPLE["en"]["amelia"]["name"] == "Clerk"
+    assert people.PEOPLE["pt"]["amelia"]["name"] == "Funcionária"
     html = source("game3d.html")
-    assert "Amélia" not in html and 'const CLERK_LABEL = { pt: "Funcionária da reprografia", en: "Print shop clerk" };' in html
+    assert "Amélia" not in html and 'const CLERK_LABEL = { pt: "Funcionária", en: "Clerk" };' in html
+
+
+# ---------- a clearer start ----------
+
+def test_the_case_file_lists_the_four_real_members():
+    for language in ("en", "pt"):
+        extra = page3d.EXTRA[language]
+        assert len(extra["group"]) == 4 and extra["group"][1:] == ["Leonor", "Rita", "Tomás"]
+        assert "Duarte" in extra["group_note"] and extra["group_label"].strip()
+    page = page3d.build_page(playable=True, inline=True)
+    assert 'id="groupList"' in page and 'id="groupNote"' in page
+
+
+def test_the_start_screen_remembers_the_last_name():
+    js = source("play.js")
+    assert 'const LAST_NAME_KEY = "plot-twist-last-name";' in js
+    assert "localStorage.setItem(LAST_NAME_KEY, current.player)" in js

@@ -93,6 +93,11 @@
              opacity: 0; transform: translateY(6px); transition: opacity .6s, transform .6s; }
   .mission.on { opacity: 1; transform: none; }
   .mission p { margin: 0; font-size: 14px; line-height: 1.5; }
+  .mission .group { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(232,163,61,.25); }
+  .group-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
+  .member { padding: 4px 11px; border-radius: 999px; background: rgba(242,238,227,.08); border: 1px solid rgba(242,238,227,.2); font-size: 13px; }
+  .member.you { border-color: #E8A33D; color: #E8A33D; }
+  .mission .group-note { font-size: 12.5px; color: #c9c3b4; font-style: italic; }
   .file-foot { display: flex; align-items: center; gap: 12px; padding: 14px 22px; border-top: 1px solid rgba(255,255,255,.07); }
   .ghost { font: inherit; font-size: 13px; color: rgba(242,238,227,.65); background: none; border: none; cursor: pointer; padding: 8px 4px; }
   .ghost:hover { color: #F2EEE3; }
@@ -141,7 +146,8 @@
             <p class="label" id="caseLabel"></p>
             <h2 id="caseTitle"></h2>
             <p id="premise"></p>
-            <div class="mission" id="mission"><p class="label" id="missionLabel"></p><p id="missionText"></p></div>
+            <div class="mission" id="mission"><p class="label" id="missionLabel"></p><p id="missionText"></p>
+              <div class="group"><p class="label" id="groupLabel"></p><div class="group-list" id="groupList"></div><p class="group-note" id="groupNote"></p></div></div>
           </div>
         </div>
         <div class="file-foot">
@@ -187,6 +193,14 @@
       $("caseNo").textContent = t.case; $("stamp").textContent = t.stamp; $("evidenceCaption").textContent = t.evidence;
       $("caseLabel").textContent = t.case_label; $("caseTitle").textContent = t.title;
       $("missionLabel").textContent = t.mission_label; $("missionText").textContent = t.mission;
+      // the four real members of the group, as small name chips (the first one is the player)
+      $("groupLabel").textContent = t.group_label; $("groupNote").textContent = t.group_note;
+      $("groupList").replaceChildren(...t.group.map((member, i) => {
+        const chip = document.createElement("span");
+        chip.className = i === 0 ? "member you" : "member";
+        chip.textContent = i === 0 ? `🕵️ ${member}` : member;
+        return chip;
+      }));
       $("back").textContent = t.back; $("skip").textContent = t.skip; $("accept").textContent = t.button;
       text = t.premise; done = false;
       $("premise").textContent = ""; $("mission").classList.remove("on"); $("accept").classList.remove("ready"); $("skip").style.visibility = "visible";
@@ -942,7 +956,7 @@ function makePerson(o) {
 }
 
 const npcs = [];
-const CLERK_LABEL = { pt: "Funcionária da reprografia", en: "Print shop clerk" };   // the same as in campus_people.py
+const CLERK_LABEL = { pt: "Funcionária", en: "Clerk" };   // the same as in campus_people.py
 function placeNpc(look, x, z, angle, name, y = 0, id = "") {
   const n = makePerson(look);
   n.userData.id = id;

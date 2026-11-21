@@ -22,6 +22,10 @@
   const startError = make("p", "", "error"); startError.setAttribute("role", "alert");
   const collection = make("p", undefined, "muted collection");   // the endings found so far, kept in this browser
   nameBox.append(nameLabel, name, nameHint, collection, startError);
+  // The last name used in this browser is filled in again: if the page reloads (for example after an
+  // update of the app), continuing the game is one click (specs/chat-dialogues.md).
+  const LAST_NAME_KEY = "plot-twist-last-name";
+  try { name.value = localStorage.getItem(LAST_NAME_KEY) || ""; } catch (error) { /* no storage */ }
   $("mission").after(nameBox);
 
   const shell = make("main"); shell.id = "investigation"; shell.hidden = true;
@@ -926,6 +930,7 @@
   window.campusStart = async () => {
     sound.start();
     if (!await send("open")) return;
+    try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
     $("intro").classList.add("gone");
     $("intro").style.display = "none";
     shell.hidden = false;
