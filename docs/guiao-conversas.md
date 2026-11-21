@@ -324,3 +324,23 @@ Onde está: **Auditório** (`auditorium`).
 - Respostas:
   - "Sair." / "Leave." → fim
 
+## Procurar a pen e o código do computador 12 (em `prototypes/campus-3d/campus_search.py`)
+
+No jogo 3D a pen já não se recebe da Rita: procura-se na sala de estudo, clicando nos objetos. O computador 12 pede um código antes de mostrar os ficheiros. As respostas estão em `campus_search.py`, que só o servidor lê (nunca vai para a página).
+
+- **Onde está a pen:** `pizza` (Caixa de pizza).
+- **Código do computador 12:** `1411`. As pistas estão nas falas `password` do Tomás e `order` da funcionária.
+- 🇵🇹 Quando encontras a pen: Debaixo da última fatia de pizza fria está a pen do grupo, com as cópias de segurança do projeto. Guardas a pen.
+- 🇬🇧 When you find it: Under the last cold slice of pizza lies the group's USB stick, with the project backups. You take the USB stick.
+- O que há em cada sítio errado (cada clique errado custa 1 minuto):
+  - **Gaveta do grupo** / Group drawer: A gaveta do grupo está vazia. Alguém tirou a pen daqui. / The group drawer is empty. Someone took the USB stick out of here.
+  - **Casaco na cadeira** / Coat on the chair: Só um casaco esquecido. Os bolsos estão vazios. / Just a forgotten coat. The pockets are empty.
+  - **Caneca** / Mug: Café frio. Nada lá dentro. / Cold coffee. Nothing inside.
+  - **Mochila** / Backpack: Cadernos e um carregador de telemóvel. Nada de pen. / Notebooks and a phone charger. No USB stick.
+  - **Pilha de livros** / Pile of books: Livros de finanças, cheios de páginas sublinhadas. / Finance books, full of underlined pages.
+  - **Papéis espalhados** / Scattered papers: Rascunhos do relatório. Nada escondido entre eles. / Drafts of the report. Nothing hidden between them.
+  - **Caixote do lixo** / Bin: Papéis amarrotados e uma lata vazia. / Crumpled paper and an empty can.
+  - **Vaso** / Plant pot: Só terra e algumas folhas secas. / Only soil and a few dry leaves.
+
+Nota: as ações "Abrir a gaveta do grupo" (Rita) e "Ver os ficheiros antigos" (computador 12) continuam em `story.py`, mas o jogo 3D não as mostra: usa a procura e o código.
+
