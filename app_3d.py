@@ -25,12 +25,20 @@ import streamlit.components.v1 as components
 PROJECT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT / "prototypes" / "campus-3d"))
 
+import campus_game  # noqa: E402
+import code_refresh  # noqa: E402
 import db  # noqa: E402
-from campus_game import command  # noqa: E402
-from page3d import build_page  # noqa: E402
+import page3d  # noqa: E402
 
 # Same separate saves as the local 3D server, so the plain game's saves are not touched.
-db.DB_PATH = PROJECT / "data" / "campus3d.db"
+SAVES = PROJECT / "data" / "campus3d.db"
+
+# The game's Python modules, in loading order: a module comes after the ones it imports from.
+# If their files change while the app is running (a deploy without a restart), they are loaded
+# again, so the page and the Python code always match (specs/fresh-code-after-deploy.md).
+CODE_MODULES = ["story", "logic", "db", "game", "campus_text", "campus_people", "campus_search", "campus_game", "page3d"]
+CODE_FILES = [PROJECT / f"{name}.py" for name in CODE_MODULES[:4]] + [
+    PROJECT / "prototypes" / "campus-3d" / f"{name}.py" for name in CODE_MODULES[4:]]
 
 # Runs inside the iframe, before the game page: sends commands to Python and waits for the answer.
 BRIDGE = """<script>
@@ -91,7 +99,7 @@ def campus_component(version):
     browser asks for a new address instead of showing an old copy.
     """
     folder = Path(tempfile.mkdtemp(prefix="plot_twist_3d_"))
-    page = build_page(playable=True, inline=True).replace("<head>", "<head>" + BRIDGE, 1)
+    page = page3d.build_page(playable=True, inline=True).replace("<head>", "<head>" + BRIDGE, 1)
     (folder / "index.html").write_text(page, encoding="utf-8")
     return components.declare_component(f"plot_twist_campus_3d_{version}", path=str(folder))
 
@@ -105,7 +113,7 @@ def answer(payload):
     """Run one command and return {"result": ...} or {"error": ...} (never a stack trace)."""
     try:
         with command_lock():
-            return {"result": command(payload)}
+            return {"result": campus_game.command(payload)}
     except (ValueError, UnicodeDecodeError) as error:
         return {"error": str(error)}
     except Exception:
@@ -122,6 +130,12 @@ st.markdown(
     "iframe {border: 0 !important; display: block;}</style>",
     unsafe_allow_html=True,
 )
+
+# Before anything else: make sure Python is running the same version of the files that is on disk.
+# Reloading db resets its path, so the path of the 3D saves is set (again) right after.
+with command_lock():
+    code_refresh.refresh(CODE_FILES, CODE_MODULES)
+    db.DB_PATH = SAVES
 
 reply = st.session_state.get("campus_reply")
 value = campus_component(page_version())(reply=reply, key="campus", default=None)
