@@ -198,3 +198,61 @@ def test_enter_only_accepts_the_five_rooms():
     play()
     with pytest.raises(ValueError):
         call("enter", room="group_chat")
+
+
+# ---------- things done by talking (specs/campus-people-and-atmosphere.md, "Interface update") ----------
+
+def offered(person, player):
+    """The story actions this person offers inside the conversation, by id."""
+    return {a["id"]: a for a in call("talk", player=player, npc=person, node="start")["actions"]}
+
+
+def test_every_person_action_exists_in_the_story_and_belongs_to_the_room_of_that_person():
+    for action, person in people.ACTION_PERSON.items():
+        scenes = [s for s, data in STORIES["en"]["scenes"].items() if action in data["actions"]]
+        assert scenes, action
+        assert any(people.room_of_scene(scene) == people.ROOM_OF_PERSON[person] for scene in scenes), action
+
+
+def test_each_person_offers_the_actions_of_their_room_inside_the_conversation():
+    play(player="a")
+    assert list(offered("rita", "a")) == ["open_drawer"] and offered("rita", "a")["open_drawer"]["allowed"]
+    call("play", player="a", action="go_print_shop")
+    assert list(offered("amelia", "a")) == ["request_copy"]
+    # the library: with the photo the decision can be taken, and it is marked as a decision
+    call("play", player="a", action="request_copy")
+    call("play", player="a", action="go_study_room")
+    call("play", player="a", action="go_library")
+    leonor = offered("leonor", "a")
+    assert set(leonor) == {"ask_for_help", "accuse"} and all(x["allowed"] and x["decision"] for x in leonor.values())
+
+
+def test_blocked_actions_are_still_offered_with_their_reason_and_change_nothing():
+    play("go_library", player="b")
+    leonor = offered("leonor", "b")
+    assert not leonor["ask_for_help"]["allowed"] and leonor["ask_for_help"]["blocked_text"]
+    before = db.DB_PATH.read_bytes()
+    result = call("play", player="b", action="ask_for_help")
+    assert not result["accepted"] and result["message"] == leonor["ask_for_help"]["blocked_text"]
+    assert db.DB_PATH.read_bytes() == before
+
+
+def test_computer_lab_actions_unlock_in_order_and_the_chat_comes_after_the_files():
+    play("go_computer_lab", player="c")
+    lab = offered("tomas", "c")
+    assert set(lab) == {"view_files"} and not lab["view_files"]["allowed"]
+    play("open_drawer", "go_computer_lab", "view_files", player="d")
+    assert "open_chat" in offered("tomas", "d")
+
+
+def test_the_professor_offers_the_final_presentation():
+    play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help",
+         "go_study_room", "go_computer_lab", "view_files", "go_study_room", "go_auditorium", player="e")
+    assert list(offered("professor", "e")) == ["present_evidence"]
+
+
+def test_the_snapshot_says_who_offers_each_action_and_the_chat_flags_have_nobody():
+    state = play("open_drawer", "go_computer_lab", "view_files", "open_chat", player="f")
+    by_id = {a["id"]: a for a in state["actions"]}
+    assert by_id["flag_1"]["person"] is None and by_id["go_computer_lab"]["person"] is None
+    assert {a["id"]: a["person"] for a in play(player="g")["actions"]}["open_drawer"] == "rita"

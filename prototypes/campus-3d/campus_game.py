@@ -3,7 +3,7 @@
 import db
 import game
 import logic
-from campus_people import ROOM_OF_PERSON, people_in_room, room_of_scene, talk
+from campus_people import ACTION_PERSON, ROOM_OF_PERSON, people_in_room, room_of_scene, talk
 from campus_text import TEXT
 from story import LANGUAGES, STORIES, UI_TEXTS
 
@@ -69,13 +69,8 @@ def route(story, start, goal):
     return seen.get(goal)
 
 
-def snapshot(player, language, message="", accepted=True):
-    """Send the current scene, not the full mystery, to the browser."""
-    state = game.load(player)
-    if state is None:
-        raise ValueError(UI_TEXTS[language]["no_game"])
-    language = db.load_language(player) or language
-    story = STORIES[language]
+def action_rows(story, state, language):
+    """The actions offered in the saved scene, ready for the screen. `person` says who offers it, if anyone."""
     scene = story["scenes"][state["scene"]]
     note = missing_clues_note(state, language)
     actions = []
@@ -88,10 +83,23 @@ def snapshot(player, language, message="", accepted=True):
             kind="travel" if "go_to" in definition and definition["go_to"] != "group_chat" else "investigate",
             blocked_text=definition.get("blocked_text", "") if not action["allowed"] else "",
             decision="colleague_choice" in definition.get("sets", {}),
+            person=ACTION_PERSON.get(action["id"]),
         )
         if definition.get("go_to") == FINAL_ROOM and note:
             row.update(allowed=False, blocked_text=note)
         actions.append(row)
+    return actions
+
+
+def snapshot(player, language, message="", accepted=True):
+    """Send the current scene, not the full mystery, to the browser."""
+    state = game.load(player)
+    if state is None:
+        raise ValueError(UI_TEXTS[language]["no_game"])
+    language = db.load_language(player) or language
+    story = STORIES[language]
+    scene = story["scenes"][state["scene"]]
+    actions = action_rows(story, state, language)
 
     # A notebook entry appears only once its evidence was actually discovered.
     sources = []
@@ -198,7 +206,11 @@ def command(payload):
     if operation == "talk":
         # Talking only reads the saved game: nothing is written, so the endings cannot be touched.
         language = db.load_language(player) or language
-        return talk(game.load(player), language, payload["npc"], payload["node"])
+        state = game.load(player)
+        reply = talk(state, language, payload["npc"], payload["node"])
+        # The things the player can do by talking to this person (ask for the copy, take the decision, ...).
+        reply["actions"] = [a for a in action_rows(STORIES[language], state, language) if a["person"] == reply["npc"]]
+        return reply
     if operation == "enter":
         room = payload["room"]
         if not isinstance(room, str) or room not in set(ROOM_OF_PERSON.values()):
