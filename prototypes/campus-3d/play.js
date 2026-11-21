@@ -162,22 +162,54 @@
   try { torchOn = localStorage.getItem("plot-twist-torch") !== "off"; voiceOn = localStorage.getItem("plot-twist-voice") !== "off"; } catch (error) { /* no storage */ }
   window.campusTorchOn = torchOn;
   const canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
-  // [pitch, speed] of each voice; computer 12 has none and stays silent
-  const VOICES = { rita: [1.3, 1.05], amelia: [0.95, 0.9], leonor: [1.1, 1], tomas: [0.8, 1.1],
-                   professor: [0.6, 0.85], duarte: [0.7, 0.92], narrator: [1, 0.95] };
+  // Who speaks: [gender, pitch, speed]. Computer 12 has no voice and stays silent.
+  // Only what the people SAY is read aloud (the text between quotation marks), never the description of what they do.
+  const VOICES = { rita: ["f", 1.08, 1.0], amelia: ["f", 0.95, 0.92], leonor: ["f", 1.0, 1.0],
+                   tomas: ["m", 1.06, 1.05], professor: ["m", 0.88, 0.9], duarte: ["m", 0.94, 0.95], narrator: ["f", 1, 0.95] };
+  const FEMALE = /raquel|fernanda|francisca|helia|heloisa|maria|joana|catarina|sonia|libby|maisie|hazel|susan|zira|emily|female|feminina/i;
+  const MALE = /duarte|antonio|daniel|ricardo|hugo|ryan|thomas|george|mark|david|james|male|masculino/i;
+  // The natural (neural, online) voices of the browser sound far more human than the old robotic ones.
+  const voiceQuality = voice => (/natural|online/i.test(voice.name) ? 3 : /neural|premium|enhanced/i.test(voice.name) ? 2 : /google/i.test(voice.name) ? 1 : 0);
+  function pickVoice(who, lang) {
+    const normal = voice => voice.lang.toLowerCase().replace("_", "-");
+    const all = speechSynthesis.getVoices().filter(voice => normal(voice).startsWith(lang.slice(0, 2).toLowerCase()));
+    if (!all.length) return null;
+    const region = all.filter(voice => normal(voice) === lang.toLowerCase());   // pt-PT and en-GB when there are such voices
+    const pool = region.length ? region : all;
+    const ofGender = pool.filter(voice => (VOICES[who][0] === "f" ? FEMALE : MALE).test(voice.name));
+    const ranked = (ofGender.length ? ofGender : pool).slice().sort((a, b) => voiceQuality(b) - voiceQuality(a));
+    const best = ranked.filter(voice => voiceQuality(voice) === voiceQuality(ranked[0]));
+    return best[Object.keys(VOICES).indexOf(who) % best.length];   // the different people get different voices when there are several
+  }
+  const quotesOf = text => [...text.matchAll(/"([^"]+)"|«([^»]+)»|“([^”]+)”/g)].map(match => (match[1] || match[2] || match[3]).trim());
   function stopSpeaking() { if (canSpeak) speechSynthesis.cancel(); }
+  // pairs: [line, who]. Each sentence is spoken on its own, so there are natural pauses and long lines are not cut off.
+  function say(pairs) {
+    const lang = (window.lang || "pt") === "pt" ? "pt-PT" : "en-GB";
+    for (const [line, who] of pairs) {
+      const [, pitch, rate] = VOICES[who];
+      for (const sentence of line.split(/(?<=[.!?…])\s+/)) {
+        const utterance = new SpeechSynthesisUtterance(sentence);
+        utterance.lang = lang;
+        utterance.voice = pickVoice(who, lang);
+        utterance.pitch = pitch;
+        utterance.rate = rate * (0.97 + Math.random() * 0.06);   // a tiny change from sentence to sentence, like a real voice
+        speechSynthesis.speak(utterance);
+      }
+    }
+  }
   function speak(text, who) {
     if (!canSpeak || !voiceOn || !VOICES[who]) return;
     stopSpeaking();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const lang = (window.lang || "pt") === "pt" ? "pt-PT" : "en-GB";
-    utterance.lang = lang;
-    [utterance.pitch, utterance.rate] = VOICES[who];
-    const voices = speechSynthesis.getVoices();
-    utterance.voice = voices.find(v => v.lang.toLowerCase().replace("_", "-") === lang.toLowerCase())
-      || voices.find(v => v.lang.toLowerCase().startsWith(lang.slice(0, 2))) || null;
-    speechSynthesis.speak(utterance);
+    say(quotesOf(text).map(line => [line, who]));
   }
+  function speakEnding(ending) {
+    if (!canSpeak || !voiceOn) return;
+    stopSpeaking();
+    const speakers = (ui().ending_voices || {})[ending.id] || [];
+    say(quotesOf(ending.text).map((line, i) => [line, VOICES[speakers[i]] ? speakers[i] : "narrator"]));
+  }
+  if (canSpeak) speechSynthesis.getVoices();   // some browsers only load the list after the first call
   document.addEventListener("pointerdown", () => sound.start());
   document.addEventListener("click", e => { if (e.target.closest("button:not(:disabled)")) sound.click(); });
 
@@ -405,7 +437,7 @@
       $("ending-again").textContent = t.play_again;
       $("ending-hide").textContent = t.see_scene;
       rememberEnding(ending.id);
-      speak(ending.text, "narrator");
+      speakEnding(ending);
       $("ending-collection").textContent = collectionText();
       $("share-text").textContent = shareText(ending);
       $("share-copy").textContent = t.share_copy;

@@ -51,6 +51,8 @@ TEXT = {
         "howto_intro": "O jogo é feito de dados e regras simples. Cada parte vive num sítio do repositório:",
         "howto_run": "Para jogar: uv run streamlit run app_3d.py · Para testar: uv run pytest",
         "howto_close": "Fechar",
+        "ending_voices": {"fifth_element": ["professor", "professor", "duarte", "duarte", "professor", "professor"],
+                          "stolen_credits": ["duarte", "professor"]},
         "howto_items": [
             ["A história", "story.py", "Só dados, em português e inglês: salas, objetos, ações e finais. Não tem regras."],
             ["As regras", "logic.py", "Funções puras que decidem o que se pode fazer, o que bloqueia e que final acontece. Não usa a base de dados nem o ecrã."],
@@ -119,6 +121,8 @@ TEXT = {
         "howto_intro": "The game is made of data and simple rules. Each part lives in one place of the repository:",
         "howto_run": "To play: uv run streamlit run app_3d.py · To test: uv run pytest",
         "howto_close": "Close",
+        "ending_voices": {"fifth_element": ["professor", "professor", "duarte", "duarte", "professor", "professor"],
+                          "stolen_credits": ["duarte", "professor"]},
         "howto_items": [
             ["The story", "story.py", "Only data, in Portuguese and English: rooms, items, actions and endings. It has no rules."],
             ["The rules", "logic.py", "Pure functions that decide what can be done, what is blocked and which ending happens. It uses neither the database nor the screen."],
