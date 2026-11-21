@@ -258,7 +258,7 @@
         group.append(make("h3", t.travel), ...travel.map(actionRow));
         $("action-groups").append(group);
       }
-      bar = state.actions.filter(a => a.kind === "investigate").map(actionRow);
+      bar = state.actions.filter(a => a.kind === "investigate" && !a.person).map(actionRow);
     }
     $("bar-actions").replaceChildren(...bar);
     $("action-bar").hidden = !bar.length;
@@ -328,16 +328,39 @@
     $("talk-trust").textContent = hearts;
     $("talk-trust").setAttribute("aria-label", hearts ? `${t.trust}: ${line.trust}/3` : "");
     $("talk-trust").className = `trust trust-${line.trust === null || line.trust === undefined ? "none" : line.trust}`;
-    $("talk-options").replaceChildren(...line.options.map(option => {
-      const button = make("button", option.label, option.next === null ? "secondary" : "");
+    const answers = line.options.map(option => {
+      const button = make("button", option.label, "answer");
       button.addEventListener("click", () => option.next === null ? closeTalk() : talkStep(line.npc, option.next));
       return button;
-    }));
+    });
+    // What can be done by talking to this person (ask for the copy, take the decision...): choices inside the conversation.
+    const doing = make("div", undefined, "actions investigate talk-actions");
+    for (const action of line.actions || []) {
+      const row = make("div", undefined, "talk-action");
+      const button = make("button", `▶ ${action.label}`, action.allowed ? "" : "locked");
+      button.dataset.action = action.id;
+      button.addEventListener("click", () => talkAction(line, action));
+      row.append(button);
+      if (action.decision) row.append(make("p", t.decision, "action-hint"));
+      doing.append(row);
+    }
+    if (doing.children.length && window.campusInside === false) doing.append(make("p", t.outside_hint, "muted"));
+    $("talk-options").replaceChildren(...(doing.children.length ? [doing] : []), ...answers);
+    applyInside();
     if (line.note) saveDiary(line.name, line.note);
     $("talk").hidden = false;
     updateNear();
     sound.talk();
     $("talk-options").querySelector("button")?.focus({ preventScroll: true });
+  }
+  // The player chose to do something by talking: the story's own action runs, and the person answers with its result.
+  async function talkAction(line, action) {
+    if (window.campusBusy || !current) return;
+    const scene = current.scene;
+    if (!await send("play", { action: action.id })) return;
+    if (!talking || current.scene !== scene) return;   // the scene changed (for example the chat opened): the conversation is over
+    showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [],
+               options: [{ label: ui().talk_continue, next: "start" }, { label: ui().talk_bye, next: null }] });
   }
   async function talkStep(npc, node) {
     if (window.campusBusy || !current) return;

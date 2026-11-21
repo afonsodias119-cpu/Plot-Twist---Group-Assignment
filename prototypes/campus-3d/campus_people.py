@@ -21,6 +21,14 @@ ROOM_OF_PERSON = {
 ROOM_OF_SCENE = {"group_chat": "computer_lab"}
 
 
+# The story actions that are done by talking to a person: they appear as choices inside that conversation.
+# (The chat flags have no person: they are read on the computer, and stay as buttons over the picture.)
+ACTION_PERSON = {
+    "open_drawer": "rita", "request_copy": "amelia", "ask_for_help": "leonor", "accuse": "leonor",
+    "view_files": "tomas", "open_chat": "tomas", "present_evidence": "professor",
+}
+
+
 def room_of_scene(scene):
     """The 3D room where a story scene takes place."""
     return ROOM_OF_SCENE.get(scene, scene)
