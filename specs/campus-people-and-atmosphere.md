@@ -25,3 +25,7 @@ A real time limit, saving conversations on the server, new endings, changing the
 - Existing tests pass unchanged.
 - New tests cover: both languages have the same dialogue structure; `talk` only in the person's room, with unknown npc/node/extra fields rejected and no write; options hidden until their condition holds; trust reaching 0 ends the talk; the clock; `room` for the chat; walking from the chat to another room; the chat flags in the diary without telling which are fake.
 - A browser check shows the people, a full conversation with choices, the diary, the clock, and no script errors.
+
+## Interface update (same feature)
+- The investigation buttons ("Ask for a copy of the original order", ...) are shown over the 3D picture, at the bottom, and no longer in the side panel; blocked ones keep their explanation. While a conversation is open they step aside. The panel keeps the people, the travel buttons, the notebook and the inventory.
+- The "hide panel" button is gone. The panel has a small arrow on its edge (› closes it, ‹ opens it). The panel starts open and the last choice is remembered in this browser.

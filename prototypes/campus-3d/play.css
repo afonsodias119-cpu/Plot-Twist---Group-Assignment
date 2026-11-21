@@ -164,8 +164,23 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 @media (max-width: 900px) { .talk-card { left: 12px; right: 12px; width: auto; bottom: 12px; } }
 
 /* the prompt that appears next to a person */
-#investigation button.near-hint { position: absolute; left: calc((100% - 470px) / 2); bottom: 56px; transform: translateX(-50%); pointer-events: auto; z-index: 11; display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 999px; background: #0a1826f2; border: 1px solid var(--gold); color: var(--ink); font-size: 15px; box-shadow: 0 12px 40px #000a; }
+#investigation button.near-hint { pointer-events: auto; display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 999px; background: #0a1826f2; border: 1px solid var(--gold); color: var(--ink); font-size: 15px; box-shadow: 0 12px 40px #000a; }
 #investigation button.near-hint:hover { background: #12304af2; }
 .near-hint kbd { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 6px; background: var(--gold); color: #101c25; font: 700 14px Inter, system-ui, sans-serif; }
-.panel-hidden #investigation button.near-hint { left: 50%; }
-@media (max-width: 900px) { #investigation button.near-hint { left: 50%; bottom: 20px; } }
+
+/* the investigation buttons over the picture, and the arrow that opens and closes the side panel */
+.hud-bottom { position: absolute; left: calc((100% - 470px) / 2); bottom: 22px; transform: translateX(-50%); width: min(760px, calc(100% - 520px)); display: flex; flex-direction: column; align-items: center; gap: 12px; pointer-events: none; z-index: 11; }
+.hud-bottom.talking { display: none; }
+.panel-hidden .hud-bottom { left: 50%; width: min(760px, calc(100% - 90px)); }
+#investigation button.near-hint { position: static; transform: none; left: auto; bottom: auto; }
+.action-bar { pointer-events: auto; max-width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: #0a1826e6; box-shadow: 0 14px 40px #000a; text-align: center; }
+.action-bar > p { margin: 0 0 8px; font-size: 12px; }
+.bar-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.bar-actions .action-row { margin: 0; flex: 0 1 280px; }
+.bar-actions .action-hint { margin: 6px 2px 0; font-size: 11.5px !important; line-height: 1.4 !important; }
+#investigation button.panel-tab { position: absolute; top: 50%; right: 470px; transform: translateY(-50%); width: 28px; height: 76px; padding: 0; border-radius: 12px 0 0 12px; border: 1px solid var(--line); border-right: 0; background: #0b1b29f7; color: var(--gold); font-size: 22px; line-height: 1; pointer-events: auto; z-index: 9; display: grid; place-items: center; }
+#investigation button.panel-tab:hover { background: #12304af7; }
+.panel-hidden #investigation button.panel-tab { right: 0; }
+.text-mode #panel-toggle, .text-mode .hud-bottom { display: none; }
+@media (max-width: 900px) { #investigation button.panel-tab { right: 400px; } .panel-hidden #investigation button.panel-tab { right: 0; } .hud-bottom { left: calc((100% - 400px) / 2); width: calc(100% - 440px); } .panel-hidden .hud-bottom { left: 50%; } }
+@media (max-width: 650px) { #investigation button.panel-tab { display: none; } .hud-bottom, .panel-hidden .hud-bottom { left: 50%; width: calc(100% - 24px); bottom: calc(70% + 10px); } .bar-actions .action-hint { display: none; } }
