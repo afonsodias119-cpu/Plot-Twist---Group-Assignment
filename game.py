@@ -9,7 +9,7 @@ from pathlib import Path
 
 import db
 import logic
-from story import LANGUAGES, STORIES
+from story import CAMPUS_MAP, LANGUAGES, MAP_LOCATION, STORIES
 
 DEFAULT_LANGUAGE = "en"
 
@@ -106,3 +106,40 @@ def image_file(name) -> str | None:
         return None
     path = ASSETS_DIR / f"{name}.jpg"
     return str(path) if path.is_file() else None
+
+
+def campus_map(language: str, state: dict) -> list[list[dict | None]]:
+    """The campus map for the phone panel (specs/phone-map.md). It only reads the game.
+
+    The rows of CAMPUS_MAP, with each room as {"id", "title", "here", "locked"}:
+    - "here" marks the room of the current scene (the group chat is shown on the computer lab);
+    - "locked" marks a room whose door in the study room is shown but not allowed yet.
+    """
+    story = STORIES[language]
+    here = MAP_LOCATION.get(state["scene"], state["scene"])
+
+    # Ask the rules which doors of the study room are allowed, as if the player stood there.
+    hub = story["start"]["scene"]
+    doors = story["scenes"][hub]["actions"]
+    allowed = {action["id"]: action["allowed"] for action in logic.available_actions(story, dict(state, scene=hub))}
+    locked_rooms = {
+        definition["go_to"]
+        for action_id, definition in doors.items()
+        if "go_to" in definition and allowed.get(action_id) is False
+    }
+
+    rows = []
+    for row in CAMPUS_MAP:
+        cells = []
+        for room in row:
+            if room is None:
+                cells.append(None)
+            else:
+                cells.append({
+                    "id": room,
+                    "title": story["scenes"][room]["title"],
+                    "here": room == here,
+                    "locked": room in locked_rooms,
+                })
+        rows.append(cells)
+    return rows

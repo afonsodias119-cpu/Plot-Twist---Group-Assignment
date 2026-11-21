@@ -106,6 +106,23 @@ def show_inventory(story, ui, state):
             st.write(f"- {story['items'][item_id]}")
 
 
+def show_phone_map(ui, state):
+    """The phone panel: the campus map, with the player's room and the locked rooms marked."""
+    with st.expander(ui["phone"]):
+        for row in game.campus_map(st.session_state["lang"], state):
+            columns = st.columns(len(row))
+            for column, room in zip(columns, row):
+                if room is None:
+                    continue
+                box = column.container(border=True)
+                if room["here"]:
+                    box.markdown(f"📍 **{room['title']}**  \n{ui['map_here']}")
+                elif room["locked"]:
+                    box.markdown(f"🔒 {room['title']}  \n{ui['map_locked']}")
+                else:
+                    box.markdown(room["title"])
+
+
 def show_new_game(ui):
     """The New game button, or its confirmation question while it is open."""
     if st.session_state["confirming"]:
@@ -144,6 +161,7 @@ def show_game(state):
         for paragraph in logic.scene_text(story, state):
             st.write(paragraph)
         show_inventory(story, ui, state)
+        show_phone_map(ui, state)
         if not st.session_state["confirming"]:
             # Blocked actions are shown too: clicking one explains why it is blocked.
             for action in logic.available_actions(story, state):
