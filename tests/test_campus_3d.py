@@ -309,19 +309,19 @@ def test_http_commands_save_and_resume_after_server_restart(http_server):
 
 
 
-def test_the_3d_campus_offers_only_rooms_it_can_draw():
-    """The group chat has no 3D room: the campus does not offer it, refuses it, and saves nothing."""
+def test_the_group_chat_is_played_inside_the_computer_lab_in_3d():
+    """Changed on purpose (specs/campus-people-and-atmosphere.md): the chat now has a place in the 3D campus."""
     call("open", language="en", player="chat tester")
     for action in SHORT[:3]:
         call("play", language="en", player="chat tester", action=action)
-    shown = call("play", language="en", player="chat tester", action="go_study_room")
+    call("play", language="en", player="chat tester", action="go_study_room")
     shown = call("play", language="en", player="chat tester", action="go_computer_lab")
-    assert shown["scene"] == "computer_lab"
-    assert "open_chat" not in [a["id"] for a in shown["actions"]]
-    before = game.load("chat tester")
-    result = call("play", language="en", player="chat tester", action="open_chat")
-    assert result["accepted"] is False
-    assert game.load("chat tester") == before
+    assert shown["scene"] == "computer_lab" and shown["room"] == "computer_lab"
+    assert "open_chat" in [a["id"] for a in shown["actions"]]
+    chat = call("play", language="en", player="chat tester", action="open_chat")
+    assert chat["accepted"] and chat["scene"] == "group_chat"
+    assert chat["room"] == "computer_lab"          # the character stays in the computer lab
+    assert {"flag_1", "flag_5", "go_computer_lab"} <= {a["id"] for a in chat["actions"]}
 
 
 # ---------- 3D inside Streamlit (specs/campus-3d-streamlit.md) ----------
