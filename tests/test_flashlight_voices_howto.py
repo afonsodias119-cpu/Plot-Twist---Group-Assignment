@@ -39,3 +39,45 @@ def test_every_person_who_talks_has_a_voice_and_computer_12_has_none():
     for person in people.ROOM_OF_PERSON:
         assert (f"{person}:" in block) == (person not in people.OBJECTS), person
     assert voices_line
+
+
+# ---------- only the spoken lines are read aloud ----------
+
+import re
+
+from story import STORIES
+
+SPOKEN = re.compile(r'"([^"]+)"|«([^»]+)»|“([^”]+)”')   # the same rule as quotesOf in play.js
+
+
+def test_every_ending_with_dialogue_says_who_speaks_each_line():
+    for language in ("en", "pt"):
+        voices = TEXT[language]["ending_voices"]
+        known = {"rita", "amelia", "leonor", "tomas", "professor", "duarte", "narrator"}
+        for ending in STORIES[language]["endings"]:
+            lines = SPOKEN.findall(ending["text"])
+            if lines:
+                assert len(voices[ending["id"]]) == len(lines), (language, ending["id"])
+                assert set(voices[ending["id"]]) <= known
+            else:
+                assert ending["id"] not in voices     # no dialogue: nothing to read aloud
+
+
+def test_the_people_speak_in_every_conversation_start_and_the_description_is_not_read():
+    people = importlib.import_module("campus_people")
+    for language in ("en", "pt"):
+        for person, data in people.PEOPLE[language].items():
+            if person in people.OBJECTS:
+                continue
+            start = data["nodes"]["start"]["text"]
+            lines = ["".join(g) for g in SPOKEN.findall(start)]
+            assert lines, (language, person)
+            assert all(line.strip() for line in lines)
+            # what is read is what is between the quotation marks, never the sentence that describes the person
+            assert not any(("looks up" in line or "levanta os olhos" in line) for line in lines)
+
+
+def test_the_page_picks_natural_voices_and_reads_only_quotes():
+    page = page3d.build_page(playable=True, inline=True)
+    for needle in ("quotesOf", "pickVoice", "speakEnding", "voiceQuality", "natural|online"):
+        assert needle in page
