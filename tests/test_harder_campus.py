@@ -75,5 +75,7 @@ def test_the_page_has_the_countdown_and_the_time_up_card():
     assert 'id="timeup-card"' in page and 'id="timeup-again"' in page
     js = (FOLDER / "play.js").read_text(encoding="utf-8")
     assert "const COUNTDOWN_MINUTES = 30" in js
-    assert "plot-twist-deadline:" in js
+    assert "plot-twist-time-left:" in js and "plot-twist-deadline:" not in js
+    # the time goes down only while the game is on the screen, so a saved game can be continued later
+    assert "const running = !current.ending && !document.hidden && !shell.hidden" in js
     assert "if (option.cost) penalize(option.cost)" in js

@@ -688,25 +688,24 @@
     setTimeout(() => { $("share-copy").textContent = ui().share_copy; }, 3000);
   });
   // ---------- countdown: 30 minutes before the faculty closes (specs/harder-campus.md) ----------
-  // The deadline (the moment the faculty closes, in milliseconds) is kept in this browser, per player.
-  // Rude answers move it 5 minutes earlier. At 0 the game stops and only "Try again" is left.
-  const COUNTDOWN_MINUTES = 30;
+  // The time LEFT is kept in this browser, per player, and it only goes down while the game is really
+  // being played (the page open and in sight, before an ending). Closing the game pauses it, so a saved
+  // game can be continued later with the time it had. Rude answers take 5 minutes off; at 0 the game
+  // stops and only "Try again" is left.
+  const COUNTDOWN_MINUTES = 30, FULL_TIME = COUNTDOWN_MINUTES * 60000;
   const NIGHT_STARTS = 22 * 60 + 15;   // 22:15, the time on the case file, so the doors close at 22:45
-  const deadlineKey = player => `plot-twist-deadline:${player}`;
-  let memoryDeadline = 0;   // used when the browser does not let the page keep anything
-  let frozenLeft = null;    // the time that was left when an ending was reached
-  function savedDeadline(player) {
-    try { return Number(localStorage.getItem(deadlineKey(player))) || memoryDeadline; } catch (error) { return memoryDeadline; }
+  const timeKey = player => `plot-twist-time-left:${player}`;
+  let timeLeft = null;      // milliseconds left for the player of `current` (null until a game is open)
+  let timeOwner = null;     // the player `timeLeft` belongs to
+  let lastTick = null;      // when the time was last counted
+  function loadTime(player) {
+    try { const saved = localStorage.getItem(timeKey(player)); return saved === null ? null : Number(saved); }
+    catch (error) { return null; }   // no storage: the time is kept only while the page is open
   }
-  function saveDeadline(player, when) {
-    memoryDeadline = when;
-    try { localStorage.setItem(deadlineKey(player), String(when)); } catch (error) { /* no storage: memoryDeadline is enough */ }
+  function saveTime() {
+    try { localStorage.setItem(timeKey(timeOwner), String(Math.round(timeLeft))); } catch (error) { /* no storage */ }
   }
-  function msLeft() {   // milliseconds until the faculty closes
-    if (frozenLeft !== null) return frozenLeft;
-    const deadline = current ? savedDeadline(current.player) : 0;
-    return deadline ? Math.max(0, deadline - Date.now()) : COUNTDOWN_MINUTES * 60000;
-  }
+  const msLeft = () => (timeLeft === null ? FULL_TIME : timeLeft);
   const minutesSeconds = ms => {
     const seconds = Math.ceil(ms / 1000);
     return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
@@ -716,16 +715,19 @@
     return `${String(Math.floor(minutes / 60) % 24).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
   }
   function startCountdown(state) {   // called on every render
-    if (state.ending) { if (frozenLeft === null) frozenLeft = msLeft(); return; }
-    frozenLeft = null;
-    const deadline = savedDeadline(state.player);
-    // A new game, or an old countdown that ran out on a game that was never played: 30 new minutes.
-    if (!deadline || (state.fresh && deadline <= Date.now())) saveDeadline(state.player, Date.now() + COUNTDOWN_MINUTES * 60000);
+    if (timeOwner !== state.player) {   // a game was opened: take its time from this browser
+      timeOwner = state.player;
+      timeLeft = loadTime(state.player) ?? FULL_TIME;
+      lastTick = null;
+    }
+    if (state.fresh && timeLeft <= 0) timeLeft = FULL_TIME;   // a game that was never played gets 30 new minutes
+    saveTime();
   }
-  function penalize(minutes) {   // a rude answer: the faculty closes earlier
-    if (!current || current.ending) return;
-    saveDeadline(current.player, savedDeadline(current.player) - minutes * 60000);
-    toast(ui().time_penalty.replace("{n}", minutes));
+  function penalize(minutes, note = ui().time_penalty) {   // a rude answer, a wrong place, a wrong code: less time
+    if (!current || current.ending || timeLeft === null) return;
+    timeLeft = Math.max(0, timeLeft - minutes * 60000);
+    saveTime();
+    toast(note.replace("{n}", minutes));
     sound.refuse();
     tick();
   }
@@ -742,7 +744,12 @@
     sound.refuse();
   }
   function tick() {   // every second: the countdown on the screen, and the end when it reaches 0
-    if (!current) return;
+    if (!current || timeLeft === null) return;
+    const now = Date.now();
+    // The time goes down only while the game is on the screen and running.
+    const running = !current.ending && !document.hidden && !shell.hidden && $("timeup-card").hidden;
+    if (running && lastTick !== null) { timeLeft = Math.max(0, timeLeft - (now - lastTick)); saveTime(); }
+    lastTick = now;
     const left = msLeft();
     $("clock").textContent = `⏳ ${minutesSeconds(left)}`;
     $("clock").setAttribute("aria-label", `${ui().time_aria}: ${minutesSeconds(left)}`);
@@ -1035,8 +1042,7 @@
       dialog.close(); window.playing = true; $("scene-heading").focus();
       stopSpeaking();
       window.dispatchEvent(new Event("campus-restarted"));
-      saveDeadline(current.player, Date.now() + COUNTDOWN_MINUTES * 60000);   // a new game: 30 new minutes
-      frozenLeft = null;
+      timeLeft = FULL_TIME; timeOwner = current.player; lastTick = null; saveTime();   // a new game: 30 new minutes
       $("timeup-card").hidden = true;
       tick();
       try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); } catch (error) { /* no storage */ }
