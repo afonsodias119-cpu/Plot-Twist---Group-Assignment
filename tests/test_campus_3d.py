@@ -212,7 +212,7 @@ def test_phone_texts_exist_in_both_languages():
     assert set(TEXT["pt"]) == set(TEXT["en"])
     assert set(TEXT["pt"]["clues"]) == set(TEXT["en"]["clues"]) == {"usb_stick", "original_photo", "files_viewed", "leonor"}
     for language in TEXT:
-        assert all(isinstance(v, (str, dict)) and v for v in TEXT[language].values())
+        assert all(isinstance(v, (str, dict, list)) and v for v in TEXT[language].values())
 
 
 def test_entering_the_current_room_changes_nothing():

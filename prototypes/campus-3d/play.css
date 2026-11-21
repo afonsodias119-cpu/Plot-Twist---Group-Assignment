@@ -229,3 +229,21 @@ body:has(#ending-card:not([hidden])) .sign { visibility: hidden; }
 .hud-bottom.chatting { display: none; }
 @media (max-width: 900px) { .chat-card { left: calc((100% - 400px) / 2); width: calc(100% - 440px); } }
 @media (max-width: 650px) { .chat-card, .panel-hidden .chat-card { left: 50%; width: calc(100% - 24px); top: 18%; transform: translate(-50%, 0); } .chat-card li { grid-template-columns: 1fr; } }
+
+/* the unknown number, the collection of endings and the share card */
+#investigation button.sms { position: absolute; right: calc(470px + 22px); top: 140px; width: min(340px, calc(100% - 560px)); display: grid; gap: 4px; padding: 12px 16px; text-align: left; border: 1px solid #ff8c7a99; border-radius: 14px; background: #1c0d0cf2; color: var(--ink); box-shadow: 0 14px 40px #000a; pointer-events: auto; z-index: 12; }
+#investigation button.sms:hover { background: #2a1210f2; }
+.panel-hidden #investigation button.sms { right: 70px; }
+.sms-from { font: 700 11px Inter, system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #ff8c7a; }
+#sms-text { font-size: 15px; line-height: 1.4; }
+.sms.buzz { animation: sms-buzz .7s ease-in-out 1; }
+@keyframes sms-buzz { 0%, 100% { transform: translateX(0); } 10%, 50%, 90% { transform: translateX(-5px) rotate(-1deg); } 30%, 70% { transform: translateX(5px) rotate(1deg); } }
+.sms-row { border-left: 2px solid #ff8c7a99; padding-left: 10px; margin: 12px 0; }
+.sms-row h4 { margin: 0 0 4px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #ff8c7a; }
+.sms-row p { margin: 0; font-size: 14px !important; }
+.collection { font-size: 13px; letter-spacing: .04em; white-space: pre-wrap; }
+.ending-card .collection { margin: 18px 0 0; color: var(--accent); }
+.share { margin-top: 16px; display: grid; gap: 10px; justify-items: start; }
+.share pre { margin: 0; padding: 12px 14px; width: 100%; border: 1px dashed color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 8px; background: #ffffff0a; color: #e9e4d6; font: 14px/1.6 ui-monospace, Consolas, monospace; white-space: pre-wrap; user-select: all; }
+@media (max-width: 900px) { #investigation button.sms { right: calc(400px + 16px); width: min(300px, calc(100% - 460px)); } }
+@media (max-width: 650px) { #investigation button.sms, .panel-hidden #investigation button.sms { right: 12px; left: 12px; width: auto; top: 70px; } }

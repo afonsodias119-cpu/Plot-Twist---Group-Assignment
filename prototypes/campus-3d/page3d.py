@@ -70,6 +70,7 @@ def language_data(language):
         "intro": dict(extra, title=ui["title"], premise=ui["premise"]),
         "ui": {"help": extra["help"], "corridor": extra["corridor"]},
         "play_ui": dict(ui, **TEXT[language]),
+        "endings": [{"id": e["id"], "title": e["title"]} for e in story["endings"]],   # the collection of endings
     }
 
 

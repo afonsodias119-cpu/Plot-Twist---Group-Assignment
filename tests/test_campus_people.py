@@ -290,3 +290,36 @@ def test_the_page_has_the_chat_screen_and_the_computer_hint():
     page = page3d.build_page(playable=True, inline=True)
     for needle in ('id="chat-card"', 'id="chat-messages"', "showChat", "press_use", 'id: "computer12"'):
         assert needle in page
+
+
+# ---------- messages from the unknown number, the collection of endings, the share card, the music ----------
+
+def test_the_unknown_number_has_one_message_for_each_clue_in_both_languages():
+    text = importlib.import_module("campus_text").TEXT
+    assert len(text["pt"]["notices"]) == len(text["en"]["notices"]) == len(campus.CLUES)
+    assert text["pt"]["notice_chat"].strip() and text["en"]["notice_chat"].strip()
+    for language in text:
+        assert all(m.strip() for m in text[language]["notices"])
+        assert len(set(text[language]["notices"])) == len(text[language]["notices"])
+
+
+def test_the_snapshot_counts_the_flagged_chat_messages():
+    assert play(player="fl1")["flagged"] == 0
+    state = play("open_drawer", "go_computer_lab", "view_files", "open_chat", "flag_2", "flag_5", player="fl2")
+    assert state["flagged"] == 2
+
+
+def test_the_page_knows_every_ending_for_the_collection_in_both_languages():
+    page3d = importlib.import_module("page3d")
+    for language in ("en", "pt"):
+        data = page3d.language_data(language)
+        assert [e["id"] for e in data["endings"]] == [e["id"] for e in STORIES[language]["endings"]]
+        assert all(e["title"].strip() for e in data["endings"])
+
+
+def test_the_page_has_the_messages_app_the_share_card_the_collection_and_the_music():
+    page3d = importlib.import_module("page3d")
+    page = page3d.build_page(playable=True, inline=True)
+    for needle in ('id="sms"', "checkNotices", "drawMsgs", 'id="share-text"', "shareText", "plot-twist-endings",
+                   "collectionText", "startMusic", "tensionOf", "setTension"):
+        assert needle in page

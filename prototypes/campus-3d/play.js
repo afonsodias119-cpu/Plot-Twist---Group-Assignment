@@ -10,6 +10,8 @@
     return el;
   };
   const ui = () => data[window.lang || "pt"].play_ui;
+  // One emoji for each ending (the collection and the share card). It is defined here because the first screen uses it at start-up.
+  const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸", fifth_element: "👁️" };
   document.body.classList.add("playable");
 
   const nameBox = make("div", undefined, "name-box");
@@ -18,7 +20,8 @@
   name.autocomplete = "nickname";
   const nameHint = make("p", undefined, "muted");
   const startError = make("p", "", "error"); startError.setAttribute("role", "alert");
-  nameBox.append(nameLabel, name, nameHint, startError);
+  const collection = make("p", undefined, "muted collection");   // the endings found so far, kept in this browser
+  nameBox.append(nameLabel, name, nameHint, collection, startError);
   $("mission").after(nameBox);
 
   const shell = make("main"); shell.id = "investigation"; shell.hidden = true;
@@ -35,12 +38,15 @@
       <footer class="panel-foot"><button id="restart" class="secondary"></button><span id="controls" class="muted"></span></footer>
     </section>
     <div id="toast" role="status" aria-live="polite" hidden></div>
+    <button id="sms" class="sms" hidden><span id="sms-from" class="sms-from"></span><span id="sms-text"></span></button>
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
     <section id="chat-card" class="chat-card" role="dialog" aria-labelledby="chat-title" hidden>
       <header><h3 id="chat-title"></h3><button id="chat-close" class="secondary"></button></header>
       <p id="chat-intro" class="muted"></p><ol id="chat-messages"></ol></section>
     <section id="ending-card" class="ending-card" role="dialog" aria-labelledby="ending-title" hidden>
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
+      <p id="ending-collection" class="collection"></p>
+      <div class="share"><pre id="share-text"></pre><button id="share-copy" class="secondary"></button></div>
       <div class="ending-actions"><button id="ending-again"></button><button id="ending-hide" class="secondary"></button></div></section>
     <button id="panel-toggle" class="panel-tab" aria-expanded="true"></button>
     <div id="hud-bottom" class="hud-bottom">
@@ -79,6 +85,7 @@
         swell.connect(swellDepth); swellDepth.connect(filter.frequency); swell.start();
         seaGain = ctx.createGain(); seaGain.gain.value = 0;
         sea.connect(filter); filter.connect(seaGain); seaGain.connect(master); sea.start();
+        startMusic();
       } catch (error) { ctx = null; }
     }
     function tone(freq, seconds, type, volume, slideTo) {
@@ -96,11 +103,41 @@
       gain.gain.setValueAtTime(0.07, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
       osc.connect(gain); gain.connect(master); osc.start(now); osc.stop(now + 0.12);
     }
+    // music: a low drone and a pulse that get faster and darker as the night goes on (tension 0..1)
+    let tension = 0, droneGain = null, droneFilter = null, musicOn = false, beatCount = 0;
+    const NOTES = [110, 130.8, 164.8, 196, 220];   // A minor
+    function startMusic() {
+      if (musicOn || !ctx) return;
+      musicOn = true;
+      droneFilter = ctx.createBiquadFilter(); droneFilter.type = "lowpass"; droneFilter.frequency.value = 200;
+      droneGain = ctx.createGain(); droneGain.gain.value = 0;
+      for (const detune of [0, 8]) {
+        const osc = ctx.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = 55; osc.detune.value = detune;
+        osc.connect(droneFilter); osc.start();
+      }
+      droneFilter.connect(droneGain); droneGain.connect(master);
+      beat();
+    }
+    function beat() {
+      if (ctx && !muted && window.campusState && !window.campusState.ending) {
+        const now = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();   // the pulse: a soft thump
+        osc.type = "sine"; osc.frequency.setValueAtTime(72, now); osc.frequency.exponentialRampToValueAtTime(38, now + 0.16);
+        gain.gain.setValueAtTime(0.05 + 0.07 * tension, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+        osc.connect(gain); gain.connect(master); osc.start(now); osc.stop(now + 0.22);
+        if (beatCount++ % 2 === 1) tone(NOTES[Math.floor(Math.random() * NOTES.length)] * (tension > 0.6 ? 2 : 1), 0.7, "triangle", 0.012 + 0.02 * tension);
+      }
+      setTimeout(beat, 60000 / (52 + 78 * tension));   // from 52 to 130 beats a minute
+    }
     // every 120 ms: footsteps while the character walks, and the sea louder outside than inside a room
     setInterval(() => {
       if (!ctx || muted) return;
       const outside = window.campusInside === false;
       seaGain.gain.setTargetAtTime(outside ? 0.3 : 0.07, ctx.currentTime, 0.5);
+      if (droneGain) {
+        const playing = Boolean(window.campusState) && !window.campusState.ending;
+        droneGain.gain.setTargetAtTime(playing ? 0.02 + 0.035 * tension : 0, ctx.currentTime, 0.8);
+        droneFilter.frequency.setTargetAtTime(160 + 520 * tension, ctx.currentTime, 0.8);
+      }
       if (window.campusMoving && window.playing && ctx.currentTime - lastStep > 0.34) { lastStep = ctx.currentTime; step(); }
     }, 120);
     return {
@@ -116,6 +153,8 @@
       chime() { tone(660, 0.18, "sine", 0.1); setTimeout(() => tone(990, 0.3, "sine", 0.09), 110); },
       refuse: () => tone(150, 0.28, "sawtooth", 0.06, 90),
       talk: () => tone(340 + Math.random() * 60, 0.07, "triangle", 0.05),
+      buzz() { tone(110, 0.13, "square", 0.07); setTimeout(() => tone(110, 0.13, "square", 0.07), 180); },   // the phone
+      setTension(value) { tension = Math.max(0, Math.min(1, value)); },
     };
   })();
   document.addEventListener("pointerdown", () => sound.start());
@@ -127,6 +166,7 @@
     document.documentElement.lang = window.lang || "pt";
     nameLabel.textContent = t.name_label;
     nameHint.textContent = t.continue_hint;
+    collection.textContent = collectionText();
     $("accept").textContent = t.start;
     $("case-eyebrow").textContent = t.case;
     $("game-title").textContent = t.title;
@@ -286,6 +326,8 @@
     else if (gotItem) sound.chime();
     showEnding(state.ending);
     showChat(state.chat);
+    checkNotices(state);
+    sound.setTension(state.ending ? 0 : tensionOf(state));
     if (roomChanged) closeTalk();
     if (roomChanged) {
       $("scene-heading").focus({ preventScroll: true });
@@ -337,6 +379,10 @@
       $("ending-text").replaceChildren(make("p", ending.text));
       $("ending-again").textContent = t.play_again;
       $("ending-hide").textContent = t.see_scene;
+      rememberEnding(ending.id);
+      $("ending-collection").textContent = collectionText();
+      $("share-text").textContent = shareText(ending);
+      $("share-copy").textContent = t.share_copy;
       const colors = CONFETTI[ending.id] || CONFETTI.full_case;
       $("confetti").replaceChildren(...Array.from({ length: 48 }, () => {
         const piece = make("span");
@@ -464,6 +510,97 @@
   $("talk-close").addEventListener("click", closeTalk);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && talking && !phone.open && !dialog.open) closeTalk(); });
 
+  // ---------- the share card, the collection of endings and the tension of the night ----------
+  function loadEndings() {
+    try { const found = JSON.parse(localStorage.getItem("plot-twist-endings") || "[]"); return Array.isArray(found) ? found : []; } catch (error) { return []; }
+  }
+  function rememberEnding(id) {
+    const found = loadEndings();
+    if (found.includes(id)) return;
+    found.push(id);
+    try { localStorage.setItem("plot-twist-endings", JSON.stringify(found)); } catch (error) { /* no storage */ }
+  }
+  function collectionCount() {
+    const all = data[window.lang || "pt"].endings, found = loadEndings();
+    return `${ui().collection}: ${all.filter(e => found.includes(e.id)).length}/${all.length}`;
+  }
+  function collectionText() {
+    const all = data[window.lang || "pt"].endings, found = loadEndings();
+    return `${collectionCount()}   ${all.map(e => found.includes(e.id) ? ENDING_EMOJI[e.id] || "✔" : "🔒").join(" ")}`;
+  }
+  function shareText(ending) {
+    const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
+    const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("") + (current?.flagged ? "🟨" : "⬛");
+    return [`${t.share_title} 🕵️`, `${ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
+            `${squares} · ${done}/${clues.length} ${t.share_clues}`, `🕘 ${current?.clock || ""} · ${collectionCount()}`].join("\n");
+  }
+  $("share-copy").addEventListener("click", async () => {
+    const t = ui(), box = $("share-text");
+    try {
+      await navigator.clipboard.writeText(box.textContent);
+      $("share-copy").textContent = t.share_copied;
+    } catch (error) {   // the page may not be allowed to use the clipboard: select the text so Ctrl+C works
+      const range = document.createRange(); range.selectNodeContents(box);
+      const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+      $("share-copy").textContent = t.share_select;
+    }
+    setTimeout(() => { $("share-copy").textContent = ui().share_copy; }, 3000);
+  });
+  // How far the night has gone, from 0 (22:15) to 1 (after one in the morning): it drives the music.
+  function tensionOf(state) {
+    const [h, m] = String(state.clock || "22:15").split(":").map(Number);
+    return Math.min(1, ((h * 60 + m - (22 * 60 + 15) + 1440) % 1440) / 185);
+  }
+
+  // ---------- messages from an unknown number: they arrive as the case moves forward ----------
+  const msgKey = player => `plot-twist-msgs:${player}`;
+  function loadMsgs(player) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(msgKey(player)) || "{}");
+      return { sent: saved.sent || [], list: saved.list || [], read: saved.read || 0 };
+    } catch (error) { return { sent: [], list: [], read: 0 }; }
+  }
+  function saveMsgs(player, store) {
+    try { localStorage.setItem(msgKey(player), JSON.stringify(store)); } catch (error) { /* no storage */ }
+  }
+  const unreadMsgs = () => { const store = loadMsgs(current?.player || ""); return Math.max(0, store.list.length - store.read); };
+  let smsTimer;
+  function showSms(text) {
+    const banner = $("sms");
+    $("sms-from").textContent = `📱 ${ui().notice_from}`;
+    $("sms-text").textContent = text;
+    banner.hidden = false;
+    banner.classList.remove("buzz"); void banner.offsetWidth; banner.classList.add("buzz");   // restart the shaking
+    clearTimeout(smsTimer);
+    smsTimer = setTimeout(() => { banner.hidden = true; }, 9000);
+  }
+  $("sms").addEventListener("click", () => { $("sms").hidden = true; openPhone("msgs"); });
+  // One message for each clue found (the first three build up, the fourth says what the player found),
+  // and one when the first chat message is flagged. Only the newest pops up; all of them stay in the phone.
+  function checkNotices(state) {
+    if (state.ending) { $("sms").hidden = true; return; }
+    const t = ui(), done = (state.clues || []).filter(c => c.done).length, store = loadMsgs(state.player);
+    const due = [];
+    for (let i = 1; i <= Math.min(done, t.notices.length); i++) if (!store.sent.includes(`c${i}`)) due.push([`c${i}`, t.notices[i - 1]]);
+    if (state.flagged > 0 && !store.sent.includes("chat")) due.push(["chat", t.notice_chat]);
+    if (!due.length) return;
+    for (const [id, text] of due) { store.sent.push(id); store.list.push({ text, clock: state.clock }); }
+    saveMsgs(state.player, store);
+    showSms(due[due.length - 1][1]);
+    sound.buzz();
+  }
+  function drawMsgs(screen, t) {
+    const store = loadMsgs(current?.player || "");
+    if (!store.list.length) screen.append(make("p", t.msgs_empty, "muted"));
+    for (const message of store.list.slice().reverse()) {
+      const row = make("article", undefined, "sms-row");
+      row.append(make("h4", `${t.notice_from} · ${message.clock}`), make("p", message.text));
+      screen.append(row);
+    }
+    store.read = store.list.length;
+    saveMsgs(current?.player || "", store);
+  }
+
   // ---------- the phone: a map, the to-do list of clues and the diary ----------
   const phone = make("dialog", undefined, "phone-dialog"); phone.id = "phone";
   phone.setAttribute("aria-labelledby", "phone-title");
@@ -582,13 +719,14 @@
     $("phone-back").hidden = view === "home";
     $("phone-back").textContent = `‹ ${t.phone_home}`;
     $("phone-close").setAttribute("aria-label", t.phone_close);
-    $("phone-title").textContent = view === "map" ? t.map_title : view === "todo" ? t.todo_title : view === "diary" ? t.diary_title : t.phone;
+    $("phone-title").textContent = view === "map" ? t.map_title : view === "todo" ? t.todo_title : view === "diary" ? t.diary_title : view === "msgs" ? t.msgs_title : t.phone;
     screen.replaceChildren();
     if (view === "home") {
       const { done, total } = clueCount();
       const grid = make("div", undefined, "app-grid");
       for (const [id, icon, label, badge] of [["map", "📍", t.app_map, ""], ["todo", "✅", t.app_todo, `${done}/${total}`],
-                                              ["diary", "📔", t.app_diary, String((current?.notebook || []).length + loadDiary().length)]]) {
+                                              ["diary", "📔", t.app_diary, String((current?.notebook || []).length + loadDiary().length)],
+                                              ["msgs", "💬", t.app_msgs, unreadMsgs() ? String(unreadMsgs()) : ""]]) {
         const app = make("button", undefined, "app-icon");
         app.dataset.app = id;
         app.append(make("span", icon, "app-glyph"), make("span", label, "app-name"));
@@ -599,13 +737,14 @@
       screen.append(grid);
     } else if (view === "map") drawMap(screen, t);
     else if (view === "diary") drawDiary(screen, t);
+    else if (view === "msgs") drawMsgs(screen, t);
     else drawTodo(screen, t);
     (view === "home" ? screen.querySelector("button") : $("phone-back")).focus();
   }
-  function openPhone() {
+  function openPhone(view = "home") {
     if (!current || window.campusBusy || phone.open) return;
     window.playing = false;   // the character stands still while the phone is out
-    showPhone("home");
+    showPhone(view);
     phone.showModal();
   }
   function closePhone() {
@@ -613,7 +752,7 @@
     window.playing = !talking;
     $("phone-open").focus();
   }
-  $("phone-open").addEventListener("click", openPhone);
+  $("phone-open").addEventListener("click", () => openPhone());
   $("phone-close").addEventListener("click", closePhone);
   $("phone-back").addEventListener("click", () => showPhone("home"));
   phone.addEventListener("cancel", e => { e.preventDefault(); closePhone(); });
@@ -645,6 +784,7 @@
     if (await send("restart", { confirmed: true })) {
       dialog.close(); window.playing = true; $("scene-heading").focus();
       window.dispatchEvent(new Event("campus-restarted"));
+      try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); } catch (error) { /* no storage */ }
     }
   });
 })();
