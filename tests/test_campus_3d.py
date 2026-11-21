@@ -309,19 +309,19 @@ def test_http_commands_save_and_resume_after_server_restart(http_server):
 
 
 
-def test_the_3d_campus_offers_only_rooms_it_can_draw():
-    """The group chat has no 3D room: the campus does not offer it, refuses it, and saves nothing."""
+def test_the_group_chat_is_played_inside_the_computer_lab_in_3d():
+    """Changed on purpose (specs/campus-people-and-atmosphere.md): the chat now has a place in the 3D campus."""
     call("open", language="en", player="chat tester")
     for action in SHORT[:3]:
         call("play", language="en", player="chat tester", action=action)
-    shown = call("play", language="en", player="chat tester", action="go_study_room")
+    call("play", language="en", player="chat tester", action="go_study_room")
     shown = call("play", language="en", player="chat tester", action="go_computer_lab")
-    assert shown["scene"] == "computer_lab"
-    assert "open_chat" not in [a["id"] for a in shown["actions"]]
-    before = game.load("chat tester")
-    result = call("play", language="en", player="chat tester", action="open_chat")
-    assert result["accepted"] is False
-    assert game.load("chat tester") == before
+    assert shown["scene"] == "computer_lab" and shown["room"] == "computer_lab"
+    assert "open_chat" in [a["id"] for a in shown["actions"]]
+    chat = call("play", language="en", player="chat tester", action="open_chat")
+    assert chat["accepted"] and chat["scene"] == "group_chat"
+    assert chat["room"] == "computer_lab"          # the character stays in the computer lab
+    assert {"flag_1", "flag_5", "go_computer_lab"} <= {a["id"] for a in chat["actions"]}
 
 
 # ---------- 3D inside Streamlit (specs/campus-3d-streamlit.md) ----------
@@ -351,3 +351,25 @@ def test_app_3d_runs_without_error():
     app = AppTest.from_file(str(Path(__file__).resolve().parent.parent / "app_3d.py"), default_timeout=30)
     app.run()
     assert not app.exception
+
+
+# ---------- people and conversations over HTTP (specs/campus-people-and-atmosphere.md) ----------
+
+def test_http_talk_reads_and_never_writes_and_rejects_bad_requests(http_server):
+    post(http_server, {"operation": "open", "language": "en", "player": "http talker"})
+    before = db.DB_PATH.read_bytes()
+    reply = json.loads(post(http_server, {"operation": "talk", "language": "en", "player": "http talker",
+                                          "npc": "rita", "node": "start"}).read())
+    assert reply["name"] == "Rita" and reply["options"]
+    assert db.DB_PATH.read_bytes() == before
+    for bad in ({"npc": "tomas", "node": "start"}, {"npc": "rita", "node": "../x"}, {"npc": "rita"}):
+        with pytest.raises(HTTPError) as error:
+            post(http_server, {"operation": "talk", "language": "en", "player": "http talker", **bad})
+        assert error.value.code == 400
+    assert db.DB_PATH.read_bytes() == before
+
+
+def test_the_page_has_the_conversation_card_and_the_sound_and_diary_code():
+    page = page3d.build_page(playable=True, inline=True)
+    for needle in ('id="talk"', "operation: \"talk\"", "AudioContext", "plot-twist-diary", "campusMoving"):
+        assert needle in page

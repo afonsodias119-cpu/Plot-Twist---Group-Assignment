@@ -3,6 +3,7 @@
 import db
 import game
 import logic
+from campus_people import ROOM_OF_PERSON, people_in_room, room_of_scene, talk
 from campus_text import TEXT
 from story import LANGUAGES, STORIES, UI_TEXTS
 
@@ -12,9 +13,9 @@ from story import LANGUAGES, STORIES, UI_TEXTS
 CLUES = [("usb_stick", "study_room"), ("original_photo", "print_shop"),
          ("files_viewed", "computer_lab"), ("leonor", "library")]
 FINAL_ROOM = "auditorium"
-# The scenes that have a room in the 3D campus (game3d.html, ROOMS). The group chat has none, so the
-# 3D version never offers or accepts a move there; the chat puzzle is played in the Streamlit app.
-ROOMS_3D = {"study_room", "print_shop", "library", "computer_lab", "auditorium"}
+# The scenes the 3D campus can show. The five rooms have their own place in game3d.html (ROOMS); the
+# group chat is played inside the computer lab (see campus_people.ROOM_OF_SCENE).
+ROOMS_3D = {"study_room", "print_shop", "library", "computer_lab", "auditorium", "group_chat"}
 
 
 def leads_outside_3d(definition):
@@ -39,6 +40,35 @@ def missing_clues_note(state, language):
     return f"{t['auditorium_note']} {t['missing']}: {'; '.join(missing)}."
 
 
+def clock_text(state):
+    """The time of the night, computed from the saved progress (it never ends the game)."""
+    done = sum(clue_done(state, clue) for clue, _room in CLUES)
+    flagged = sum(1 for n in range(1, 6) if state["flags"].get(f"flagged_{n}"))
+    minutes = (22 * 60 + 15 + 40 * done + 5 * flagged) % (24 * 60)
+    return f"{minutes // 60:02d}:{minutes % 60:02d}"
+
+
+def chat_notes(story, state):
+    """The chat messages the player has flagged, in order. Says nothing about which ones are fake."""
+    messages = [t["text"] for t in story["scenes"]["group_chat"]["texts"] if t["when"] == {}][1:]
+    title = story["scenes"]["group_chat"]["title"]
+    return [{"title": f"{title} · {n}", "text": messages[n - 1]} for n in range(1, 6)
+            if state["flags"].get(f"flagged_{n}")]
+
+
+def route(story, start, goal):
+    """The scenes to pass through, in order, from `start` to `goal` using the story's own go_to actions."""
+    seen, queue = {start: []}, [start]
+    while queue:
+        here = queue.pop(0)
+        for definition in story["scenes"][here]["actions"].values():
+            nxt = definition.get("go_to")
+            if nxt and nxt not in seen:
+                seen[nxt] = seen[here] + [nxt]
+                queue.append(nxt)
+    return seen.get(goal)
+
+
 def snapshot(player, language, message="", accepted=True):
     """Send the current scene, not the full mystery, to the browser."""
     state = game.load(player)
@@ -55,7 +85,7 @@ def snapshot(player, language, message="", accepted=True):
             continue
         row = dict(
             action,
-            kind="travel" if "go_to" in definition else "investigate",
+            kind="travel" if "go_to" in definition and definition["go_to"] != "group_chat" else "investigate",
             blocked_text=definition.get("blocked_text", "") if not action["allowed"] else "",
             decision="colleague_choice" in definition.get("sets", {}),
         )
@@ -78,7 +108,7 @@ def snapshot(player, language, message="", accepted=True):
         {"title": story["scenes"][room]["title"],
          "text": story["scenes"][room]["actions"][action]["result_text"]}
         for room, action in sources
-    ]
+    ] + chat_notes(story, state)
     ending = next(({"id": e["id"], "title": e["title"], "text": e["text"]}
                    for e in story["endings"] if e["id"] == state["ending"]), None)
     return {
@@ -90,6 +120,10 @@ def snapshot(player, language, message="", accepted=True):
         "clues": [{"id": clue, "label": TEXT[language]["clues"][clue], "room": story["scenes"][room]["title"],
                    "done": clue_done(state, clue)} for clue, room in CLUES],
         "accepted": accepted, "message": message,
+        # The 3D room where the saved scene takes place (the group chat happens in the computer lab).
+        "room": room_of_scene(state["scene"]),
+        "people": people_in_room(state["scene"], state, language),
+        "clock": clock_text(state),
         "leonor_present": choice != "accused",
         # True while the game is untouched: the 3D scene then starts the character outside.
         "fresh": state == story["start"],
@@ -106,13 +140,7 @@ def enter_room(player, language, room):
     state = game.load(player)
     language = db.load_language(player) or language
     story = STORIES[language]
-    hub = story["start"]["scene"]
-    if state["scene"] == room:
-        steps = []
-    elif hub in (state["scene"], room):
-        steps = [room]
-    else:
-        steps = [hub, room]
+    steps = [] if room_of_scene(state["scene"]) == room else route(story, state["scene"], room) or []
     message, accepted = "", True
     for target in steps:
         actions = story["scenes"][state["scene"]]["actions"]
@@ -142,6 +170,7 @@ def command(payload):
         "play": {"operation", "player", "language", "action"},
         "restart": {"operation", "player", "language", "confirmed"},
         "enter": {"operation", "player", "language", "room"},
+        "talk": {"operation", "player", "language", "npc", "node"},
     }
     if not isinstance(operation, str) or operation not in allowed_fields:
         raise ValueError("Unknown operation / Operação desconhecida.")
@@ -166,9 +195,13 @@ def command(payload):
             raise ValueError(UI_TEXTS[language]["confirm_question"])
         game.restart(player)
         return snapshot(player, language)
+    if operation == "talk":
+        # Talking only reads the saved game: nothing is written, so the endings cannot be touched.
+        language = db.load_language(player) or language
+        return talk(game.load(player), language, payload["npc"], payload["node"])
     if operation == "enter":
         room = payload["room"]
-        if not isinstance(room, str) or room not in STORIES[language]["scenes"]:
+        if not isinstance(room, str) or room not in set(ROOM_OF_PERSON.values()):
             raise ValueError("Invalid room / Sala inválida.")
         return enter_room(player, language, room)
     if not isinstance(payload["action"], str):

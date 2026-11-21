@@ -24,8 +24,8 @@
   const shell = make("main"); shell.id = "investigation"; shell.hidden = true;
   shell.innerHTML = `
     <header class="case-bar"><div><p id="case-eyebrow" class="label"></p><h1 id="game-title"></h1></div>
-      <div class="bar-tools"><span id="save-status" role="status"></span>
-        <div class="tool-row"><button id="phone-open" class="secondary"></button><button id="panel-toggle" class="secondary" aria-expanded="true"></button><button id="view-toggle" class="secondary"></button></div></div></header>
+      <div class="bar-tools"><span id="clock" class="clock"></span><span id="save-status" role="status"></span>
+        <div class="tool-row"><button id="sound-toggle" class="secondary"></button><button id="phone-open" class="secondary"></button><button id="panel-toggle" class="secondary" aria-expanded="true"></button><button id="view-toggle" class="secondary"></button></div></div></header>
     <section class="scene-panel" aria-labelledby="scene-heading">
       <div class="scene-top"><span id="scene-label" class="label"></span><span id="player-label" class="muted"></span></div>
       <h2 id="scene-heading" tabindex="-1"></h2><p id="feedback" role="status"></p>
@@ -35,6 +35,9 @@
       <footer class="panel-foot"><button id="restart" class="secondary"></button><span id="controls" class="muted"></span></footer>
     </section>
     <div id="toast" role="status" aria-live="polite" hidden></div>
+    <section id="talk" class="talk-card" role="dialog" aria-labelledby="talk-name" aria-live="polite" hidden>
+      <header><h3 id="talk-name"></h3><span id="talk-trust" class="trust"></span><button id="talk-close" class="secondary"></button></header>
+      <p id="talk-text"></p><div id="talk-options"></div></section>
     <p id="renderer-status" class="renderer-status"></p>`;
   document.body.append(shell);
   const dialog = make("dialog"); dialog.id = "restart-dialog";
@@ -42,6 +45,70 @@
   dialog.innerHTML = '<h2 id="restart-question"></h2><div class="dialog-actions"><button id="cancel-restart" class="secondary"></button><button id="confirm-restart"></button></div>';
   document.body.append(dialog);
   let current = null, textMode = false, uncertain = false;
+  // ---------- sound: everything is generated in the browser, there are no sound files ----------
+  const sound = (() => {
+    let ctx = null, master = null, seaGain = null, muted = false, lastStep = 0;
+    try { muted = localStorage.getItem("plot-twist-sound") === "off"; } catch (error) { /* no storage */ }
+    function start() {
+      if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      try {
+        ctx = new AudioContextClass();
+        master = ctx.createGain(); master.gain.value = muted ? 0 : 0.5; master.connect(ctx.destination);
+        // the sea: soft noise through a low-pass filter whose cut-off swells like waves
+        const length = ctx.sampleRate * 4, buffer = ctx.createBuffer(1, length, ctx.sampleRate), data = buffer.getChannelData(0);
+        let last = 0;
+        for (let i = 0; i < length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; data[i] = last * 3.5; }
+        const sea = ctx.createBufferSource(); sea.buffer = buffer; sea.loop = true;
+        const filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 500;
+        const swell = ctx.createOscillator(); swell.frequency.value = 0.12;
+        const swellDepth = ctx.createGain(); swellDepth.gain.value = 130;
+        swell.connect(swellDepth); swellDepth.connect(filter.frequency); swell.start();
+        seaGain = ctx.createGain(); seaGain.gain.value = 0;
+        sea.connect(filter); filter.connect(seaGain); seaGain.connect(master); sea.start();
+      } catch (error) { ctx = null; }
+    }
+    function tone(freq, seconds, type, volume, slideTo) {
+      if (!ctx || muted) return;
+      const now = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(freq, now);
+      if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, now + seconds);
+      gain.gain.setValueAtTime(volume, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + seconds);
+      osc.connect(gain); gain.connect(master); osc.start(now); osc.stop(now + seconds + 0.02);
+    }
+    function step() {
+      if (!ctx || muted) return;
+      const now = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = "triangle"; osc.frequency.setValueAtTime(110 + Math.random() * 30, now); osc.frequency.exponentialRampToValueAtTime(55, now + 0.09);
+      gain.gain.setValueAtTime(0.07, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+      osc.connect(gain); gain.connect(master); osc.start(now); osc.stop(now + 0.12);
+    }
+    // every 120 ms: footsteps while the character walks, and the sea louder outside than inside a room
+    setInterval(() => {
+      if (!ctx || muted) return;
+      const outside = window.campusInside === false;
+      seaGain.gain.setTargetAtTime(outside ? 0.3 : 0.07, ctx.currentTime, 0.5);
+      if (window.campusMoving && window.playing && ctx.currentTime - lastStep > 0.34) { lastStep = ctx.currentTime; step(); }
+    }, 120);
+    return {
+      start,
+      isMuted: () => muted,
+      toggle() {
+        muted = !muted;
+        try { localStorage.setItem("plot-twist-sound", muted ? "off" : "on"); } catch (error) { /* no storage */ }
+        if (master) master.gain.value = muted ? 0 : 0.5;
+        if (!muted) start();
+      },
+      click: () => tone(620, 0.05, "square", 0.025),
+      chime() { tone(660, 0.18, "sine", 0.1); setTimeout(() => tone(990, 0.3, "sine", 0.09), 110); },
+      refuse: () => tone(150, 0.28, "sawtooth", 0.06, 90),
+      talk: () => tone(340 + Math.random() * 60, 0.07, "triangle", 0.05),
+    };
+  })();
+  document.addEventListener("pointerdown", () => sound.start());
+  document.addEventListener("click", e => { if (e.target.closest("button:not(:disabled)")) sound.click(); });
+
 
   function updateLabels() {
     const t = ui();
@@ -61,6 +128,9 @@
     $("phone-open").textContent = `📱 ${t.phone}`;
     $("phone-open").setAttribute("aria-label", t.phone_open);
     $("panel-toggle").textContent = document.body.classList.contains("panel-hidden") ? t.show_panel : t.hide_panel;
+    $("talk-close").textContent = t.talk_close;
+    $("sound-toggle").textContent = sound.isMuted() ? "🔇" : "🔊";
+    $("sound-toggle").setAttribute("aria-label", sound.isMuted() ? t.sound_off : t.sound_on);
     $("restart-question").textContent = t.confirm_question;
     $("cancel-restart").textContent = t.confirm_cancel;
     $("confirm-restart").textContent = t.confirm_yes;
@@ -99,25 +169,24 @@
     $("save-status").textContent = busy ? ui().saving : (uncertain ? "" : ui().saved);
   }
 
+  async function request(payload) {
+    if (window.campusBridge) return window.campusBridge.call(payload);   // inside Streamlit (app_3d.py)
+    const response = await fetch("/api/command", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload), signal: AbortSignal.timeout(12000),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || ui().network_error);
+    return result;
+  }
+
   async function send(operation, extra = {}) {
     if (window.campusBusy) return;
     if (location.protocol === "file:") { startError.textContent = ui().local_only; return; }
     setBusy(true);
     try {
-      const payload = { operation, player: current?.player || name.value,
-        language: window.lang || "pt", ...extra };
-      let result;
-      if (window.campusBridge) {
-        // Inside Streamlit (app_3d.py): the command goes to Python through the component, not over HTTP.
-        result = await window.campusBridge.call(payload);
-      } else {
-        const response = await fetch("/api/command", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload), signal: AbortSignal.timeout(12000),
-        });
-        result = await response.json();
-        if (!response.ok) throw new Error(result.error || ui().network_error);
-      }
+      const result = await request({ operation, player: current?.player || name.value,
+        language: window.lang || "pt", ...extra });
       uncertain = false;
       render(result);
       return true;
@@ -132,6 +201,7 @@
 
   function render(state) {
     const roomChanged = !current || current.scene !== state.scene || Boolean(current.ending) !== Boolean(state.ending);
+    const gotItem = current && state.inventory.length > current.inventory.length;
     current = state;
     window.campusState = state;
     window.lang = state.language;
@@ -141,12 +211,26 @@
     $("scene-heading").textContent = state.ending ? state.ending.title : state.title;
     $("scene-label").textContent = state.ending ? t.the_end : t.scene;
     $("player-label").textContent = `${t.player} · ${state.player}`;
+    $("clock").textContent = `🕘 ${state.clock}`;
+    $("clock").setAttribute("aria-label", `${t.clock}: ${state.clock}`);
     $("feedback").textContent = state.message;
     $("feedback").className = state.accepted ? "success" : "error";
     $("feedback").hidden = !state.message;
     $("scene-paragraphs").replaceChildren(...(state.ending ? [state.ending.text] : state.texts).map(p => make("p", p)));
     $("action-groups").replaceChildren();
     if (!state.ending) {
+      if (state.people.length) {   // the people in this room; reuses the investigate rules (the character must be inside)
+        const group = make("section", undefined, "actions investigate people");
+        group.append(make("h3", t.people));
+        for (const person of state.people) {
+          const box = make("div", undefined, "action-row");
+          const button = make("button", `💬 ${t.talk_to} ${person.name}`);
+          button.dataset.talk = person.id;
+          button.addEventListener("click", () => talkStep(person.id, "start"));
+          box.append(button); group.append(box);
+        }
+        $("action-groups").append(group);
+      }
       for (const kind of ["investigate", "travel"]) {
         const group = make("section", undefined, `actions ${kind}`);
         group.append(make("h3", t[kind]));
@@ -183,7 +267,9 @@
     shell.classList.toggle("ended", Boolean(state.ending));
     applyInside();
     if (state.ending) setPanelHidden(false);                 // the ending text lives in the panel
-    if (!state.accepted && state.message) toast(state.message);   // a refusal also shows as a note over the picture
+    if (!state.accepted && state.message) { toast(state.message); sound.refuse(); }   // a refusal also shows as a note over the picture
+    else if (gotItem) sound.chime();
+    if (roomChanged) closeTalk();
     if (roomChanged) {
       $("scene-heading").focus({ preventScroll: true });
       document.querySelector(".scene-panel").scrollTop = 0;
@@ -197,6 +283,7 @@
     $("panel-toggle").setAttribute("aria-expanded", String(!hidden));
     window.dispatchEvent(new Event("resize"));   // the 3D picture takes the new width
   }
+  $("sound-toggle").addEventListener("click", () => { sound.toggle(); updateLabels(); });
   $("panel-toggle").addEventListener("click", () => setPanelHidden(!document.body.classList.contains("panel-hidden")));
 
   // ---------- a note over the 3D picture: it stays visible even when the panel is hidden ----------
@@ -208,7 +295,49 @@
     toastTimer = setTimeout(() => { $("toast").hidden = true; }, 8000);
   }
 
-  // ---------- the phone: a map and the to-do list of clues ----------
+
+  // ---------- conversations ----------
+  let talking = null;   // the person the player is talking to
+  function closeTalk() {
+    const was = talking;
+    talking = null;
+    $("talk").hidden = true;
+    if (was && !phone.open && !dialog.open) window.playing = true;
+  }
+  function showLine(line) {
+    const t = ui();
+    talking = line.npc;
+    window.playing = false;   // the character stands still while talking
+    $("talk-name").textContent = line.name;
+    $("talk-text").textContent = line.text;
+    const hearts = line.trust === null || line.trust === undefined ? "" : "♥".repeat(line.trust) + "♡".repeat(3 - line.trust);
+    $("talk-trust").textContent = hearts;
+    $("talk-trust").setAttribute("aria-label", hearts ? `${t.trust}: ${line.trust}/3` : "");
+    $("talk-trust").className = `trust trust-${line.trust === null || line.trust === undefined ? "none" : line.trust}`;
+    $("talk-options").replaceChildren(...line.options.map(option => {
+      const button = make("button", option.label, option.next === null ? "secondary" : "");
+      button.addEventListener("click", () => option.next === null ? closeTalk() : talkStep(line.npc, option.next));
+      return button;
+    }));
+    if (line.note) saveDiary(line.name, line.note);
+    $("talk").hidden = false;
+    sound.talk();
+    $("talk-options").querySelector("button")?.focus({ preventScroll: true });
+  }
+  async function talkStep(npc, node) {
+    if (window.campusBusy || !current) return;
+    setBusy(true);
+    try {
+      showLine(await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc, node }));
+    } catch (error) {
+      closeTalk();
+      toast(error.name === "Error" ? error.message : ui().network_error);
+    } finally { setBusy(false); }
+  }
+  $("talk-close").addEventListener("click", closeTalk);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && talking && !phone.open && !dialog.open) closeTalk(); });
+
+  // ---------- the phone: a map, the to-do list of clues and the diary ----------
   const phone = make("dialog", undefined, "phone-dialog"); phone.id = "phone";
   phone.setAttribute("aria-labelledby", "phone-title");
   phone.innerHTML = `<div class="phone"><div class="phone-notch"></div>
@@ -257,7 +386,7 @@
     const titles = data[window.lang || "pt"].scenes;
     const map = window.campusMap && window.campusMap();
     if (!map) {   // the 3D scenery did not load: only say where the character is
-      screen.append(make("p", t.map_no_3d, "muted"), make("p", `${t.map_where}: ${titles[current.scene].title}`, "map-where"));
+      screen.append(make("p", t.map_no_3d, "muted"), make("p", `${t.map_where}: ${titles[current.room].title}`, "map-where"));
       return;
     }
     const ready = (current?.clues || []).every(c => c.done);
@@ -296,17 +425,43 @@
     if (!ready) screen.append(make("p", `🔒 ${titles.auditorium.title}: ${t.map_locked}`, "muted map-lock"));
   }
 
+  // The diary: the evidence the server knows, and what people told the player (kept in this browser only).
+  const diaryKey = () => `plot-twist-diary:${current?.player || ""}`;
+  function loadDiary() {
+    try { const list = JSON.parse(localStorage.getItem(diaryKey()) || "[]"); return Array.isArray(list) ? list : []; } catch (error) { return []; }
+  }
+  function saveDiary(name, text) {
+    const list = loadDiary();
+    if (list.some(entry => entry.text === text)) return;
+    list.push({ name, text });
+    try { localStorage.setItem(diaryKey(), JSON.stringify(list.slice(-40))); } catch (error) { /* no storage: the diary just forgets */ }
+  }
+  function drawDiary(screen, t) {
+    const sections = [[t.diary_evidence, (current?.notebook || []).map(n => [n.title, n.text])],
+                      [t.diary_people, loadDiary().map(n => [n.name, n.text])]];
+    for (const [heading, entries] of sections) {
+      screen.append(make("h3", heading, "diary-heading"));
+      if (!entries.length) screen.append(make("p", t.diary_empty, "muted"));
+      for (const [title, text] of entries) {
+        const note = make("article", undefined, "diary-note");
+        note.append(make("h4", title), make("p", text));
+        screen.append(note);
+      }
+    }
+  }
+
   function showPhone(view) {
     const t = ui(), screen = $("phone-screen");
     $("phone-back").hidden = view === "home";
     $("phone-back").textContent = `‹ ${t.phone_home}`;
     $("phone-close").setAttribute("aria-label", t.phone_close);
-    $("phone-title").textContent = view === "map" ? t.map_title : view === "todo" ? t.todo_title : t.phone;
+    $("phone-title").textContent = view === "map" ? t.map_title : view === "todo" ? t.todo_title : view === "diary" ? t.diary_title : t.phone;
     screen.replaceChildren();
     if (view === "home") {
       const { done, total } = clueCount();
       const grid = make("div", undefined, "app-grid");
-      for (const [id, icon, label, badge] of [["map", "📍", t.app_map, ""], ["todo", "✅", t.app_todo, `${done}/${total}`]]) {
+      for (const [id, icon, label, badge] of [["map", "📍", t.app_map, ""], ["todo", "✅", t.app_todo, `${done}/${total}`],
+                                              ["diary", "📔", t.app_diary, String((current?.notebook || []).length + loadDiary().length)]]) {
         const app = make("button", undefined, "app-icon");
         app.dataset.app = id;
         app.append(make("span", icon, "app-glyph"), make("span", label, "app-name"));
@@ -316,6 +471,7 @@
       }
       screen.append(grid);
     } else if (view === "map") drawMap(screen, t);
+    else if (view === "diary") drawDiary(screen, t);
     else drawTodo(screen, t);
     (view === "home" ? screen.querySelector("button") : $("phone-back")).focus();
   }
@@ -327,7 +483,7 @@
   }
   function closePhone() {
     phone.close();
-    window.playing = true;
+    window.playing = !talking;
     $("phone-open").focus();
   }
   $("phone-open").addEventListener("click", openPhone);
@@ -336,6 +492,7 @@
   phone.addEventListener("cancel", e => { e.preventDefault(); closePhone(); });
 
   window.campusStart = async () => {
+    sound.start();
     if (!await send("open")) return;
     $("intro").classList.add("gone");
     $("intro").style.display = "none";
