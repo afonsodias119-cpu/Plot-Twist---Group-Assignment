@@ -124,14 +124,14 @@ def test_walking_between_two_rooms_goes_through_the_study_room():
 
 
 def test_entering_the_auditorium_is_refused_without_the_clues():
-    """The door explains itself with a note that lists every missing clue, and nothing is saved."""
+    """The door explains itself with a note that does not list the missing clues, and nothing is saved."""
     call()
     before = saved_bytes()
     result = call("enter", room="auditorium")
     t = TEXT["pt"]
     assert not result["accepted"] and result["scene"] == "study_room"
-    assert result["message"].startswith(t["auditorium_note"])
-    assert all(t["clues"][clue] in result["message"] for clue in t["clues"])   # all four are missing
+    assert result["message"] == t["auditorium_note"]   # the door does not list what is missing (specs/harder-campus.md)
+    assert not any(t["clues"][clue] in result["message"] for clue in t["clues"])
     assert saved_bytes() == before
 
 
@@ -153,8 +153,7 @@ def test_the_story_rule_alone_is_not_enough_for_the_auditorium():
     result = call("enter", room="auditorium")
     t = TEXT["pt"]
     assert not result["accepted"] and result["scene"] == "study_room"   # the walk went through the hub, then stopped
-    assert t["clues"]["original_photo"] in result["message"] and t["clues"]["leonor"] in result["message"]
-    assert t["clues"]["usb_stick"] not in result["message"] and t["clues"]["files_viewed"] not in result["message"]
+    assert result["message"] == t["auditorium_note"]   # no list of what is missing (specs/harder-campus.md)
     after = game.load("test detective")
     assert after["scene"] == "study_room" and dict(after, scene=None) == dict(before, scene=None)   # only the room changed
 

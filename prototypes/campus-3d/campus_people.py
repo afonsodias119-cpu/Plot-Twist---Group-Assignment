@@ -6,6 +6,8 @@ hearts), an optional `note` (a line for the player's diary) and the answers the 
 There is no "Ask something else" answer (specs/chat-dialogues.md): to change subject, the player
 talks to the person again.
 An answer can have "if": a story condition ({"has": [...], "flags": {...}}); it is offered only when true.
+An answer can have "cost": minutes taken off the countdown when the player chooses it (the rude answers,
+specs/harder-campus.md). The countdown lives in the browser; the server only passes the cost on.
 The same ids and conditions exist in "en" and "pt"; only the texts differ.
 
 Talking never changes the saved game. The server only reads it (to check the person is in the saved
@@ -82,7 +84,7 @@ PEOPLE = {
             "start": {"text": "Leonor closes her book slowly. \"You are here about Duarte. I know.\"", "trust": 2, "options": [
                 {"label": "Ask if she is sure he was in the group", "next": "sure"},
                 {"label": "Tell her you have doubts", "next": "soft"},
-                {"label": "Say she is lying", "next": "harsh"},
+                {"label": "Say she is lying", "next": "harsh", "cost": 5},
                 _bye("Goodbye."),
             ]},
             "sure": {"text": "\"He has been in every message for weeks. I have them right here.\" She taps her phone.", "trust": 2, "options": [
@@ -94,13 +96,13 @@ PEOPLE = {
                 {"label": "Ask to see the messages", "next": "messages"}]},
             "harsh": {"text": "\"Excuse me?\" Her voice hardens.", "trust": 1, "options": [
                 {"label": "Apologise", "next": "soft"},
-                {"label": "Insist", "next": "closed"}]},
+                {"label": "Insist", "next": "closed", "cost": 5}]},
             "closed": {"text": "Leonor stands up. \"Come back with proof, not accusations.\"", "trust": 0, "options": [_bye("Leave.")]},
         }},
         "tomas": {"name": "Tomás", "nodes": {
             "start": {"text": "Tomás is hunched over computer 11, avoiding your eyes. \"Oh. Hi. It is late.\"", "trust": 2, "options": [
                 {"label": "Ask kindly what he is doing here", "next": "kind"},
-                {"label": "Demand to know why he lied about Duarte", "next": "hard"},
+                {"label": "Demand to know why he lied about Duarte", "next": "hard", "cost": 5},
                 {"label": "Show him the original photo", "next": "photo", "if": {"has": ["original_photo"]}},
                 _bye("Goodbye."),
             ]},
@@ -115,7 +117,7 @@ PEOPLE = {
                 _bye("Goodbye.")]},
             "hard": {"text": "\"Excuse me? I did not lie!\" His voice shakes.", "trust": 1, "options": [
                 {"label": "Apologise", "next": "calm"},
-                {"label": "Push harder", "next": "closed"}]},
+                {"label": "Push harder", "next": "closed", "cost": 5}]},
             "calm": {"text": "\"Fine. It has been a long night. Ask properly.\"", "trust": 2, "options": [
                 {"label": "Ask kindly what he is doing here", "next": "kind"}, _bye("Goodbye.")]},
             "photo": {"text": "Tomás stares at the photo. \"Four people... I never noticed.\" He swallows.", "trust": 2, "options": [
@@ -145,7 +147,7 @@ PEOPLE = {
         "duarte": {"name": "Duarte", "nodes": {
             "start": {"text": "Duarte smiles calmly. \"Ah, the fourth wheel. Ready for tomorrow?\"", "trust": 3, "options": [
                 {"label": "Ask which part of the project he did", "next": "part"},
-                {"label": "Tell him you know the truth", "next": "know"},
+                {"label": "Tell him you know the truth", "next": "know", "cost": 5},
                 _bye("Goodbye."),
             ]},
             "part": {"text": "\"The slides, of course. Ask anyone.\" He hesitates for a second.", "trust": 3, "options": [
@@ -154,7 +156,7 @@ PEOPLE = {
                       "note": "Duarte could not say which slide he made.", "options": [
                 _bye("Goodbye.")]},
             "know": {"text": "\"Know what? Careful with accusations.\"", "trust": 1, "options": [
-                {"label": "Press him", "next": "closed"},
+                {"label": "Press him", "next": "closed", "cost": 5},
                 {"label": "Back off", "next": "start"}]},
             "closed": {"text": "Duarte laughs and turns away. The conversation is over.", "trust": 0, "options": [_bye("Leave.")]},
         }},
@@ -198,7 +200,7 @@ PEOPLE = {
             "start": {"text": "A Leonor fecha o livro devagar. \"Vens por causa do Duarte. Eu sei.\"", "trust": 2, "options": [
                 {"label": "Perguntar se tem a certeza de que ele estava no grupo", "next": "sure"},
                 {"label": "Dizer-lhe que tens dúvidas", "next": "soft"},
-                {"label": "Dizer que ela está a mentir", "next": "harsh"},
+                {"label": "Dizer que ela está a mentir", "next": "harsh", "cost": 5},
                 _bye("Até já."),
             ]},
             "sure": {"text": "\"Está em todas as mensagens há semanas. Tenho-as aqui.\" Toca no telemóvel.", "trust": 2, "options": [
@@ -210,13 +212,13 @@ PEOPLE = {
                 {"label": "Pedir para ver as mensagens", "next": "messages"}]},
             "harsh": {"text": "\"Desculpa?\" A voz dela endurece.", "trust": 1, "options": [
                 {"label": "Pedir desculpa", "next": "soft"},
-                {"label": "Insistir", "next": "closed"}]},
+                {"label": "Insistir", "next": "closed", "cost": 5}]},
             "closed": {"text": "A Leonor levanta-se. \"Volta com provas, não com acusações.\"", "trust": 0, "options": [_bye("Sair.")]},
         }},
         "tomas": {"name": "Tomás", "nodes": {
             "start": {"text": "O Tomás está curvado sobre o computador 11, a evitar o teu olhar. \"Ah. Olá. Já é tarde.\"", "trust": 2, "options": [
                 {"label": "Perguntar com calma o que está ali a fazer", "next": "kind"},
-                {"label": "Exigir saber porque mentiu sobre o Duarte", "next": "hard"},
+                {"label": "Exigir saber porque mentiu sobre o Duarte", "next": "hard", "cost": 5},
                 {"label": "Mostrar-lhe a fotografia original", "next": "photo", "if": {"has": ["original_photo"]}},
                 _bye("Até já."),
             ]},
@@ -231,7 +233,7 @@ PEOPLE = {
                 _bye("Até já.")]},
             "hard": {"text": "\"Como? Eu não menti!\" A voz dele treme.", "trust": 1, "options": [
                 {"label": "Pedir desculpa", "next": "calm"},
-                {"label": "Pressionar mais", "next": "closed"}]},
+                {"label": "Pressionar mais", "next": "closed", "cost": 5}]},
             "calm": {"text": "\"Está bem. Foi uma noite longa. Pergunta com educação.\"", "trust": 2, "options": [
                 {"label": "Perguntar com calma o que está ali a fazer", "next": "kind"}, _bye("Até já.")]},
             "photo": {"text": "O Tomás fica a olhar para a fotografia. \"Quatro pessoas... nunca tinha reparado.\" Engole em seco.", "trust": 2, "options": [
@@ -261,7 +263,7 @@ PEOPLE = {
         "duarte": {"name": "Duarte", "nodes": {
             "start": {"text": "O Duarte sorri com calma. \"Ah, o quarto elemento. Pronto para amanhã?\"", "trust": 3, "options": [
                 {"label": "Perguntar que parte do projeto fez", "next": "part"},
-                {"label": "Dizer-lhe que sabes a verdade", "next": "know"},
+                {"label": "Dizer-lhe que sabes a verdade", "next": "know", "cost": 5},
                 _bye("Até já."),
             ]},
             "part": {"text": "\"Os slides, claro. Pergunta a qualquer um.\" Hesita por um segundo.", "trust": 3, "options": [
@@ -270,7 +272,7 @@ PEOPLE = {
                       "note": "O Duarte não soube dizer que slide fez.", "options": [
                 _bye("Até já.")]},
             "know": {"text": "\"Que verdade? Cuidado com as acusações.\"", "trust": 1, "options": [
-                {"label": "Pressioná-lo", "next": "closed"},
+                {"label": "Pressioná-lo", "next": "closed", "cost": 5},
                 {"label": "Recuar", "next": "start"}]},
             "closed": {"text": "O Duarte ri-se e vira-te as costas. A conversa acabou.", "trust": 0, "options": [_bye("Sair.")]},
         }},
@@ -305,7 +307,8 @@ def talk(state, language, person, node):
     inbound = [o for n in data["nodes"].values() for o in n["options"] if o["next"] == node]
     if inbound and all("if" in o for o in inbound) and not any(logic._condition_met(o["if"], state) for o in inbound):
         raise ValueError("Unknown answer / Resposta desconhecida.")
-    options = [{"label": o["label"], "next": o["next"]} for o in line["options"]
+    options = [dict({"label": o["label"], "next": o["next"]}, **({"cost": o["cost"]} if "cost" in o else {}))
+               for o in line["options"]
                # logic._condition_met is the story's own rule for "has" / "flags" conditions.
                if logic._condition_met(o.get("if", {}), state)]
     return {"npc": person, "name": data["name"], "node": node, "text": line["text"],

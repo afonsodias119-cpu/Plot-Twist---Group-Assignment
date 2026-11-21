@@ -52,6 +52,9 @@
       <p id="ending-collection" class="collection"></p>
       <div class="share"><pre id="share-text"></pre><button id="share-copy" class="secondary"></button></div>
       <div class="ending-actions"><button id="ending-again"></button><button id="ending-hide" class="secondary"></button></div></section>
+    <section id="timeup-card" class="ending-card timeup-card" role="alertdialog" aria-labelledby="timeup-title" hidden>
+      <p class="stamp">⏳ 22:45</p><h2 id="timeup-title"></h2><div id="timeup-text"></div>
+      <div class="ending-actions"><button id="timeup-again"></button></div></section>
     <button id="panel-toggle" class="panel-tab" aria-expanded="true"></button>
     <div id="hud-bottom" class="hud-bottom">
       <button id="near-hint" class="near-hint" hidden></button>
@@ -348,8 +351,8 @@
     $("scene-heading").textContent = state.ending ? state.ending.title : state.title;
     $("scene-label").textContent = state.ending ? t.the_end : t.scene;
     $("player-label").textContent = `${t.player} · ${state.player}`;
-    $("clock").textContent = `🕘 ${state.clock}`;
-    $("clock").setAttribute("aria-label", `${t.clock}: ${state.clock}`);
+    startCountdown(state);   // the countdown replaces the clock of the server (specs/harder-campus.md)
+    tick();
     $("feedback").textContent = state.message;
     $("feedback").className = state.accepted ? "success" : "error";
     $("feedback").hidden = !state.message;
@@ -518,7 +521,7 @@
   function addBubble(text, who) {   // who: "them" (the person) or "me" (the player)
     $("talk-log").querySelector(".typing")?.remove();
     const bubble = make("div", undefined, `bubble ${who}`);
-    bubble.append(make("p", text), make("time", current?.clock || ""));
+    bubble.append(make("p", text), make("time", campusTime()));
     $("talk-log").append(bubble);
     $("talk-log").scrollTop = $("talk-log").scrollHeight;   // always show the newest message
   }
@@ -575,6 +578,7 @@
       button.addEventListener("click", () => {
         asked.add(option.next);
         addBubble(option.label, "me");   // the player's answer goes on the right, like a sent message
+        if (option.cost) penalize(option.cost);   // a rude answer: minutes off the countdown
         talkStep(line.npc, option.next);
       });
       return button;
@@ -669,7 +673,7 @@
     const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
     const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("") + (current?.flagged ? "🟨" : "⬛");
     return [`${t.share_title} 🕵️`, `${ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
-            `${squares} · ${done}/${clues.length} ${t.share_clues}`, `🕘 ${current?.clock || ""} · ${collectionCount()}`].join("\n");
+            `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
   }
   $("share-copy").addEventListener("click", async () => {
     const t = ui(), box = $("share-text");
@@ -683,10 +687,74 @@
     }
     setTimeout(() => { $("share-copy").textContent = ui().share_copy; }, 3000);
   });
-  // How far the night has gone, from 0 (22:15) to 1 (after one in the morning): it drives the music.
-  function tensionOf(state) {
-    const [h, m] = String(state.clock || "22:15").split(":").map(Number);
-    return Math.min(1, ((h * 60 + m - (22 * 60 + 15) + 1440) % 1440) / 185);
+  // ---------- countdown: 30 minutes before the faculty closes (specs/harder-campus.md) ----------
+  // The deadline (the moment the faculty closes, in milliseconds) is kept in this browser, per player.
+  // Rude answers move it 5 minutes earlier. At 0 the game stops and only "Try again" is left.
+  const COUNTDOWN_MINUTES = 30;
+  const NIGHT_STARTS = 22 * 60 + 15;   // 22:15, the time on the case file, so the doors close at 22:45
+  const deadlineKey = player => `plot-twist-deadline:${player}`;
+  let memoryDeadline = 0;   // used when the browser does not let the page keep anything
+  let frozenLeft = null;    // the time that was left when an ending was reached
+  function savedDeadline(player) {
+    try { return Number(localStorage.getItem(deadlineKey(player))) || memoryDeadline; } catch (error) { return memoryDeadline; }
+  }
+  function saveDeadline(player, when) {
+    memoryDeadline = when;
+    try { localStorage.setItem(deadlineKey(player), String(when)); } catch (error) { /* no storage: memoryDeadline is enough */ }
+  }
+  function msLeft() {   // milliseconds until the faculty closes
+    if (frozenLeft !== null) return frozenLeft;
+    const deadline = current ? savedDeadline(current.player) : 0;
+    return deadline ? Math.max(0, deadline - Date.now()) : COUNTDOWN_MINUTES * 60000;
+  }
+  const minutesSeconds = ms => {
+    const seconds = Math.ceil(ms / 1000);
+    return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+  };
+  function campusTime() {   // the time on the campus clocks: 22:15 plus the time already used
+    const minutes = Math.floor(NIGHT_STARTS + COUNTDOWN_MINUTES - msLeft() / 60000);
+    return `${String(Math.floor(minutes / 60) % 24).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  }
+  function startCountdown(state) {   // called on every render
+    if (state.ending) { if (frozenLeft === null) frozenLeft = msLeft(); return; }
+    frozenLeft = null;
+    const deadline = savedDeadline(state.player);
+    // A new game, or an old countdown that ran out on a game that was never played: 30 new minutes.
+    if (!deadline || (state.fresh && deadline <= Date.now())) saveDeadline(state.player, Date.now() + COUNTDOWN_MINUTES * 60000);
+  }
+  function penalize(minutes) {   // a rude answer: the faculty closes earlier
+    if (!current || current.ending) return;
+    saveDeadline(current.player, savedDeadline(current.player) - minutes * 60000);
+    toast(ui().time_penalty.replace("{n}", minutes));
+    sound.refuse();
+    tick();
+  }
+  function showTimeUp() {
+    const t = ui();
+    closeTalk();
+    stopSpeaking();
+    window.playing = false;   // the detective cannot move any more
+    $("timeup-title").textContent = t.time_up_title;
+    $("timeup-text").replaceChildren(make("p", t.time_up_text));
+    $("timeup-again").textContent = t.time_up_again;
+    $("timeup-card").hidden = false;
+    $("timeup-again").focus();
+    sound.refuse();
+  }
+  function tick() {   // every second: the countdown on the screen, and the end when it reaches 0
+    if (!current) return;
+    const left = msLeft();
+    $("clock").textContent = `⏳ ${minutesSeconds(left)}`;
+    $("clock").setAttribute("aria-label", `${ui().time_aria}: ${minutesSeconds(left)}`);
+    $("clock").classList.toggle("urgent", !current.ending && left < 5 * 60000);
+    if (left === 0 && !current.ending && $("timeup-card").hidden) showTimeUp();
+    if (!$("timeup-card").hidden) window.playing = false;   // nothing else may let the detective walk again
+  }
+  setInterval(tick, 1000);
+  $("timeup-again").addEventListener("click", () => $("confirm-restart").click());   // the same confirmed restart as "New game"
+  // How far the night has gone, from 0 (30 minutes left) to 1 (the faculty closes): it drives the music.
+  function tensionOf() {
+    return Math.min(1, Math.max(0, 1 - msLeft() / (COUNTDOWN_MINUTES * 60000)));
   }
 
   // ---------- messages from an unknown number: they arrive as the case moves forward ----------
@@ -721,7 +789,7 @@
     for (let i = 1; i <= Math.min(done, t.notices.length); i++) if (!store.sent.includes(`c${i}`)) due.push([`c${i}`, t.notices[i - 1]]);
     if (state.flagged > 0 && !store.sent.includes("chat")) due.push(["chat", t.notice_chat]);
     if (!due.length) return;
-    for (const [id, text] of due) { store.sent.push(id); store.list.push({ text, clock: state.clock }); }
+    for (const [id, text] of due) { store.sent.push(id); store.list.push({ text, clock: campusTime() }); }
     saveMsgs(state.player, store);
     showSms(due[due.length - 1][1]);
     sound.buzz();
@@ -967,6 +1035,10 @@
       dialog.close(); window.playing = true; $("scene-heading").focus();
       stopSpeaking();
       window.dispatchEvent(new Event("campus-restarted"));
+      saveDeadline(current.player, Date.now() + COUNTDOWN_MINUTES * 60000);   // a new game: 30 new minutes
+      frozenLeft = null;
+      $("timeup-card").hidden = true;
+      tick();
       try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); } catch (error) { /* no storage */ }
     }
   });

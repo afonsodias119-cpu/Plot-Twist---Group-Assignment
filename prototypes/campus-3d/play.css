@@ -283,3 +283,10 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 
 /* nothing left to answer: "End conversation" in the header is the way out */
 #talk #talk-close.only-way { background: var(--gold); color: #101c25; border-color: var(--gold); }
+
+/* ---------- countdown (specs/harder-campus.md) ---------- */
+.clock { font-variant-numeric: tabular-nums; }
+.clock.urgent { color: #ff8c7a !important; animation: clock-pulse 1s ease-in-out infinite; }
+@keyframes clock-pulse { 50% { opacity: .55; } }
+.timeup-card { --accent: #ff8c7a; text-align: center; }
+.timeup-card .stamp { font-size: 22px; letter-spacing: .1em; color: var(--accent); }

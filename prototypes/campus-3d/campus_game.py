@@ -32,12 +32,13 @@ def clue_done(state, clue):
 
 
 def missing_clues_note(state, language):
-    """The note for trying the auditorium too early. Empty once every clue is done."""
-    t = TEXT[language]
-    missing = [t["clues"][clue] for clue, _room in CLUES if not clue_done(state, clue)]
-    if not missing:
+    """The note for trying the auditorium too early. Empty once every clue is done.
+
+    It does not say which clues are missing (specs/harder-campus.md): the player has to work it out.
+    """
+    if all(clue_done(state, clue) for clue, _room in CLUES):
         return ""
-    return f"{t['auditorium_note']} {t['missing']}: {'; '.join(missing)}."
+    return TEXT[language]["auditorium_note"]
 
 
 def clock_text(state):
