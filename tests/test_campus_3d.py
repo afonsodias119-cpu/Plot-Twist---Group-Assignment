@@ -374,3 +374,11 @@ def test_the_page_has_the_conversation_card_and_the_sound_and_diary_code():
     assert '"actions people"' in page and "actions investigate people" not in page   # talking is not blocked outside the room
     for needle in ('id="talk"', "operation: \"talk\"", "AudioContext", "plot-twist-diary", "campusMoving"):
         assert needle in page
+
+
+def test_people_are_reached_by_walking_up_and_pressing_k_and_there_is_no_play_without_3d_button():
+    page = page3d.build_page(playable=True, inline=True)
+    assert 'id="near-hint"' in page and "campus-near" in page and "campusNear" in page
+    assert 'id="view-toggle"' not in page            # the "play without 3D" button was removed on purpose
+    for language in ("pt", "en"):
+        assert "{name}" in TEXT[language]["press_talk"] and "K" in TEXT[language]["press_talk"]

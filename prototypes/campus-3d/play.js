@@ -25,7 +25,7 @@
   shell.innerHTML = `
     <header class="case-bar"><div><p id="case-eyebrow" class="label"></p><h1 id="game-title"></h1></div>
       <div class="bar-tools"><span id="clock" class="clock"></span><span id="save-status" role="status"></span>
-        <div class="tool-row"><button id="sound-toggle" class="secondary"></button><button id="phone-open" class="secondary"></button><button id="panel-toggle" class="secondary" aria-expanded="true"></button><button id="view-toggle" class="secondary"></button></div></div></header>
+        <div class="tool-row"><button id="sound-toggle" class="secondary"></button><button id="phone-open" class="secondary"></button><button id="panel-toggle" class="secondary" aria-expanded="true"></button></div></div></header>
     <section class="scene-panel" aria-labelledby="scene-heading">
       <div class="scene-top"><span id="scene-label" class="label"></span><span id="player-label" class="muted"></span></div>
       <h2 id="scene-heading" tabindex="-1"></h2><p id="feedback" role="status"></p>
@@ -35,6 +35,7 @@
       <footer class="panel-foot"><button id="restart" class="secondary"></button><span id="controls" class="muted"></span></footer>
     </section>
     <div id="toast" role="status" aria-live="polite" hidden></div>
+    <button id="near-hint" class="near-hint" hidden></button>
     <section id="talk" class="talk-card" role="dialog" aria-labelledby="talk-name" aria-live="polite" hidden>
       <header><h3 id="talk-name"></h3><span id="talk-trust" class="trust"></span><button id="talk-close" class="secondary"></button></header>
       <p id="talk-text"></p><div id="talk-options"></div></section>
@@ -134,7 +135,7 @@
     $("restart-question").textContent = t.confirm_question;
     $("cancel-restart").textContent = t.confirm_cancel;
     $("confirm-restart").textContent = t.confirm_yes;
-    $("view-toggle").textContent = textMode ? t.world_mode : t.text_mode;
+    updateNear();
     $("renderer-status").textContent = window.campus3dReady ? t.render_ready : t.render_loading;
   }
   window.addEventListener("language", () => { queueMicrotask(updateLabels); startError.textContent = ""; });
@@ -302,6 +303,7 @@
     const was = talking;
     talking = null;
     $("talk").hidden = true;
+    updateNear();
     if (was && !phone.open && !dialog.open) window.playing = true;
   }
   function showLine(line) {
@@ -321,6 +323,7 @@
     }));
     if (line.note) saveDiary(line.name, line.note);
     $("talk").hidden = false;
+    updateNear();
     sound.talk();
     $("talk-options").querySelector("button")?.focus({ preventScroll: true });
   }
@@ -334,6 +337,23 @@
       toast(error.name === "Error" ? error.message : ui().network_error);
     } finally { setBusy(false); }
   }
+  // ---------- walking up to a person: a note says which key starts the conversation ----------
+  // The 3D scene sets window.campusNear (the id of the person close enough, or null).
+  function updateNear() {
+    const person = window.campusNear && current?.people.find(p => p.id === window.campusNear);
+    $("near-hint").hidden = !person || Boolean(talking);
+    if (!person) return;
+    const key = make("kbd", "K");
+    $("near-hint").replaceChildren(key, document.createTextNode(" " + ui().press_talk.replace("{name}", person.name)));
+  }
+  window.addEventListener("campus-near", updateNear);
+  $("near-hint").addEventListener("click", () => { if (window.campusNear) talkStep(window.campusNear, "start"); });
+  document.addEventListener("keydown", e => {
+    if (e.key.toLowerCase() !== "k" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target.closest("input, textarea, dialog") || !window.campusNear || talking || !window.playing || window.campusBusy) return;
+    e.preventDefault();
+    talkStep(window.campusNear, "start");
+  });
   $("talk-close").addEventListener("click", closeTalk);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && talking && !phone.open && !dialog.open) closeTalk(); });
 
@@ -518,11 +538,5 @@
     if (await send("restart", { confirmed: true })) {
       dialog.close(); window.playing = true; $("scene-heading").focus();
     }
-  });
-  $("view-toggle").addEventListener("click", () => {
-    textMode = !textMode;
-    document.body.classList.toggle("text-mode", textMode);
-    if (textMode) setPanelHidden(false);
-    updateLabels();
   });
 })();
