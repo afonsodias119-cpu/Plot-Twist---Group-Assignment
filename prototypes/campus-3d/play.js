@@ -644,9 +644,7 @@
     Object.assign(input, { inputMode: "numeric", maxLength: 4, autocomplete: "off", placeholder: "• • • •" });
     input.setAttribute("aria-label", t.code_label);
     const unlock = make("button", t.code_unlock); unlock.type = "submit";
-    const leave = make("button", t.talk_bye, "answer"); leave.type = "button";
-    leave.addEventListener("click", closeTalk);
-    form.append(input, unlock, leave);
+    form.append(input, unlock);   // to give up, "End conversation" in the header
     form.addEventListener("submit", async event => {
       event.preventDefault();
       const code = input.value.trim();
@@ -662,10 +660,11 @@
         return;
       }
       if (!talking || current.scene !== scene) return;
-      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [],
-                 options: [{ label: t.talk_bye, next: null }] });
+      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [], options: [] });
     });
     $("talk-options").replaceChildren(form);
+    $("talk-options").hidden = false;
+    $("talk-close").classList.remove("only-way");
     input.focus();
   }
   // ---------- searching the study room (specs/pen-and-code.md) ----------
