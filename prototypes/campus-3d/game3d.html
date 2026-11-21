@@ -413,7 +413,8 @@ function label(text, x, y, z, small = false) {
 // =====================================================================
 // 4. Light
 // =====================================================================
-scene.add(new THREE.HemisphereLight(0x9db8e0, 0x2a1d10, 0.35));
+const hemi = new THREE.HemisphereLight(0x9db8e0, 0x2a1d10, 0.35);
+scene.add(hemi);
 const moon = new THREE.DirectionalLight(0xbcd3ff, 1.1);   // moonlight through the windows
 moon.position.set(-9, 20, -16);
 moon.castShadow = true;
@@ -956,6 +957,10 @@ lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stag
 const USABLE = [{ id: "computer12", x: -1.8, z: 9.0 }];   // see the computer lab: desk 6, right-hand screen
 const player = makePerson({ topColor: 0xb3895a, long: true, hat: 0x3a2a1e, scarf: 0x8a1f24 });
 scene.add(player);
+// The detective's torch: a warm cone in the direction the character faces (it has no shadow: that would be too slow).
+const torch = new THREE.SpotLight(0xfff0d2, 0, 13, 0.55, 0.6, 1.2);
+scene.add(torch, torch.target);
+let torchAmount = 0;
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 48), new THREE.MeshBasicMaterial({ color: 0xE8A33D, transparent: true, opacity: 0.6, toneMapped: false }));
 ring.rotation.x = -Math.PI / 2; ring.position.y = 0.012; scene.add(ring);
 
@@ -1158,6 +1163,14 @@ function loop() {
     walk += dt * 9;
   }
   animatePerson(player, t, moveAmount, walk);
+  // the torch is on while the game is played and the player wants it; the rest of the night gets a little darker
+  const torchWanted = window.campusState && !window.campusState.ending && window.campusTorchOn !== false ? 1 : 0;
+  torchAmount += (torchWanted - torchAmount) * Math.min(1, dt * 4);
+  torch.intensity = 140 * torchAmount;
+  torch.position.set(player.position.x, 1.55, player.position.z);
+  torch.target.position.set(player.position.x + Math.sin(facing) * 5, 0.3, player.position.z + Math.cos(facing) * 5);
+  hemi.intensity = 0.35 * (1 - 0.5 * torchAmount);
+  moon.intensity = 1.1 * (1 - 0.45 * torchAmount);
   ring.position.set(player.position.x, 0.012, player.position.z);
   ring.material.opacity = 0.4 + Math.sin(t * 3) * 0.15;
 

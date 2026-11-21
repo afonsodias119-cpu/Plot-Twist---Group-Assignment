@@ -247,3 +247,12 @@ body:has(#ending-card:not([hidden])) .sign { visibility: hidden; }
 .share pre { margin: 0; padding: 12px 14px; width: 100%; border: 1px dashed color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 8px; background: #ffffff0a; color: #e9e4d6; font: 14px/1.6 ui-monospace, Consolas, monospace; white-space: pre-wrap; user-select: all; }
 @media (max-width: 900px) { #investigation button.sms { right: calc(400px + 16px); width: min(300px, calc(100% - 460px)); } }
 @media (max-width: 650px) { #investigation button.sms, .panel-hidden #investigation button.sms { right: 12px; left: 12px; width: auto; top: 70px; } }
+
+/* torch, voices and "How it was made" */
+#investigation button.icon-btn { padding: 9px 11px; min-width: 40px; font-size: 15px; }
+.howto-dialog { max-width: min(760px, 94vw); max-height: 86vh; overflow-y: auto; }
+.howto-dialog h2 { margin-top: 0; }
+.howto-dialog ul { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 12px; }
+.howto-dialog li { padding-left: 12px; border-left: 2px solid #e8b45c66; }
+.howto-dialog li p { margin: 4px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.howto-dialog code { font: 12px ui-monospace, Consolas, monospace; padding: 2px 7px; border-radius: 5px; background: #ffffff12; color: var(--gold); }

@@ -28,7 +28,7 @@
   shell.innerHTML = `
     <header class="case-bar"><div><p id="case-eyebrow" class="label"></p><h1 id="game-title"></h1></div>
       <div class="bar-tools"><span id="clock" class="clock"></span><span id="save-status" role="status"></span>
-        <div class="tool-row"><button id="sound-toggle" class="secondary"></button><button id="phone-open" class="secondary"></button></div></div></header>
+        <div class="tool-row"><button id="howto-open" class="secondary icon-btn">ℹ️</button><button id="voice-toggle" class="secondary icon-btn"></button><button id="torch-toggle" class="secondary icon-btn"></button><button id="sound-toggle" class="secondary"></button><button id="phone-open" class="secondary"></button></div></div></header>
     <section class="scene-panel" aria-labelledby="scene-heading">
       <div class="scene-top"><span id="scene-label" class="label"></span><span id="player-label" class="muted"></span></div>
       <h2 id="scene-heading" tabindex="-1"></h2><p id="feedback" role="status"></p>
@@ -157,6 +157,27 @@
       setTension(value) { tension = Math.max(0, Math.min(1, value)); },
     };
   })();
+  // The torch of the 3D scene and the voices of the people; both are remembered in this browser.
+  let torchOn = true, voiceOn = true;
+  try { torchOn = localStorage.getItem("plot-twist-torch") !== "off"; voiceOn = localStorage.getItem("plot-twist-voice") !== "off"; } catch (error) { /* no storage */ }
+  window.campusTorchOn = torchOn;
+  const canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  // [pitch, speed] of each voice; computer 12 has none and stays silent
+  const VOICES = { rita: [1.3, 1.05], amelia: [0.95, 0.9], leonor: [1.1, 1], tomas: [0.8, 1.1],
+                   professor: [0.6, 0.85], duarte: [0.7, 0.92], narrator: [1, 0.95] };
+  function stopSpeaking() { if (canSpeak) speechSynthesis.cancel(); }
+  function speak(text, who) {
+    if (!canSpeak || !voiceOn || !VOICES[who]) return;
+    stopSpeaking();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const lang = (window.lang || "pt") === "pt" ? "pt-PT" : "en-GB";
+    utterance.lang = lang;
+    [utterance.pitch, utterance.rate] = VOICES[who];
+    const voices = speechSynthesis.getVoices();
+    utterance.voice = voices.find(v => v.lang.toLowerCase().replace("_", "-") === lang.toLowerCase())
+      || voices.find(v => v.lang.toLowerCase().startsWith(lang.slice(0, 2))) || null;
+    speechSynthesis.speak(utterance);
+  }
   document.addEventListener("pointerdown", () => sound.start());
   document.addEventListener("click", e => { if (e.target.closest("button:not(:disabled)")) sound.click(); });
 
@@ -181,6 +202,10 @@
     $("phone-open").setAttribute("aria-label", t.phone_open);
     paintPanelTab();
     $("talk-close").textContent = t.talk_close;
+    $("howto-open").setAttribute("aria-label", t.howto_open); $("howto-open").title = t.howto_open;
+    $("voice-toggle").hidden = !canSpeak;
+    $("voice-toggle").textContent = voiceOn ? "🗣️" : "🤐"; $("voice-toggle").setAttribute("aria-label", voiceOn ? t.voice_on : t.voice_off); $("voice-toggle").title = voiceOn ? t.voice_on : t.voice_off;
+    $("torch-toggle").textContent = torchOn ? "🔦" : "🌑"; $("torch-toggle").setAttribute("aria-label", torchOn ? t.torch_on : t.torch_off); $("torch-toggle").title = torchOn ? t.torch_on : t.torch_off;
     $("sound-toggle").textContent = sound.isMuted() ? "🔇" : "🔊";
     $("sound-toggle").setAttribute("aria-label", sound.isMuted() ? t.sound_off : t.sound_on);
     $("restart-question").textContent = t.confirm_question;
@@ -380,6 +405,7 @@
       $("ending-again").textContent = t.play_again;
       $("ending-hide").textContent = t.see_scene;
       rememberEnding(ending.id);
+      speak(ending.text, "narrator");
       $("ending-collection").textContent = collectionText();
       $("share-text").textContent = shareText(ending);
       $("share-copy").textContent = t.share_copy;
@@ -430,6 +456,7 @@
   function closeTalk() {
     const was = talking;
     talking = null;
+    stopSpeaking();
     $("talk").hidden = true;
     updateNear();
     if (was && !phone.open && !dialog.open) window.playing = true;
@@ -467,6 +494,7 @@
     $("talk").hidden = false;
     updateNear();
     sound.talk();
+    speak(line.text, line.npc);
     $("talk-options").querySelector("button")?.focus({ preventScroll: true });
   }
   // The player chose to do something by talking: the story's own action runs, and the person answers with its result.
@@ -600,6 +628,50 @@
     store.read = store.list.length;
     saveMsgs(current?.player || "", store);
   }
+
+  // ---------- the buttons for the torch, the voices and "How it was made" ----------
+  $("torch-toggle").addEventListener("click", () => toggleTorch());
+  $("voice-toggle").addEventListener("click", () => {
+    voiceOn = !voiceOn;
+    try { localStorage.setItem("plot-twist-voice", voiceOn ? "on" : "off"); } catch (error) { /* no storage */ }
+    if (!voiceOn) stopSpeaking();
+    updateLabels();
+  });
+  function toggleTorch() {
+    torchOn = !torchOn;
+    window.campusTorchOn = torchOn;
+    try { localStorage.setItem("plot-twist-torch", torchOn ? "on" : "off"); } catch (error) { /* no storage */ }
+    updateLabels();
+  }
+  document.addEventListener("keydown", e => {
+    if (e.key.toLowerCase() !== "f" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target.closest("input, textarea, dialog") || !current) return;
+    toggleTorch();
+  });
+
+  const howto = make("dialog", undefined, "howto-dialog"); howto.id = "howto";
+  howto.setAttribute("aria-labelledby", "howto-title");
+  howto.innerHTML = '<h2 id="howto-title"></h2><p id="howto-intro" class="muted"></p><ul id="howto-list"></ul><p id="howto-run" class="muted"></p><div class="dialog-actions"><button id="howto-close"></button></div>';
+  document.body.append(howto);
+  function openHowto() {
+    if (howto.open) return;
+    const t = ui();
+    $("howto-title").textContent = t.howto_title;
+    $("howto-intro").textContent = t.howto_intro;
+    $("howto-run").textContent = t.howto_run;
+    $("howto-close").textContent = t.howto_close;
+    $("howto-list").replaceChildren(...t.howto_items.map(([title, file, detail]) => {
+      const item = make("li");
+      item.append(make("strong", title), document.createTextNode(" "), make("code", file), make("p", detail));
+      return item;
+    }));
+    window.playing = false;
+    howto.showModal();
+    $("howto-close").focus();
+  }
+  $("howto-open").addEventListener("click", openHowto);
+  $("howto-close").addEventListener("click", () => howto.close());
+  howto.addEventListener("close", () => { window.playing = !talking && $("chat-card").hidden && !phone.open; });
 
   // ---------- the phone: a map, the to-do list of clues and the diary ----------
   const phone = make("dialog", undefined, "phone-dialog"); phone.id = "phone";
@@ -783,6 +855,7 @@
   $("confirm-restart").addEventListener("click", async () => {
     if (await send("restart", { confirmed: true })) {
       dialog.close(); window.playing = true; $("scene-heading").focus();
+      stopSpeaking();
       window.dispatchEvent(new Event("campus-restarted"));
       try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); } catch (error) { /* no storage */ }
     }
