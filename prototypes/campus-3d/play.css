@@ -162,6 +162,9 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 .bubble.them { align-self: flex-start; background: #202c33; border-top-left-radius: 3px; }
 .bubble.me { align-self: flex-end; background: #005c4b; border-top-right-radius: 3px; }
 .bubble.me time::after { content: " ✓✓"; color: #53bdeb; }
+/* what happens (not what is said): a short line in the middle, outside the bubbles, like a note in a chat */
+.narration { align-self: center; max-width: 88%; margin: 3px 0; padding: 5px 12px; border-radius: 8px; background: #182229; color: #c5cdd2; text-align: center; animation: bubble-in .18s ease-out; }
+.narration p { margin: 0; font-size: 12.5px !important; line-height: 1.45 !important; font-style: italic; }
 .bubble.typing { display: flex; gap: 4px; padding: 11px 13px; }
 .bubble.typing span { width: 7px; height: 7px; border-radius: 50%; background: #aebac1; animation: typing 1s infinite ease-in-out; }
 .bubble.typing span:nth-child(2) { animation-delay: .15s; } .bubble.typing span:nth-child(3) { animation-delay: .3s; }
@@ -273,3 +276,7 @@ body:has(#ending-card:not([hidden])) .sign { visibility: hidden; }
 .howto-dialog li { padding-left: 12px; border-left: 2px solid #e8b45c66; }
 .howto-dialog li p { margin: 4px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
 .howto-dialog code { font: 12px ui-monospace, Consolas, monospace; padding: 2px 7px; border-radius: 5px; background: #ffffff12; color: var(--gold); }
+
+/* The description of the scene is not shown in the 3D game: the player has to look and talk (specs/chat-dialogues.md).
+   The text mode keeps it, because there it is the only way to know where you are. */
+body:not(.text-mode) #scene-paragraphs { display: none; }

@@ -59,3 +59,17 @@ def test_room_signs_are_plaques_with_a_code_and_no_emoji():
     assert len(re.findall(r'code: "0\.0[1-5]"', rooms)) == 5
     assert "${r.icon} ${SCENES[r.id].title}" not in html   # the old sign text with an emoji
     assert ".sign.room" in html
+
+
+# ---------- only what is said goes in a bubble ----------
+
+def test_lines_are_split_into_speech_bubbles_and_narration():
+    js = source("play.js")
+    assert "function partsOf(text)" in js and "function addSaid(text)" in js
+    assert "addSaid(line.text)" in js                      # every line of a person goes through the split
+    assert "quotesOf = text => partsOf(text)" in js        # the voices use the same rule
+    assert ".narration" in source("play.css")
+
+
+def test_the_scene_description_is_hidden_outside_the_text_mode():
+    assert "body:not(.text-mode) #scene-paragraphs { display: none; }" in source("play.css")

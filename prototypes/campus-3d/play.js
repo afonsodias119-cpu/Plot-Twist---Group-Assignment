@@ -183,7 +183,23 @@
     const best = ranked.filter(voice => voiceQuality(voice) === voiceQuality(ranked[0]));
     return best[Object.keys(VOICES).indexOf(who) % best.length];   // the different people get different voices when there are several
   }
-  const quotesOf = text => [...text.matchAll(/"([^"]+)"|«([^»]+)»|“([^”]+)”/g)].map(match => (match[1] || match[2] || match[3]).trim());
+  // A line is split into what the person SAYS (between quotation marks) and what HAPPENS (the rest).
+  // The voices read only what is said; the conversation shows what is said in speech bubbles and the
+  // rest as a short narration line outside the bubbles (specs/chat-dialogues.md).
+  function partsOf(text) {
+    const parts = [];
+    let last = 0;
+    for (const match of text.matchAll(/"([^"]+)"|«([^»]+)»|“([^”]+)”/g)) {
+      const before = text.slice(last, match.index).trim();
+      if (before) parts.push({ kind: "narration", text: before });
+      parts.push({ kind: "speech", text: (match[1] || match[2] || match[3]).trim() });
+      last = match.index + match[0].length;
+    }
+    const after = text.slice(last).trim();
+    if (after) parts.push({ kind: "narration", text: after });
+    return parts;
+  }
+  const quotesOf = text => partsOf(text).filter(part => part.kind === "speech").map(part => part.text);
   function stopSpeaking() { if (canSpeak) speechSynthesis.cancel(); }
   // pairs: [line, who]. Each sentence is spoken on its own, so there are natural pauses and long lines are not cut off.
   function say(pairs) {
@@ -497,6 +513,16 @@
     $("talk-log").append(bubble);
     $("talk-log").scrollTop = $("talk-log").scrollHeight;   // always show the newest message
   }
+  function addSaid(text) {   // a line of the person: speech bubbles for what is said, narration for the rest
+    $("talk-log").querySelector(".typing")?.remove();
+    for (const part of partsOf(text)) {
+      if (part.kind === "speech") { addBubble(part.text, "them"); continue; }
+      const narration = make("div", undefined, "narration");
+      narration.append(make("p", part.text));
+      $("talk-log").append(narration);
+    }
+    $("talk-log").scrollTop = $("talk-log").scrollHeight;
+  }
   function showTyping() {   // three dots while the answer is on its way
     const bubble = make("div", undefined, "bubble them typing");
     bubble.setAttribute("aria-label", "…");
@@ -520,13 +546,14 @@
     window.playing = false;   // the character stands still while talking
     $("talk-name").textContent = line.name;
     $("talk-avatar").textContent = line.name.charAt(0);
-    addBubble(line.text, "them");
+    const firstLine = $("talk-log").children.length === 0;
+    addSaid(line.text);
     // Trust hearts in the header. A line without trust (for example the answer to an action) keeps the hearts shown.
     if (line.trust !== null && line.trust !== undefined) {
       $("talk-trust").textContent = "♥".repeat(line.trust) + "♡".repeat(3 - line.trust);
       $("talk-trust").setAttribute("aria-label", `${t.trust}: ${line.trust}/3`);
       $("talk-trust").className = `trust trust-${line.trust}`;
-    } else if ($("talk-log").children.length === 1) {   // the first line of a person without trust: no hearts
+    } else if (firstLine) {   // the first line of a person without trust: no hearts
       $("talk-trust").textContent = "";
       $("talk-trust").className = "trust trust-none";
     }
