@@ -13,6 +13,7 @@ How it works (the 3D page lives in an iframe, a Streamlit "component"):
 4. The answer goes back to the page the same way, and the page redraws.
 """
 
+import hashlib
 import sys
 import tempfile
 import threading
@@ -69,13 +70,30 @@ BRIDGE = """<script>
 </script>"""
 
 
+PAGE_FILES = [PROJECT / "story.py"] + [PROJECT / "prototypes" / "campus-3d" / name for name in (
+    "game3d.html", "play.js", "play.css", "campus_text.py", "campus_people.py", "page3d.py")]
+
+
+def page_version():
+    """A short fingerprint of the files the 3D page is built from. It changes when any of them changes."""
+    digest = hashlib.sha1()
+    for path in PAGE_FILES:
+        digest.update(path.read_bytes())
+    return digest.hexdigest()[:12]
+
+
 @st.cache_resource
-def campus_component():
-    """Write the 3D page once to a temporary folder and declare it as a component."""
+def campus_component(version):
+    """Write the 3D page to a temporary folder and declare it as a component.
+
+    `version` is part of the cache key and of the component name, so after an update of the code
+    (for example a new deploy that does not restart the app) the page is built again and the
+    browser asks for a new address instead of showing an old copy.
+    """
     folder = Path(tempfile.mkdtemp(prefix="plot_twist_3d_"))
     page = build_page(playable=True, inline=True).replace("<head>", "<head>" + BRIDGE, 1)
     (folder / "index.html").write_text(page, encoding="utf-8")
-    return components.declare_component("plot_twist_campus_3d", path=str(folder))
+    return components.declare_component(f"plot_twist_campus_3d_{version}", path=str(folder))
 
 
 @st.cache_resource
@@ -106,7 +124,7 @@ st.markdown(
 )
 
 reply = st.session_state.get("campus_reply")
-value = campus_component()(reply=reply, key="campus", default=None)
+value = campus_component(page_version())(reply=reply, key="campus", default=None)
 
 # A new command from the page: answer it once, then rerun so the page receives the answer.
 if isinstance(value, dict) and value.get("id") != st.session_state.get("campus_last_id"):
