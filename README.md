@@ -15,7 +15,7 @@ The plain version without 3D is `app.py`.
 | Name | Student number |
 |---|---|
 | Afonso Mendo Dias | _(add)_ |
-| Guilherme Osório | _(add)_ |
+| Guilherme Osório | 56699 |
 | Maria da Cunha | _(add)_ |
 | _(add your name)_ | _(add)_ |
 
