@@ -63,7 +63,7 @@ PEOPLE = {
                      "note": "Rita: an old message does not arrive as new. Compare the arrival times in the group chat.", "options": [
                 _bye("Goodbye.")]},
         }},
-        "amelia": {"name": "Amélia", "nodes": {
+        "amelia": {"name": "Print shop clerk", "nodes": {
             "start": {"text": "The clerk adjusts her glasses. \"We close in ten minutes. What do you need?\"", "options": [
                 {"label": "Ask about the cover photo order", "next": "order"},
                 {"label": "Ask if anyone else came asking", "next": "visitor"},
@@ -179,7 +179,7 @@ PEOPLE = {
                      "note": "Rita: uma mensagem antiga não chega como nova. Compara as horas de chegada no chat do grupo.", "options": [
                 _bye("Até já.")]},
         }},
-        "amelia": {"name": "Amélia", "nodes": {
+        "amelia": {"name": "Funcionária da reprografia", "nodes": {
             "start": {"text": "A funcionária ajeita os óculos. \"Fechamos daqui a dez minutos. Do que precisas?\"", "options": [
                 {"label": "Perguntar pelo pedido da fotografia da capa", "next": "order"},
                 {"label": "Perguntar se mais alguém veio perguntar", "next": "visitor"},

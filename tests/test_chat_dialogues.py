@@ -75,3 +75,12 @@ def test_lines_are_split_into_speech_bubbles_and_narration():
 
 def test_the_scene_description_is_hidden_outside_the_text_mode():
     assert "body:not(.text-mode) #scene-paragraphs { display: none; }" in source("play.css")
+
+
+# ---------- only the people of the group have names ----------
+
+def test_the_print_shop_clerk_has_no_name():
+    assert people.PEOPLE["en"]["amelia"]["name"] == "Print shop clerk"
+    assert people.PEOPLE["pt"]["amelia"]["name"] == "Funcionária da reprografia"
+    html = source("game3d.html")
+    assert "Amélia" not in html and 'const CLERK_LABEL = { pt: "Funcionária da reprografia", en: "Print shop clerk" };' in html

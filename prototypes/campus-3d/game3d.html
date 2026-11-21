@@ -942,6 +942,7 @@ function makePerson(o) {
 }
 
 const npcs = [];
+const CLERK_LABEL = { pt: "Funcionária da reprografia", en: "Print shop clerk" };   // the same as in campus_people.py
 function placeNpc(look, x, z, angle, name, y = 0, id = "") {
   const n = makePerson(look);
   n.userData.id = id;
@@ -955,7 +956,7 @@ placeNpc({ topColor: 0x2f7a5a, hair: 0x5a2a12, hairStyle: "long", skin: 0xd9a27e
 placeNpc({ topColor: 0x1d2025, hood: true, hair: 0x0e0b09, smug: true }, 4.0, 4.4, Math.PI, "Duarte", 0, "duarte");
 placeNpc({ topColor: 0x5a5070, pants: 0x3a3a44, hair: 0xb8b8b8, glasses: true, skin: 0xf0c8a8 }, 7.6, 10.2, Math.PI, "Professor", 0.4, "professor");
 placeNpc({ topColor: 0xc2566b, hair: 0x1c1410, hairStyle: "long", skin: 0xe8b896 }, 3.3, -6.0, -Math.PI / 2, "Rita", 0, "rita");          // study room
-placeNpc({ topColor: 0x3b6a8c, pants: 0x5a4a3a, hair: 0x8a8a8a, glasses: true, skin: 0xe2b08a }, -8.5, -7.4, 0, "Amélia", 0, "amelia");   // print shop
+placeNpc({ topColor: 0x3b6a8c, pants: 0x5a4a3a, hair: 0x8a8a8a, glasses: true, skin: 0xe2b08a }, -8.5, -7.4, 0, CLERK_LABEL.pt, 0, "amelia");   // print shop (no name: only the people of the group have names)
 placeNpc({ topColor: 0x6a7a3a, hair: 0x2a1a0a, skin: 0xd9a27e }, -6.5, 7.6, Math.PI, "Tomás", 0, "tomas");                                  // computer lab
 
 lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stage";   // the stage light
@@ -998,6 +999,8 @@ const OUTSIDE_AREA = { id: "outside", icon: "🌊" };
 function applyLanguage() {   // called when the player picks a language on the first screen
   LANG = window.lang || "pt"; SCENES = DATA[LANG].scenes;
   ROOMS.forEach(r => { r.sign.element.textContent = SCENES[r.id].title; });
+  const clerk = npcs.find(n => n.userData.id === "amelia");
+  if (clerk) clerk.userData.sign.element.textContent = CLERK_LABEL[LANG];
   document.getElementById("help").textContent = DATA[LANG].ui.help;
   currentRoom = "refresh";   // force the room card to be drawn again in the new language
 }

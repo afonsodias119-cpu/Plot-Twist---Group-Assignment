@@ -16,7 +16,7 @@ Tudo o que as pessoas dizem no jogo 3D, em português e em inglês, tal como est
    - As falas nunca podem dizer quais são as mensagens falsas ("message 2", "mensagem 4"…).
 5. Depois de mudar, corre `uv run pytest`. Se ficar verde, recarrega o jogo (http://localhost:8503).
 
-**Legenda:** *confiança* são os corações (0 a 3; com 0 a pessoa acaba a conversa). *Diário* é a nota que fica guardada no diário do telemóvel. "→ fim" acaba a conversa.
+**Legenda:** ⏳ *custa N minutos* é uma resposta agressiva: tira esses minutos à contagem decrescente (só no branch `harder-campus`; para mudar, altera `"cost": 5` no código). *Confiança* são os corações (0 a 3; com 0 a pessoa acaba a conversa). *Diário* é a nota que fica guardada no diário do telemóvel. "→ fim" acaba a conversa.
 
 ## Rita
 Onde está: **Sala de estudo** (`study_room`).
@@ -57,12 +57,12 @@ Onde está: **Sala de estudo** (`study_room`).
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
-### Ações feitas a falar com Rita (em `story.py`)
+### Ações feitas nesta conversa (em `story.py`)
 - **▶ Abrir a gaveta do grupo** / Open the group drawer (`open_drawer`)
   - Se resultar 🇵🇹: Encontras a pen onde o grupo guardava as cópias de segurança do projeto. Guardas a pen.
   - Se resultar 🇬🇧: You find the USB stick where the group kept the project backups. You take the USB stick.
 
-## Amélia
+## Funcionária da reprografia
 Onde está: **Reprografia** (`print_shop`).
 
 ### `start`
@@ -93,7 +93,7 @@ Onde está: **Reprografia** (`print_shop`).
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
-### Ações feitas a falar com Amélia (em `story.py`)
+### Ações feitas nesta conversa (em `story.py`)
 - **▶ Pedir uma cópia do pedido original** / Ask for a copy of the original order (`request_copy`)
   - Se resultar 🇵🇹: A funcionária volta a imprimir o ficheiro que ficou guardado no pedido. Na fotografia original estão quatro pessoas. Guardas a fotografia.
   - Se resultar 🇬🇧: The clerk prints again the file that was saved with the order. The original photo shows four people. You take the photo.
@@ -142,7 +142,7 @@ Onde está: **Biblioteca** (`library`).
 - Respostas:
   - "Sair." / "Leave." → fim
 
-### Ações feitas a falar com Leonor (em `story.py`)
+### Ações feitas nesta conversa (em `story.py`)
 - **▶ Mostrar a fotografia e pedir ajuda discretamente** / Show the photo and quietly ask for help (`ask_for_help`)
   - Se resultar 🇵🇹: A Leonor compara a fotografia com a do relatório e fica pálida. "Recebi estas mensagens todas ontem à noite, de um número que não conhecia. E algumas têm datas de há três semanas." Promete guardar as mensagens originais e ir ter contigo ao auditório.
   - Se resultar 🇬🇧: Leonor compares the photo with the one in the report and turns pale. "I got all these messages last night, from a number I did not know. And some of them are dated three weeks ago." She promises to keep the original messages and to meet you in the auditorium.
@@ -229,7 +229,7 @@ Onde está: **Sala de informática** (`computer_lab`).
 - Respostas:
   - "Afastar-me do computador." / "Step away from the computer." → fim
 
-### Ações feitas a falar com Computador 12 (em `story.py`)
+### Ações feitas nesta conversa (em `story.py`)
 - **▶ Consultar os ficheiros antigos do projeto** / Look at the old project files (`view_files`)
   - Se resultar 🇵🇹: Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador: alguém acrescentou "Duarte Sequeira" ao relatório e trocou a fotografia. Recuperas a versão original do trabalho.
   - Se resultar 🇬🇧: You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer: someone added "Duarte Sequeira" to the report and swapped the photo. You recover the original version of the work.
@@ -267,7 +267,7 @@ Onde está: **Auditório** (`auditorium`).
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
-### Ações feitas a falar com Professor (em `story.py`)
+### Ações feitas nesta conversa (em `story.py`)
 - **▶ Apresentar as provas ao professor** / Present the evidence to the professor (`present_evidence`)
   - Acaba o jogo: o texto que aparece é o do final (em `story.py`, `endings`).
 
