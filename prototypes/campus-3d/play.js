@@ -22,6 +22,10 @@
   const startError = make("p", "", "error"); startError.setAttribute("role", "alert");
   const collection = make("p", undefined, "muted collection");   // the endings found so far, kept in this browser
   nameBox.append(nameLabel, name, nameHint, collection, startError);
+  // The last name used in this browser is filled in again: if the page reloads (for example after an
+  // update of the app), continuing the game is one click (specs/chat-dialogues.md).
+  const LAST_NAME_KEY = "plot-twist-last-name";
+  try { name.value = localStorage.getItem(LAST_NAME_KEY) || ""; } catch (error) { /* no storage */ }
   $("mission").after(nameBox);
 
   const shell = make("main"); shell.id = "investigation"; shell.hidden = true;
@@ -48,14 +52,19 @@
       <p id="ending-collection" class="collection"></p>
       <div class="share"><pre id="share-text"></pre><button id="share-copy" class="secondary"></button></div>
       <div class="ending-actions"><button id="ending-again"></button><button id="ending-hide" class="secondary"></button></div></section>
+    <section id="timeup-card" class="ending-card timeup-card" role="alertdialog" aria-labelledby="timeup-title" hidden>
+      <p class="stamp">⏳ 22:45</p><h2 id="timeup-title"></h2><div id="timeup-text"></div>
+      <div class="ending-actions"><button id="timeup-again"></button></div></section>
     <button id="panel-toggle" class="panel-tab" aria-expanded="true"></button>
     <div id="hud-bottom" class="hud-bottom">
       <button id="near-hint" class="near-hint" hidden></button>
       <div id="action-bar" class="action-bar" hidden><p id="outside-hint" class="muted" hidden></p><div id="bar-actions" class="actions investigate"></div></div>
     </div>
-    <section id="talk" class="talk-card" role="dialog" aria-labelledby="talk-name" aria-live="polite" hidden>
-      <header><h3 id="talk-name"></h3><span id="talk-trust" class="trust"></span><button id="talk-close" class="secondary"></button></header>
-      <p id="talk-text"></p><div id="talk-options"></div></section>
+    <section id="talk" class="talk-card" role="dialog" aria-labelledby="talk-name" hidden>
+      <header class="talk-head"><span id="talk-avatar" class="avatar" aria-hidden="true"></span>
+        <div class="talk-who"><h3 id="talk-name"></h3><span id="talk-trust" class="trust"></span></div>
+        <button id="talk-close" class="secondary"></button></header>
+      <div id="talk-log" class="chat-log" aria-live="polite"></div><div id="talk-options" class="chat-replies"></div></section>
     <p id="renderer-status" class="renderer-status"></p>`;
   document.body.append(shell);
   const dialog = make("dialog"); dialog.id = "restart-dialog";
@@ -181,7 +190,28 @@
     const best = ranked.filter(voice => voiceQuality(voice) === voiceQuality(ranked[0]));
     return best[Object.keys(VOICES).indexOf(who) % best.length];   // the different people get different voices when there are several
   }
-  const quotesOf = text => [...text.matchAll(/"([^"]+)"|«([^»]+)»|“([^”]+)”/g)].map(match => (match[1] || match[2] || match[3]).trim());
+  // A line is split into what the person SAYS (between quotation marks) and what HAPPENS (the rest).
+  // The voices read only what is said; the conversation shows what is said in speech bubbles and the
+  // rest as a short narration line outside the bubbles (specs/chat-dialogues.md).
+  function partsOf(text) {
+    const parts = [];
+    let last = 0, narration = "";
+    for (const match of text.matchAll(/"([^"]+)"|«([^»]+)»|“([^”]+)”/g)) {
+      const said = (match[1] || match[2] || match[3]).trim();
+      narration += text.slice(last, match.index);
+      last = match.index + match[0].length;
+      // A short quote without a full stop is a name or a title (someone added "Duarte Sequeira" to the
+      // report), not a line someone says: it stays in the narration, with its quotation marks.
+      if (said.split(/\s+/).length <= 3 && !/[.!?…]/.test(said)) { narration += match[0]; continue; }
+      if (narration.trim()) parts.push({ kind: "narration", text: narration.trim() });
+      narration = "";
+      parts.push({ kind: "speech", text: said });
+    }
+    narration += text.slice(last);
+    if (narration.trim()) parts.push({ kind: "narration", text: narration.trim() });
+    return parts;
+  }
+  const quotesOf = text => partsOf(text).filter(part => part.kind === "speech").map(part => part.text);
   function stopSpeaking() { if (canSpeak) speechSynthesis.cancel(); }
   // pairs: [line, who]. Each sentence is spoken on its own, so there are natural pauses and long lines are not cut off.
   function say(pairs) {
@@ -321,8 +351,8 @@
     $("scene-heading").textContent = state.ending ? state.ending.title : state.title;
     $("scene-label").textContent = state.ending ? t.the_end : t.scene;
     $("player-label").textContent = `${t.player} · ${state.player}`;
-    $("clock").textContent = `🕘 ${state.clock}`;
-    $("clock").setAttribute("aria-label", `${t.clock}: ${state.clock}`);
+    startCountdown(state);   // the countdown replaces the clock of the server (specs/harder-campus.md)
+    tick();
     $("feedback").textContent = state.message;
     $("feedback").className = state.accepted ? "success" : "error";
     $("feedback").hidden = !state.message;
@@ -339,6 +369,21 @@
           button.dataset.talk = person.id;
           button.addEventListener("click", () => talkStep(person.id, "start"));
           box.append(button); group.append(box);
+        }
+        $("action-groups").append(group);
+      }
+      // Searching the study room for the USB stick (specs/pen-and-code.md). In 3D the objects are clicked
+      // in the picture; the text mode lists the same places as buttons.
+      if (state.scene === "study_room" && !state.inventory.some(item => item.id === "usb_stick")) {
+        const group = make("section", undefined, "actions search");
+        group.append(make("h3", t.search_title), make("p", t.search_hint, "muted"));
+        if (textMode) {
+          for (const [spot, label] of Object.entries(t.spots)) {
+            const box = make("div", undefined, "action-row");
+            const button = make("button", label, "locked");
+            button.addEventListener("click", () => window.campusSearch(spot));
+            box.append(button); group.append(box);
+          }
         }
         $("action-groups").append(group);
       }
@@ -484,43 +529,92 @@
   }
 
 
-  // ---------- conversations ----------
+  // ---------- conversations (specs/chat-dialogues.md) ----------
+  // The conversation is drawn like a messaging app: a log of bubbles (the person on the left,
+  // the player's choices on the right) and the possible answers as reply buttons underneath.
+  // The log lives only on the screen: closing the conversation empties it.
+  function addBubble(text, who) {   // who: "them" (the person) or "me" (the player)
+    $("talk-log").querySelector(".typing")?.remove();
+    const bubble = make("div", undefined, `bubble ${who}`);
+    bubble.append(make("p", text), make("time", campusTime()));
+    $("talk-log").append(bubble);
+    $("talk-log").scrollTop = $("talk-log").scrollHeight;   // always show the newest message
+  }
+  function addSaid(text) {   // a line of the person: speech bubbles for what is said, narration for the rest
+    $("talk-log").querySelector(".typing")?.remove();
+    for (const part of partsOf(text)) {
+      if (part.kind === "speech") { addBubble(part.text, "them"); continue; }
+      const narration = make("div", undefined, "narration");
+      narration.append(make("p", part.text));
+      $("talk-log").append(narration);
+    }
+    $("talk-log").scrollTop = $("talk-log").scrollHeight;
+  }
+  function showTyping() {   // three dots while the answer is on its way
+    const bubble = make("div", undefined, "bubble them typing");
+    bubble.setAttribute("aria-label", "…");
+    bubble.append(make("span"), make("span"), make("span"));
+    $("talk-log").append(bubble);
+    $("talk-log").scrollTop = $("talk-log").scrollHeight;
+  }
+  const asked = new Set();   // the questions (node ids) already chosen in the open conversation
   function closeTalk() {
     const was = talking;
     talking = null;
+    asked.clear();
     stopSpeaking();
     $("talk").hidden = true;
+    $("talk-log").replaceChildren();   // the next conversation starts empty
     updateNear();
     if (was && !phone.open && !dialog.open) window.playing = true;
   }
   function showLine(line) {
     const t = ui();
+    if (talking !== line.npc) { $("talk-log").replaceChildren(); asked.clear(); }   // a different person: a new conversation
     talking = line.npc;
     window.playing = false;   // the character stands still while talking
     $("talk-name").textContent = line.name;
-    $("talk-text").textContent = line.text;
-    const hearts = line.trust === null || line.trust === undefined ? "" : "♥".repeat(line.trust) + "♡".repeat(3 - line.trust);
-    $("talk-trust").textContent = hearts;
-    $("talk-trust").setAttribute("aria-label", hearts ? `${t.trust}: ${line.trust}/3` : "");
-    $("talk-trust").className = `trust trust-${line.trust === null || line.trust === undefined ? "none" : line.trust}`;
-    const answers = line.options.map(option => {
+    $("talk-avatar").textContent = line.name.charAt(0);
+    const firstLine = $("talk-log").children.length === 0;
+    addSaid(line.text);
+    // Trust hearts in the header. A line without trust (for example the answer to an action) keeps the hearts shown.
+    if (line.trust !== null && line.trust !== undefined) {
+      $("talk-trust").textContent = "♥".repeat(line.trust) + "♡".repeat(3 - line.trust);
+      $("talk-trust").setAttribute("aria-label", `${t.trust}: ${line.trust}/3`);
+      $("talk-trust").className = `trust trust-${line.trust}`;
+    } else if (firstLine) {   // the first line of a person without trust: no hearts
+      $("talk-trust").textContent = "";
+      $("talk-trust").className = "trust trust-none";
+    }
+    // "Goodbye" (an answer that ends the talk) is not shown: the header has "End conversation".
+    // A question already chosen in this conversation is not offered again.
+    const answers = line.options.filter(option => option.next !== null && !asked.has(option.next)).map(option => {
       const button = make("button", option.label, "answer");
-      button.addEventListener("click", () => option.next === null ? closeTalk() : talkStep(line.npc, option.next));
+      button.addEventListener("click", () => {
+        asked.add(option.next);
+        addBubble(option.label, "me");   // the player's answer goes on the right, like a sent message
+        if (option.cost) penalize(option.cost);   // a rude answer: minutes off the countdown
+        talkStep(line.npc, option.next);
+      });
       return button;
     });
     // What can be done by talking to this person (ask for the copy, take the decision...): choices inside the conversation.
     const doing = make("div", undefined, "actions investigate talk-actions");
     for (const action of line.actions || []) {
+      if (action.id === "open_drawer") continue;   // the USB stick has to be found in the room (specs/pen-and-code.md)
       const row = make("div", undefined, "talk-action");
-      const button = make("button", `▶ ${action.label}`, action.allowed ? "" : "locked");
+      const isCode = action.id === "view_files";   // computer 12 asks for its code first
+      const button = make("button", isCode ? t.code_enter : `▶ ${action.label}`, action.allowed ? "" : "locked");
       button.dataset.action = action.id;
-      button.addEventListener("click", () => talkAction(line, action));
+      button.addEventListener("click", () => isCode ? askCode(line) : talkAction(line, action));
       row.append(button);
       if (action.decision) row.append(make("p", t.decision, "action-hint"));
       doing.append(row);
     }
     if (doing.children.length && window.campusInside === false) doing.append(make("p", t.outside_hint, "muted"));
     $("talk-options").replaceChildren(...(doing.children.length ? [doing] : []), ...answers);
+    $("talk-options").hidden = !doing.children.length && !answers.length;
+    $("talk-close").classList.toggle("only-way", !doing.children.length && !answers.length);   // the way out stands out
     applyInside();
     if (line.note) saveDiary(line.name, line.note);
     $("talk").hidden = false;
@@ -533,13 +627,64 @@
   async function talkAction(line, action) {
     if (window.campusBusy || !current) return;
     const scene = current.scene;
-    if (!await send("play", { action: action.id })) return;
+    addBubble(action.label, "me");
+    showTyping();
+    if (!await send("play", { action: action.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
     if (!talking || current.scene !== scene) return;   // the scene changed (for example the chat opened): the conversation is over
+    // The person answers with the result (or why it is refused). Only goodbye is offered: no "continue" (specs/chat-dialogues.md).
     showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [],
-               options: [{ label: ui().talk_continue, next: "start" }, { label: ui().talk_bye, next: null }] });
+               options: [] });
   }
+  // ---------- the code of computer 12 (specs/pen-and-code.md) ----------
+  // A small field for 4 digits replaces the answers. The server checks the code; a wrong one costs 1 minute.
+  function askCode(line) {
+    const t = ui();
+    const form = make("form", undefined, "code-form");
+    const input = make("input");
+    Object.assign(input, { inputMode: "numeric", maxLength: 4, autocomplete: "off", placeholder: "• • • •" });
+    input.setAttribute("aria-label", t.code_label);
+    const unlock = make("button", t.code_unlock); unlock.type = "submit";
+    form.append(input, unlock);   // to give up, "End conversation" in the header
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const code = input.value.trim();
+      if (!/^\d{4}$/.test(code) || window.campusBusy) { input.focus(); return; }
+      addBubble("••••", "me");
+      showTyping();
+      const scene = current.scene;
+      if (!await send("unlock", { code })) { $("talk-log").querySelector(".typing")?.remove(); return; }
+      if (!current.unlocked) {   // wrong code: the computer stays locked, and it costs time
+        addSaid(current.message);
+        penalize(1, t.time_penalty_code);
+        input.value = ""; input.focus();
+        return;
+      }
+      if (!talking || current.scene !== scene) return;
+      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [], options: [] });
+    });
+    $("talk-options").replaceChildren(form);
+    $("talk-options").hidden = false;
+    $("talk-close").classList.remove("only-way");
+    input.focus();
+  }
+  // ---------- searching the study room (specs/pen-and-code.md) ----------
+  // The 3D scene calls this when an object of the study room is clicked; the text mode calls it from its buttons.
+  window.campusSearch = async spot => {
+    if (window.campusBusy || !current || current.ending) return;
+    const t = ui();
+    if (current.scene !== "study_room" || window.campusInside === false) { toast(t.search_where); return; }
+    if (current.inventory.some(item => item.id === "usb_stick")) { toast(t.search_done); return; }
+    if (!await send("search", { spot })) return;
+    if (current.found) {
+      toast(current.message);
+      window.dispatchEvent(new CustomEvent("campus-found", { detail: spot }));   // the 3D scene opens the box
+    } else if (current.message !== t.search_where && current.message !== t.search_done) {
+      penalize(1, `${current.message} (${t.time_penalty_search})`);   // a wrong place costs 1 minute
+    }
+  };
   async function talkStep(npc, node) {
     if (window.campusBusy || !current) return;
+    if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)
     setBusy(true);
     try {
       showLine(await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc, node }));
@@ -592,7 +737,7 @@
     const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
     const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("") + (current?.flagged ? "🟨" : "⬛");
     return [`${t.share_title} 🕵️`, `${ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
-            `${squares} · ${done}/${clues.length} ${t.share_clues}`, `🕘 ${current?.clock || ""} · ${collectionCount()}`].join("\n");
+            `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
   }
   $("share-copy").addEventListener("click", async () => {
     const t = ui(), box = $("share-text");
@@ -606,10 +751,81 @@
     }
     setTimeout(() => { $("share-copy").textContent = ui().share_copy; }, 3000);
   });
-  // How far the night has gone, from 0 (22:15) to 1 (after one in the morning): it drives the music.
-  function tensionOf(state) {
-    const [h, m] = String(state.clock || "22:15").split(":").map(Number);
-    return Math.min(1, ((h * 60 + m - (22 * 60 + 15) + 1440) % 1440) / 185);
+  // ---------- countdown: 30 minutes before the faculty closes (specs/harder-campus.md) ----------
+  // The time LEFT is kept in this browser, per player, and it only goes down while the game is really
+  // being played (the page open and in sight, before an ending). Closing the game pauses it, so a saved
+  // game can be continued later with the time it had. Rude answers take 5 minutes off; at 0 the game
+  // stops and only "Try again" is left.
+  const COUNTDOWN_MINUTES = 30, FULL_TIME = COUNTDOWN_MINUTES * 60000;
+  const NIGHT_STARTS = 22 * 60 + 15;   // 22:15, the time on the case file, so the doors close at 22:45
+  const timeKey = player => `plot-twist-time-left:${player}`;
+  let timeLeft = null;      // milliseconds left for the player of `current` (null until a game is open)
+  let timeOwner = null;     // the player `timeLeft` belongs to
+  let lastTick = null;      // when the time was last counted
+  function loadTime(player) {
+    try { const saved = localStorage.getItem(timeKey(player)); return saved === null ? null : Number(saved); }
+    catch (error) { return null; }   // no storage: the time is kept only while the page is open
+  }
+  function saveTime() {
+    try { localStorage.setItem(timeKey(timeOwner), String(Math.round(timeLeft))); } catch (error) { /* no storage */ }
+  }
+  const msLeft = () => (timeLeft === null ? FULL_TIME : timeLeft);
+  const minutesSeconds = ms => {
+    const seconds = Math.ceil(ms / 1000);
+    return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+  };
+  function campusTime() {   // the time on the campus clocks: 22:15 plus the time already used
+    const minutes = Math.floor(NIGHT_STARTS + COUNTDOWN_MINUTES - msLeft() / 60000);
+    return `${String(Math.floor(minutes / 60) % 24).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  }
+  function startCountdown(state) {   // called on every render
+    if (timeOwner !== state.player) {   // a game was opened: take its time from this browser
+      timeOwner = state.player;
+      timeLeft = loadTime(state.player) ?? FULL_TIME;
+      lastTick = null;
+    }
+    if (state.fresh && timeLeft <= 0) timeLeft = FULL_TIME;   // a game that was never played gets 30 new minutes
+    saveTime();
+  }
+  function penalize(minutes, note = ui().time_penalty) {   // a rude answer, a wrong place, a wrong code: less time
+    if (!current || current.ending || timeLeft === null) return;
+    timeLeft = Math.max(0, timeLeft - minutes * 60000);
+    saveTime();
+    toast(note.replace("{n}", minutes));
+    sound.refuse();
+    tick();
+  }
+  function showTimeUp() {
+    const t = ui();
+    closeTalk();
+    stopSpeaking();
+    window.playing = false;   // the detective cannot move any more
+    $("timeup-title").textContent = t.time_up_title;
+    $("timeup-text").replaceChildren(make("p", t.time_up_text));
+    $("timeup-again").textContent = t.time_up_again;
+    $("timeup-card").hidden = false;
+    $("timeup-again").focus();
+    sound.refuse();
+  }
+  function tick() {   // every second: the countdown on the screen, and the end when it reaches 0
+    if (!current || timeLeft === null) return;
+    const now = Date.now();
+    // The time goes down only while the game is on the screen and running.
+    const running = !current.ending && !document.hidden && !shell.hidden && $("timeup-card").hidden;
+    if (running && lastTick !== null) { timeLeft = Math.max(0, timeLeft - (now - lastTick)); saveTime(); }
+    lastTick = now;
+    const left = msLeft();
+    $("clock").textContent = `⏳ ${minutesSeconds(left)}`;
+    $("clock").setAttribute("aria-label", `${ui().time_aria}: ${minutesSeconds(left)}`);
+    $("clock").classList.toggle("urgent", !current.ending && left < 5 * 60000);
+    if (left === 0 && !current.ending && $("timeup-card").hidden) showTimeUp();
+    if (!$("timeup-card").hidden) window.playing = false;   // nothing else may let the detective walk again
+  }
+  setInterval(tick, 1000);
+  $("timeup-again").addEventListener("click", () => $("confirm-restart").click());   // the same confirmed restart as "New game"
+  // How far the night has gone, from 0 (30 minutes left) to 1 (the faculty closes): it drives the music.
+  function tensionOf() {
+    return Math.min(1, Math.max(0, 1 - msLeft() / (COUNTDOWN_MINUTES * 60000)));
   }
 
   // ---------- messages from an unknown number: they arrive as the case moves forward ----------
@@ -644,7 +860,7 @@
     for (let i = 1; i <= Math.min(done, t.notices.length); i++) if (!store.sent.includes(`c${i}`)) due.push([`c${i}`, t.notices[i - 1]]);
     if (state.flagged > 0 && !store.sent.includes("chat")) due.push(["chat", t.notice_chat]);
     if (!due.length) return;
-    for (const [id, text] of due) { store.sent.push(id); store.list.push({ text, clock: state.clock }); }
+    for (const [id, text] of due) { store.sent.push(id); store.list.push({ text, clock: campusTime() }); }
     saveMsgs(state.player, store);
     showSms(due[due.length - 1][1]);
     sound.buzz();
@@ -864,6 +1080,7 @@
   window.campusStart = async () => {
     sound.start();
     if (!await send("open")) return;
+    try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
     $("intro").classList.add("gone");
     $("intro").style.display = "none";
     shell.hidden = false;
@@ -889,6 +1106,9 @@
       dialog.close(); window.playing = true; $("scene-heading").focus();
       stopSpeaking();
       window.dispatchEvent(new Event("campus-restarted"));
+      timeLeft = FULL_TIME; timeOwner = current.player; lastTick = null; saveTime();   // a new game: 30 new minutes
+      $("timeup-card").hidden = true;
+      tick();
       try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); } catch (error) { /* no storage */ }
     }
   });

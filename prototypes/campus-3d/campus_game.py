@@ -5,6 +5,8 @@ import game
 import logic
 from campus_people import ACTION_PERSON, ROOM_OF_PERSON, people_in_room, room_of_scene, talk
 from campus_text import TEXT
+# The answers of the two puzzles: read only here, never sent to the page (specs/pen-and-code.md).
+from campus_search import PC12_CODE, PEN_SPOT, SEARCH_TEXT, SPOTS
 from story import LANGUAGES, STORIES, UI_TEXTS
 
 # The clues the player has to collect, and the room where each one is found. In this 3D version the
@@ -32,12 +34,13 @@ def clue_done(state, clue):
 
 
 def missing_clues_note(state, language):
-    """The note for trying the auditorium too early. Empty once every clue is done."""
-    t = TEXT[language]
-    missing = [t["clues"][clue] for clue, _room in CLUES if not clue_done(state, clue)]
-    if not missing:
+    """The note for trying the auditorium too early. Empty once every clue is done.
+
+    It does not say which clues are missing (specs/harder-campus.md): the player has to work it out.
+    """
+    if all(clue_done(state, clue) for clue, _room in CLUES):
         return ""
-    return f"{t['auditorium_note']} {t['missing']}: {'; '.join(missing)}."
+    return TEXT[language]["auditorium_note"]
 
 
 def clock_text(state):
@@ -183,6 +186,43 @@ def enter_room(player, language, room):
     return snapshot(player, language, message, accepted)
 
 
+def search_room(player, language, spot):
+    """The player clicked a spot of the study room (specs/pen-and-code.md).
+
+    A wrong spot only says what is there and saves nothing. The right spot plays the story's own
+    open_drawer action, so the USB stick is saved exactly as before. `found` tells the page which.
+    """
+    if not isinstance(spot, str) or spot not in SPOTS:
+        raise ValueError("Unknown place / Sítio desconhecido.")
+    state = game.load(player)
+    language = db.load_language(player) or language
+    t = TEXT[language]
+    if state["ending"] != "none" or state["scene"] != "study_room":
+        return dict(snapshot(player, language, t["search_where"], accepted=False), found=False)
+    if "usb_stick" in state["inventory"]:
+        return dict(snapshot(player, language, t["search_done"], accepted=False), found=False)
+    if spot != PEN_SPOT:
+        return dict(snapshot(player, language, SEARCH_TEXT[language]["nothing"][spot], accepted=False), found=False)
+    result = game.play(player, "open_drawer", language)
+    message = SEARCH_TEXT[language]["found"] if result["accepted"] else result["message"]
+    return dict(snapshot(player, language, message, result["accepted"]), found=result["accepted"])
+
+
+def unlock_computer(player, language, code):
+    """The player typed a code on computer 12 (specs/pen-and-code.md).
+
+    A wrong code saves nothing. The right code plays the story's own view_files action, which still
+    needs the USB stick. `unlocked` tells the page whether the code was right.
+    """
+    if not isinstance(code, str):
+        raise ValueError("Invalid code / Código inválido.")
+    language = db.load_language(player) or language
+    if code != PC12_CODE:
+        return dict(snapshot(player, language, TEXT[language]["code_wrong"], accepted=False), unlocked=False)
+    result = game.play(player, "view_files", language)
+    return dict(snapshot(player, language, result["message"], result["accepted"]), unlocked=True)
+
+
 def command(payload):
     """Validate browser input before calling the existing saved-game functions."""
     if not isinstance(payload, dict):
@@ -194,6 +234,8 @@ def command(payload):
         "restart": {"operation", "player", "language", "confirmed"},
         "enter": {"operation", "player", "language", "room"},
         "talk": {"operation", "player", "language", "npc", "node"},
+        "search": {"operation", "player", "language", "spot"},
+        "unlock": {"operation", "player", "language", "code"},
     }
     if not isinstance(operation, str) or operation not in allowed_fields:
         raise ValueError("Unknown operation / Operação desconhecida.")
@@ -231,6 +273,10 @@ def command(payload):
         if not isinstance(room, str) or room not in set(ROOM_OF_PERSON.values()):
             raise ValueError("Invalid room / Sala inválida.")
         return enter_room(player, language, room)
+    if operation == "search":
+        return search_room(player, language, payload["spot"])
+    if operation == "unlock":
+        return unlock_computer(player, language, payload["code"])
     if not isinstance(payload["action"], str):
         raise ValueError("Invalid action / Ação inválida.")
     # Going to the auditorium by the button needs every clue too, exactly as walking in through its door.

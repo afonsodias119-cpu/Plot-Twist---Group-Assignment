@@ -20,8 +20,14 @@
   #card img { width: 150px; height: 112px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
   #card h3 { margin: 0 0 4px; color: #E8A33D; font-size: 17px; }
   #card p { margin: 0; font-size: 13px; line-height: 1.4; }
-  .sign { font: 600 14px Georgia, serif; color: #e9e1cf; background: rgba(8,20,33,0.85); border: 1.5px solid #E8A33D; padding: 3px 12px; border-radius: 999px; white-space: nowrap; box-shadow: 0 3px 10px #0007; transition: opacity .3s; }
-  .sign.small { font-size: 12px; padding: 2px 9px; }
+  /* labels drawn over the 3D picture (specs/chat-dialogues.md) */
+  .sign { font: 600 12px/1.2 "Inter", system-ui, sans-serif; color: #f2eee3; white-space: nowrap; transition: opacity .3s; }
+  /* room plaque: like the sign of a real building, only the name in capitals */
+  .sign.room { padding: 7px 13px 8px 11px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+               background: linear-gradient(180deg, #1c2733, #0d151e); border: 1px solid #ffffff24; border-left: 3px solid #E8A33D;
+               border-radius: 3px; box-shadow: 0 8px 18px #000a, inset 0 1px 0 #ffffff17; }
+  /* people: a small dark name tag */
+  .sign.small { padding: 3px 8px; font-size: 11px; font-weight: 500; background: #0b141ad9; border-radius: 6px; box-shadow: 0 2px 8px #0009; }
   /* ---------- start screens: language, then the case file ---------- */
   #intro { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; overflow: auto; padding: 16px; box-sizing: border-box;
            font-family: "Inter", system-ui, sans-serif; color: #F2EEE3;
@@ -87,6 +93,11 @@
              opacity: 0; transform: translateY(6px); transition: opacity .6s, transform .6s; }
   .mission.on { opacity: 1; transform: none; }
   .mission p { margin: 0; font-size: 14px; line-height: 1.5; }
+  .mission .group { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(232,163,61,.25); }
+  .group-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
+  .member { padding: 4px 11px; border-radius: 999px; background: rgba(242,238,227,.08); border: 1px solid rgba(242,238,227,.2); font-size: 13px; }
+  .member.you { border-color: #E8A33D; color: #E8A33D; }
+  .mission .group-note { font-size: 12.5px; color: #c9c3b4; font-style: italic; }
   .file-foot { display: flex; align-items: center; gap: 12px; padding: 14px 22px; border-top: 1px solid rgba(255,255,255,.07); }
   .ghost { font: inherit; font-size: 13px; color: rgba(242,238,227,.65); background: none; border: none; cursor: pointer; padding: 8px 4px; }
   .ghost:hover { color: #F2EEE3; }
@@ -135,7 +146,8 @@
             <p class="label" id="caseLabel"></p>
             <h2 id="caseTitle"></h2>
             <p id="premise"></p>
-            <div class="mission" id="mission"><p class="label" id="missionLabel"></p><p id="missionText"></p></div>
+            <div class="mission" id="mission"><p class="label" id="missionLabel"></p><p id="missionText"></p>
+              <div class="group"><p class="label" id="groupLabel"></p><div class="group-list" id="groupList"></div><p class="group-note" id="groupNote"></p></div></div>
           </div>
         </div>
         <div class="file-foot">
@@ -181,6 +193,14 @@
       $("caseNo").textContent = t.case; $("stamp").textContent = t.stamp; $("evidenceCaption").textContent = t.evidence;
       $("caseLabel").textContent = t.case_label; $("caseTitle").textContent = t.title;
       $("missionLabel").textContent = t.mission_label; $("missionText").textContent = t.mission;
+      // the four real members of the group, as small name chips (the first one is the player)
+      $("groupLabel").textContent = t.group_label; $("groupNote").textContent = t.group_note;
+      $("groupList").replaceChildren(...t.group.map((member, i) => {
+        const chip = document.createElement("span");
+        chip.className = i === 0 ? "member you" : "member";
+        chip.textContent = i === 0 ? `🕵️ ${member}` : member;
+        return chip;
+      }));
       $("back").textContent = t.back; $("skip").textContent = t.skip; $("accept").textContent = t.button;
       text = t.premise; done = false;
       $("premise").textContent = ""; $("mission").classList.remove("on"); $("accept").classList.remove("ready"); $("skip").style.visibility = "visible";
@@ -400,9 +420,9 @@ function picture(w, h, x, y, z, texture, emissive = 0) {   // flat picture facin
   m.position.set(x, y, z); scene.add(m);
   return m;
 }
-function label(text, x, y, z, small = false) {
+function label(text, x, y, z, kind = "") {   // kind: "room" (a door plaque) or "small" (a name tag)
   const div = document.createElement("div");
-  div.className = small ? "sign small" : "sign";
+  div.className = kind ? `sign ${kind}` : "sign";
   div.textContent = text;
   const sign = new CSS2DObject(div);
   sign.position.set(x, y, z);
@@ -453,7 +473,7 @@ for (const r of ROOMS) {
   floorPlane(r.maxX - r.minX, r.maxZ - r.minZ, cx, cz, mat(0xffffff, { map: r.floor, roughness: 0.6 }));
   lamp(r.light, 11, cx, 3.2, cz, 11);
   const doorZ = r.maxZ === -3 ? -3 : 3;
-  r.sign = label(`${r.icon} ${SCENES[r.id].title}`, cx, 2.6, doorZ);
+  r.sign = label(SCENES[r.id].title, cx, 2.6, doorZ, "room");
 }
 for (const x of [-8, 0, 8]) lamp(0xffe2b0, 4, x, 3.4, 0, 9);   // corridor lights
 
@@ -594,6 +614,90 @@ rbox(2.3, 1.2, 0.06, 0, 0.9, -11.84, mat(0xb0b4b8, { metalness: 0.6, roughness: 
 picture(2.2, 1.1, 0, 1.5, -11.8, whiteboard, 0.15);
 plant(-3.9, -11.4); plant(3.9, -3.6, 0.8);
 
+// ---- The things of the study room the player can search (specs/pen-and-code.md)
+// Each one is a group with userData.spot = its id (the same ids as campus_search.SPOTS). Which one hides
+// the USB stick is decided on the server and never written here: clicking one asks the server.
+const spotObjects = [];
+function spotGroup(id) {
+  const g = new THREE.Group();
+  g.userData.spot = id;
+  scene.add(g); spotObjects.push(g);
+  return g;
+}
+const cardboard = mat(0xc49a6c, { roughness: 0.9 });
+{
+  let g = spotGroup("drawer");   // the group drawer, under the table top, facing the door
+  rbox(0.9, 0.12, 0.45, 0, 0.58, -7.48, oak, { parent: g });
+  cyl(0.02, 0.02, 0.03, 0, 0.62, -7.24, blackMetal, 12, g).rotation.x = Math.PI / 2;
+  g = spotGroup("coat");         // a coat hanging on the back of a chair
+  rbox(0.5, 0.48, 0.09, -0.8, 0.5, -6.66, mat(0x3c4a32, { roughness: 0.95 }), { parent: g });
+  rbox(0.12, 0.4, 0.08, -1.08, 0.45, -6.64, mat(0x3c4a32, { roughness: 0.95 }), { parent: g });
+  g = spotGroup("mug");          // a mug of cold coffee on the table
+  cyl(0.045, 0.04, 0.1, -0.35, 0.76, -7.62, mat(0xf2efe8, { roughness: 0.4 }), 16, g);
+  cyl(0.04, 0.04, 0.005, -0.35, 0.85, -7.62, mat(0x3a2418), 16, g);
+  g = spotGroup("backpack");     // a backpack on the floor
+  rbox(0.38, 0.48, 0.22, -2.7, 0, -9.9, mat(0x1f3a5a, { roughness: 0.9 }), { radius: 0.08, parent: g });
+  rbox(0.28, 0.18, 0.05, -2.7, 0.08, -9.77, mat(0x2a4a70, { roughness: 0.9 }), { parent: g });
+  g = spotGroup("books");        // a pile of books on the floor
+  [[0x8a2f2f, 0.42], [0x2f5a8a, 0.38], [0xd8c27a, 0.4], [0x3a6a4a, 0.34]].forEach(([colour, w], i) =>
+    rbox(w, 0.07, 0.28, 2.6 + (i % 2) * 0.03, i * 0.07, -10.9, mat(colour, { roughness: 0.8 }), { radius: 0.01, parent: g }).rotation.y = i * 0.25);
+  g = spotGroup("papers");       // papers scattered on the floor
+  rbox(0.3, 0.05, 0.22, -2.3, 0, -5.4, paper, { radius: 0.005, parent: g });
+  for (let i = 0; i < 5; i++) {
+    const sheet = add(new THREE.Mesh(new THREE.PlaneGeometry(0.21, 0.29), paper), -2.3 + rand(-0.45, 0.45), 0.004 + i * 0.001, -5.4 + rand(-0.35, 0.35), g);
+    sheet.rotation.x = -Math.PI / 2; sheet.rotation.z = rand(-1, 1);
+  }
+  g = spotGroup("bin");          // a bin in the corner
+  cyl(0.18, 0.15, 0.42, 3.9, 0, -10.9, mat(0x5a5f66, { metalness: 0.4, roughness: 0.5 }), 20, g);
+  for (let i = 0; i < 3; i++) add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.06, 0), paper), 3.9 + rand(-0.08, 0.08), 0.43, -10.9 + rand(-0.08, 0.08), g);
+  g = spotGroup("plant");        // the plant pot of the corner: an invisible box makes it clickable
+  rbox(0.5, 1.2, 0.5, -3.9, 0, -11.4, mat(0x000000, { transparent: true, opacity: 0, depthWrite: false }), { parent: g });
+  g = spotGroup("pizza");        // a pizza box on the table
+  rbox(0.42, 0.06, 0.42, 1.05, 0.765, -8.35, cardboard, { radius: 0.005, parent: g });
+}
+// Each group was drawn at the origin of the room; move its centre to the middle of its own object,
+// so making it a little bigger (hover) or turning it (found) happens in place.
+for (const g of spotObjects) {
+  const centre = new THREE.Box3().setFromObject(g).getCenter(new THREE.Vector3());
+  g.children.forEach(child => child.position.sub(centre));
+  g.position.copy(centre);
+}
+// Clicking: a ray from the camera through the mouse finds the object under it.
+const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
+function spotUnder(event) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  let object = raycaster.intersectObjects(spotObjects, true)[0]?.object;
+  while (object && !object.userData.spot) object = object.parent;   // up to the group that has the id
+  return object || null;
+}
+// Searching makes sense only in the study room, before the USB stick is found.
+const canSearch = () => {
+  const state = window.campusState;
+  return Boolean(state) && !state.ending && state.scene === "study_room" && !state.inventory.some(i => i.id === "usb_stick");
+};
+let hoveredSpot = null;
+renderer.domElement.addEventListener("pointermove", event => {
+  const spot = canSearch() ? spotUnder(event) : null;
+  if (spot === hoveredSpot) return;
+  if (hoveredSpot) hoveredSpot.scale.setScalar(1);
+  hoveredSpot = spot;
+  if (spot) spot.scale.setScalar(1.04);   // a small lift shows what can be searched
+  renderer.domElement.style.cursor = spot ? "pointer" : "";
+});
+renderer.domElement.addEventListener("click", event => {
+  if (!canSearch()) return;
+  const spot = spotUnder(event);
+  if (spot && window.campusSearch) window.campusSearch(spot.userData.spot);
+});
+// Where the USB stick was found, the object is left moved aside. (Every object reacts the same way,
+// so reading this page does not tell which one hides it.)
+window.addEventListener("campus-found", event => {
+  const g = spotObjects.find(o => o.userData.spot === event.detail);
+  if (g) { g.scale.setScalar(1); g.position.y += 0.03; g.rotation.y += 0.35; }
+});
+
 // ---- Print shop (x -13..-4.5)
 const counterTop = oak;
 rbox(5, 1.0, 0.8, -8.75, 0, -6.2, mat(0xefeeea, { roughness: 0.4 }), { collide: true });
@@ -680,7 +784,6 @@ for (const z of [6, 9]) for (const x of [-10.5, -6.5, -2.5]) {
     officeChair(mx, z + 0.75, Math.PI);
     if (isTwelve) {
       lamp(0x59ff9c, 6, mx, 1.4, z + 0.3, 4);
-      label("💻 12", mx, 2.0, z - 0.2, true);
     }
   }
   pcNumber++;
@@ -937,12 +1040,13 @@ function makePerson(o) {
 }
 
 const npcs = [];
+const CLERK_LABEL = { pt: "Funcionária", en: "Clerk" };   // the same as in campus_people.py
 function placeNpc(look, x, z, angle, name, y = 0, id = "") {
   const n = makePerson(look);
   n.userData.id = id;
   n.position.set(x, y, z); n.rotation.y = angle; scene.add(n);
   block(x, z, 0.6, 0.6);
-  n.userData.sign = label(name, x, y + 2.35, z, true);
+  n.userData.sign = label(name, x, y + 2.35, z, "small");
   n.userData.baseAngle = angle;
   npcs.push(n);
 }
@@ -950,7 +1054,7 @@ placeNpc({ topColor: 0x2f7a5a, hair: 0x5a2a12, hairStyle: "long", skin: 0xd9a27e
 placeNpc({ topColor: 0x1d2025, hood: true, hair: 0x0e0b09, smug: true }, 4.0, 4.4, Math.PI, "Duarte", 0, "duarte");
 placeNpc({ topColor: 0x5a5070, pants: 0x3a3a44, hair: 0xb8b8b8, glasses: true, skin: 0xf0c8a8 }, 7.6, 10.2, Math.PI, "Professor", 0.4, "professor");
 placeNpc({ topColor: 0xc2566b, hair: 0x1c1410, hairStyle: "long", skin: 0xe8b896 }, 3.3, -6.0, -Math.PI / 2, "Rita", 0, "rita");          // study room
-placeNpc({ topColor: 0x3b6a8c, pants: 0x5a4a3a, hair: 0x8a8a8a, glasses: true, skin: 0xe2b08a }, -8.5, -7.4, 0, "Amélia", 0, "amelia");   // print shop
+placeNpc({ topColor: 0x3b6a8c, pants: 0x5a4a3a, hair: 0x8a8a8a, glasses: true, skin: 0xe2b08a }, -8.5, -7.4, 0, CLERK_LABEL.pt, 0, "amelia");   // print shop (no name: only the people of the group have names)
 placeNpc({ topColor: 0x6a7a3a, hair: 0x2a1a0a, skin: 0xd9a27e }, -6.5, 7.6, Math.PI, "Tomás", 0, "tomas");                                  // computer lab
 
 lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stage";   // the stage light
@@ -992,7 +1096,9 @@ const blocked = (x, z) =>
 const OUTSIDE_AREA = { id: "outside", icon: "🌊" };
 function applyLanguage() {   // called when the player picks a language on the first screen
   LANG = window.lang || "pt"; SCENES = DATA[LANG].scenes;
-  ROOMS.forEach(r => { r.sign.element.textContent = `${r.icon} ${SCENES[r.id].title}`; });
+  ROOMS.forEach(r => { r.sign.element.textContent = SCENES[r.id].title; });
+  const clerk = npcs.find(n => n.userData.id === "amelia");
+  if (clerk) clerk.userData.sign.element.textContent = CLERK_LABEL[LANG];
   document.getElementById("help").textContent = DATA[LANG].ui.help;
   currentRoom = "refresh";   // force the room card to be drawn again in the new language
 }

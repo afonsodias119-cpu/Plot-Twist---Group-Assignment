@@ -146,22 +146,43 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 
 /* people, conversations, clock, diary */
 .clock { font: 600 13px/1 Inter, system-ui, sans-serif; letter-spacing: .08em; color: var(--gold); }
-.talk-card { position: absolute; left: 26px; bottom: 34px; width: min(560px, calc(100% - 520px)); padding: 18px 20px; border: 1px solid #e8b45c66; border-radius: 14px; background: #0a1826f2; box-shadow: 0 18px 50px #000a; pointer-events: auto; z-index: 11; }
-.talk-card header { display: flex; align-items: center; gap: 12px; }
-.talk-card h3 { margin: 0 !important; font: 400 22px/1.2 "DM Serif Display", Georgia, serif !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--ink) !important; flex: 1; }
-.talk-card #talk-text { margin: 12px 0 14px; font-size: 15px; line-height: 1.6; }
-.talk-card #talk-options { display: grid; gap: 8px; }
-.talk-card #talk-options button { text-align: left; width: 100%; }
-.talk-card #talk-close { padding: 6px 10px; font-size: 12px; }
+/* ---------- conversations: a messaging app (specs/chat-dialogues.md) ---------- */
+.talk-card { position: absolute; left: 26px; bottom: 34px; width: min(440px, calc(100% - 520px)); max-height: min(580px, calc(100% - 150px)); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ffffff14; border-radius: 16px; background: #0b141a; box-shadow: 0 18px 50px #000b; pointer-events: auto; z-index: 11; }
+.talk-head { display: flex; align-items: center; gap: 11px; padding: 10px 12px; background: #1f2c34; border-bottom: 1px solid #ffffff0d; }
+.avatar { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(145deg, #f0c47a, #c98d34); color: #10202b; font: 700 17px/1 Inter, system-ui, sans-serif; }
+.talk-who { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.talk-card h3 { margin: 0 !important; font: 600 15.5px/1.2 Inter, system-ui, sans-serif !important; letter-spacing: 0 !important; text-transform: none !important; color: #e9edef !important; }
+.talk-card .trust { font-size: 12px; }
+#talk #talk-close { padding: 6px 10px; font-size: 12px; background: transparent; color: #aebac1; border-color: #ffffff26; }
+/* the messages: a dark wallpaper with a faint dot pattern, newest at the bottom */
+.chat-log { flex: 1; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 14px 12px 10px; background-color: #0b141a; background-image: radial-gradient(#ffffff0a 1px, transparent 1.2px); background-size: 18px 18px; }
+.bubble { position: relative; max-width: 84%; padding: 7px 10px 19px; border-radius: 10px; color: #e9edef; font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; box-shadow: 0 1px 1px #0006; animation: bubble-in .18s ease-out; }
+.bubble p { margin: 0; font-size: inherit !important; line-height: inherit !important; }
+.bubble time { position: absolute; right: 9px; bottom: 4px; font-size: 10.5px; color: #ffffff8c; }
+.bubble.them { align-self: flex-start; background: #202c33; border-top-left-radius: 3px; }
+.bubble.me { align-self: flex-end; background: #005c4b; border-top-right-radius: 3px; }
+.bubble.me time::after { content: " ✓✓"; color: #53bdeb; }
+/* what happens (not what is said): a short line in the middle, outside the bubbles, like a note in a chat */
+.narration { align-self: center; max-width: 88%; margin: 3px 0; padding: 5px 12px; border-radius: 8px; background: #182229; color: #c5cdd2; text-align: center; animation: bubble-in .18s ease-out; }
+.narration p { margin: 0; font-size: 12.5px !important; line-height: 1.45 !important; font-style: italic; }
+.bubble.typing { display: flex; gap: 4px; padding: 11px 13px; }
+.bubble.typing span { width: 7px; height: 7px; border-radius: 50%; background: #aebac1; animation: typing 1s infinite ease-in-out; }
+.bubble.typing span:nth-child(2) { animation-delay: .15s; } .bubble.typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes bubble-in { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes typing { 0%, 60%, 100% { opacity: .35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+/* the answers: reply buttons under the messages */
+.chat-replies { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 12px 12px; background: #111b21; border-top: 1px solid #ffffff0d; }
+#talk .chat-replies button.answer { width: auto; border-radius: 18px; padding: 8px 14px; background: #202c33; border-color: #2f3e47; color: #e9edef; font-size: 13.5px; text-align: left; }
+#talk .chat-replies button.answer:hover, #talk .chat-replies button.answer:focus-visible { border-color: #00a884; background: #1f3a36; }
 .trust { letter-spacing: .12em; font-size: 15px; color: #ff8c7a; }
 .trust-3 { color: #7fd6a0; } .trust-2 { color: #e8b45c; } .trust-1 { color: #ff8c7a; } .trust-0 { color: #c0554a; } .trust-none { display: none; }
-.panel-hidden .talk-card { width: min(560px, calc(100% - 52px)); }
+.panel-hidden .talk-card { width: min(440px, calc(100% - 52px)); }
 .actions.people button { background: #e8b45c1f !important; color: var(--ink) !important; border-color: #e8b45c66 !important; }
 .diary-heading { margin-top: 18px !important; }
 .diary-note { border-left: 2px solid #e8b45c66; padding-left: 10px; margin: 10px 0; }
 .diary-note h4 { margin: 0 0 4px; font-size: 12px; color: var(--gold); }
 .diary-note p { margin: 0; font-size: 13px !important; line-height: 1.5 !important; }
-@media (max-width: 900px) { .talk-card { left: 12px; right: 12px; width: auto; bottom: 12px; } }
+@media (max-width: 900px) { .talk-card { left: 12px; right: 12px; width: auto; bottom: 12px; max-height: 62%; } }
 
 /* the prompt that appears next to a person */
 #investigation button.near-hint { pointer-events: auto; display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 999px; background: #0a1826f2; border: 1px solid var(--gold); color: var(--ink); font-size: 15px; box-shadow: 0 12px 40px #000a; }
@@ -186,11 +207,10 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 @media (max-width: 650px) { #investigation button.panel-tab { display: none; } .hud-bottom, .panel-hidden .hud-bottom { left: 50%; width: calc(100% - 24px); bottom: calc(70% + 10px); } .bar-actions .action-hint { display: none; } }
 
 /* actions chosen inside a conversation */
-.talk-card .talk-actions { display: grid; gap: 8px; margin-bottom: 4px; }
-.talk-card .talk-action .action-hint { margin: 4px 2px 0; font-size: 11.5px !important; }
-.talk-card #talk-options button.answer { background: #ffffff08; border-color: var(--line); color: var(--ink); }
-.talk-card #talk-options button.answer:hover { border-color: var(--gold); background: #e8b45c14; }
-.talk-card #talk-options button.locked { background: #e8b45c26; color: var(--ink); border-color: #e8b45c66; }
+.chat-replies .talk-actions { width: 100%; display: grid; gap: 7px; margin-bottom: 2px; }
+#talk .chat-replies .talk-action button { width: 100%; border-radius: 18px; padding: 8px 14px; }
+.chat-replies .talk-action .action-hint { margin: 4px 6px 0; font-size: 11.5px !important; }
+#talk .chat-replies button.locked { background: #e8b45c26; color: var(--ink); border-color: #e8b45c66; }
 .text-mode .near-hint { display: none; }
 
 /* the ending screen */
@@ -256,3 +276,23 @@ body:has(#ending-card:not([hidden])) .sign { visibility: hidden; }
 .howto-dialog li { padding-left: 12px; border-left: 2px solid #e8b45c66; }
 .howto-dialog li p { margin: 4px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
 .howto-dialog code { font: 12px ui-monospace, Consolas, monospace; padding: 2px 7px; border-radius: 5px; background: #ffffff12; color: var(--gold); }
+
+/* The description of the scene is not shown in the 3D game: the player has to look and talk (specs/chat-dialogues.md).
+   The text mode keeps it, because there it is the only way to know where you are. */
+body:not(.text-mode) #scene-paragraphs { display: none; }
+
+/* nothing left to answer: "End conversation" in the header is the way out */
+#talk #talk-close.only-way { background: var(--gold); color: #101c25; border-color: var(--gold); }
+
+/* ---------- countdown (specs/harder-campus.md) ---------- */
+.clock { font-variant-numeric: tabular-nums; }
+.clock.urgent { color: #ff8c7a !important; animation: clock-pulse 1s ease-in-out infinite; }
+@keyframes clock-pulse { 50% { opacity: .55; } }
+.timeup-card { --accent: #ff8c7a; text-align: center; }
+.timeup-card .stamp { font-size: 22px; letter-spacing: .1em; color: var(--accent); }
+
+/* ---------- the code of computer 12 (specs/pen-and-code.md) ---------- */
+#talk .code-form { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+#talk .code-form input { flex: 0 0 132px; padding: 9px 12px; border: 1px solid #2f3e47; border-radius: 18px; background: #0b141a; color: #e9edef; font: 600 18px/1 Inter, ui-monospace, monospace; letter-spacing: .4em; text-align: center; }
+#talk .code-form input:focus { outline: none; border-color: #00a884; }
+#talk .code-form button[type="submit"] { border-radius: 18px; padding: 8px 16px; }
