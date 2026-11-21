@@ -192,3 +192,25 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 .talk-card #talk-options button.answer:hover { border-color: var(--gold); background: #e8b45c14; }
 .talk-card #talk-options button.locked { background: #e8b45c26; color: var(--ink); border-color: #e8b45c66; }
 .text-mode .near-hint { display: none; }
+
+/* the ending screen */
+.ending-card { --accent: #e8b45c; position: absolute; left: calc((100% - 470px) / 2); top: 50%; transform: translate(-50%, -50%); width: min(720px, calc(100% - 540px)); max-height: 82%; overflow-y: auto; padding: 34px 38px; border: 1px solid var(--accent); border-radius: 18px; background: #06111ff5; box-shadow: 0 0 80px color-mix(in srgb, var(--accent) 30%, transparent), 0 30px 80px #000c; pointer-events: auto; z-index: 14; animation: ending-rise .9s ease both; }
+.panel-hidden .ending-card { left: 50%; width: min(720px, calc(100% - 60px)); }
+.ending-impostor { --accent: #7fd6a0; } .ending-stolen_credits { --accent: #ff8c7a; } .ending-fifth_element { --accent: #b79cff; }
+.ending-card h2 { font: 400 clamp(30px, 4vw, 46px)/1.1 "DM Serif Display", Georgia, serif; margin: 6px 0 16px; color: var(--ink); }
+.ending-card #ending-text p { font-size: 16px; line-height: 1.75; margin: 0; color: #e9e4d6; }
+.ending-card .label { color: var(--accent); letter-spacing: .3em; margin: 14px 0 0; }
+.stamp { display: inline-block; margin: 0; padding: 6px 16px; border: 3px solid var(--accent); border-radius: 6px; color: var(--accent); font: 800 20px/1.2 Inter, system-ui, sans-serif; letter-spacing: .28em; transform: rotate(-5deg); animation: ending-stamp .55s .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+.ending-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+#investigation .ending-actions button:first-child { background: var(--accent); border-color: var(--accent); }
+.ending-fifth_element h2 { animation: ending-glitch 2.6s steps(1) infinite; text-shadow: 2px 0 #ff4d8d, -2px 0 #4dd2ff; }
+.confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 13; }
+.confetti span { position: absolute; top: -20px; left: var(--x); width: 9px; height: 16px; background: var(--c); opacity: .9; animation: ending-fall var(--dur) linear var(--delay) infinite; }
+@keyframes ending-rise { from { opacity: 0; transform: translate(-50%, -44%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes ending-stamp { from { opacity: 0; transform: rotate(-5deg) scale(2.6); } to { opacity: 1; transform: rotate(-5deg) scale(1); } }
+@keyframes ending-fall { from { transform: translateY(-20px) rotate(0); } to { transform: translateY(105vh) rotate(720deg); } }
+@keyframes ending-glitch { 0%, 92%, 100% { transform: none; } 93% { transform: translateX(-4px) skewX(8deg); } 95% { transform: translateX(5px); } 97% { transform: translateX(-2px) skewX(-6deg); } }
+@media (max-width: 900px) { .ending-card { left: calc((100% - 400px) / 2); width: calc(100% - 440px); } }
+@media (max-width: 650px) { .ending-card, .panel-hidden .ending-card { left: 50%; width: calc(100% - 24px); top: 15%; padding: 22px; } }
+/* while the ending screen is open, the names floating in the 3D scene step aside */
+body:has(#ending-card:not([hidden])) .sign { visibility: hidden; }

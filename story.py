@@ -230,6 +230,13 @@ STORY_EN = {
     },
     "endings": [
         # The best ending comes first: the first ending whose "when" is true wins.
+        # The secret ending: the player flags every single message (see specs/fifth-element-ending.md).
+        {
+            "id": "fifth_element",
+            "title": "The fifth element",
+            "when": {"flags": {"flagged_1": True, "flagged_2": True, "flagged_3": True, "flagged_4": True, "flagged_5": True}},
+            "text": "You flag every single message. One by one, the professor reads them aloud, then looks up at the cover, at the list of groups, at the date of the presentation. \"If everything in this chat is fake,\" the professor says slowly, \"why would the fifth name be the only thing that is real?\" The lights of the auditorium begin to flicker. Duarte stands up, smiling for the first time without any effort. \"You were never meant to flag them all,\" he says. \"A group that trusts nothing needs someone to trust. I am the fifth element: the one who appears when four people stop believing each other.\" He steps into the spotlight, and the spotlight goes out. On the front-row seat where he was sitting lies the printed photo. Five silhouettes. In the fifth one, a hat, a scarf and a long coat: yours. The professor closes the folder. \"Tomorrow,\" the professor says, \"the five of you present.\"",
+        },
         {
             "id": "full_case",
             "title": "Case closed",
@@ -468,6 +475,13 @@ STORY_PT = {
     },
     "endings": [
         # O melhor final vem primeiro: ganha o primeiro final cujo "when" é verdadeiro.
+        # The secret ending: the player flags every single message (see specs/fifth-element-ending.md).
+        {
+            "id": "fifth_element",
+            "title": "O quinto elemento",
+            "when": {"flags": {"flagged_1": True, "flagged_2": True, "flagged_3": True, "flagged_4": True, "flagged_5": True}},
+            "text": "Assinalas todas as mensagens, sem exceção. Uma a uma, o professor lê-as em voz alta e depois levanta os olhos para a capa, para a lista de grupos, para a data da apresentação. «Se tudo neste chat é falso», diz devagar, «porque seria o quinto nome a única coisa verdadeira?» As luzes do auditório começam a piscar. O Duarte levanta-se, a sorrir pela primeira vez sem esforço. «Nunca era para assinalares todas», diz. «Um grupo que não confia em nada precisa de alguém em quem confiar. Eu sou o quinto elemento: aquele que aparece quando quatro pessoas deixam de acreditar umas nas outras.» Entra no foco de luz e o foco apaga-se. Na cadeira da primeira fila onde ele estava, fica a fotografia impressa. Cinco silhuetas. Na quinta, um chapéu, um cachecol e um casaco comprido: os teus. O professor fecha a pasta. «Amanhã», diz, «apresentam os cinco.»",
+        },
         {
             "id": "full_case",
             "title": "Caso encerrado",

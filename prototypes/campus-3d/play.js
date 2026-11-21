@@ -35,6 +35,10 @@
       <footer class="panel-foot"><button id="restart" class="secondary"></button><span id="controls" class="muted"></span></footer>
     </section>
     <div id="toast" role="status" aria-live="polite" hidden></div>
+    <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
+    <section id="ending-card" class="ending-card" role="dialog" aria-labelledby="ending-title" hidden>
+      <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
+      <div class="ending-actions"><button id="ending-again"></button><button id="ending-hide" class="secondary"></button></div></section>
     <button id="panel-toggle" class="panel-tab" aria-expanded="true"></button>
     <div id="hud-bottom" class="hud-bottom">
       <button id="near-hint" class="near-hint" hidden></button>
@@ -276,12 +280,44 @@
     if (state.ending) setPanelHidden(false);                 // the ending text lives in the panel
     if (!state.accepted && state.message) { toast(state.message); sound.refuse(); }   // a refusal also shows as a note over the picture
     else if (gotItem) sound.chime();
+    showEnding(state.ending);
     if (roomChanged) closeTalk();
     if (roomChanged) {
       $("scene-heading").focus({ preventScroll: true });
       document.querySelector(".scene-panel").scrollTop = 0;
     }
   }
+
+  // ---------- the ending: a screen over the picture, with a stamp and confetti ----------
+  const CONFETTI = { full_case: ["#e8b45c", "#f4e3b0", "#7fd6a0"], impostor: ["#7fd6a0", "#e8b45c", "#cfe8d8"],
+                     fifth_element: ["#b79cff", "#ffffff", "#6a4cff"], stolen_credits: ["#ff8c7a", "#9aa4ad"] };
+  function showEnding(ending) {
+    const card = $("ending-card"), t = ui();
+    if (!ending) { delete card.dataset.id; card.hidden = true; $("confetti").hidden = true; $("confetti").replaceChildren(); return; }
+    if (card.dataset.id !== ending.id) {   // a new ending: build the screen once
+      card.dataset.id = ending.id;
+      card.className = `ending-card ending-${ending.id}`;
+      $("ending-stamp").textContent = (t.stamps || {})[ending.id] || "";
+      $("ending-label").textContent = t.the_end;
+      $("ending-title").textContent = ending.title;
+      $("ending-text").replaceChildren(make("p", ending.text));
+      $("ending-again").textContent = t.play_again;
+      $("ending-hide").textContent = t.see_scene;
+      const colors = CONFETTI[ending.id] || CONFETTI.full_case;
+      $("confetti").replaceChildren(...Array.from({ length: 48 }, () => {
+        const piece = make("span");
+        piece.style.setProperty("--x", `${Math.random() * 100}%`);
+        piece.style.setProperty("--delay", `${(Math.random() * 6).toFixed(2)}s`);
+        piece.style.setProperty("--dur", `${(4 + Math.random() * 4).toFixed(2)}s`);
+        piece.style.setProperty("--c", colors[Math.floor(Math.random() * colors.length)]);
+        return piece;
+      }));
+    }
+    card.hidden = false; $("confetti").hidden = false;
+    $("ending-again").focus({ preventScroll: true });
+  }
+  $("ending-again").addEventListener("click", () => $("restart").click());
+  $("ending-hide").addEventListener("click", () => { $("ending-card").hidden = true; $("confetti").hidden = true; });
 
   // ---------- hide the side panel ----------
   function paintPanelTab() {
@@ -573,6 +609,7 @@
   $("confirm-restart").addEventListener("click", async () => {
     if (await send("restart", { confirmed: true })) {
       dialog.close(); window.playing = true; $("scene-heading").focus();
+      window.dispatchEvent(new Event("campus-restarted"));
     }
   });
 })();

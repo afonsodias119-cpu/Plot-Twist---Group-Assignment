@@ -182,7 +182,7 @@ def test_every_action_is_rejected_after_an_ending():
 
 
 def test_every_ending_is_reachable_from_a_new_game():
-    """Trying every offered action from every reachable state finds exactly the three endings."""
+    """Trying every offered action from every reachable state finds exactly the endings of the story."""
     start = logic.new_game(STORY)
     seen = {json.dumps(start, sort_keys=True)}
     to_visit = [start]
@@ -200,7 +200,8 @@ def test_every_ending_is_reachable_from_a_new_game():
                     seen.add(key)
                     to_visit.append(result["state"])
     # Changed by specs/spot-the-fake.md ("Reviewed tests that change"): the group chat adds full_case.
-    assert endings_found == {"impostor", "stolen_credits", "full_case"}
+    # Changed again by specs/fifth-element-ending.md ("Reviewed tests that change"): flagging every message adds fifth_element.
+    assert endings_found == {"impostor", "stolen_credits", "full_case", "fifth_element"}
 
 
 def test_playing_never_changes_the_story():
