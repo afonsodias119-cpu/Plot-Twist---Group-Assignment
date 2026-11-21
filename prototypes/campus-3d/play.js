@@ -53,9 +53,11 @@
       <button id="near-hint" class="near-hint" hidden></button>
       <div id="action-bar" class="action-bar" hidden><p id="outside-hint" class="muted" hidden></p><div id="bar-actions" class="actions investigate"></div></div>
     </div>
-    <section id="talk" class="talk-card" role="dialog" aria-labelledby="talk-name" aria-live="polite" hidden>
-      <header><h3 id="talk-name"></h3><span id="talk-trust" class="trust"></span><button id="talk-close" class="secondary"></button></header>
-      <p id="talk-text"></p><div id="talk-options"></div></section>
+    <section id="talk" class="talk-card" role="dialog" aria-labelledby="talk-name" hidden>
+      <header class="talk-head"><span id="talk-avatar" class="avatar" aria-hidden="true"></span>
+        <div class="talk-who"><h3 id="talk-name"></h3><span id="talk-trust" class="trust"></span></div>
+        <button id="talk-close" class="secondary"></button></header>
+      <div id="talk-log" class="chat-log" aria-live="polite"></div><div id="talk-options" class="chat-replies"></div></section>
     <p id="renderer-status" class="renderer-status"></p>`;
   document.body.append(shell);
   const dialog = make("dialog"); dialog.id = "restart-dialog";
@@ -484,28 +486,57 @@
   }
 
 
-  // ---------- conversations ----------
+  // ---------- conversations (specs/chat-dialogues.md) ----------
+  // The conversation is drawn like a messaging app: a log of bubbles (the person on the left,
+  // the player's choices on the right) and the possible answers as reply buttons underneath.
+  // The log lives only on the screen: closing the conversation empties it.
+  function addBubble(text, who) {   // who: "them" (the person) or "me" (the player)
+    $("talk-log").querySelector(".typing")?.remove();
+    const bubble = make("div", undefined, `bubble ${who}`);
+    bubble.append(make("p", text), make("time", current?.clock || ""));
+    $("talk-log").append(bubble);
+    $("talk-log").scrollTop = $("talk-log").scrollHeight;   // always show the newest message
+  }
+  function showTyping() {   // three dots while the answer is on its way
+    const bubble = make("div", undefined, "bubble them typing");
+    bubble.setAttribute("aria-label", "…");
+    bubble.append(make("span"), make("span"), make("span"));
+    $("talk-log").append(bubble);
+    $("talk-log").scrollTop = $("talk-log").scrollHeight;
+  }
   function closeTalk() {
     const was = talking;
     talking = null;
     stopSpeaking();
     $("talk").hidden = true;
+    $("talk-log").replaceChildren();   // the next conversation starts empty
     updateNear();
     if (was && !phone.open && !dialog.open) window.playing = true;
   }
   function showLine(line) {
     const t = ui();
+    if (talking !== line.npc) $("talk-log").replaceChildren();   // a different person: a new conversation
     talking = line.npc;
     window.playing = false;   // the character stands still while talking
     $("talk-name").textContent = line.name;
-    $("talk-text").textContent = line.text;
-    const hearts = line.trust === null || line.trust === undefined ? "" : "♥".repeat(line.trust) + "♡".repeat(3 - line.trust);
-    $("talk-trust").textContent = hearts;
-    $("talk-trust").setAttribute("aria-label", hearts ? `${t.trust}: ${line.trust}/3` : "");
-    $("talk-trust").className = `trust trust-${line.trust === null || line.trust === undefined ? "none" : line.trust}`;
+    $("talk-avatar").textContent = line.name.charAt(0);
+    addBubble(line.text, "them");
+    // Trust hearts in the header. A line without trust (for example the answer to an action) keeps the hearts shown.
+    if (line.trust !== null && line.trust !== undefined) {
+      $("talk-trust").textContent = "♥".repeat(line.trust) + "♡".repeat(3 - line.trust);
+      $("talk-trust").setAttribute("aria-label", `${t.trust}: ${line.trust}/3`);
+      $("talk-trust").className = `trust trust-${line.trust}`;
+    } else if ($("talk-log").children.length === 1) {   // the first line of a person without trust: no hearts
+      $("talk-trust").textContent = "";
+      $("talk-trust").className = "trust trust-none";
+    }
     const answers = line.options.map(option => {
       const button = make("button", option.label, "answer");
-      button.addEventListener("click", () => option.next === null ? closeTalk() : talkStep(line.npc, option.next));
+      button.addEventListener("click", () => {
+        if (option.next === null) { closeTalk(); return; }
+        addBubble(option.label, "me");   // the player's answer goes on the right, like a sent message
+        talkStep(line.npc, option.next);
+      });
       return button;
     });
     // What can be done by talking to this person (ask for the copy, take the decision...): choices inside the conversation.
@@ -533,13 +564,17 @@
   async function talkAction(line, action) {
     if (window.campusBusy || !current) return;
     const scene = current.scene;
-    if (!await send("play", { action: action.id })) return;
+    addBubble(action.label, "me");
+    showTyping();
+    if (!await send("play", { action: action.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
     if (!talking || current.scene !== scene) return;   // the scene changed (for example the chat opened): the conversation is over
+    // The person answers with the result (or why it is refused). Only goodbye is offered: no "continue" (specs/chat-dialogues.md).
     showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [],
-               options: [{ label: ui().talk_continue, next: "start" }, { label: ui().talk_bye, next: null }] });
+               options: [{ label: ui().talk_bye, next: null }] });
   }
   async function talkStep(npc, node) {
     if (window.campusBusy || !current) return;
+    if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)
     setBusy(true);
     try {
       showLine(await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc, node }));
