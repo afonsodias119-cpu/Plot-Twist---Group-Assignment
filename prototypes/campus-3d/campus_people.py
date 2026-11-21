@@ -15,17 +15,19 @@ import logic
 # Where each person stands (the id of the story scene) and when they are not there any more.
 ROOM_OF_PERSON = {
     "rita": "study_room", "amelia": "print_shop", "leonor": "library",
-    "tomas": "computer_lab", "professor": "auditorium", "duarte": "auditorium",
+    "tomas": "computer_lab", "computer12": "computer_lab", "professor": "auditorium", "duarte": "auditorium",
 }
+# Things that are used, not talked to (the panel says "Use", the screen says "press K to use").
+OBJECTS = {"computer12"}
 # The group chat is a scene of the story that has no room of its own: it happens in the computer lab.
 ROOM_OF_SCENE = {"group_chat": "computer_lab"}
 
 
 # The story actions that are done by talking to a person: they appear as choices inside that conversation.
-# (The chat flags have no person: they are read on the computer, and stay as buttons over the picture.)
+# (The chat flags are done on the chat screen of computer 12, which the page draws over the picture.)
 ACTION_PERSON = {
     "open_drawer": "rita", "request_copy": "amelia", "ask_for_help": "leonor", "accuse": "leonor",
-    "view_files": "tomas", "open_chat": "tomas", "present_evidence": "professor",
+    "view_files": "computer12", "open_chat": "computer12", "present_evidence": "professor",
 }
 
 
@@ -126,6 +128,9 @@ PEOPLE = {
                      "note": "Tomás hints that some chat messages are not from the people they name.", "options": [
                 {"label": "Ask something else", "next": "kind"}, _bye("Goodbye.")]},
             "closed": {"text": "Tomás crosses his arms. \"We are done here.\"", "trust": 0, "options": [_bye("Leave.")]},
+        }},
+        "computer12": {"name": "Computer 12", "nodes": {
+            "start": {"text": "Computer 12 is still on, with the group's session open.", "options": [_bye("Step away from the computer.")]},
         }},
         "professor": {"name": "Professor", "nodes": {
             "start": {"text": "The professor looks up from the list of groups. \"Is this about tomorrow's presentations?\"", "options": [
@@ -248,6 +253,9 @@ PEOPLE = {
                 {"label": "Perguntar outra coisa", "next": "kind"}, _bye("Até já.")]},
             "closed": {"text": "O Tomás cruza os braços. \"Ficamos por aqui.\"", "trust": 0, "options": [_bye("Sair.")]},
         }},
+        "computer12": {"name": "Computador 12", "nodes": {
+            "start": {"text": "O computador 12 ainda está ligado, com a sessão do grupo aberta.", "options": [_bye("Afastar-me do computador.")]},
+        }},
         "professor": {"name": "Professor", "nodes": {
             "start": {"text": "O professor levanta os olhos da lista de grupos. \"É sobre as apresentações de amanhã?\"", "options": [
                 {"label": "Perguntar quantos elementos tem o teu grupo na lista", "next": "list"},
@@ -293,7 +301,7 @@ def people_in_room(scene, state, language):
             continue
         if person == "leonor" and state["flags"]["colleague_choice"] == "accused":
             continue
-        found.append({"id": person, "name": PEOPLE[language][person]["name"]})
+        found.append({"id": person, "name": PEOPLE[language][person]["name"], "object": person in OBJECTS})
     return found
 
 

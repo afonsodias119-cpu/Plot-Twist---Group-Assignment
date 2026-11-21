@@ -953,6 +953,7 @@ placeNpc({ topColor: 0x3b6a8c, pants: 0x5a4a3a, hair: 0x8a8a8a, glasses: true, s
 placeNpc({ topColor: 0x6a7a3a, hair: 0x2a1a0a, skin: 0xd9a27e }, -6.5, 7.6, Math.PI, "Tomás", 0, "tomas");                                  // computer lab
 
 lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stage";   // the stage light
+const USABLE = [{ id: "computer12", x: -1.8, z: 9.0 }];   // see the computer lab: desk 6, right-hand screen
 const player = makePerson({ topColor: 0xb3895a, long: true, hat: 0x3a2a1e, scarf: 0x8a1f24 });
 scene.add(player);
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 48), new THREE.MeshBasicMaterial({ color: 0xE8A33D, transparent: true, opacity: 0.6, toneMapped: false }));
@@ -1176,6 +1177,12 @@ function loop() {
       if (!n.visible || !here.some(p => p.id === n.userData.id)) continue;
       const d = Math.hypot(player.position.x - n.position.x, player.position.z - n.position.z);
       if (d < nearDistance) { nearDistance = d; near = n.userData.id; }
+    }
+    // things that are used: computer 12 is the right-hand screen of the sixth desk of the lab
+    for (const o of USABLE) {
+      if (!here.some(p => p.id === o.id)) continue;
+      const d = Math.hypot(player.position.x - o.x, player.position.z - o.z);
+      if (d < nearDistance) { nearDistance = d; near = o.id; }
     }
   }
   if (near !== window.campusNear) { window.campusNear = near; window.dispatchEvent(new Event("campus-near")); }
