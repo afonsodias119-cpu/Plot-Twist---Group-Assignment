@@ -987,7 +987,9 @@ function makePerson(o) {
     body.add(hip); legs.push(hip);
   }
   // torso: a turned profile (like pottery); a long coat flares at the bottom
-  const profile = o.long
+  const profile = o.skirt
+    ? [[0.4, 0.55], [0.36, 0.7], [0.27, 0.95], [0.24, 1.15], [0.27, 1.38], [0.23, 1.47], [0.1, 1.52]]
+    : o.long
     ? [[0.31, 0.42], [0.3, 0.6], [0.26, 0.95], [0.25, 1.15], [0.28, 1.38], [0.24, 1.47], [0.1, 1.52]]
     : [[0.25, 0.8], [0.24, 0.95], [0.24, 1.15], [0.27, 1.38], [0.23, 1.47], [0.1, 1.52]];
   const torso = new THREE.Mesh(new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), 32), top);
@@ -1001,12 +1003,21 @@ function makePerson(o) {
   if (o.hood) { const hood = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.06, 10, 24), top); hood.rotation.x = Math.PI / 2 - 0.3; hood.position.set(0, 1.5, -0.06); body.add(hood); }
   const collar = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.045, 10, 24), o.scarf ? mat(o.scarf, { roughness: 0.95 }) : top);
   collar.rotation.x = Math.PI / 2; collar.position.y = 1.5; body.add(collar);
+  if (o.shirt) {   // a jacket or a suit: the white shirt shows at the neck, and maybe a tie
+    const front = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.3, 0.03), mat(o.shirt, { roughness: 0.8 })); front.position.set(0, 1.32, 0.262); body.add(front);
+    if (o.tie) { const tie = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.03), mat(o.tie, { roughness: 0.6 })); tie.position.set(0, 1.28, 0.28); body.add(tie); }
+  }
   if (o.scarf) { const tail = new THREE.Mesh(new RoundedBoxGeometry(0.09, 0.3, 0.03, 2, 0.012), mat(o.scarf, { roughness: 0.95 })); tail.position.set(0.08, 1.33, 0.25); tail.rotation.z = 0.1; body.add(tail); }
 
   const arms = [];
   for (const side of [-1, 1]) {
     const shoulder = new THREE.Group(); shoulder.position.set(side * 0.29, 1.42, 0);
-    const arm = capsule(0.065, 0.5, top); arm.position.y = -0.3; arm.rotation.z = side * 0.06; shoulder.add(arm);
+    if (o.shortSleeves) {   // a T-shirt: short sleeves, bare forearms
+      const sleeve = capsule(0.07, 0.14, top); sleeve.position.y = -0.14; sleeve.rotation.z = side * 0.06; shoulder.add(sleeve);
+      const forearm = capsule(0.055, 0.3, skin); forearm.position.set(side * 0.01, -0.42, 0); forearm.rotation.z = side * 0.06; shoulder.add(forearm);
+    } else {
+      const arm = capsule(0.065, 0.5, top); arm.position.y = -0.3; arm.rotation.z = side * 0.06; shoulder.add(arm);
+    }
     const hand = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 14), skin); hand.position.set(side * 0.03, -0.63, 0); shoulder.add(hand);
     body.add(shoulder); arms.push(shoulder);
   }
@@ -1060,10 +1071,10 @@ placeNpc({ topColor: 0x6a7a3a, hair: 0x2a1a0a, skin: 0xd9a27e }, -6.5, 7.6, Math
 
 lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stage";   // the stage light
 const USABLE = [{ id: "computer12", x: -1.8, z: 9.0 }];   // see the computer lab: desk 6, right-hand screen
-const player = makePerson({ topColor: 0xb3895a, long: true, hat: 0x3a2a1e, scarf: 0x8a1f24 });
+let player = makePerson({ topColor: 0xb3895a, long: true, hat: 0x3a2a1e, scarf: 0x8a1f24 });
 scene.add(player);
 // The detective's torch: a warm cone in the direction the character faces (it has no shadow: that would be too slow).
-const torch = new THREE.SpotLight(0xfff0d2, 0, 13, 0.55, 0.6, 1.2);
+const torch = new THREE.SpotLight(0xfff0d2, 0, 11, 0.5, 0.7, 1.7);
 scene.add(torch, torch.target);
 let torchAmount = 0;
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 48), new THREE.MeshBasicMaterial({ color: 0xE8A33D, transparent: true, opacity: 0.6, toneMapped: false }));
@@ -1260,6 +1271,61 @@ function syncCampus() {
 window.addEventListener("campus-state", syncCampus);
 window.addEventListener("campus-restarted", () => { placedOutside = false; syncCampus(); });   // a new game starts outside again
 syncCampus();
+// ---- the character creator: the detective is dressed on the first screen (specs/rules-and-character.md) ----
+// `r` is the look with its colours already chosen: { body: "m" | "f", outfit, topColor, hairColor, skin, hat }.
+function playerLook(r) {
+  const o = { topColor: r.topColor, hair: r.hairColor, skin: r.skin, hairStyle: r.body === "f" ? "long" : "short" };
+  if (r.outfit === "tee") { o.pants = 0x2e3a56; o.shortSleeves = true; }
+  else if (r.outfit === "jacket") { o.pants = 0x2a2b33; o.shirt = 0xf2f0e8; }
+  else if (r.outfit === "hoodie") { o.pants = 0x2a2b33; o.hood = true; }
+  else if (r.outfit === "suit") { o.pants = r.topColor; o.shirt = 0xf2f0e8; o.tie = 0x8a1f24; }
+  else if (r.outfit === "dress") { o.skirt = true; o.pants = r.skin; }   // the legs show under the dress
+  else { o.long = true; o.scarf = 0x8a1f24; }                           // the detective's trench coat
+  if (r.hat) o.hat = 0x3a2a1e;
+  return o;
+}
+window.campusSetLook = r => {   // swap the detective's model, keeping where it stands
+  const next = makePerson(playerLook(r));
+  next.position.copy(player.position); next.rotation.copy(player.rotation);
+  scene.remove(player); player = next; scene.add(player);
+};
+// A small second scene with only the detective, turning slowly, for the first screen. It is stopped when the game starts.
+const PREVIEW = { renderer: null, scene: null, model: null, stopped: false };
+window.campusPreview = {
+  show(canvas, r) {
+    if (PREVIEW.renderer) { this.setLook(r); return; }
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(canvas.width, canvas.height, false);
+    const small = new THREE.Scene();
+    small.add(new THREE.HemisphereLight(0xffffff, 0x556677, 1.6));
+    const key = new THREE.DirectionalLight(0xfff1dd, 2.4); key.position.set(2.5, 4, 5); small.add(key);
+    const rim = new THREE.DirectionalLight(0x9db8ff, 1.2); rim.position.set(-3, 2, -3); small.add(rim);
+    const camera = new THREE.PerspectiveCamera(26, canvas.width / canvas.height, 0.1, 30);
+    camera.position.set(0, 1.0, 6.4); camera.lookAt(0, 0.95, 0);
+    Object.assign(PREVIEW, { renderer, scene: small, model: null, stopped: false });
+    this.setLook(r);
+    const spin = now => {
+      if (PREVIEW.stopped) return;
+      if (PREVIEW.model) PREVIEW.model.rotation.y = now / 1400;
+      renderer.render(small, camera);
+      requestAnimationFrame(spin);
+    };
+    requestAnimationFrame(spin);
+  },
+  setLook(r) {
+    if (!PREVIEW.scene) return;
+    if (PREVIEW.model) PREVIEW.scene.remove(PREVIEW.model);
+    PREVIEW.model = makePerson(playerLook(r));
+    PREVIEW.scene.add(PREVIEW.model);
+  },
+  stop() {
+    PREVIEW.stopped = true;
+    if (PREVIEW.renderer) { PREVIEW.renderer.dispose(); PREVIEW.renderer.forceContextLoss(); }
+    PREVIEW.renderer = PREVIEW.scene = PREVIEW.model = null;
+  },
+};
+
 window.campus3dReady = true;
 window.dispatchEvent(new Event("campus-renderer-ready"));
 
@@ -1297,7 +1363,9 @@ function loop() {
   // the torch is on while the game is played and the player wants it; the rest of the night gets a little darker
   const torchWanted = window.campusState && !window.campusState.ending && window.campusTorchOn !== false ? 1 : 0;
   torchAmount += (torchWanted - torchAmount) * Math.min(1, dt * 4);
-  torch.intensity = 140 * torchAmount;
+  // Close to the glowing NOVA sign (where a new game starts) the torch is much weaker, or it would burn the letters out.
+  const awayFromSign = Math.min(1, Math.max(0.15, (Math.hypot(player.position.x - SIGN_X, player.position.z - SIGN_Z) - 3) / 5));
+  torch.intensity = 85 * torchAmount * awayFromSign;
   torch.position.set(player.position.x, 1.55, player.position.z);
   torch.target.position.set(player.position.x + Math.sin(facing) * 5, 0.3, player.position.z + Math.cos(facing) * 5);
   hemi.intensity = 0.35 * (1 - 0.5 * torchAmount);

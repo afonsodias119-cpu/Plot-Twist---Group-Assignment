@@ -350,3 +350,29 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .ending-card #ending-text p.hearing-reply, .ending-card #ending-text p.verdict { margin-bottom: 14px; font-style: italic; color: #cfd6dc; }
 .ending-card #ending-text p.verdict { padding-left: 12px; border-left: 3px solid var(--accent); color: var(--ink); }
 .scene-panel p.verdict { font-style: italic; border-left: 3px solid var(--gold); padding-left: 12px; }
+
+/* the menu: one word each, with a dot that says if Torch and Sound are on */
+#investigation .menu-list button[aria-pressed] { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+#investigation .menu-list button[aria-pressed]::after { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--muted); flex: none; }
+#investigation .menu-list button[aria-pressed="true"]::after { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 8px var(--gold); }
+.howto-dev { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
+.howto-dev summary { cursor: pointer; color: var(--gold); font-size: 14px; }
+
+/* the character creator on the first screen */
+.creator { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 150px 1fr; gap: 6px 18px; align-items: start; }
+.creator h3 { grid-column: 1 / -1; margin: 0 0 4px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.creator-preview { width: 150px; height: 200px; border-radius: 12px; background: radial-gradient(circle at 50% 35%, #1d3550, #0a1826); border: 1px solid var(--line); }
+.creator-controls { display: grid; gap: 8px; }
+.creator-row { display: grid; gap: 4px; }
+.creator-label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.creator-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.creator button { font: 500 12px/1.2 Inter, system-ui, sans-serif; cursor: pointer; border-radius: 7px; border: 1px solid var(--line); background: #ffffff08; color: var(--ink); padding: 6px 10px; }
+.creator button:hover { border-color: var(--gold); }
+.creator button[aria-pressed="true"] { border-color: var(--gold); background: #e8b45c26; color: var(--gold); }
+.creator button.swatch { width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid #ffffff33; }
+.creator button.swatch[aria-pressed="true"] { border-color: #fff; box-shadow: 0 0 0 2px var(--gold); }
+.creator button.random { justify-self: start; margin-top: 2px; }
+.creator button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.text-mode .creator-preview { display: none; }
+.text-mode .creator { grid-template-columns: 1fr; }
+@media (max-width: 640px) { .creator { grid-template-columns: 1fr; justify-items: center; } .creator-controls { justify-self: stretch; } }
