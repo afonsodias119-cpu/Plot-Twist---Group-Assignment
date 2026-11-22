@@ -1,7 +1,7 @@
 # Plano do projeto — Plot Twist (trabalho de grupo)
 
 Documento de referência da equipa. Resume o que foi decidido até agora e o que falta fazer.
-Última atualização: 20/11/2026 (3D publicado, entrega no Moodle e estado das fases).
+Última atualização: 22/11/2026 (provas e audiência no branch `evidence-and-hearing`).
 
 ## 1. O que o curso pede
 
@@ -44,7 +44,7 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 | **A. Preparar** | Clonar o repositório, criar a estrutura e proteger o `main` | Afonso | 🔄 quase pronta (falta o passo 5: os colegas clonarem) |
 | **B. Inventar a história** | Mistério, 5+ cenas, objetos, finais e personagens, tudo no papel | Grupo todo | ✅ história revista e integrada na main (#3, #4 e #6) |
 | **C. Versão base** | Jogo mínimo que cumpre o brief, com testes | Afonso + revisão | ✅ implementada e no `main` (107 testes a passar) |
-| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | ✅ 3D jogável no `main` (Maria + Afonso) e puzzle do chat de grupo (Guilherme) |
+| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | ✅ 3D jogável no `main` (Maria + Afonso) e puzzle do chat de grupo (Guilherme). 🔄 Provas e audiência (`specs/evidence-and-hearing.md`, branch `evidence-and-hearing`): mostrar provas nas conversas, três pessoas que cedem e a audiência com as três afirmações do Duarte; código e testes feitos (299 testes a passar), falta a verificação no browser (3D e modo de texto, nas duas línguas), o Pull Request e a revisão |
 | **E. Publicar e ensaiar** | Link público (semana 9, não no último dia) e ensaio de perguntas | Os 4 | 🔄 publicado em https://plot-twist.streamlit.app/ (`app_3d.py`); falta ensaio e dados da equipa no README |
 
 ### Conversas corridas — Maria (22/11/2026)

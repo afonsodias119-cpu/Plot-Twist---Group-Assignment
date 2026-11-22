@@ -319,3 +319,22 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .photo-frame.wrong { animation: photo-wrong .7s; }
 .photo-frame.done { stroke: #7fd6a0; stroke-width: 5; filter: drop-shadow(0 0 12px #7fd6a0); }
 @keyframes photo-wrong { 0%, 100% { stroke: #e8b45c; } 30%, 60% { stroke: #ff6b5a; stroke-width: 5; } }
+/* ---------- evidence and the hearing (specs/evidence-and-hearing.md) ---------- */
+/* "Show evidence": its own row between the log and the answers */
+.talk-evidence { padding: 8px 12px 0; background: #111b21; border-top: 1px solid #ffffff0d; }
+#talk .talk-evidence button { border-radius: 18px; padding: 6px 13px; font-size: 12.5px; }
+/* the tray of cards that replaces the answers */
+#talk .evidence-tray { width: 100%; display: grid; gap: 7px; }
+#talk .evidence-tray .evidence-title, #talk .hearing-step { width: 100%; margin: 0 0 2px; font-size: 11px !important; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+/* the professor's trust during the hearing, in words (no hearts: specs/cleaner-interface.md) */
+#talk .hearing-trust { width: 100%; margin: 0 0 4px; font-size: 12.5px; color: #cfd6dc; }
+#talk .hearing-trust.trust-1, #talk .hearing-trust.trust-0 { color: #ff8c7a; }
+#talk .chat-replies button.evidence-card { border-color: #e8b45c55; }
+#talk .evidence-tray button.evidence-back { justify-self: start; border-radius: 18px; padding: 6px 13px; }
+/* each bubble of the hearing carries its speaker's name */
+.bubble .speaker { display: block; margin-bottom: 2px; font-size: 12px; color: var(--gold); }
+.bubble.by-duarte .speaker { color: #ff8c7a; }
+/* the ending card after a hearing: the last reply, then the professor's verdict, above the ending's text */
+.ending-card #ending-text p.hearing-reply, .ending-card #ending-text p.verdict { margin-bottom: 14px; font-style: italic; color: #cfd6dc; }
+.ending-card #ending-text p.verdict { padding-left: 12px; border-left: 3px solid var(--accent); color: var(--ink); }
+.scene-panel p.verdict { font-style: italic; border-left: 3px solid var(--gold); padding-left: 12px; }

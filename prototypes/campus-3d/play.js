@@ -67,7 +67,7 @@
       <header class="talk-head"><span id="talk-avatar" class="avatar" aria-hidden="true"></span>
         <div class="talk-who"><h3 id="talk-name"></h3></div>
         <button id="talk-close" class="secondary"></button></header>
-      <div id="talk-log" class="chat-log" aria-live="polite"></div><div id="talk-options" class="chat-replies"></div></section>
+      <div id="talk-log" class="chat-log" aria-live="polite"></div><div id="talk-evidence" class="talk-evidence" hidden></div><div id="talk-options" class="chat-replies"></div></section>
     <p id="renderer-status" class="renderer-status"></p>`;
   document.body.append(shell);
   const dialog = make("dialog"); dialog.id = "restart-dialog";
@@ -236,11 +236,16 @@
     stopSpeaking();
     say(quotesOf(text).map(line => [line, who]));
   }
-  function speakEnding(ending) {
+  function speakEnding(ending, reply) {
     if (!canSpeak || !voiceOn) return;
     stopSpeaking();
     const speakers = (ui().ending_voices || {})[ending.id] || [];
-    say(quotesOf(ending.text).map((line, i) => [line, VOICES[speakers[i]] ? speakers[i] : "narrator"]));
+    // After a hearing: first its last reply in its speaker's voice, then the professor's verdict.
+    // The ending's own quotes keep their voices (specs/evidence-and-hearing.md, point 11).
+    const before = [];
+    if (reply && VOICES[reply.who]) before.push(...quotesOf(reply.text).map(line => [line, reply.who]));
+    if (ending.verdict) before.push(...quotesOf(ending.verdict).map(line => [line, "professor"]));
+    say([...before, ...quotesOf(ending.text).map((line, i) => [line, VOICES[speakers[i]] ? speakers[i] : "narrator"])]);
   }
   if (canSpeak) speechSynthesis.getVoices();   // some browsers only load the list after the first call
   document.addEventListener("pointerdown", () => sound.start());
@@ -361,6 +366,7 @@
     $("feedback").className = state.accepted ? "success" : "error";
     $("feedback").hidden = !state.message;
     $("scene-paragraphs").replaceChildren(...(state.ending ? [state.ending.text] : state.texts).map(p => make("p", p)));
+    if (state.ending && state.ending.verdict) $("scene-paragraphs").prepend(make("p", state.ending.verdict, "verdict"));   // the text mode's panel too
     $("action-groups").replaceChildren();
     let bar = [];   // the investigation buttons shown over the picture
     if (!state.ending) {
@@ -427,11 +433,12 @@
     if (state.ending) setPanelHidden(false);                 // the ending text lives in the panel
     if (!state.accepted && state.message) { toast(state.message); sound.refuse(); }   // a refusal also shows as a note over the picture
     else if (gotItem) sound.chime();
+    // Close the old conversation before the ending card starts speaking: closing stops every voice.
+    if (roomChanged) closeTalk();
     showEnding(state.ending);
     showChat(state.chat);
     checkNotices(state);
     sound.setTension(state.ending ? 0 : tensionOf(state));
-    if (roomChanged) closeTalk();
     if (roomChanged) {
       $("scene-heading").focus({ preventScroll: true });
       document.querySelector(".scene-panel").scrollTop = 0;
@@ -480,10 +487,19 @@
       $("ending-label").textContent = t.the_end;
       $("ending-title").textContent = ending.title;
       $("ending-text").replaceChildren(make("p", ending.text));
+      // After a hearing, above the text: the reply to the third answer, with its speaker's name,
+      // then the professor's verdict when there is one (specs/evidence-and-hearing.md, point 11).
+      const reply = lastReply();
+      if (ending.verdict) $("ending-text").prepend(make("p", ending.verdict, "verdict"));
+      if (reply) {
+        const said = make("p", undefined, "hearing-reply");
+        said.append(make("strong", `${reply.name}: `), document.createTextNode(reply.text));
+        $("ending-text").prepend(said);
+      }
       $("ending-again").textContent = t.play_again;
       $("ending-hide").textContent = t.see_scene;
       rememberEnding(ending.id);
-      speakEnding(ending);
+      speakEnding(ending, reply);
       $("ending-collection").textContent = collectionText();
       $("share-text").textContent = shareText(ending);
       $("share-copy").textContent = t.share_copy;
@@ -560,9 +576,12 @@
   }
   const topics = new Map();   // unasked subjects learned from this conversation
   const asked = new Set();   // the questions (node ids) already chosen in the open conversation
+  // The last line the server gave by "talk": "Show evidence" sends its node (specs/evidence-and-hearing.md, point 5).
+  let screenLine = null;
   function closeTalk() {
     const was = talking;
     talking = null;
+    screenLine = null;
     asked.clear();
     topics.clear();
     stopSpeaking();
@@ -587,9 +606,9 @@
         topics.clear();
         line = { ...line, actions: [] };
       } else {
-        // Root subjects and Tomás's factual leads remain useful after choosing a sibling.
+        // Root subjects, Tomás's factual leads and Rita's question about the photo remain useful after choosing a sibling.
         // Reactions such as "Apologise" belong only to the current exchange.
-        if (line.node === "start" || line.node === "result" || (line.npc === "tomas" && line.node === "kind")) {
+        if (line.node === "start" || line.node === "result" || (line.npc === "tomas" && line.node === "kind") || (line.npc === "rita" && line.node === "photo")) {
           for (const option of line.options) {
             if (option.next && option.next !== "start") topics.set(option.next, option);
           }
@@ -624,6 +643,7 @@
       if (action.id === "open_drawer") continue;   // the USB stick has to be found in the room (specs/pen-and-code.md)
       if (action.decision && !action.allowed) continue;   // a decision shows only when it can be taken
       if (action.id === "request_copy" && !asked.has("order")) continue;   // the copy only after the clerk mentions the original order
+      if (action.id === "present_evidence") continue;   // the hearing button below replaces it (specs/evidence-and-hearing.md, point 9)
       const isCode = action.id === "view_files";   // computer 12 asks for its code first
       const isPhoto = action.id === "request_copy";   // the original photo has to be put together (specs/torn-photo.md)
       const button = make("button", isCode ? t.code_enter : action.label, "answer");
@@ -631,6 +651,23 @@
       button.addEventListener("click", () => isCode ? askCode(line) : isPhoto ? openPhoto(line, action) : talkAction(line, action));
       doing.append(button);
     }
+    // The professor's story button starts the hearing instead of ending the game at once (point 9).
+    // It has the story's own label and looks like any other answer (specs/actions-when-they-make-sense.md);
+    // a short line under it says the hearing cannot be left. The hearing is played in this same card (showHearing).
+    const present = (line.actions || []).find(action => action.id === "present_evidence");
+    if (present) {
+      const button = make("button", present.label, "answer");
+      button.dataset.action = "hearing";
+      button.addEventListener("click", () => startHearing(present));
+      doing.append(button, make("p", t.hearing_hint, "muted"));
+    }
+    // "📁 Show evidence", in its own row between the log and the answers, on every line of a person
+    // (not computer 12, not a closed line, not during the hearing: specs/evidence-and-hearing.md, point 5).
+    const showsEvidence = line.npc !== "computer12" && line.node !== "closed" && !(current && current.hearing);
+    const evidenceButton = make("button", t.evidence_show, "secondary evidence-show");
+    evidenceButton.addEventListener("click", () => askEvidence(line));
+    $("talk-evidence").replaceChildren(...(showsEvidence ? [evidenceButton] : []));
+    $("talk-evidence").hidden = !showsEvidence;
     if (doing.children.length && window.campusInside === false) doing.append(make("p", t.outside_hint, "muted"));
     $("talk-options").replaceChildren(...answers, ...(doing.children.length ? [doing] : []));
     $("talk-options").hidden = !doing.children.length && !answers.length;
@@ -660,6 +697,7 @@
     setBusy(true);
     try {
       const menu = await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc: line.npc, node: "start" });
+      screenLine = menu;   // a card shown now is shown on the start line (specs/evidence-and-hearing.md, point 5)
       showLine({ ...menu, node: "result", text: current.message });
     } catch (error) {
       closeTalk();
@@ -719,6 +757,136 @@
       },
     });
   }
+  // ---------- showing evidence (specs/evidence-and-hearing.md, points 5 and 6) ----------
+  // Like the code field, the cards held replace the answers. The answers are kept aside, so
+  // "Put it away" puts back the very same buttons: nothing is sent and nothing is added to the log.
+  function askEvidence(line) {
+    const t = ui();
+    const kept = [...$("talk-options").children], wasHidden = $("talk-options").hidden;
+    const wasOnlyWay = $("talk-close").classList.contains("only-way");
+    const tray = make("div", undefined, "evidence-tray");
+    tray.append(make("p", t.evidence_title, "evidence-title"));
+    const cards = current.evidence || [];
+    if (!cards.length) tray.append(make("p", t.evidence_empty, "muted"));
+    for (const card of cards) {
+      const button = make("button", `📁 ${card.label}`, "answer evidence-card");
+      button.addEventListener("click", () => confrontWith(line, card));
+      tray.append(button);
+    }
+    const back = make("button", t.evidence_back, "secondary evidence-back");
+    back.addEventListener("click", () => {
+      $("talk-options").replaceChildren(...kept);
+      $("talk-options").hidden = wasHidden;
+      $("talk-close").classList.toggle("only-way", wasOnlyWay);
+      $("talk-evidence").hidden = false;
+      applyInside();
+      $("talk-evidence").querySelector("button")?.focus({ preventScroll: true });
+    });
+    tray.append(back);
+    $("talk-evidence").hidden = true;   // the tray is open: the button that opened it steps aside
+    $("talk-options").replaceChildren(tray);
+    $("talk-options").hidden = false;
+    $("talk-close").classList.remove("only-way");
+    tray.querySelector("button").focus({ preventScroll: true });
+  }
+  // A card is shown on the line on the screen. The server answers with the reveal or the rebuff,
+  // drawn as a line of that person with the answers that line had; a rebuff costs minutes, like a rude answer.
+  async function confrontWith(line, card) {
+    if (window.campusBusy || !current || !screenLine || screenLine.npc !== line.npc) return;
+    const t = ui(), node = screenLine.node;
+    addBubble(`📁 ${card.label}`, "me");
+    showTyping();
+    if (!await send("confront", { npc: line.npc, node, evidence: card.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
+    if (!talking || !current.confront) return;
+    const reply = current.confront;
+    if (reply.cracked) {
+      topics.delete(node);   // the claim is broken: its kept answer is not offered again (point 7)
+      screenLine = { ...screenLine, node: "start" };
+    }
+    showLine({ npc: reply.npc, name: reply.name, text: reply.text, trust: reply.trust, note: reply.note,
+               options: screenLine.options, actions: current.actions.filter(action => action.person === reply.npc) });
+    if (reply.minutes) penalize(reply.minutes, reply.npc === "duarte" ? t.time_penalty_duarte : t.time_penalty_card);
+  }
+  // ---------- the hearing, inside the professor's conversation card (specs/evidence-and-hearing.md, points 9 to 11) ----------
+  // It is not an ordinary conversation: no kept topics, no start menu. The server sends the whole log
+  // (`hearing.said`), and this card is drawn again from it after every answer.
+  async function startHearing(action) {
+    if (window.campusBusy || !current) return;
+    addBubble(action.label, "me");
+    showTyping();
+    if (!await send("hearing", { answer: "start" })) { $("talk-log").querySelector(".typing")?.remove(); return; }
+    $("talk-log").querySelector(".typing")?.remove();
+    if (current.heard && current.hearing && !current.ending) showHearing(current.hearing);
+  }
+  async function answerHearing(answer) {
+    if (window.campusBusy || !current) return;
+    showTyping();
+    if (!await send("hearing", { answer })) { $("talk-log").querySelector(".typing")?.remove(); return; }
+    // After the third answer the ending arrives and render() closes this card: the ending card shows the reply.
+    if (talking && current.hearing && !current.ending) showHearing(current.hearing);
+  }
+  function addHeard(entry) {   // one entry of the log: the player on the right, Duarte or the professor with their name
+    if (entry.who === "you") { addBubble(entry.text, "me"); return; }
+    for (const part of partsOf(entry.text)) {
+      if (part.kind === "speech") {
+        const bubble = make("div", undefined, `bubble them by-${entry.who}`);
+        bubble.append(make("strong", entry.name, "speaker"), make("p", part.text), make("time", campusTime()));
+        $("talk-log").append(bubble);
+        continue;
+      }
+      const narration = make("div", undefined, "narration");
+      narration.append(make("p", part.text));
+      $("talk-log").append(narration);
+    }
+  }
+  function showHearing(hearing) {
+    const t = ui();
+    const professor = current.people.find(person => person.id === "professor");
+    talking = "professor";
+    window.playing = false;
+    $("talk-log").replaceChildren(); asked.clear(); topics.clear();
+    $("talk-name").textContent = professor ? professor.name : "";
+    $("talk-avatar").textContent = professor ? professor.name.charAt(0) : "";
+    // The professor's trust: three minus the doubts (the server never counts more than three), in words
+    // under the claim number. There are no hearts in conversations (specs/cleaner-interface.md).
+    const trust = Math.max(0, 3 - hearing.doubts);
+    const step = make("p", t.hearing_step.replace("{n}", hearing.step), "hearing-step");
+    const doubt = make("p", `${t.hearing_trust}: ${trust}/3`, `hearing-trust trust-${trust}`);
+    for (const entry of hearing.said) addHeard(entry);
+    $("talk-log").scrollTop = $("talk-log").scrollHeight;
+    $("talk-evidence").replaceChildren();
+    $("talk-evidence").hidden = true;   // no "Show evidence" and no story actions: the answers are the cards
+    const answers = (current.evidence || []).map(card => {
+      const button = make("button", `📁 ${card.label}`, "answer evidence-card");
+      button.addEventListener("click", () => answerHearing(card.id));
+      return button;
+    });
+    const silent = make("button", t.hearing_concede, "answer");
+    silent.addEventListener("click", () => answerHearing("concede"));
+    $("talk-options").replaceChildren(step, doubt, ...answers, silent);
+    $("talk-options").hidden = false;
+    $("talk-close").classList.remove("only-way");
+    $("talk").hidden = false;
+    updateNear();
+    sound.talk();
+    speakHeard(hearing.said);
+    $("talk-options").querySelector("button")?.focus({ preventScroll: true });
+  }
+  // The voices read what was said since the player's last answer (the reply and the next claim),
+  // each quote in the voice of its speaker.
+  function speakHeard(said) {
+    if (!canSpeak || !voiceOn) return;
+    let first = 0;
+    said.forEach((entry, i) => { if (entry.who === "you") first = i + 1; });
+    stopSpeaking();
+    say(said.slice(first).filter(entry => VOICES[entry.who]).flatMap(entry => quotesOf(entry.text).map(line => [line, entry.who])));
+  }
+  // The reply to the third answer, shown on the ending card; null when the ending came without a hearing.
+  function lastReply() {
+    const hearing = current && current.hearing;
+    if (!hearing || !hearing.said.length) return null;
+    return hearing.said[hearing.said.length - 1];   // after the third answer, the last entry is always a reply
+  }
   // ---------- searching the study room: the close-up of the table (specs/hidden-object-table.md) ----------
   // Asks the server about one kind of object of the table. Answers "found", "wrong" or nothing.
   window.campusSearch = async spot => {
@@ -748,10 +916,19 @@
   };
   async function talkStep(npc, node) {
     if (window.campusBusy || !current) return;
+    // During the hearing, the professor's card shows the hearing where it stopped (specs/evidence-and-hearing.md, point 9).
+    // Anyone else cannot be talked to until the hearing ends: a note says so and the hearing card stays open.
+    if (current.hearing && !current.ending) {
+      if (npc === "professor") showHearing(current.hearing);
+      else toast(ui().hearing_locked);
+      return;
+    }
     if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)
     setBusy(true);
     try {
-      showLine(await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc, node }));
+      const line = await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc, node });
+      screenLine = line;
+      showLine(line);
     } catch (error) {
       closeTalk();
       toast(error.name === "Error" ? error.message : ui().network_error);
