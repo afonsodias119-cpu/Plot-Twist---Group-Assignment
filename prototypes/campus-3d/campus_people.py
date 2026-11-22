@@ -21,7 +21,7 @@ ROOM_OF_PERSON = {
     "rita": "study_room", "amelia": "print_shop", "leonor": "library",
     "tomas": "computer_lab", "computer12": "computer_lab", "professor": "auditorium", "duarte": "auditorium",
 }
-# Things that are used, not talked to (the panel says "Use", the screen says "press Space to use").
+# Things that are used, not talked to (the panel says "Use", the screen says "press K to use").
 OBJECTS = {"computer12"}
 # The group chat is a scene of the story that has no room of its own: it happens in the computer lab.
 ROOM_OF_SCENE = {"group_chat": "computer_lab"}

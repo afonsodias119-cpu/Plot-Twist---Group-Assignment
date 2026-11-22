@@ -52,12 +52,6 @@ def test_the_menu_closes_on_a_click_outside_and_on_escape():
     assert 'e.key === "Escape" && !$("menu-list").hidden' in PLAY_JS
 
 
-def test_the_talk_key_text_exists_in_both_languages():
-    for language in ("pt", "en"):
-        assert campus_text.TEXT[language]["talk_key"]
-        assert "{name}" in campus_text.TEXT[language]["press_talk"]
-
-
 def test_the_clue_list_does_not_say_where_the_clues_are():
     draw_todo = PLAY_JS[PLAY_JS.index("function drawTodo("):PLAY_JS.index("function drawTodo(") + 1200]
     assert "clue.room" not in draw_todo and "todo_where" not in PLAY_JS
@@ -65,11 +59,6 @@ def test_the_clue_list_does_not_say_where_the_clues_are():
 
 def test_conversations_show_no_hearts():
     assert "talk-trust" not in PLAY_JS and "♥" not in PLAY_JS
-
-
-def test_space_starts_a_conversation_and_k_still_works():
-    assert '(e.code !== "Space" && e.key.toLowerCase() !== "k")' in PLAY_JS
-    assert 'make("kbd", ui().talk_key)' in PLAY_JS
 
 
 def test_backspace_shows_the_whole_typed_text():

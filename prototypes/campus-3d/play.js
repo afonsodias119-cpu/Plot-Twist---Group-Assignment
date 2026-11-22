@@ -731,15 +731,14 @@
     const person = window.campusNear && current?.people.find(p => p.id === window.campusNear);
     $("near-hint").hidden = !person || Boolean(talking);
     if (!person) return;
-    const key = make("kbd", ui().talk_key);
+    const key = make("kbd", "K");
     const sentence = person.object ? ui().press_use.replace("{name}", person.name.toLowerCase()) : ui().press_talk.replace("{name}", person.name);
     $("near-hint").replaceChildren(key, document.createTextNode(" " + sentence));
   }
   window.addEventListener("campus-near", updateNear);
   $("near-hint").addEventListener("click", () => { if (window.campusNear) talkStep(window.campusNear, "start"); });
   document.addEventListener("keydown", e => {
-    // Space starts the conversation; K still works (specs/cleaner-interface.md).
-    if ((e.code !== "Space" && e.key.toLowerCase() !== "k") || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key.toLowerCase() !== "k" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target.closest("input, textarea, dialog") || !window.campusNear || talking || !window.playing || window.campusBusy) return;
     e.preventDefault();
     talkStep(window.campusNear, "start");
