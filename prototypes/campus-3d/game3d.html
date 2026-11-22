@@ -1063,7 +1063,7 @@ const USABLE = [{ id: "computer12", x: -1.8, z: 9.0 }];   // see the computer la
 const player = makePerson({ topColor: 0xb3895a, long: true, hat: 0x3a2a1e, scarf: 0x8a1f24 });
 scene.add(player);
 // The detective's torch: a warm cone in the direction the character faces (it has no shadow: that would be too slow).
-const torch = new THREE.SpotLight(0xfff0d2, 0, 13, 0.55, 0.6, 1.2);
+const torch = new THREE.SpotLight(0xfff0d2, 0, 11, 0.5, 0.7, 1.7);
 scene.add(torch, torch.target);
 let torchAmount = 0;
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 48), new THREE.MeshBasicMaterial({ color: 0xE8A33D, transparent: true, opacity: 0.6, toneMapped: false }));
@@ -1296,7 +1296,7 @@ function loop() {
   // the torch is on while the game is played and the player wants it; the rest of the night gets a little darker
   const torchWanted = window.campusState && !window.campusState.ending && window.campusTorchOn !== false ? 1 : 0;
   torchAmount += (torchWanted - torchAmount) * Math.min(1, dt * 4);
-  torch.intensity = 140 * torchAmount;
+  torch.intensity = 85 * torchAmount;
   torch.position.set(player.position.x, 1.55, player.position.z);
   torch.target.position.set(player.position.x + Math.sin(facing) * 5, 0.3, player.position.z + Math.cos(facing) * 5);
   hemi.intensity = 0.35 * (1 - 0.5 * torchAmount);
