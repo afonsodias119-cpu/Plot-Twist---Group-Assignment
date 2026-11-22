@@ -152,7 +152,6 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 .avatar { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(145deg, #f0c47a, #c98d34); color: #10202b; font: 700 17px/1 Inter, system-ui, sans-serif; }
 .talk-who { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .talk-card h3 { margin: 0 !important; font: 600 15.5px/1.2 Inter, system-ui, sans-serif !important; letter-spacing: 0 !important; text-transform: none !important; color: #e9edef !important; }
-.talk-card .trust { font-size: 12px; }
 #talk #talk-close { padding: 6px 10px; font-size: 12px; background: transparent; color: #aebac1; border-color: #ffffff26; }
 /* the messages: a dark wallpaper with a faint dot pattern, newest at the bottom */
 .chat-log { flex: 1; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 14px 12px 10px; background-color: #0b141a; background-image: radial-gradient(#ffffff0a 1px, transparent 1.2px); background-size: 18px 18px; }
@@ -174,8 +173,6 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 .chat-replies { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 12px 12px; background: #111b21; border-top: 1px solid #ffffff0d; }
 #talk .chat-replies button.answer { width: auto; border-radius: 18px; padding: 8px 14px; background: #202c33; border-color: #2f3e47; color: #e9edef; font-size: 13.5px; text-align: left; }
 #talk .chat-replies button.answer:hover, #talk .chat-replies button.answer:focus-visible { border-color: #00a884; background: #1f3a36; }
-.trust { letter-spacing: .12em; font-size: 15px; color: #ff8c7a; }
-.trust-3 { color: #7fd6a0; } .trust-2 { color: #e8b45c; } .trust-1 { color: #ff8c7a; } .trust-0 { color: #c0554a; } .trust-none { display: none; }
 .panel-hidden .talk-card { width: min(440px, calc(100% - 52px)); }
 .actions.people button { background: #e8b45c1f !important; color: var(--ink) !important; border-color: #e8b45c66 !important; }
 .diary-heading { margin-top: 18px !important; }
@@ -266,8 +263,12 @@ body:has(#ending-card:not([hidden])) .sign { visibility: hidden; }
 @media (max-width: 900px) { #investigation button.sms { right: calc(400px + 16px); width: min(300px, calc(100% - 460px)); } }
 @media (max-width: 650px) { #investigation button.sms, .panel-hidden #investigation button.sms { right: 12px; left: 12px; width: auto; top: 70px; } }
 
-/* torch, voices and "How it was made" */
-#investigation button.icon-btn { padding: 9px 11px; min-width: 40px; font-size: 15px; }
+/* the menu of the top bar: torch, voices, sound and "How it was made" */
+.tool-menu { position: relative; }
+.menu-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; display: grid; gap: 6px; min-width: 210px; padding: 8px; background: #0b1b29f7; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 40px #0006; }
+.menu-list[hidden] { display: none; }
+#investigation .menu-list button { width: 100%; }
+@media (max-width: 650px) { .menu-list { right: auto; left: 0; } }
 .howto-dialog { max-width: min(760px, 94vw); max-height: 86vh; overflow-y: auto; }
 .howto-dialog h2 { margin-top: 0; }
 .howto-dialog ul { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 12px; }

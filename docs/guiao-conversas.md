@@ -16,7 +16,7 @@ Tudo o que as pessoas dizem no jogo 3D, em português e em inglês, tal como est
    - As falas nunca podem dizer quais são as mensagens falsas ("message 2", "mensagem 4"…).
 5. Depois de mudar, corre `uv run pytest`. Se ficar verde, recarrega o jogo (http://localhost:8503).
 
-**Legenda:** ⏳ *custa N minutos* é uma resposta agressiva: tira esses minutos à contagem decrescente (só no branch `harder-campus`; para mudar, altera `"cost": 5` no código). *Confiança* são os corações (0 a 3; com 0 a pessoa acaba a conversa). *Diário* é a nota que fica guardada no diário do telemóvel. "→ fim" acaba a conversa: no jogo 3D estas respostas não aparecem (usa-se o botão "Terminar conversa"), mas têm de existir no código, porque cada fala precisa de pelo menos uma resposta. Uma pergunta já feita na mesma conversa não volta a aparecer.
+**Legenda:** ⏳ *custa N minutos* é uma resposta agressiva: tira esses minutos à contagem decrescente (para mudar, altera `"cost": 5` no código). *Confiança* (0 a 3) é o humor da pessoa: não aparece no jogo (não há corações), o jogador percebe-o pelo que ela diz; com 0 a pessoa acaba a conversa. *Diário* é a nota que fica guardada no diário do telemóvel. "→ fim" acaba a conversa: no jogo 3D estas respostas não aparecem (usa-se o botão "Terminar conversa"), mas têm de existir no código, porque cada fala precisa de pelo menos uma resposta. Uma pergunta já feita na mesma conversa não volta a aparecer.
 
 ## Rita
 Onde está: **Sala de estudo** (`study_room`).

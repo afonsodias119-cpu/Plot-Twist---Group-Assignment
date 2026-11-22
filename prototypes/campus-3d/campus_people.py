@@ -1,7 +1,7 @@
 """The people of the 3D campus and their conversations (specs/campus-people-and-atmosphere.md).
 
-A conversation is a small tree. Each node has what the person says, optional `trust` (0-3, shown as
-hearts), an optional `note` (a line for the player's diary) and the answers the player can choose:
+A conversation is a small tree. Each node has what the person says, optional `trust` (0-3, not shown;
+at 0 the person ends the talk), an optional `note` (a line for the player's diary) and the answers the player can choose:
 {"label", "next"} where next is another node id or None (the conversation ends).
 There is no "Ask something else" answer (specs/chat-dialogues.md): the screen keeps the conversation
 open and offers, after each answer, the topics of the opening menu not asked yet

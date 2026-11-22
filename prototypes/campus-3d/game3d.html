@@ -209,6 +209,12 @@
     }
     document.querySelectorAll(".lang").forEach(b => b.addEventListener("click", () => chooseLanguage(b.dataset.lang)));
     $("premise").addEventListener("click", finish);
+    // Backspace also shows the whole text at once (specs/cleaner-interface.md).
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Backspace" || done || !$("stepCase").classList.contains("on")) return;
+      e.preventDefault();
+      finish();
+    });
     $("back").addEventListener("click", () => { clearTimeout(timer); go($("stepCase"), $("stepLang")); });
     $("accept").addEventListener("click", () => {
       if (window.campusStart) { window.campusStart(); return; }

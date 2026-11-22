@@ -32,7 +32,9 @@
   shell.innerHTML = `
     <header class="case-bar"><div><p id="case-eyebrow" class="label"></p><h1 id="game-title"></h1></div>
       <div class="bar-tools"><span id="clock" class="clock"></span><span id="save-status" role="status"></span>
-        <div class="tool-row"><button id="howto-open" class="secondary icon-btn">ℹ️</button><button id="voice-toggle" class="secondary icon-btn"></button><button id="torch-toggle" class="secondary icon-btn"></button><button id="sound-toggle" class="secondary"></button><button id="phone-open" class="secondary"></button></div></div></header>
+        <div class="tool-row"><button id="phone-open" class="secondary"></button>
+          <div class="tool-menu"><button id="menu-toggle" class="secondary" aria-expanded="false" aria-controls="menu-list"></button>
+            <div id="menu-list" class="menu-list" hidden><button id="howto-open" class="secondary"></button><button id="voice-toggle" class="secondary"></button><button id="torch-toggle" class="secondary"></button><button id="sound-toggle" class="secondary"></button></div></div></div></div></header>
     <section class="scene-panel" aria-labelledby="scene-heading">
       <div class="scene-top"><span id="scene-label" class="label"></span><span id="player-label" class="muted"></span></div>
       <h2 id="scene-heading" tabindex="-1"></h2><p id="feedback" role="status"></p>
@@ -62,7 +64,7 @@
     </div>
     <section id="talk" class="talk-card" role="dialog" aria-labelledby="talk-name" hidden>
       <header class="talk-head"><span id="talk-avatar" class="avatar" aria-hidden="true"></span>
-        <div class="talk-who"><h3 id="talk-name"></h3><span id="talk-trust" class="trust"></span></div>
+        <div class="talk-who"><h3 id="talk-name"></h3></div>
         <button id="talk-close" class="secondary"></button></header>
       <div id="talk-log" class="chat-log" aria-live="polite"></div><div id="talk-options" class="chat-replies"></div></section>
     <p id="renderer-status" class="renderer-status"></p>`;
@@ -260,16 +262,18 @@
     $("restart").textContent = t.new_game;
     $("controls").textContent = t.controls;
     $("outside-hint").textContent = t.outside_hint;
-    $("phone-open").textContent = `📱 ${t.phone}`;
+    // The top bar has words, not emojis: the phone, and a menu with the other tools.
+    $("phone-open").textContent = t.phone;
     $("phone-open").setAttribute("aria-label", t.phone_open);
+    $("menu-toggle").textContent = t.menu;
     paintPanelTab();
     $("talk-close").textContent = t.talk_close;
-    $("howto-open").setAttribute("aria-label", t.howto_open); $("howto-open").title = t.howto_open;
+    // Each menu item says what it does or how it is now ("Voices on", "Torch off (F)").
+    $("howto-open").textContent = t.howto_open;
     $("voice-toggle").hidden = !canSpeak;
-    $("voice-toggle").textContent = voiceOn ? "🗣️" : "🤐"; $("voice-toggle").setAttribute("aria-label", voiceOn ? t.voice_on : t.voice_off); $("voice-toggle").title = voiceOn ? t.voice_on : t.voice_off;
-    $("torch-toggle").textContent = torchOn ? "🔦" : "🌑"; $("torch-toggle").setAttribute("aria-label", torchOn ? t.torch_on : t.torch_off); $("torch-toggle").title = torchOn ? t.torch_on : t.torch_off;
-    $("sound-toggle").textContent = sound.isMuted() ? "🔇" : "🔊";
-    $("sound-toggle").setAttribute("aria-label", sound.isMuted() ? t.sound_off : t.sound_on);
+    $("voice-toggle").textContent = voiceOn ? t.voice_on : t.voice_off;
+    $("torch-toggle").textContent = torchOn ? t.torch_on : t.torch_off;
+    $("sound-toggle").textContent = sound.isMuted() ? t.sound_off : t.sound_on;
     $("restart-question").textContent = t.confirm_question;
     $("cancel-restart").textContent = t.confirm_cancel;
     $("confirm-restart").textContent = t.confirm_yes;
@@ -600,15 +604,8 @@
         line = { ...line, options: [...available.values()] };
       }
     }
-    // Trust hearts in the header. A line without trust (for example the answer to an action) keeps the hearts shown.
-    if (line.trust !== null && line.trust !== undefined) {
-      $("talk-trust").textContent = "♥".repeat(line.trust) + "♡".repeat(3 - line.trust);
-      $("talk-trust").setAttribute("aria-label", `${t.trust}: ${line.trust}/3`);
-      $("talk-trust").className = `trust trust-${line.trust}`;
-    } else if (firstLine) {   // the first line of a person without trust: no hearts
-      $("talk-trust").textContent = "";
-      $("talk-trust").className = "trust trust-none";
-    }
+    // No trust hearts on screen: the player reads the mood in what the person says (specs/cleaner-interface.md).
+    // The server still sends `trust`, and a person with trust 0 still ends the conversation.
     // "Goodbye" (an answer that ends the talk) is not shown: the header has "End conversation".
     // A question already chosen in this conversation is not offered again.
     // When a decision can be taken, it is the moment of the choice: only the decisions are offered (specs/actions-when-they-make-sense.md).
@@ -955,6 +952,17 @@
   }
   $("howto-open").addEventListener("click", openHowto);
   $("howto-close").addEventListener("click", () => howto.close());
+  // ---------- the menu of the top bar: how it was made, voices, torch, sound (specs/cleaner-interface.md) ----------
+  function setMenu(open) {
+    $("menu-list").hidden = !open;
+    $("menu-toggle").setAttribute("aria-expanded", String(open));
+  }
+  $("menu-toggle").addEventListener("click", () => setMenu($("menu-list").hidden));
+  $("howto-open").addEventListener("click", () => setMenu(false));   // its window opens over the game
+  document.addEventListener("click", e => { if (!e.target.closest(".tool-menu")) setMenu(false); });   // a click anywhere else closes it
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && !$("menu-list").hidden) { setMenu(false); $("menu-toggle").focus(); }
+  });
   howto.addEventListener("close", () => { window.playing = !talking && $("chat-card").hidden && !phone.open; });
 
   // ---------- the phone: a map, the to-do list of clues and the diary ----------
@@ -995,7 +1003,7 @@
       const box = make("span", clue.done ? "✔" : "○", "todo-box");
       box.setAttribute("aria-label", clue.done ? t.todo_done : t.todo_open);
       const text = make("span", undefined, "todo-text");
-      text.append(make("strong", clue.label), make("small", `${t.todo_where}: ${clue.room}`));
+      text.append(make("strong", clue.label));   // not where to find it: the player has to look (specs/cleaner-interface.md)
       item.append(box, text);
       list.append(item);
     }
