@@ -57,6 +57,10 @@ PEOPLE = {
             ]},
             "photo": {"text": "\"The photo? We took it after the last meeting, the four of us.\"",
                       "note": "Rita remembers four people in the group photo.", "options": [
+                {"label": "Ask why the photo in the folder shows five", "next": "five"},
+                _bye("Goodbye.")]},
+            # Rita's claim line (specs/evidence-and-hearing.md, point 7): broken by `files` or `original_photo`.
+            "five": {"text": "\"Then I counted wrong.\" Rita turns the laptop towards you: five people. \"A photo cannot change. My memory can. He must have been standing right there.\"", "options": [
                 _bye("Goodbye.")]},
             "pen": {"text": "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza, but with this mess, it could be anywhere.\"",
                     "note": "Rita cannot find the USB stick. The group ate pizza here last night.", "options": [_bye("Goodbye.")]},
@@ -82,11 +86,17 @@ PEOPLE = {
             "start": {"text": "Leonor closes her book slowly. \"You are here about Duarte. I know.\"", "trust": 2, "options": [
                 {"label": "Ask if she is sure he was in the group", "next": "sure"},
                 {"label": "Tell her you have doubts", "next": "soft"},
+                {"label": "Ask which chat message is really hers", "next": "mine", "if": {"flags": {"colleague_choice": "help"}}},
                 {"label": "Say she is lying", "next": "harsh", "cost": 5},
                 _bye("Goodbye."),
             ]},
+            # Leonor's claim line (point 7): broken by `tomas_word`.
             "sure": {"text": "\"He has been in every message for weeks. I have them right here.\" She taps her phone.", "trust": 2, "options": [
                 {"label": "Ask to see the messages", "next": "messages"}]},
+            # She vouches only for her own chat message (message 1), and names no other one.
+            "mine": {"text": "\"The one asking to book the study room. I wrote that at this table, three weeks ago.\" Leonor scrolls with one finger. \"The ones from the number I did not know all arrived within minutes of each other, last night.\"", "trust": 3,
+                     "note": "Leonor wrote the chat message about booking the study room herself.", "options": [
+                _bye("Goodbye.")]},
             "messages": {"text": "\"Look. All from a number I did not know. Some are dated weeks ago, but they arrived last night.\"", "trust": 3,
                          "note": "Leonor received Duarte's messages last night, from an unknown number.", "options": [
                 _bye("Goodbye.")]},
@@ -107,14 +117,20 @@ PEOPLE = {
             "kind": {"text": "\"I could not sleep, I just came here to finish the slides. And... I saw someone at computer 12 last night, near midnight.\"", "trust": 3, "options": [
                 {"label": "Ask who it was", "next": "who"},
                 {"label": "Ask for the password of computer 12", "next": "password"},
-                {"label": "Ask about message 5, the one with his name", "next": "msg5", "if": {"flags": {"files_viewed": True}}}]},
+                {"label": "Ask about message 5, the one with his name", "next": "msg5", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Ask who made the slides", "next": "slides", "if": {"flags": {"files_viewed": True}}}]},
             "password": {"text": "\"The password of computer 12? It is the group's: the day and the month we took the cover photo. Four digits. I can never remember the date.\"", "trust": 3,
                          "note": "Tomás: the password of computer 12 is the day and month the cover photo was taken (4 digits).", "options": [_bye("Goodbye.")]},
             "who": {"text": "\"Only a hood. Like the one Duarte wears. But nobody ever saw him arrive.\"", "trust": 3,
                     "note": "Tomás saw someone in a hood at computer 12 near midnight.", "options": [
                 _bye("Goodbye.")]},
-            "msg5": {"text": "\"'Duarte did the slides'? I never wrote that. My phone buzzed with it at midnight, as if it was sent three weeks ago.\"", "trust": 3,
-                     "note": "Tomás says he never wrote message 5; it arrived last night.", "options": [
+            # He does not say "I never wrote that" before he is shown the proof (point 8): see `slides`.
+            "msg5": {"text": "\"'Duarte did the slides'? It is under my name, but I do not remember writing it. My phone buzzed with it last night, near midnight, as if it had been sent three weeks ago.\"", "trust": 3,
+                     "note": "Tomás does not remember writing message 5; it reached his phone last night.", "options": [
+                _bye("Goodbye.")]},
+            # Tomás's claim line (point 7): broken only by `msg_5`, the flagged message with his name.
+            "slides": {"text": "Tomás keeps his eyes on the screen. \"The slides? I am finishing them. But the chat says Duarte did them, under my name. So maybe he did, and I only tidied up.\"", "trust": 2,
+                       "note": "Tomás thinks Duarte may have made the slides, only because a chat message under his own name says so.", "options": [
                 _bye("Goodbye.")]},
             "hard": {"text": "\"Excuse me? I did not lie!\" His voice shakes.", "trust": 1, "options": [
                 {"label": "Apologise", "next": "calm"},
@@ -173,6 +189,9 @@ PEOPLE = {
             ]},
             "photo": {"text": "\"A fotografia? Tirámo-la depois da última reunião, nós os quatro.\"",
                       "note": "A Rita lembra-se de quatro pessoas na fotografia do grupo.", "options": [
+                {"label": "Perguntar porque é que a fotografia da pasta mostra cinco", "next": "five"},
+                _bye("Até já.")]},
+            "five": {"text": "\"Então contei mal.\" A Rita vira o portátil para ti: cinco pessoas. \"Uma fotografia não muda. A minha memória muda. Ele devia estar mesmo ali.\"", "options": [
                 _bye("Até já.")]},
             "pen": {"text": "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado.\"",
                     "note": "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite.", "options": [_bye("Até já.")]},
@@ -198,11 +217,15 @@ PEOPLE = {
             "start": {"text": "A Leonor fecha o livro devagar. \"Vens por causa do Duarte. Eu sei.\"", "trust": 2, "options": [
                 {"label": "Perguntar se tem a certeza de que ele estava no grupo", "next": "sure"},
                 {"label": "Dizer-lhe que tens dúvidas", "next": "soft"},
+                {"label": "Perguntar que mensagem do chat é mesmo dela", "next": "mine", "if": {"flags": {"colleague_choice": "help"}}},
                 {"label": "Dizer que ela está a mentir", "next": "harsh", "cost": 5},
                 _bye("Até já."),
             ]},
             "sure": {"text": "\"Está em todas as mensagens há semanas. Tenho-as aqui.\" Toca no telemóvel.", "trust": 2, "options": [
                 {"label": "Pedir para ver as mensagens", "next": "messages"}]},
+            "mine": {"text": "\"A que pede para reservar a sala de estudo. Escrevi-a nesta mesa, há três semanas.\" A Leonor percorre o ecrã com um dedo. \"As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite.\"", "trust": 3,
+                     "note": "A Leonor escreveu ela própria a mensagem do chat sobre reservar a sala de estudo.", "options": [
+                _bye("Até já.")]},
             "messages": {"text": "\"Olha. Todas de um número que eu não conhecia. Algumas têm data de há semanas, mas chegaram ontem à noite.\"", "trust": 3,
                          "note": "A Leonor recebeu as mensagens do Duarte ontem à noite, de um número desconhecido.", "options": [
                 _bye("Até já.")]},
@@ -223,14 +246,18 @@ PEOPLE = {
             "kind": {"text": "\"Não conseguia dormir e vim acabar os slides. Ontem à noite, perto da meia-noite, vi alguém no computador 12.\"", "trust": 3, "options": [
                 {"label": "Perguntar quem era", "next": "who"},
                 {"label": "Perguntar a password do computador 12", "next": "password"},
-                {"label": "Perguntar pela mensagem 5, a que tem o nome dele", "next": "msg5", "if": {"flags": {"files_viewed": True}}}]},
+                {"label": "Perguntar pela mensagem 5, a que tem o nome dele", "next": "msg5", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Perguntar quem fez os slides", "next": "slides", "if": {"flags": {"files_viewed": True}}}]},
             "password": {"text": "\"A password do computador? É o dia e o mês em que tirámos a fotografia da capa. São só 4 números mas nunca me lembro da data.\"", "trust": 3,
                          "note": "Tomás: a password do computador 12 é o dia e o mês em que foi tirada a fotografia da capa (4 algarismos).", "options": [_bye("Até já.")]},
             "who": {"text": "\"Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar.\"", "trust": 3,
                     "note": "O Tomás viu alguém de capuz no computador 12 perto da meia-noite.", "options": [
                 _bye("Até já.")]},
-            "msg5": {"text": "\"'O Duarte fez os slides'? Eu nunca escrevi isso. O meu telemóvel apitou com ela à meia-noite, como se tivesse sido enviada há três semanas.\"", "trust": 3,
-                     "note": "O Tomás diz que nunca escreveu a mensagem 5; chegou ontem à noite.", "options": [
+            "msg5": {"text": "\"'Os slides foram do Duarte'? Está com o meu nome, mas não me lembro de a ter escrito. O meu telemóvel apitou com ela ontem à noite, perto da meia-noite, como se tivesse sido enviada há três semanas.\"", "trust": 3,
+                     "note": "O Tomás não se lembra de ter escrito a mensagem 5; chegou-lhe ao telemóvel ontem à noite.", "options": [
+                _bye("Até já.")]},
+            "slides": {"text": "O Tomás não tira os olhos do ecrã. \"Os slides? Estou a acabá-los. Mas o chat diz que foram do Duarte, com o meu nome. Se calhar foram mesmo, e eu só arrumei.\"", "trust": 2,
+                       "note": "O Tomás acha que os slides podem ter sido do Duarte, só porque uma mensagem do chat com o nome dele o diz.", "options": [
                 _bye("Até já.")]},
             "hard": {"text": "\"Como? Eu não menti!\" A voz dele treme.", "trust": 1, "options": [
                 {"label": "Pedir desculpa", "next": "calm"},
