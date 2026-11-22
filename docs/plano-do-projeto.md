@@ -51,6 +51,10 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 
 Alteração preparada em `maria/continuous-conversations`: depois de cada resposta, as outras perguntas disponíveis continuam no mesmo diálogo, sem terminar e voltar a falar. Mantém as pistas, as condições e as consequências. Ver `specs/continuous-conversations.md`.
 
+### Interface mais limpa e intuitiva — Maria (22/11/2026)
+
+Alteração preparada em `cleaner-interface`, só no jogo 3D: a ficha do caso diz só "O teu grupo" e o Backspace mostra o texto todo de uma vez; a barra de cima deixa de ter emojis (fica "Telemóvel" e "Menu", com Como foi feito, vozes, lanterna e som por extenso); a lista de pistas do telemóvel já não diz onde está cada pista; as conversas deixam de mostrar os corações de confiança; e fala-se com as pessoas com a tecla Espaço (o K continua a funcionar). O servidor e as regras não mudam. Ver `specs/cleaner-interface.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

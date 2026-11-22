@@ -1,7 +1,7 @@
 """The people of the 3D campus and their conversations (specs/campus-people-and-atmosphere.md).
 
-A conversation is a small tree. Each node has what the person says, optional `trust` (0-3, shown as
-hearts), an optional `note` (a line for the player's diary) and the answers the player can choose:
+A conversation is a small tree. Each node has what the person says, optional `trust` (0-3, not shown;
+at 0 the person ends the talk), an optional `note` (a line for the player's diary) and the answers the player can choose:
 {"label", "next"} where next is another node id or None (the conversation ends).
 There is no "Ask something else" answer (specs/chat-dialogues.md): to change subject, the player
 talks to the person again.
@@ -21,7 +21,7 @@ ROOM_OF_PERSON = {
     "rita": "study_room", "amelia": "print_shop", "leonor": "library",
     "tomas": "computer_lab", "computer12": "computer_lab", "professor": "auditorium", "duarte": "auditorium",
 }
-# Things that are used, not talked to (the panel says "Use", the screen says "press K to use").
+# Things that are used, not talked to (the panel says "Use", the screen says "press Space to use").
 OBJECTS = {"computer12"}
 # The group chat is a scene of the story that has no room of its own: it happens in the computer lab.
 ROOM_OF_SCENE = {"group_chat": "computer_lab"}
