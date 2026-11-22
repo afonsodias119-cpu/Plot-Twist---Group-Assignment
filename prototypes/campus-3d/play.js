@@ -905,7 +905,7 @@
         asked.add(option.next);
         addBubble(option.label, "me");   // the player's answer goes on the right, like a sent message
         if (option.cost) penalize(option.cost);   // a rude answer: minutes off the countdown
-        talkStep(line.npc, option.next);
+        talkStep(line.npc, option.next, Boolean(option.cost));   // and the server remembers it (specs/trust-has-consequences.md)
       });
       return button;
     });
@@ -1196,7 +1196,9 @@
       onClose: () => { if (!talking && !phone.open && !dialog.open) window.playing = true; },
     });
   };
-  async function talkStep(npc, node) {
+  // `rude` is true for an answer with a cost: the operation `rude` is a `talk` that the server remembers
+  // for the rest of the night (specs/trust-has-consequences.md, point 9). Nothing new is drawn.
+  async function talkStep(npc, node, rude = false) {
     if (window.campusBusy || !current) return;
     // During the hearing, the professor's card shows the hearing where it stopped (specs/evidence-and-hearing.md, point 9).
     // Anyone else cannot be talked to until the hearing ends: a note says so and the hearing card stays open.
@@ -1211,7 +1213,7 @@
     if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)
     setBusy(true);
     try {
-      const line = await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc, node });
+      const line = await request({ operation: rude ? "rude" : "talk", player: current.player, language: window.lang || "pt", npc, node });
       screenLine = line;
       showLine(line);
     } catch (error) {

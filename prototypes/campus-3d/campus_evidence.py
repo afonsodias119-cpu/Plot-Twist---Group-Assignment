@@ -6,8 +6,9 @@ both files are read by the server only. campus_game.py calls these functions.
 What the player holds comes from two places:
 - the saved game (db.py, table `games`): the item and the flags of the story;
 - the night's notes (db.py, table `nights`): who was cracked tonight, the answers of the hearing,
-  the campus minute, the rounds at which the player was caught (specs/night-schedule.md) and
-  whether tonight's row of `runs` is already written (`run`, specs/earlier-nights.md, point 2).
+  the campus minute, the rounds at which the player was caught (specs/night-schedule.md),
+  whether tonight's row of `runs` is already written (`run`, specs/earlier-nights.md, point 2) and
+  how many rude answers each person got (`rude`, specs/trust-has-consequences.md, point 3).
 The notes are read through read_night, which keeps only what it understands, so a damaged row can
 neither raise an error nor help the player.
 """
@@ -22,7 +23,7 @@ from campus_clock import COSTS, NIGHT_MINUTES, ROUNDS
 # What the server remembers of earlier nights (specs/earlier-nights.md): the gate of the true ending
 # and the row of tonight's ending.
 from campus_memory import TRUE_ENDING, record, seen_all, true_ending
-from campus_people import OBJECTS, PEOPLE, talk
+from campus_people import OBJECTS, PEOPLE, TEMPERS, talk
 from campus_text import TEXT
 from story import STORIES
 
@@ -64,15 +65,25 @@ def clean_minute(saved):
     return whole
 
 
+def clean_rude(saved):
+    """The note `rude`, cleaned (specs/trust-has-consequences.md, point 3): a dict whose keys are
+    Leonor, Tomás or Duarte and whose values are the ints 1 or 2. Anything else is dropped, so a
+    damaged note counts as calm. `type(...) is int`: True and 1.0 are not a count."""
+    if not isinstance(saved, dict):
+        return {}
+    return {person: saved[person] for person in TEMPERS
+            if type(saved.get(person)) is int and saved[person] in (1, 2)}
+
+
 def read_night(player, state):
-    """The night's notes of this player, cleaned: {"minute", "cracked", "hearing", "verdict", "caught", "run"}.
+    """The night's notes of this player, cleaned: {"minute", "cracked", "hearing", "verdict", "caught", "run", "rude"}.
 
     `cracked` keeps only people who have a confrontation; `hearing` is None when no hearing was
     started (or the saved one does not fit this game); `verdict` is kept only when the game has ended
     and the hearing could have produced it; `minute` is a whole number or a half from 0 to 30;
     `caught` keeps only the rounds of the schedule (specs/night-schedule.md, point 8); `run` is
-    True only when the note is exactly true (specs/earlier-nights.md, point 2). Cleaning happens in
-    memory: nothing is written here.
+    True only when the note is exactly true (specs/earlier-nights.md, point 2); `rude` is cleaned by
+    clean_rude. Cleaning happens in memory: nothing is written here.
     """
     saved = db.load_night(player)
     notes = saved["notes"]
@@ -83,7 +94,7 @@ def read_night(player, state):
     answers = notes.get("hearing")
     night = {"minute": clean_minute(saved), "cracked": cracked,
              "hearing": answers if valid_hearing(answers, state) else None, "verdict": "", "caught": caught,
-             "run": notes.get("run") is True}
+             "run": notes.get("run") is True, "rude": clean_rude(notes.get("rude"))}
     # The saved verdict is only a record of what was shown (point 10): the screen always works the
     # ending out again from the answers (shown_ending), so editing this note by hand changes nothing.
     if night["hearing"] is not None and state["ending"] != "none":
@@ -107,7 +118,30 @@ def write_night(player, night):
              "half": minute != int(minute), "run": night["run"]}
     if night["hearing"] is not None:
         notes["hearing"] = night["hearing"]
+    if night.get("rude"):   # only when someone got a rude answer (specs/trust-has-consequences.md, point 3)
+        notes["rude"] = night["rude"]
     db.save_night(player, int(minute), notes)
+
+
+# ---------- trust (specs/trust-has-consequences.md) ----------
+
+def remember_rude(player, night, person):
+    """A rude answer to `person`: one more in the note `rude`, never above 2 (point 2). Returns the
+    night as it is now saved."""
+    rude = dict(night["rude"])
+    rude[person] = min(rude.get(person, 0) + 1, 2)
+    night = dict(night, rude=rude)
+    write_night(player, night)
+    return night
+
+
+def moods(night):
+    """The temper of Leonor, Tomás and Duarte tonight (point 1): "calm" with no rude answer, "wary"
+    with one, "hostile" with two. A person cracked tonight is calm whatever was said: the proof showed
+    the player was right. Server only: the temper is never sent to the page."""
+    names = ("calm", "wary", "hostile")
+    return {person: "calm" if person in night["cracked"] else names[night["rude"].get(person, 0)]
+            for person in TEMPERS}
 
 
 # ---------- the cards ----------

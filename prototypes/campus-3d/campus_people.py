@@ -14,7 +14,9 @@ An answer can have "night": a campus-only key, the first night of this name on w
 The same ids, conditions and nights exist in "en" and "pt"; only the texts differ.
 
 Talking never changes the saved game. The server only reads it (to check the person is in the saved
-room and which answers are offered).
+room and which answers are offered). A rude answer (the operation `rude`) is remembered in the
+night's notes, not in the saved game, and changes how Leonor, Tomás and Duarte answer for the rest
+of the night: see `temper` (specs/trust-has-consequences.md).
 """
 
 import logic
@@ -347,6 +349,85 @@ PEOPLE = {
 }
 
 
+# ---------- trust has consequences (specs/trust-has-consequences.md) ----------
+# The texts below are in their own tables, so PEOPLE (and the trust values the reviewed tests compare)
+# is never touched. They are used only while a person is wary or hostile: see `temper`.
+# None of them names the culprit, a date of the photo or a code.
+
+# The three people who have rude answers (the answers with a `cost`): only they have a temper (point 1).
+TEMPERS = ("leonor", "tomas", "duarte")
+
+# Curt lines, wary or hostile (point 4): a short text, the same note, so no clue in the diary is lost.
+COLD = {
+    "en": {
+        "tomas": {"start": 'Tomás does not look up from computer 11. "What now?"',
+                  "kind": '"Finishing the slides." He keeps typing. "Someone was at computer 12 last night. That is all I know."',
+                  "password": '"The day and month of the cover photo. Four digits." He does not look up.'},
+        "leonor": {"start": 'Leonor does not close her book this time. "Yes?"',
+                   "messages": '"From a number I did not know. Last night."'},
+        "duarte": {"start": 'Duarte does not bother to smile. "Still here?"',
+                   "part": '"The slides. Ask anyone." He looks past you.'},
+    },
+    "pt": {
+        "tomas": {"start": 'O Tomás nem levanta os olhos do computador 11. "O que foi agora?"',
+                  "kind": '"A acabar os slides." Continua a escrever. "Esteve alguém no computador 12 ontem à noite. É tudo o que sei."',
+                  "password": '"O dia e o mês da fotografia da capa. Quatro algarismos." Nem levanta os olhos.'},
+        "leonor": {"start": 'Desta vez a Leonor não fecha o livro. "Sim?"',
+                   "messages": '"De um número que eu não conhecia. Ontem à noite."'},
+        "duarte": {"start": 'O Duarte nem se dá ao trabalho de sorrir. "Ainda por aqui?"',
+                   "part": '"Os slides. Pergunta a qualquer um." Olha para além de ti.'},
+    },
+}
+
+# Withheld lines, wary or hostile (point 4): a short text and no note, the hint is not given. They are
+# hints only: every clue needed for an ending has another source.
+WITHHELD = {
+    "en": {
+        "tomas": {"who": '"I did not see anything. Can I work now?"',
+                  "help": 'Tomás looks at the photo a second too long. "Check what you like. I am busy."'},
+        "leonor": {"mine": '"Work it out yourself."'},
+        "duarte": {"slide": '"Why would I tell you?" Duarte glances at the door.'},
+    },
+    "pt": {
+        "tomas": {"who": '"Não vi nada. Posso trabalhar?"',
+                  "help": 'O Tomás fica a olhar para a fotografia um segundo a mais. "Vê o que quiseres. Estou ocupado."'},
+        "leonor": {"mine": '"Descobre tu."'},
+        "duarte": {"slide": '"Porque é que te havia de dizer?" O Duarte olha para a porta.'},
+    },
+}
+
+# One lie each, hostile only (point 5). The player can check it: the arrival line of the chat message
+# with Tomás's name, and Rita's `chat` line, say otherwise. A lie is not a claim: a card shown on it
+# gets the usual rebuff. Its note is what the player was told.
+LIES = {
+    "en": {
+        "tomas": {"msg5": {"text": '"The one with my name? I wrote it. Three weeks ago, like it says." He shrugs without looking at you.',
+                           "note": "Tomás says he wrote the message with his name himself, three weeks ago."}},
+        "leonor": {"messages": {"text": '"Nothing strange about them. They came on the dates they say, weeks ago." She turns the phone face down.',
+                                "note": "Leonor says the messages arrived on their dates, weeks ago."}},
+    },
+    "pt": {
+        "tomas": {"msg5": {"text": '"A que tem o meu nome? Fui eu que a escrevi. Há três semanas, como lá diz." Encolhe os ombros sem olhar para ti.',
+                           "note": "O Tomás diz que foi ele que escreveu a mensagem com o nome dele, há três semanas."}},
+        "leonor": {"messages": {"text": '"Não têm nada de estranho. Chegaram nas datas que lá dizem, há semanas." Vira o telemóvel ao contrário.',
+                                "note": "A Leonor diz que as mensagens chegaram nas datas delas, há semanas."}},
+    },
+}
+
+# Who warns whom while hostile (point 6): the chain is fixed.
+WARNS = {"tomas": "leonor", "leonor": "rita", "duarte": "professor"}
+
+# The first line (`start`) of the person who was warned, while the warner is hostile and not cracked.
+WARNED = {
+    "en": {"leonor": 'Leonor closes her book before you reach the table. "Tomás texted me. He says you are going round calling people liars."',
+           "rita": 'Rita looks up and does not smile. "Leonor says you shouted at her in the library. Is that true?"',
+           "professor": 'The professor looks up from the list and does not smile. "Duarte tells me you threatened him. I hope you bring evidence tomorrow, not that."'},
+    "pt": {"leonor": 'A Leonor fecha o livro antes de chegares à mesa. "O Tomás mandou-me mensagem. Diz que andas por aí a chamar mentirosos às pessoas."',
+           "rita": 'A Rita levanta os olhos e não sorri. "A Leonor diz que lhe gritaste na biblioteca. É verdade?"',
+           "professor": 'O professor levanta os olhos da lista e não sorri. "O Duarte diz-me que o ameaçou. Espero que amanhã me traga provas, e não isso."'},
+}
+
+
 def people_in_room(scene, state, language, gone=()):
     """Who stands in the room of this saved scene (Leonor leaves after being accused).
 
@@ -405,3 +486,38 @@ def talk(state, language, person, node, gone=(), night=1):
     options = [offered(o) for o in line["options"] if is_open(o, state, night)]
     return {"npc": person, "name": data["name"], "node": node, "text": line["text"],
             "trust": line.get("trust"), "note": line.get("note", ""), "options": options}
+
+
+def is_rude(language, person, node):
+    """True when `node` is where an answer with a `cost` leads in this person's tree: the only lines
+    the operation `rude` accepts (specs/trust-has-consequences.md, point 2)."""
+    if not isinstance(person, str) or person not in PEOPLE[language]:
+        return False
+    lines = PEOPLE[language][person]["nodes"].values()
+    return any(option["next"] == node and "cost" in option for line in lines for option in line["options"])
+
+
+def temper(reply, moods, language):
+    """A `talk` reply as a person with this temper says it (points 4 to 7). Writes nothing.
+
+    `moods` is campus_evidence.moods(night): "calm", "wary" or "hostile" for Leonor, Tomás and Duarte.
+    Only the text and the note change, never the answers or the actions, so the kept topics of
+    specs/continuous-conversations.md stay the same. Which text wins: on `start`, the warning of a
+    hostile warner, else the curt line; on any line, the lie when hostile, else the curt or the
+    withheld line when wary or hostile. A calm person says the story's own line.
+    """
+    person, node = reply["npc"], reply["node"]
+    mood = moods.get(person, "calm")   # Rita, the clerk and the professor are always calm
+    warners = [warner for warner, listener in WARNS.items() if listener == person and moods.get(warner) == "hostile"]
+    if node == "start" and warners:
+        return dict(reply, text=WARNED[language][person])
+    if mood == "hostile" and node in LIES[language].get(person, {}):
+        lie = LIES[language][person][node]
+        return dict(reply, text=lie["text"], note=lie["note"])
+    if mood == "calm":
+        return reply
+    if node in COLD[language].get(person, {}):
+        return dict(reply, text=COLD[language][person][node])   # the story's note stays
+    if node in WITHHELD[language].get(person, {}):
+        return dict(reply, text=WITHHELD[language][person][node], note="")
+    return reply

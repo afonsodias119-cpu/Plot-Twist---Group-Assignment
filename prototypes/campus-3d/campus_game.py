@@ -3,12 +3,15 @@
 import db
 import game
 import logic
-from campus_people import ACTION_PERSON, ROOM_OF_PERSON, people_in_room, room_of_scene, talk
+from campus_people import ACTION_PERSON, ROOM_OF_PERSON, is_rude, people_in_room, room_of_scene, talk, temper
 from campus_text import TEXT
 # Evidence cards, confrontations and the hearing (specs/evidence-and-hearing.md). The answers stay on
 # the server: campus_case.py is read only by campus_evidence.py and campus_memory.py.
 from campus_evidence import (FINAL_ROOM, confront, hand, hearing, hearing_open, hearing_view, read_night,
                              refuse_during_hearing, shown_ending, without_broken_claims, write_night)
+# The rude answers remembered tonight and the temper they give (specs/trust-has-consequences.md).
+# The temper stays on the server: only the text and the note of a line change.
+from campus_evidence import moods, remember_rude
 # The night's clock (specs/night-schedule.md): the costs, the departures and the rounds. Server only,
 # like the two files below: the clerk's sentence names the date of the code.
 from campus_clock import (COSTS, LEAVES, NIGHT_MINUTES, ROUNDS, SHUTTER, WARNING, duarte_place, next_mark,
@@ -538,11 +541,26 @@ def report_time(player, language, minute):
     return clocked_snapshot(player, language, "", True, clock)
 
 
+def rude_answer(player, state, night, language, person, node):
+    """The player chose an answer with a cost (specs/trust-has-consequences.md, point 2).
+
+    `node` must be where such an answer leads in that person's tree. Then the same checks as `talk`
+    are made first (the person is here, the line can be reached now), so a refused request writes
+    nothing. When accepted, one more rude answer to that person is saved in the night's notes. It
+    charges nothing: the page still takes the 5 minutes itself. Returns the night as saved now.
+    """
+    if not is_rude(language, person, node):
+        raise ValueError("Unknown answer / Resposta desconhecida.")
+    line = talk(state, language, person, node, gone_people(state, night["minute"]), night_number(player, night))
+    without_broken_claims(line, night)
+    return remember_rude(player, night, person)
+
+
 def closed_reply(player, language, operation):
-    """At 22:45 the faculty is closed (point 9): `talk` and `confront` raise, every other operation is
-    refused with "The faculty is closed". Nothing is played or written."""
+    """At 22:45 the faculty is closed (point 9): `talk`, `rude` and `confront` raise, every other
+    operation is refused with "The faculty is closed". Nothing is played or written."""
     closed_text = TEXT[language]["time_up_title"]
-    if operation in ("talk", "confront"):
+    if operation in ("talk", "rude", "confront"):
         raise ValueError(closed_text)
     extra = {"search": {"found": False}, "unlock": {"unlocked": False}, "assemble": {"assembled": False},
              "hearing": {"heard": False}, "examine": {"examine": None}}
@@ -560,6 +578,8 @@ def command(payload):
         "restart": {"operation", "player", "language", "confirmed"},
         "enter": {"operation", "player", "language", "room"},
         "talk": {"operation", "player", "language", "npc", "node"},
+        # a `talk` that is remembered: the page sends it for an answer with a cost (specs/trust-has-consequences.md, point 2)
+        "rude": {"operation", "player", "language", "npc", "node"},
         "search": {"operation", "player", "language", "spot"},
         "unlock": {"operation", "player", "language", "code"},
         "assemble": {"operation", "player", "language", "pieces"},
@@ -605,14 +625,20 @@ def command(payload):
     night = read_night(player, state)
     if night_closed(state, night):
         return closed_reply(player, language, operation)
-    if operation == "talk":
+    if operation in ("talk", "rude"):
         # Talking only reads the saved game and the notes: nothing is written, so the endings cannot be touched.
+        # A `rude` writes one thing only, its note in the night's notes (rude_answer).
         refuse_during_hearing(state, night, language)
+        if operation == "rude":
+            night = rude_answer(player, state, night, language, payload["npc"], payload["node"])
         # The night number decides which memory answers are offered (specs/earlier-nights.md, point 5).
         reply = talk(state, language, payload["npc"], payload["node"], gone_people(state, night["minute"]),
                      night_number(player, night))
         # A claim already broken tonight is not offered again (specs/evidence-and-hearing.md, point 7).
         reply = without_broken_claims(reply, night)
+        # A person who got rude answers tonight answers shorter, warns the next person or lies
+        # (specs/trust-has-consequences.md). Only the text and the note change.
+        reply = temper(reply, moods(night), language)
         # The things the player can do by talking to this person (ask for the copy, take the decision, ...).
         reply["actions"] = [a for a in action_rows(STORIES[language], state, language, night["minute"])
                             if a["person"] == reply["npc"]]
