@@ -27,6 +27,136 @@
   // update of the app), continuing the game is one click (specs/chat-dialogues.md).
   const LAST_NAME_KEY = "plot-twist-last-name";
   try { name.value = localStorage.getItem(LAST_NAME_KEY) || ""; } catch (error) { /* no storage */ }
+  // ---------- the character creator: boy or girl, clothes, colours (kept in this browser, for each name) ----------
+  // It only changes how the detective looks; the server never sees it (specs/rules-and-character.md).
+  const OUTFITS = ["tee", "jacket", "hoodie", "suit", "trench", "dress"];
+  const OUTFIT_COLORS = ["#b3895a", "#c2566b", "#3b6a8c", "#2f7a5a", "#7a5cc2", "#d9a441", "#2a2b33", "#8a1f24"];
+  const HAIR_COLORS = ["#1c1410", "#5a2a12", "#d9b36a", "#9a3a1c", "#b8b8b8"];
+  const SKIN_COLORS = ["#f0c8a8", "#e2b08a", "#c68863", "#8d5a3b"];
+  const DEFAULT_LOOK = { body: "m", outfit: "trench", color: 0, hair: 1, skin: 1, hat: true };
+  const LAST_LOOK_KEY = "plot-twist-look";
+  const lookKey = who => `plot-twist-look:${String(who).trim().toLowerCase()}`;
+  const hexToInt = hex => parseInt(hex.slice(1), 16);
+  // Whatever is read from the browser is checked: a damaged note can only give the default look.
+  function cleanLook(raw) {
+    const clean = { ...DEFAULT_LOOK };
+    if (!raw || typeof raw !== "object") return clean;
+    if (raw.body === "m" || raw.body === "f") clean.body = raw.body;
+    if (OUTFITS.includes(raw.outfit)) clean.outfit = raw.outfit;
+    if (Number.isInteger(raw.color) && raw.color >= 0 && raw.color < OUTFIT_COLORS.length) clean.color = raw.color;
+    if (Number.isInteger(raw.hair) && raw.hair >= 0 && raw.hair < HAIR_COLORS.length) clean.hair = raw.hair;
+    if (Number.isInteger(raw.skin) && raw.skin >= 0 && raw.skin < SKIN_COLORS.length) clean.skin = raw.skin;
+    if (typeof raw.hat === "boolean") clean.hat = raw.hat;
+    if (clean.outfit === "dress" && clean.body !== "f") clean.outfit = "trench";   // the dress is for the girl
+    return clean;
+  }
+  function readLook(key) {
+    try { return cleanLook(JSON.parse(localStorage.getItem(key) || "null")); } catch (error) { return { ...DEFAULT_LOOK }; }
+  }
+  let look = readLook(LAST_LOOK_KEY);
+  const resolvedLook = value => ({ body: value.body, outfit: value.outfit, topColor: hexToInt(OUTFIT_COLORS[value.color]),
+    hairColor: hexToInt(HAIR_COLORS[value.hair]), skin: hexToInt(SKIN_COLORS[value.skin]), hat: value.hat });
+  function saveLook(who) {
+    try {
+      localStorage.setItem(LAST_LOOK_KEY, JSON.stringify(look));
+      if (who) localStorage.setItem(lookKey(who), JSON.stringify(look));
+    } catch (error) { /* no storage */ }
+  }
+
+  const creator = make("section", undefined, "creator"); creator.setAttribute("aria-labelledby", "creator-title");
+  const creatorTitle = make("h3"); creatorTitle.id = "creator-title";
+  const previewCanvas = make("canvas", undefined, "creator-preview"); previewCanvas.width = 240; previewCanvas.height = 320;
+  previewCanvas.setAttribute("aria-hidden", "true");
+  const creatorBody = make("div", undefined, "creator-controls");
+  const creatorParts = [];   // every button: how to say it and when it is pressed, so one function can redraw them all
+  function creatorRow(labelOf) {
+    const row = make("div", undefined, "creator-row"), label = make("span", undefined, "creator-label"), options = make("div", undefined, "creator-options");
+    row.append(label, options);
+    creatorParts.push({ label, labelOf });
+    creatorBody.append(row);
+    return options;
+  }
+  function creatorButton(options, textOf, pressedOf, patchOf, extra) {
+    const button = make("button", undefined, extra || "choice");
+    button.type = "button";
+    button.addEventListener("click", () => changeLook(patchOf()));
+    options.append(button);
+    creatorParts.push({ button, textOf, pressedOf });
+    return button;
+  }
+  const bodyOptions = creatorRow(t => t.creator_body);
+  for (const body of ["m", "f"]) creatorButton(bodyOptions, t => t[`body_${body}`], () => look.body === body, () => ({ body }));
+  const outfitOptions = creatorRow(t => t.creator_outfit);
+  const outfitButtons = {};
+  for (const outfit of OUTFITS) outfitButtons[outfit] = creatorButton(outfitOptions, t => t.outfits[outfit], () => look.outfit === outfit, () => ({ outfit }));
+  const colorOptions = creatorRow(t => t.creator_color);
+  OUTFIT_COLORS.forEach((hex, index) => {
+    const swatch = creatorButton(colorOptions, t => t.color_names[index], () => look.color === index, () => ({ color: index }), "swatch");
+    swatch.style.background = hex;
+  });
+  const hairOptions = creatorRow(t => t.creator_hair);
+  HAIR_COLORS.forEach((hex, index) => {
+    const swatch = creatorButton(hairOptions, t => t.hair_names[index], () => look.hair === index, () => ({ hair: index }), "swatch");
+    swatch.style.background = hex;
+  });
+  const skinOptions = creatorRow(t => t.creator_skin);
+  SKIN_COLORS.forEach((hex, index) => {
+    const swatch = creatorButton(skinOptions, t => t.skin_names[index], () => look.skin === index, () => ({ skin: index }), "swatch");
+    swatch.style.background = hex;
+  });
+  const hatOptions = creatorRow(t => t.creator_hat);
+  creatorButton(hatOptions, t => t.hat_on, () => look.hat, () => ({ hat: true }));
+  creatorButton(hatOptions, t => t.hat_off, () => !look.hat, () => ({ hat: false }));
+  const randomButton = make("button", undefined, "choice random"); randomButton.type = "button";
+  randomButton.addEventListener("click", () => {
+    const pick = list => list[Math.floor(Math.random() * list.length)];
+    const body = pick(["m", "f"]);
+    changeLook({ body, outfit: pick(OUTFITS.filter(o => o !== "dress" || body === "f")), color: Math.floor(Math.random() * OUTFIT_COLORS.length),
+      hair: Math.floor(Math.random() * HAIR_COLORS.length), skin: Math.floor(Math.random() * SKIN_COLORS.length), hat: Math.random() < 0.5 });
+  });
+  creatorBody.append(randomButton);
+  creator.append(creatorTitle, previewCanvas, creatorBody);
+
+  function paintCreator() {
+    const t = ui();
+    creatorTitle.textContent = t.creator_title;
+    randomButton.textContent = `🎲 ${t.creator_random}`;
+    for (const part of creatorParts) {
+      if (part.label) { part.label.textContent = part.labelOf(t); continue; }
+      const text = part.textOf(t);
+      part.button.setAttribute("aria-pressed", String(part.pressedOf()));
+      part.button.setAttribute("aria-label", text);
+      part.button.title = text;
+      if (!part.button.classList.contains("swatch")) part.button.textContent = text;
+    }
+    outfitButtons.dress.hidden = look.body !== "f";
+  }
+  let previewShown = false;
+  function showPreview() {
+    if (!window.campusPreview || document.body.classList.contains("text-mode")) return;
+    if (previewShown) window.campusPreview.setLook(resolvedLook(look));
+    else { window.campusPreview.show(previewCanvas, resolvedLook(look)); previewShown = true; }
+  }
+  function changeLook(patchValues) {
+    look = cleanLook({ ...look, ...patchValues });
+    saveLook(null);
+    paintCreator();
+    showPreview();
+  }
+  // Writing a name that already has a look in this browser shows that look again.
+  let lookTimer;
+  name.addEventListener("input", () => {
+    clearTimeout(lookTimer);
+    lookTimer = setTimeout(() => {
+      let stored = null;
+      try { stored = localStorage.getItem(lookKey(name.value)); } catch (error) { /* no storage */ }
+      if (stored) { look = readLook(lookKey(name.value)); paintCreator(); showPreview(); }
+    }, 250);
+  });
+  window.addEventListener("campus-renderer-ready", showPreview);
+  nameBox.append(creator);
+  paintCreator();
+
   $("mission").after(nameBox);
 
   const shell = make("main"); shell.id = "investigation"; shell.hidden = true;
@@ -35,7 +165,7 @@
       <div class="bar-tools"><span id="clock" class="clock"></span><span id="save-status" role="status"></span>
         <div class="tool-row"><button id="phone-open" class="secondary"></button>
           <div class="tool-menu"><button id="menu-toggle" class="secondary" aria-expanded="false" aria-controls="menu-list"></button>
-            <div id="menu-list" class="menu-list" hidden><button id="howto-open" class="secondary"></button><button id="voice-toggle" class="secondary"></button><button id="torch-toggle" class="secondary"></button><button id="sound-toggle" class="secondary"></button></div></div></div></div></header>
+            <div id="menu-list" class="menu-list" hidden><button id="howto-open" class="secondary"></button><button id="torch-toggle" class="secondary"></button><button id="sound-toggle" class="secondary"></button></div></div></div></div></header>
     <section class="scene-panel" aria-labelledby="scene-heading">
       <div class="scene-top"><span id="scene-label" class="label"></span><span id="player-label" class="muted"></span></div>
       <h2 id="scene-heading" tabindex="-1"></h2><p id="feedback" role="status"></p>
@@ -170,8 +300,8 @@
     };
   })();
   // The torch of the 3D scene and the voices of the people; both are remembered in this browser.
-  let torchOn = true, voiceOn = true;
-  try { torchOn = localStorage.getItem("plot-twist-torch") !== "off"; voiceOn = localStorage.getItem("plot-twist-voice") !== "off"; } catch (error) { /* no storage */ }
+  let torchOn = true;
+  try { torchOn = localStorage.getItem("plot-twist-torch") !== "off"; } catch (error) { /* no storage */ }
   window.campusTorchOn = torchOn;
   const canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
   // Who speaks: [gender, pitch, speed]. Computer 12 has no voice and stays silent.
@@ -232,12 +362,12 @@
     }
   }
   function speak(text, who) {
-    if (!canSpeak || !voiceOn || !VOICES[who]) return;
+    if (!canSpeak || sound.isMuted() || !VOICES[who]) return;
     stopSpeaking();
     say(quotesOf(text).map(line => [line, who]));
   }
   function speakEnding(ending, reply) {
-    if (!canSpeak || !voiceOn) return;
+    if (!canSpeak || sound.isMuted()) return;
     stopSpeaking();
     const speakers = (ui().ending_voices || {})[ending.id] || [];
     // After a hearing: first its last reply in its speaker's voice, then the professor's verdict.
@@ -273,12 +403,13 @@
     $("menu-toggle").textContent = t.menu;
     paintPanelTab();
     $("talk-close").textContent = t.talk_close;
-    // Each menu item says what it does or how it is now ("Voices on", "Torch off (F)").
+    paintCreator();
+    // Each menu item is one word; the dot beside Torch and Sound says if it is on (aria-pressed, drawn by the stylesheet).
     $("howto-open").textContent = t.howto_open;
-    $("voice-toggle").hidden = !canSpeak;
-    $("voice-toggle").textContent = voiceOn ? t.voice_on : t.voice_off;
-    $("torch-toggle").textContent = torchOn ? t.torch_on : t.torch_off;
-    $("sound-toggle").textContent = sound.isMuted() ? t.sound_off : t.sound_on;
+    $("torch-toggle").textContent = t.torch_on;
+    $("torch-toggle").setAttribute("aria-pressed", String(torchOn));
+    $("sound-toggle").textContent = t.sound_on;
+    $("sound-toggle").setAttribute("aria-pressed", String(!sound.isMuted()));
     $("restart-question").textContent = t.confirm_question;
     $("cancel-restart").textContent = t.confirm_cancel;
     $("confirm-restart").textContent = t.confirm_yes;
@@ -548,7 +679,7 @@
     if (remember) { try { localStorage.setItem("plot-twist-panel", hidden ? "closed" : "open"); } catch (error) { /* no storage */ } }
     window.dispatchEvent(new Event("resize"));   // the 3D picture takes the new width
   }
-  $("sound-toggle").addEventListener("click", () => { sound.toggle(); updateLabels(); });
+  $("sound-toggle").addEventListener("click", () => { sound.toggle(); if (sound.isMuted()) stopSpeaking(); updateLabels(); });   // the voices follow the sound
   $("panel-toggle").addEventListener("click", () => setPanelHidden(!document.body.classList.contains("panel-hidden"), true));
   try { if (localStorage.getItem("plot-twist-panel") === "closed") setPanelHidden(true); } catch (error) { /* no storage */ }
 
@@ -913,7 +1044,7 @@
   // The voices read what was said since the player's last answer (the reply and the next claim),
   // each quote in the voice of its speaker.
   function speakHeard(said) {
-    if (!canSpeak || !voiceOn) return;
+    if (!canSpeak || sound.isMuted()) return;
     let first = 0;
     said.forEach((entry, i) => { if (entry.who === "you") first = i + 1; });
     stopSpeaking();
@@ -1230,14 +1361,8 @@
     saveMsgs(current?.player || "", store);
   }
 
-  // ---------- the buttons for the torch, the voices and "How it was made" ----------
+  // ---------- the buttons for the torch and the Rules window ----------
   $("torch-toggle").addEventListener("click", () => toggleTorch());
-  $("voice-toggle").addEventListener("click", () => {
-    voiceOn = !voiceOn;
-    try { localStorage.setItem("plot-twist-voice", voiceOn ? "on" : "off"); } catch (error) { /* no storage */ }
-    if (!voiceOn) stopSpeaking();
-    updateLabels();
-  });
   function toggleTorch() {
     torchOn = !torchOn;
     window.campusTorchOn = torchOn;
@@ -1252,7 +1377,7 @@
 
   const howto = make("dialog", undefined, "howto-dialog"); howto.id = "howto";
   howto.setAttribute("aria-labelledby", "howto-title");
-  howto.innerHTML = '<h2 id="howto-title"></h2><p id="howto-intro" class="muted"></p><ul id="howto-list"></ul><p id="howto-run" class="muted"></p><div class="dialog-actions"><button id="howto-close"></button></div>';
+  howto.innerHTML = '<h2 id="howto-title"></h2><p id="howto-intro" class="muted"></p><ul id="howto-list"></ul><details class="howto-dev"><summary id="howto-dev-title"></summary><p id="howto-dev-intro" class="muted"></p><ul id="howto-dev-list"></ul><p id="howto-run" class="muted"></p></details><div class="dialog-actions"><button id="howto-close"></button></div>';
   document.body.append(howto);
   function openHowto() {
     if (howto.open) return;
@@ -1261,18 +1386,26 @@
     $("howto-intro").textContent = t.howto_intro;
     $("howto-run").textContent = t.howto_run;
     $("howto-close").textContent = t.howto_close;
-    $("howto-list").replaceChildren(...t.howto_items.map(([title, file, detail]) => {
+    $("howto-dev-title").textContent = t.rules_dev;
+    $("howto-dev-intro").textContent = t.dev_intro;
+    const entry = ([title, file, detail]) => {
       const item = make("li");
-      item.append(make("strong", title), document.createTextNode(" "), make("code", file), make("p", detail));
+      item.append(make("strong", title));
+      if (file) item.append(document.createTextNode(" "), make("code", file));
+      item.append(make("p", detail));
       return item;
-    }));
+    };
+    $("howto-list").replaceChildren(...t.rules_items.map(entry));
+    $("howto-dev-list").replaceChildren(...t.howto_items.map(entry));
     window.playing = false;
     howto.showModal();
-    $("howto-close").focus();
+    howto.scrollTop = 0;   // the window opens at its top, not at the Close button
+    $("howto-title").setAttribute("tabindex", "-1");
+    $("howto-title").focus({ preventScroll: true });
   }
   $("howto-open").addEventListener("click", openHowto);
   $("howto-close").addEventListener("click", () => howto.close());
-  // ---------- the menu of the top bar: how it was made, voices, torch, sound (specs/cleaner-interface.md) ----------
+  // ---------- the menu of the top bar: rules, torch, sound (specs/cleaner-interface.md, changed by specs/rules-and-character.md) ----------
   function setMenu(open) {
     $("menu-list").hidden = !open;
     $("menu-toggle").setAttribute("aria-expanded", String(open));
@@ -1449,6 +1582,9 @@
     sound.start();
     if (!await send("open")) return;
     try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
+    saveLook(current.player); saveLook(name.value);
+    if (window.campusPreview) window.campusPreview.stop();
+    if (window.campusSetLook) window.campusSetLook(resolvedLook(look));
     $("intro").classList.add("gone");
     $("intro").style.display = "none";
     shell.hidden = false;

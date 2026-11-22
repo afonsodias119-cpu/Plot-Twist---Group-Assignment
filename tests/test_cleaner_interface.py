@@ -33,15 +33,16 @@ def test_the_menu_text_exists_in_both_languages():
 def test_the_top_bar_has_no_emojis():
     assert not EMOJI.search(top_bar())
     labels = [line for line in PLAY_JS.splitlines()
-              if re.search(r'\$\("(phone-open|menu-toggle|howto-open|voice-toggle|torch-toggle|sound-toggle)"\)\.textContent', line)]
-    assert len(labels) == 6
+              if re.search(r'\$\("(phone-open|menu-toggle|howto-open|torch-toggle|sound-toggle)"\)\.textContent', line)]
+    # Changed by specs/rules-and-character.md: the voices follow the Sound button, so there is no separate voice item.
+    assert len(labels) == 5
     assert not any(EMOJI.search(line) for line in labels)
 
 
-def test_the_four_tools_are_inside_the_menu():
+def test_the_three_tools_are_inside_the_menu():
     bar = top_bar()
     menu = bar[bar.index('id="menu-list"'):]
-    for tool in ("howto-open", "voice-toggle", "torch-toggle", "sound-toggle"):
+    for tool in ("howto-open", "torch-toggle", "sound-toggle"):   # changed by specs/rules-and-character.md (was four, with the voices)
         assert f'id="{tool}"' in menu
     assert 'id="phone-open"' in bar and 'id="phone-open"' not in menu
     assert 'id="menu-toggle"' in bar and 'aria-expanded="false"' in bar

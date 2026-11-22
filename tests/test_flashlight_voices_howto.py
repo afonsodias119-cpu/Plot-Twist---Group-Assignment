@@ -26,8 +26,8 @@ def test_how_it_was_made_covers_the_main_parts_of_the_game():
 
 def test_the_page_has_the_torch_the_voices_and_the_how_it_was_made_window():
     page = page3d.build_page(playable=True, inline=True)
-    for needle in ('id="howto-open"', 'id="torch-toggle"', 'id="voice-toggle"', "SpeechSynthesisUtterance", "plot-twist-torch",
-                   "plot-twist-voice", "campusTorchOn", "SpotLight(0xfff0d2", "openHowto"):
+    for needle in ('id="howto-open"', 'id="torch-toggle"', "SpeechSynthesisUtterance", "plot-twist-torch",
+                   "campusTorchOn", "SpotLight(0xfff0d2", "openHowto"):   # the voices follow the Sound button (specs/rules-and-character.md)
         assert needle in page
 
 
