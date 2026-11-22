@@ -332,12 +332,16 @@
   async function send(operation, extra = {}) {
     if (window.campusBusy) return;
     if (location.protocol === "file:") { startError.textContent = ui().local_only; return; }
+    // Before a command the server hears the page's own minute (specs/night-schedule.md, point 4). The
+    // command is for the person of the open card: it is not sent if the report shows that person gone.
+    if (!["open", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
     setBusy(true);
     try {
       const result = await request({ operation, player: current?.player || name.value,
         language: window.lang || "pt", ...extra });
       uncertain = false;
-      render(result);
+      render(result, operation);
+      if (operation !== "confront") endGoneTalk();   // confrontWith draws the rebuff first, then this
       return true;
     } catch (error) {
       uncertain = true;
@@ -348,7 +352,7 @@
     } finally { setBusy(false); }
   }
 
-  function render(state) {
+  function render(state, operation) {   // operation: the command this snapshot answers
     const roomChanged = !current || current.scene !== state.scene || Boolean(current.ending) !== Boolean(state.ending);
     const gotItem = current && state.inventory.length > current.inventory.length;
     current = state;
@@ -361,6 +365,7 @@
     $("scene-label").textContent = state.ending ? t.the_end : t.scene;
     $("player-label").textContent = `${t.player} · ${state.player}`;
     startCountdown(state);   // the countdown replaces the clock of the server (specs/harder-campus.md)
+    applyNight(state, operation);   // ...and now follows the server's campus minute (specs/night-schedule.md, point 4)
     tick();
     $("feedback").textContent = state.message;
     $("feedback").className = state.accepted ? "success" : "error";
@@ -431,10 +436,21 @@
     shell.classList.toggle("ended", Boolean(state.ending));
     applyInside();
     if (state.ending) setPanelHidden(false);                 // the ending text lives in the panel
-    if (!state.accepted && state.message) { toast(state.message); sound.refuse(); }   // a refusal also shows as a note over the picture
+    if (!state.accepted && state.message) {   // a refusal also shows as a note over the picture
+      // A catch is refused and charged: Duarte's line and "−3 min" (design-notes/texts-2-schedule.md, C).
+      toast(state.night?.charged > 0 ? `${state.message} (${chargedNote(state)})` : state.message);
+      sound.refuse();
+    }
     else if (gotItem) sound.chime();
     // Close the old conversation before the ending card starts speaking: closing stops every voice.
     if (roomChanged) closeTalk();
+    // The person of the open card has left (by the schedule, or Leonor after being accused): that
+    // conversation ends in place, with the reply's message or the room's notice (specs/night-schedule.md, point 5).
+    // A catch changes the scene, so closeTalk above has already closed the card (point 8).
+    // Once per conversation: the later snapshots, while that ended card stays open, add nothing.
+    goneLine = talking && !state.ending && talking !== endedTalk && !state.people.some(person => person.id === talking)
+      ? state.message || (state.night ? state.night.notice : "") || null : null;   // an empty text is nothing to draw
+    showNotice(state);
     showEnding(state.ending);
     showChat(state.chat);
     checkNotices(state);
@@ -581,6 +597,7 @@
   function closeTalk() {
     const was = talking;
     talking = null;
+    endedTalk = null;
     screenLine = null;
     asked.clear();
     topics.clear();
@@ -589,6 +606,18 @@
     $("talk-log").replaceChildren();   // the next conversation starts empty
     updateNear();
     if (was && !phone.open && !dialog.open) window.playing = true;
+  }
+  // The last line of a conversation whose person has left (render sets goneLine; specs/night-schedule.md,
+  // point 5). It is a "closed" line: no answers, no actions, and the kept topics are emptied.
+  let goneLine = null;
+  let endedTalk = null;   // the person whose conversation has had its last line (closeTalk forgets it)
+  function endGoneTalk() {
+    if (goneLine === null || !talking) return;
+    const text = goneLine;
+    goneLine = null;
+    endedTalk = talking;
+    window.campusPhoto?.close();   // the clerk has gone: the pieces of the photo stay on the counter
+    showLine({ npc: talking, name: $("talk-name").textContent, node: "closed", text, trust: null, note: "", actions: [], options: [] });
   }
   function showLine(line) {
     const t = ui();
@@ -688,6 +717,9 @@
     showTyping();
     if (!await send("play", { action: action.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
     if (!talking || current.scene !== scene) return;   // the scene changed (for example the chat opened): the conversation is over
+    // The person is no longer here (Leonor after `accuse`, or gone by the schedule): send() has already
+    // ended the conversation with the reply's message, so the start menu is not asked for again.
+    if (!current.people.some(person => person.id === line.npc)) return;
     // Refresh conditions and available actions after changing the story, retaining the log.
     // The computer has its own code/chat flow.
     if (line.npc === "computer12") {
@@ -797,7 +829,7 @@
     addBubble(`📁 ${card.label}`, "me");
     showTyping();
     if (!await send("confront", { npc: line.npc, node, evidence: card.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
-    if (!talking || !current.confront) return;
+    if (!talking || !current.confront) { goneLine = null; return; }   // a catch closed the card: nothing more is drawn
     const reply = current.confront;
     if (reply.cracked) {
       topics.delete(node);   // the claim is broken: its kept answer is not offered again (point 7)
@@ -805,7 +837,13 @@
     }
     showLine({ npc: reply.npc, name: reply.name, text: reply.text, trust: reply.trust, note: reply.note,
                options: screenLine.options, actions: current.actions.filter(action => action.person === reply.npc) });
-    if (reply.minutes) penalize(reply.minutes, reply.npc === "duarte" ? t.time_penalty_duarte : t.time_penalty_card);
+    // The server now charges the card's minutes and they arrive in night.charged (specs/night-schedule.md,
+    // point 4): only the note is shown here, so a rebuff is not counted twice.
+    if (reply.minutes) {
+      toast((reply.npc === "duarte" ? t.time_penalty_duarte : t.time_penalty_card).replace("{n}", reply.minutes));
+      sound.refuse();
+    }
+    endGoneTalk();   // a rebuff whose minutes reach a departure: the rebuff first, then the last line
   }
   // ---------- the hearing, inside the professor's conversation card (specs/evidence-and-hearing.md, points 9 to 11) ----------
   // It is not an ordinary conversation: no kept topics, no start menu. The server sends the whole log
@@ -923,6 +961,9 @@
       else toast(ui().hearing_locked);
       return;
     }
+    // A line asked for is a command: the page reports its minute first when it is ahead, and the line is
+    // not asked for when that person has gone meanwhile (specs/night-schedule.md, point 4).
+    if (!await catchUp(npc)) return;
     if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)
     setBusy(true);
     try {
@@ -1036,6 +1077,69 @@
     sound.refuse();
     tick();
   }
+  // ---------- the server's campus minute (specs/night-schedule.md, points 3 and 4) ----------
+  // The page keeps drawing its own countdown, but the server now knows the minute too: the page
+  // follows every snapshot, and tells the server its own minute when it is ahead.
+  // The page's own whole minute: the minutes already used, rounded down (from 0 to 30).
+  const pageMinute = () => Math.min(COUNTDOWN_MINUTES, Math.max(0, Math.floor((FULL_TIME - msLeft()) / 60000)));
+  // After every snapshot: take off what this command cost, once, then never have more time than the
+  // server's minute leaves. So a cleared browser or another device no longer gets 30 new minutes.
+  function applyNight(state, operation) {
+    const night = state.night;
+    if (!night || timeLeft === null) return;
+    // A fresh game at minute 0, opened or restarted: the server is starting a new night, so the page starts
+    // from 30 minutes too (after a restart of the host the browser would otherwise push its old time onto
+    // the new night). Only then: the other replies of an untouched game must not give time back.
+    const opening = operation === "open" || operation === "restart";
+    if (opening && state.fresh && night.minute === 0) timeLeft = FULL_TIME;
+    timeLeft = Math.max(0, timeLeft - night.charged * 60000);   // the countdown counts in ms: half a minute is 30 seconds
+    timeLeft = Math.min(timeLeft, (COUNTDOWN_MINUTES - night.minute) * 60000);
+    saveTime();
+    // A refusal shows its own note (render adds the charge to it): only one note at a time.
+    if (night.charged > 0 && (state.accepted || !state.message)) toast(chargedNote(state));
+  }
+  // "−0.5 min" in English, "−0,5 min" in Portuguese
+  function chargedNote(state) {
+    return ui().time_charged.replace("{n}", state.night.charged.toLocaleString(state.language === "pt" ? "pt-PT" : "en-GB"));
+  }
+  // Sends the page's own minute with the operation "time". Returns false when a command that was waiting
+  // for this report must not be sent: the reply is a catch (not accepted), the night is closed, or
+  // `person` (the person the command is for) is no longer in the room (point 4).
+  async function reportTime(person = null) {
+    if (!await send("time", { minute: pageMinute() })) return false;
+    if (current.accepted && current.message) toast(current.message);   // Tomás in the lab door: the round passes
+    if (!current.accepted || current.night.closed) return false;
+    return !person || current.people.some(p => p.id === person);
+  }
+  // Before a command: report first, but only when the page is ahead of the server's minute.
+  function catchUp(person) {
+    if (!current || !current.night || current.ending || pageMinute() <= current.night.minute) return true;
+    return reportTime(person);
+  }
+  // Every second (from the timer under tick): report when the page reaches the next mark of the schedule
+  // (`night.report_at`), and when the time is up. It never polls the server otherwise.
+  let lastReportTry = 0;
+  function reportDue(left) {
+    const night = current.night, minute = pageMinute();
+    if (!night || night.closed || window.campusBusy || minute <= night.minute) return;
+    if (minute < night.report_at && left > 0) return;
+    if (Date.now() - lastReportTry < 5000) return;   // a report that failed is tried again a few seconds later
+    lastReportTry = Date.now();
+    reportTime();
+  }
+  // The shutter slip and the empty chair (point 5): a notice that is new (the room was just entered,
+  // the page was reloaded there, or the person has just left) is kept in the diary under the room's
+  // title, so the date on the slip can be read again, and shown as the note over the picture, unless
+  // it has just become the last line of the open card.
+  let lastNotice = "";
+  function showNotice(state) {
+    const notice = state.night ? state.night.notice : "";
+    if (notice && notice !== lastNotice) {
+      saveDiary(state.title, notice);
+      if (goneLine !== notice) toast(notice);
+    }
+    lastNotice = notice;
+  }
   function showTimeUp() {
     const t = ui();
     closeTalk();
@@ -1056,13 +1160,16 @@
     if (running && lastTick !== null) { timeLeft = Math.max(0, timeLeft - (now - lastTick)); saveTime(); }
     lastTick = now;
     const left = msLeft();
-    $("clock").textContent = `⏳ ${minutesSeconds(left)}`;
-    $("clock").setAttribute("aria-label", `${ui().time_aria}: ${minutesSeconds(left)}`);
+    // The campus time first, then the countdown: "22:27 · ⏳ 17:04" (specs/night-schedule.md, point 4).
+    $("clock").textContent = `${campusTime()} · ⏳ ${minutesSeconds(left)}`;
+    $("clock").setAttribute("aria-label", `${campusTime()} · ${ui().time_aria}: ${minutesSeconds(left)}`);
     $("clock").classList.toggle("urgent", !current.ending && left < 5 * 60000);
     if (left === 0 && !current.ending && $("timeup-card").hidden) showTimeUp();
     if (!$("timeup-card").hidden) window.playing = false;   // nothing else may let the detective walk again
   }
-  setInterval(tick, 1000);
+  // Only the timer reports, never a tick called by render or penalize: a report started there would keep
+  // the page busy and stop the command that called it (a rude answer would lose its reply).
+  setInterval(() => { tick(); if (current && !current.ending) reportDue(msLeft()); }, 1000);
   $("timeup-again").addEventListener("click", () => $("confirm-restart").click());   // the same confirmed restart as "New game"
   // How far the night has gone, from 0 (30 minutes left) to 1 (the faculty closes): it drives the music.
   function tensionOf() {
@@ -1100,6 +1207,11 @@
     const due = [];
     for (let i = 1; i <= Math.min(done, t.notices.length); i++) if (!store.sent.includes(`c${i}`)) due.push([`c${i}`, t.notices[i - 1]]);
     if (state.flagged > 0 && !store.sent.includes("chat")) due.push(["chat", t.notice_chat]);
+    // The unknown number also keeps the time: the warnings and the rounds the server says are due now,
+    // each id only once (specs/night-schedule.md, point 7).
+    for (const message of (state.night && state.night.messages) || []) {
+      if (!store.sent.includes(message.id)) due.push([message.id, message.text]);
+    }
     if (!due.length) return;
     for (const [id, text] of due) { store.sent.push(id); store.list.push({ text, clock: campusTime() }); }
     saveMsgs(state.player, store);
@@ -1207,15 +1319,19 @@
     bar.append(fill);
     const list = make("ul", undefined, "todo-list");
     for (const clue of current?.clues || []) {
-      const item = make("li", undefined, clue.done ? "done" : "");
-      const box = make("span", clue.done ? "✔" : "○", "todo-box");
-      box.setAttribute("aria-label", clue.done ? t.todo_done : t.todo_open);
+      const item = make("li", undefined, clue.done ? "done" : clue.lost ? "lost" : "");
+      const box = make("span", clue.done ? "✔" : clue.lost ? "✕" : "○", "todo-box");
+      box.setAttribute("aria-label", clue.done ? t.todo_done : clue.lost ? t.todo_lost : t.todo_open);
       const text = make("span", undefined, "todo-text");
       text.append(make("strong", clue.label));   // not where to find it: the player has to look (specs/cleaner-interface.md)
+      // When it closes, from the start of the night, and "Too late" once it is lost (specs/night-schedule.md, point 6).
+      if (clue.lost) text.append(make("small", t.todo_lost));
+      else if (clue.until && !clue.done) text.append(make("small", t.todo_until.replace("{time}", clue.until)));
       item.append(box, text);
       list.append(item);
     }
     screen.append(bar, list, make("p", t.todo_hint, "muted todo-hint"));
+    if ((current?.clues || []).some(c => c.lost)) screen.append(make("p", t.todo_hint_lost, "muted todo-hint"));
   }
 
   function drawMap(screen, t) {
@@ -1225,7 +1341,7 @@
       screen.append(make("p", t.map_no_3d, "muted"), make("p", `${t.map_where}: ${titles[current.room].title}`, "map-where"));
       return;
     }
-    const ready = (current?.clues || []).every(c => c.done);
+    const ready = (current?.clues || []).every(c => c.done || c.lost);   // a lost clue does not lock it (specs/night-schedule.md, point 6)
     const X0 = -30, Z0 = -13, K = 10, W = 44 * K, H = 26 * K;   // the map shows x from -30 to 14 and z from -13 to 13
     const sx = x => (x - X0) * K, sy = z => (z - Z0) * K;
     const board = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "map-svg", role: "img", "aria-label": t.map_title });

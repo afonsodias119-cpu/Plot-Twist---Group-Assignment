@@ -5,7 +5,8 @@ both files are read by the server only. campus_game.py calls these functions.
 
 What the player holds comes from two places:
 - the saved game (db.py, table `games`): the item and the flags of the story;
-- the night's notes (db.py, table `nights`): who was cracked tonight and the answers of the hearing.
+- the night's notes (db.py, table `nights`): who was cracked tonight, the answers of the hearing,
+  the campus minute and the rounds at which the player was caught (specs/night-schedule.md).
 The notes are read through read_night, which keeps only what it understands, so a damaged row can
 neither raise an error nor help the player.
 """
@@ -14,6 +15,9 @@ import db
 import game
 import logic
 from campus_case import CASE_TEXT, CONFRONT, EVIDENCE, FACTS, HEARING
+# The cost of a card is in the night's cost table (specs/night-schedule.md, point 2): the server adds
+# it to the campus minute.
+from campus_clock import COSTS, NIGHT_MINUTES, ROUNDS
 from campus_people import OBJECTS, PEOPLE, talk
 from campus_text import TEXT
 from story import STORIES
@@ -23,9 +27,6 @@ CARDS = list(EVIDENCE) + list(FACTS.values())
 FINAL_ROOM = "auditorium"
 # The doubts are never counted above three (point 10).
 MAX_DOUBTS = 3
-# Campus minutes a card costs when it proves nothing (point 6). The page takes them off its countdown.
-REBUFF_MINUTES = 2
-DUARTE_MINUTES = 1
 
 
 # ---------- the night's notes ----------
@@ -46,35 +47,58 @@ def valid_hearing(answers, state):
     return state["scene"] == FINAL_ROOM and len(answers) < len(HEARING)
 
 
+def clean_minute(saved):
+    """The campus minute of a saved night (specs/night-schedule.md, point 1).
+
+    The column holds the whole minutes (db.load_night already turns anything that is not an int into
+    0); it is brought back inside 0 to 30. The note `half` adds half a minute only when it is exactly
+    true and the night is not over.
+    """
+    whole = min(max(saved["minute"], 0), NIGHT_MINUTES)
+    if saved["notes"].get("half") is True and whole < NIGHT_MINUTES:
+        return whole + 0.5
+    return whole
+
+
 def read_night(player, state):
-    """The night's notes of this player, cleaned: {"minute", "cracked", "hearing", "verdict"}.
+    """The night's notes of this player, cleaned: {"minute", "cracked", "hearing", "verdict", "caught"}.
 
     `cracked` keeps only people who have a confrontation; `hearing` is None when no hearing was
     started (or the saved one does not fit this game); `verdict` is kept only when the game has ended
-    and the hearing could have produced it. Cleaning happens in memory: nothing is written here.
+    and the hearing could have produced it; `minute` is a whole number or a half from 0 to 30;
+    `caught` keeps only the rounds of the schedule (specs/night-schedule.md, point 8). Cleaning
+    happens in memory: nothing is written here.
     """
     saved = db.load_night(player)
     notes = saved["notes"]
     cracked = notes.get("cracked")
     cracked = [person for person in CONFRONT if isinstance(cracked, list) and person in cracked]
+    caught = notes.get("caught")
+    caught = [mark for mark in ROUNDS if isinstance(caught, list) and mark in caught]
     answers = notes.get("hearing")
-    night = {"minute": saved["minute"], "cracked": cracked,
-             "hearing": answers if valid_hearing(answers, state) else None, "verdict": ""}
+    night = {"minute": clean_minute(saved), "cracked": cracked,
+             "hearing": answers if valid_hearing(answers, state) else None, "verdict": "", "caught": caught}
     # The saved verdict is only a record of what was shown (point 10): the screen always works the
     # ending out again from the answers (shown_ending), so editing this note by hand changes nothing.
     if night["hearing"] is not None and state["ending"] != "none":
-        shown, _line = verdict_of(state, night["hearing"])
+        shown, _line = verdict_of(state, night["hearing"], bool(caught))
         if notes.get("verdict") == shown:
             night["verdict"] = shown
     return night
 
 
 def write_night(player, night):
-    """Save the night's notes. A hearing that was never started is left out."""
-    notes = {"cracked": night["cracked"], "verdict": night["verdict"]}
+    """Save the night's notes. A hearing that was never started is left out.
+
+    The column `minute` is an INTEGER, so it gets the whole minutes and the half is the note `half`
+    (specs/night-schedule.md, point 1).
+    """
+    minute = night["minute"]
+    notes = {"cracked": night["cracked"], "verdict": night["verdict"], "caught": night["caught"],
+             "half": minute != int(minute)}
     if night["hearing"] is not None:
         notes["hearing"] = night["hearing"]
-    db.save_night(player, night["minute"], notes)
+    db.save_night(player, int(minute), notes)
 
 
 # ---------- the cards ----------
@@ -133,17 +157,19 @@ def without_broken_claims(reply, night):
     return dict(reply, options=options)
 
 
-def confront(player, state, night, language, person, node, card):
+def confront(player, state, night, language, person, node, card, gone=()):
     """The player shows `card` to `person` on the line `node` (point 6).
 
     The right card on the claim line cracks the person: they are added to `cracked` (the only
-    write) and their fact, if they have one, is a card from now on. Anything else writes nothing.
+    write here) and their fact, if they have one, is a card from now on. Anything else writes nothing
+    here. `minutes` is what the card costs (specs/night-schedule.md, point 2): campus_game.py adds it
+    to the campus minute. `gone` are the people who have left by the schedule.
     The reply never says which card would have been right.
     """
     refuse_during_hearing(state, night, language)
     if not isinstance(card, str) or card not in CARDS:
         raise ValueError("Unknown evidence / Prova desconhecida.")
-    talk(state, language, person, node)   # the same checks as a conversation: the person is here, the line can be reached
+    talk(state, language, person, node, gone)   # the same checks as a conversation: the person is here, the line can be reached
     if person in OBJECTS:
         raise ValueError("Unknown person / Pessoa desconhecida.")
     if is_broken(night, person, node):
@@ -153,33 +179,38 @@ def confront(player, state, night, language, person, node, card):
 
     text = CASE_TEXT[language]
     reply = {"npc": person, "name": PEOPLE[language][person]["name"], "cracked": False,
-             "text": text["rebuffs"][person], "trust": None, "note": "", "minutes": REBUFF_MINUTES}
+             "text": text["rebuffs"][person], "trust": None, "note": "", "minutes": COSTS["card_wrong"]}
     if person == "duarte":   # one line for any card, on any of his lines
-        return dict(reply, minutes=DUARTE_MINUTES)
+        return dict(reply, minutes=COSTS["card_duarte"])
     claim = CONFRONT.get(person)
     if claim and node == claim["node"] and card in claim["breaks"]:
         write_night(player, dict(night, cracked=night["cracked"] + [person]))
         reveal = text["reveals"][person]
-        return dict(reply, cracked=True, text=reveal["text"], trust=reveal["trust"], note=reveal["note"], minutes=0)
+        return dict(reply, cracked=True, text=reveal["text"], trust=reveal["trust"], note=reveal["note"],
+                    minutes=COSTS["card_right"])
     return reply
 
 
 # ---------- the hearing ----------
 
-def doubts(answers):
-    """How many answers did not break their claim. "concede" is always a doubt."""
+def doubts(answers, caught=False):
+    """How many answers did not break their claim. "concede" is always a doubt.
+
+    A player who was caught at computer 12 tonight has one more doubt, however many times it happened
+    (specs/night-schedule.md, point 8). Never more than three.
+    """
     count = sum(1 for claim, answer in zip(HEARING, answers) if answer not in claim["accepts"])
-    return min(count, MAX_DOUBTS)
+    return min(count + (1 if caught else 0), MAX_DOUBTS)
 
 
-def verdict_of(state, answers):
+def verdict_of(state, answers, caught=False):
     """The ending shown after the hearing and the key of the professor's verdict line ("" for none).
 
     The story decides the best the player earned (state["ending"]); the hearing can only lose it
-    (point 10 and design-notes, B6).
+    (point 10 and design-notes, B6). `caught`: the player was caught at a round tonight.
     """
     story_ending = state["ending"]
-    count = doubts(answers)
+    count = doubts(answers, caught)
     if count >= MAX_DOUBTS:
         return "stolen_credits", "three_help" if state["flags"]["colleague_choice"] == "help" else "three"
     if count == 2 and story_ending == "full_case":
@@ -217,7 +248,7 @@ def hearing(player, state, night, language, answer):
     if len(night["hearing"]) == len(HEARING):
         # The saved ending is still "the first ending whose condition is true"; the verdict caps what is shown.
         game.play(player, "present_evidence", language)
-        night["verdict"], _line = verdict_of(game.load(player), night["hearing"])
+        night["verdict"], _line = verdict_of(game.load(player), night["hearing"], bool(night["caught"]))
     write_night(player, night)
     return True, "", True
 
@@ -241,20 +272,23 @@ def hearing_view(state, night, language):
     """The hearing for the snapshot: {step, doubts, said}, rebuilt from the saved answers, or None.
 
     `said` ends with the claim that waits for an answer; after the third answer it ends with the
-    reply to that answer, and `step` stays 3.
+    reply to that answer, and `step` stays 3. A player who was caught at computer 12 hears first why
+    the professor already doubts them (specs/night-schedule.md, point 8).
     """
     answers = night["hearing"]
     if answers is None:
         return None
     claims = CASE_TEXT[language]["claims"]
-    said = [entry("duarte", claims[HEARING[0]["id"]], language)]
+    said = [entry("professor", CASE_TEXT[language]["caught"], language)] if night["caught"] else []
+    said.append(entry("duarte", claims[HEARING[0]["id"]], language))
     for number, answer in enumerate(answers):
         mine = TEXT[language]["hearing_concede"] if answer == "concede" else "📁 " + card_label(answer, language)
         said.append({"who": "you", "name": "", "text": mine})
         said.append(answer_reply(HEARING[number], answer, language))
         if number + 1 < len(HEARING):
             said.append(entry("duarte", claims[HEARING[number + 1]["id"]], language))
-    return {"step": min(len(answers) + 1, len(HEARING)), "doubts": doubts(answers), "said": said}
+    return {"step": min(len(answers) + 1, len(HEARING)), "doubts": doubts(answers, bool(night["caught"])),
+            "said": said}
 
 
 def shown_ending(state, night, language):
@@ -267,7 +301,7 @@ def shown_ending(state, night, language):
         return None
     shown, line = state["ending"], ""
     if night["hearing"] is not None:
-        shown, line = verdict_of(state, night["hearing"])
+        shown, line = verdict_of(state, night["hearing"], bool(night["caught"]))
     ending = next(e for e in STORIES[language]["endings"] if e["id"] == shown)
     verdict = CASE_TEXT[language]["verdicts"][line] if line else ""
     return {"id": ending["id"], "title": ending["title"], "text": ending["text"], "verdict": verdict}

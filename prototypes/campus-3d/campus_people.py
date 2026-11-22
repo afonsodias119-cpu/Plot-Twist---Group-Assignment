@@ -308,12 +308,15 @@ PEOPLE = {
 }
 
 
-def people_in_room(scene, state, language):
-    """Who stands in the room of this saved scene (Leonor leaves after being accused)."""
+def people_in_room(scene, state, language, gone=()):
+    """Who stands in the room of this saved scene (Leonor leaves after being accused).
+
+    `gone` are the people who have left by the night's schedule (specs/night-schedule.md, point 5).
+    """
     room = room_of_scene(scene)
     found = []
     for person, where in ROOM_OF_PERSON.items():
-        if where != room:
+        if where != room or person in gone:
             continue
         if person == "leonor" and state["flags"]["colleague_choice"] == "accused":
             continue
@@ -321,13 +324,17 @@ def people_in_room(scene, state, language):
     return found
 
 
-def talk(state, language, person, node):
-    """One step of a conversation: what the person says and the answers offered now. Writes nothing."""
+def talk(state, language, person, node, gone=()):
+    """One step of a conversation: what the person says and the answers offered now. Writes nothing.
+
+    `gone` are the people who have left by the night's schedule: they are not here any more.
+    """
     if not isinstance(person, str) or person not in ROOM_OF_PERSON:
         raise ValueError("Unknown person / Pessoa desconhecida.")
     if not isinstance(node, str) or node not in PEOPLE[language][person]["nodes"]:
         raise ValueError("Unknown answer / Resposta desconhecida.")
-    if state["ending"] != "none" or person not in [p["id"] for p in people_in_room(state["scene"], state, language)]:
+    here = [p["id"] for p in people_in_room(state["scene"], state, language, gone)]
+    if state["ending"] != "none" or person not in here:
         raise ValueError("This person is not here / Esta pessoa não está aqui.")
     data = PEOPLE[language][person]
     line = data["nodes"][node]
