@@ -72,16 +72,10 @@ PEOPLE = {
         "amelia": {"name": "Clerk", "nodes": {
             "start": {"text": "The clerk adjusts her glasses. \"Hello! We close in ten minutes. What do you need?\"", "options": [
                 {"label": "Ask about the cover photo order", "next": "order"},
-                {"label": "Ask if anyone else came asking about the cover", "next": "visitor"},
                 _bye("Goodbye."),
             ]},
             "order": {"text": "\"On 14 November, you took the photo and had it printed the same day. I remember there were four people in it, and I think the original order file is still saved.\"",
                       "note": "The cover photo was taken and printed on 14 November. The print shop still has the original order file.", "options": [
-                _bye("Goodbye.")]},
-            "visitor": {"text": "\"If I'm not mistaken, a young man in a hood came by yesterday evening. He asked to reprint the cover with a different photo.\"",
-                        "note": "A hooded stranger asked the print shop to change the cover photo.", "options": [
-                {"label": "Ask what he looked like", "next": "hood"}]},
-            "hood": {"text": "\"He did not want to leave a name, so I just thought he was one of your group.\"", "options": [
                 _bye("Goodbye.")]},
         }},
         "leonor": {"name": "Leonor", "nodes": {
@@ -194,16 +188,10 @@ PEOPLE = {
         "amelia": {"name": "Funcionária", "nodes": {
             "start": {"text": "A funcionária ajeita os óculos. \"Fechamos daqui a dez minutos, do que precisas?\"", "options": [
                 {"label": "Perguntar pelo pedido da fotografia da capa", "next": "order"},
-                {"label": "Perguntar se mais alguém veio perguntar pela capa", "next": "visitor"},
                 _bye("Até já."),
             ]},
             "order": {"text": "\"A 14 de novembro, tiraram a fotografia e mandaram-na imprimir no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado.\"",
                       "note": "A fotografia da capa foi tirada e impressa a 14 de novembro. A reprografia ainda tem o ficheiro original do pedido.", "options": [
-                _bye("Até já.")]},
-            "visitor": {"text": "\"Ontem ao fim da tarde passou por aqui um rapaz de capuz e pediu para reimprimir a capa com outra fotografia.\"",
-                        "note": "Um desconhecido de capuz pediu à reprografia para mudar a fotografia da capa.", "options": [
-                {"label": "Perguntar como era ele", "next": "hood"}]},
-            "hood": {"text": "\"Não quis deixar o nome, por isso pensei que fosse do vosso grupo.\"", "options": [
                 _bye("Até já.")]},
         }},
         "leonor": {"name": "Leonor", "nodes": {
