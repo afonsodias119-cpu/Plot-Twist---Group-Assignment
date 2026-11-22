@@ -142,6 +142,7 @@
     saveLook(null);
     paintCreator();
     showPreview();
+    window.dispatchEvent(new Event("campus-look"));   // the fifth figure of the photo wears the same colour
   }
   // Writing a name that already has a look in this browser shows that look again.
   let lookTimer;
@@ -150,7 +151,7 @@
     lookTimer = setTimeout(() => {
       let stored = null;
       try { stored = localStorage.getItem(lookKey(name.value)); } catch (error) { /* no storage */ }
-      if (stored) { look = readLook(lookKey(name.value)); paintCreator(); showPreview(); }
+      if (stored) { look = readLook(lookKey(name.value)); paintCreator(); showPreview(); window.dispatchEvent(new Event("campus-look")); }
     }, 250);
   });
   window.addEventListener("campus-renderer-ready", showPreview);
@@ -1637,7 +1638,9 @@
   // The fifth silhouette of assets/cover.jpg in the picture's own pixels (1280 × 720), measured on the file.
   // The shapes use the same viewBox and "slice" as the photo's object-fit: cover, so they lie exactly on it.
   const FIFTH_COAT = "938,247 999,247 1016,335 1012,350 1020,428 924,428 925,350 918,335 926,252";
-  const DETECTIVE = { coat: "#b3895a", scarf: "#8a1f24", hat: "#3a2a1e" };   // the colours of the player in game3d.html
+  // The scarf and the hat of the detective in game3d.html. The coat takes the colour chosen in the
+  // character creator (OUTFIT_COLORS[look.color]), so "Yours." on night 3 is true.
+  const DETECTIVE = { scarf: "#8a1f24", hat: "#3a2a1e" };
   const PHOTO_PAPER = "#f2d089", PHOTO_FLOOR = "#d9a359";   // the pale yellow behind the people, and the floor
   function silhouette(fill, coat, stroke, width) {   // the head, the long coat and the two legs
     const style = { stroke, "stroke-width": width, "stroke-linejoin": "round" };
@@ -1657,7 +1660,7 @@
       fifthFigure.append(...silhouette(PHOTO_PAPER, PHOTO_PAPER, PHOTO_PAPER, 12),
                          svg("rect", { x: 930, y: 535, width: 90, height: 14, fill: PHOTO_FLOOR }));
     } else if (stage >= 2) {
-      fifthFigure.append(...silhouette(dark, stage >= 3 ? DETECTIVE.coat : dark, dark, 5));
+      fifthFigure.append(...silhouette(dark, stage >= 3 ? OUTFIT_COLORS[look.color] : dark, dark, 5));
       if (stage >= 4) {   // a scarf round the neck, one end hanging
         fifthFigure.append(svg("rect", { x: 938, y: 240, width: 50, height: 13, rx: 5, fill: DETECTIVE.scarf }),
                            svg("rect", { x: 973, y: 246, width: 12, height: 50, rx: 4, fill: DETECTIVE.scarf }));
@@ -1683,6 +1686,7 @@
   }
   window.addEventListener("language", () => { if (!current) drawNight(); });   // only the start screen shows it
   name.addEventListener("input", () => { if (!current) drawNight(); });   // the initial follows the name typed
+  window.addEventListener("campus-look", () => { if (!current) drawNight(); });   // and the coat follows the look
   drawNight();
 
   window.campusStart = async () => {
