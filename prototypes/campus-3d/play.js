@@ -28,6 +28,10 @@
   const LAST_NAME_KEY = "plot-twist-last-name";
   try { name.value = localStorage.getItem(LAST_NAME_KEY) || ""; } catch (error) { /* no storage */ }
   $("mission").after(nameBox);
+  // Which night of this name it is, under the name box (specs/earlier-nights.md, point 6). Empty on night 1,
+  // so a first player sees only the name field and its hint. It never counts endings. drawNight fills it.
+  const nightLine = make("p", "", "night-line");
+  nameBox.after(nightLine);
 
   const shell = make("main"); shell.id = "investigation"; shell.hidden = true;
   shell.innerHTML = `
@@ -239,7 +243,8 @@
   function speakEnding(ending, reply) {
     if (!canSpeak || !voiceOn) return;
     stopSpeaking();
-    const speakers = (ui().ending_voices || {})[ending.id] || [];
+    // An ending that is not one of the story's four brings its own voices (specs/earlier-nights.md, point 9).
+    const speakers = ending.voices || (ui().ending_voices || {})[ending.id] || [];
     // After a hearing: first its last reply in its speaker's voice, then the professor's verdict.
     // The ending's own quotes keep their voices (specs/evidence-and-hearing.md, point 11).
     const before = [];
@@ -360,6 +365,7 @@
     window.lang = state.language;
     window.dispatchEvent(new Event("language"));
     window.dispatchEvent(new Event("campus-state"));
+    rememberNight(state.memory);   // before showEnding: the ★ of the collection reads it
     const t = ui();
     $("scene-heading").textContent = state.ending ? state.ending.title : state.title;
     $("scene-label").textContent = state.ending ? t.the_end : t.scene;
@@ -492,14 +498,19 @@
 
   // ---------- the ending: a screen over the picture, with a stamp and confetti ----------
   const CONFETTI = { full_case: ["#e8b45c", "#f4e3b0", "#7fd6a0"], impostor: ["#7fd6a0", "#e8b45c", "#cfe8d8"],
-                     fifth_element: ["#b79cff", "#ffffff", "#6a4cff"], stolen_credits: ["#ff8c7a", "#9aa4ad"] };
+                     fifth_element: ["#b79cff", "#ffffff", "#6a4cff"], stolen_credits: ["#ff8c7a", "#9aa4ad"],
+                     extra: ["#ffb38a", "#ffe2a8", "#f2d089"] };
   function showEnding(ending) {
     const card = $("ending-card"), t = ui();
     if (!ending) { delete card.dataset.id; card.hidden = true; $("confetti").hidden = true; $("confetti").replaceChildren(); return; }
     if (card.dataset.id !== ending.id) {   // a new ending: build the screen once
       card.dataset.id = ending.id;
-      card.className = `ending-card ending-${ending.id}`;
-      $("ending-stamp").textContent = (t.stamps || {})[ending.id] || "";
+      // An ending that carries its own stamp is not one of the story's four: the page does not name it,
+      // it gets the neutral class `ending-extra` and uses the stamp, emoji and voices it brings
+      // (specs/earlier-nights.md, point 9).
+      const kind = ending.stamp ? "extra" : ending.id;
+      card.className = `ending-card ending-${kind}`;
+      $("ending-stamp").textContent = ending.stamp || (t.stamps || {})[ending.id] || "";
       $("ending-label").textContent = t.the_end;
       $("ending-title").textContent = ending.title;
       $("ending-text").replaceChildren(make("p", ending.text));
@@ -519,7 +530,7 @@
       $("ending-collection").textContent = collectionText();
       $("share-text").textContent = shareText(ending);
       $("share-copy").textContent = t.share_copy;
-      const colors = CONFETTI[ending.id] || CONFETTI.full_case;
+      const colors = CONFETTI[kind] || CONFETTI.full_case;
       $("confetti").replaceChildren(...Array.from({ length: 48 }, () => {
         const piece = make("span");
         piece.style.setProperty("--x", `${Math.random() * 100}%`);
@@ -638,13 +649,15 @@
         // Root subjects, Tomás's factual leads and Rita's question about the photo remain useful after choosing a sibling.
         // Reactions such as "Apologise" belong only to the current exchange.
         if (line.node === "start" || line.node === "result" || (line.npc === "tomas" && line.node === "kind") || (line.npc === "rita" && line.node === "photo")) {
+          // A memory answer (↺) is something said on arriving: it is never kept as a topic, and it is
+          // offered only with the greeting, the first line of a conversation (specs/earlier-nights.md, point 5).
           for (const option of line.options) {
-            if (option.next && option.next !== "start") topics.set(option.next, option);
+            if (option.next && option.next !== "start" && !option.memory) topics.set(option.next, option);
           }
         }
         const available = new Map();
         for (const option of [...line.options, ...topics.values()]) {
-          if (option.next !== "start") available.set(option.next, option);
+          if (option.next !== "start" && (firstLine || !option.memory)) available.set(option.next, option);
         }
         line = { ...line, options: [...available.values()] };
       }
@@ -656,7 +669,12 @@
     // When a decision can be taken, it is the moment of the choice: only the decisions are offered (specs/actions-when-they-make-sense.md).
     const deciding = (line.actions || []).some(action => action.decision && action.allowed);
     const answers = deciding ? [] : line.options.filter(option => option.next !== null && !asked.has(option.next)).map(option => {
-      const button = make("button", option.label, "answer");
+      // A memory answer has a small ↺ in front; screen readers hear "You have heard this before" instead.
+      const button = make("button", option.memory ? `↺ ${option.label}` : option.label, "answer");
+      if (option.memory) {
+        button.title = t.memory_answer;
+        button.setAttribute("aria-label", `${t.memory_answer}: ${option.label}`);
+      }
       button.addEventListener("click", () => {
         asked.add(option.next);
         addBubble(option.label, "me");   // the player's answer goes on the right, like a sent message
@@ -1009,7 +1027,9 @@
   }
   function collectionCount() {
     const all = data[window.lang || "pt"].endings, found = loadEndings();
-    return `${ui().collection}: ${all.filter(e => found.includes(e.id)).length}/${all.length}`;
+    // Still "n/4": the story has four endings. A ★ after it once the night is over (specs/earlier-nights.md, point 9).
+    const star = current?.memory?.over ? " ★" : "";
+    return `${ui().collection}: ${all.filter(e => found.includes(e.id)).length}/${all.length}${star}`;
   }
   function collectionText() {
     const all = data[window.lang || "pt"].endings, found = loadEndings();
@@ -1018,7 +1038,7 @@
   function shareText(ending) {
     const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
     const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("") + (current?.flagged ? "🟨" : "⬛");
-    return [`${t.share_title} 🕵️`, `${ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
+    return [`${t.share_title} 🕵️`, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
             `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
   }
   $("share-copy").addEventListener("click", async () => {
@@ -1201,10 +1221,19 @@
   $("sms").addEventListener("click", () => { $("sms").hidden = true; openPhone("msgs"); });
   // One message for each clue found (the first three build up, the fourth says what the player found),
   // and one when the first chat message is flagged. Only the newest pops up; all of them stay in the phone.
+  let restarting = false;   // true while a confirmed "New game" is on its way (set by the restart button)
   function checkNotices(state) {
     if (state.ending) { $("sms").hidden = true; return; }
+    // During a new game the old night's messages are about to be deleted: the restart calls this again
+    // once they are gone, so the new night's first message is not wiped (specs/earlier-nights.md, point 7).
+    if (restarting) return;
     const t = ui(), done = (state.clues || []).filter(c => c.done).length, store = loadMsgs(state.player);
     const due = [];
+    // The unknown number remembers earlier nights: its message as this night starts, each id only once
+    // (specs/earlier-nights.md, point 4). It comes first, so a message of the case pops up over it.
+    for (const whisper of state.whispers || []) {
+      if (!store.sent.includes(whisper.id)) due.push([whisper.id, whisper.text]);
+    }
     for (let i = 1; i <= Math.min(done, t.notices.length); i++) if (!store.sent.includes(`c${i}`)) due.push([`c${i}`, t.notices[i - 1]]);
     if (state.flagged > 0 && !store.sent.includes("chat")) due.push(["chat", t.notice_chat]);
     // The unknown number also keeps the time: the warnings and the rounds the server says are due now,
@@ -1445,6 +1474,84 @@
   $("phone-back").addEventListener("click", () => showPhone("home"));
   phone.addEventListener("cancel", e => { e.preventDefault(); closePhone(); });
 
+  // ---------- earlier nights: the fifth figure grows on the case-file photo (specs/earlier-nights.md, point 6) ----------
+  // The start screen is drawn before the server knows the player, so it uses a display copy kept in this
+  // browser: the night and `over` the server last reported. Only the picture reads it, never the rules.
+  const NIGHT_KEY = "plot-twist-night";
+  function loadNight() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(NIGHT_KEY) || "{}");
+      const night = Math.floor(Number(saved.night));   // a damaged copy (2.5, "x") must not stop the page
+      return { night: night >= 1 ? night : 1, over: saved.over === true };
+    } catch (error) { return { night: 1, over: false }; }
+  }
+  function rememberNight(memory) {   // called by render with the snapshot's `memory`
+    if (!memory) return;
+    try { localStorage.setItem(NIGHT_KEY, JSON.stringify({ night: memory.night, over: memory.over })); } catch (error) { /* no storage */ }
+  }
+  // The night shown: the larger of the copy and one more than the story endings in this browser's collection
+  // (an ending on screen is still "night 1" for the server until the new game).
+  function shownNight() {
+    const copy = loadNight(), found = loadEndings();
+    const story = data[window.lang || "pt"].endings.filter(ending => found.includes(ending.id)).length;
+    return { night: Math.max(copy.night, story + 1), over: copy.over };
+  }
+  // 1: nothing is added. 2: the fifth silhouette is darker. 3: its long coat has the detective's colour.
+  // 4: plus a scarf. 5: plus a hat. 6 (and every later night): the "?" of the red box is the player's initial.
+  function nightStage(night) {
+    return Math.min(6, Math.max(1, night));
+  }
+  // The fifth silhouette of assets/cover.jpg in the picture's own pixels (1280 × 720), measured on the file.
+  // The shapes use the same viewBox and "slice" as the photo's object-fit: cover, so they lie exactly on it.
+  const FIFTH_COAT = "938,247 999,247 1016,335 1012,350 1020,428 924,428 925,350 918,335 926,252";
+  const DETECTIVE = { coat: "#b3895a", scarf: "#8a1f24", hat: "#3a2a1e" };   // the colours of the player in game3d.html
+  const PHOTO_PAPER = "#f2d089", PHOTO_FLOOR = "#d9a359";   // the pale yellow behind the people, and the floor
+  function silhouette(fill, coat, stroke, width) {   // the head, the long coat and the two legs
+    const style = { stroke, "stroke-width": width, "stroke-linejoin": "round" };
+    return [svg("circle", { cx: 962, cy: 219, r: 22, fill, ...style }),
+            svg("rect", { x: 946, y: 428, width: 25, height: 104, rx: 6, fill, ...style }),
+            svg("rect", { x: 977, y: 428, width: 25, height: 104, rx: 6, fill, ...style }),
+            svg("polygon", { points: FIFTH_COAT, fill: coat, ...style })];
+  }
+  const photoBox = document.querySelector("#stepCase .photo"), redBox = photoBox?.querySelector(".target");
+  const fifthFigure = svg("svg", { class: "fifth-figure", viewBox: "0 0 1280 720", preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true" });
+  if (photoBox) photoBox.insertBefore(fifthFigure, redBox);   // under the red box
+  function drawFifthFigure(shown) {
+    const stage = nightStage(shown.night), dark = "#03060b";
+    fifthFigure.replaceChildren();
+    if (shown.over) {
+      // After the true ending a patch of the photo's own colours covers the fifth silhouette: four people are left.
+      fifthFigure.append(...silhouette(PHOTO_PAPER, PHOTO_PAPER, PHOTO_PAPER, 12),
+                         svg("rect", { x: 930, y: 535, width: 90, height: 14, fill: PHOTO_FLOOR }));
+    } else if (stage >= 2) {
+      fifthFigure.append(...silhouette(dark, stage >= 3 ? DETECTIVE.coat : dark, dark, 5));
+      if (stage >= 4) {   // a scarf round the neck, one end hanging
+        fifthFigure.append(svg("rect", { x: 938, y: 240, width: 50, height: 13, rx: 5, fill: DETECTIVE.scarf }),
+                           svg("rect", { x: 973, y: 246, width: 12, height: 50, rx: 4, fill: DETECTIVE.scarf }));
+      }
+      if (stage >= 5) {   // a fedora: the crown, then the brim
+        fifthFigure.append(svg("rect", { x: 944, y: 174, width: 36, height: 28, rx: 7, fill: DETECTIVE.hat }),
+                           svg("ellipse", { cx: 962, cy: 202, rx: 37, ry: 7, fill: DETECTIVE.hat }));
+      }
+    }
+    if (!redBox) return;
+    redBox.hidden = shown.over;   // the red box and its "?" go with the fifth person
+    const initial = name.value.trim().charAt(0).toUpperCase();
+    if (stage >= 6 && initial) redBox.dataset.initial = initial;   // play.css shows it in place of the "?"
+    else delete redBox.dataset.initial;
+  }
+  function drawNight() {
+    const shown = shownNight(), t = ui(), stage = nightStage(shown.night);
+    drawFifthFigure(shown);
+    // night_lines has one line for each of nights 2, 3, 4, 5 and 6-and-later; after the true ending, night_done.
+    if (shown.over) nightLine.textContent = t.night_done;
+    else nightLine.textContent = stage === 1 ? "" : t.night_lines[stage - 2].replace("{n}", shown.night);
+    nightLine.hidden = !nightLine.textContent;
+  }
+  window.addEventListener("language", () => { if (!current) drawNight(); });   // only the start screen shows it
+  name.addEventListener("input", () => { if (!current) drawNight(); });   // the initial follows the name typed
+  drawNight();
+
   window.campusStart = async () => {
     sound.start();
     if (!await send("open")) return;
@@ -1470,16 +1577,23 @@
   $("cancel-restart").addEventListener("click", closeDialog);
   dialog.addEventListener("cancel", e => { e.preventDefault(); closeDialog(); });
   $("confirm-restart").addEventListener("click", async () => {
-    if (await send("restart", { confirmed: true })) {
-      dialog.close(); window.playing = true; $("scene-heading").focus();
-      stopSpeaking();
-      window.dispatchEvent(new Event("campus-restarted"));
-      window.campusTable?.reset();   // a new game: no object of the table is marked as checked
-      window.campusPhoto?.reset();   // and the pieces of the photo are back on the counter
-      timeLeft = FULL_TIME; timeOwner = current.player; lastTick = null; saveTime();   // a new game: 30 new minutes
-      $("timeup-card").hidden = true;
-      tick();
-      try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); } catch (error) { /* no storage */ }
-    }
+    // The new night's snapshot is drawn before the old messages are deleted: `restarting` makes
+    // checkNotices wait until they are gone (specs/earlier-nights.md, point 7).
+    restarting = true;
+    try {
+      if (await send("restart", { confirmed: true })) {
+        dialog.close(); window.playing = true; $("scene-heading").focus();
+        stopSpeaking();
+        window.dispatchEvent(new Event("campus-restarted"));
+        window.campusTable?.reset();   // a new game: no object of the table is marked as checked
+        window.campusPhoto?.reset();   // and the pieces of the photo are back on the counter
+        timeLeft = FULL_TIME; timeOwner = current.player; lastTick = null; saveTime();   // a new game: 30 new minutes
+        $("timeup-card").hidden = true;
+        tick();
+        try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); } catch (error) { /* no storage */ }
+        restarting = false;
+        checkNotices(current);   // now the new night's whisper lands in an empty phone, at 22:15
+      }
+    } finally { restarting = false; }
   });
 })();
