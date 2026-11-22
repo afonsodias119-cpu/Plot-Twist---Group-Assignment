@@ -19,7 +19,7 @@ Na véspera da apresentação, aparece uma quinta pessoa na fotografia do teu gr
 |---|---|
 | **Tu** | O jogador. Membro do grupo de quatro. |
 | **Leonor** | Colega de grupo. Recebeu as mensagens falsas. Pode ajudar-te ou virar-te as costas. |
-| **Duarte Sequeira** | O intruso. Acrescentou o seu nome ao relatório e alterou a fotografia. |
+| **Duarte** | O intruso. Acrescentou o seu nome ao relatório e alterou a fotografia. |
 | **O professor** | Está no auditório a fechar a lista de grupos para o dia seguinte. |
 | **Funcionária da reprografia** | Guarda o pedido original de impressão da fotografia. |
 
@@ -80,7 +80,7 @@ Nas tabelas, o texto que o jogador lê está em itálico.
 ### 6.1 Sala de estudo — `study_room` (cena inicial)
 
 **Texto:**
-> É noite, véspera da apresentação. Na pasta do grupo, a fotografia mostra cinco pessoas. Vocês são quatro. Na capa do relatório há um quinto nome: Duarte Sequeira. No chat, os teus colegas garantem que ele "esteve sempre connosco". Só tu sabes que isso é mentira.
+> É noite, véspera da apresentação. Na pasta do grupo, a fotografia mostra cinco pessoas, no entanto vocês são quatro. Na capa do relatório há um quinto nome: Duarte. No chat, os teus colegas garantem que ele "esteve sempre connosco". Só tu sabes que isso é mentira.
 
 **Texto extra depois de apanhares a pen:**
 > A gaveta do grupo está vazia.
@@ -141,7 +141,7 @@ Depois de escolheres, as duas ações deixam de aparecer. A decisão não se pod
 
 | Ação | Condição | Resultado |
 |---|---|---|
-| Consultar os ficheiros antigos do projeto | Tens `usb_stick` e ainda não os viste | `files_viewed` passa a `true`. Texto: *Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador: alguém acrescentou "Duarte Sequeira" ao relatório e trocou a fotografia. Recuperas a versão original do trabalho.* A pen fica no inventário. Depois disto, a ação deixa de aparecer. |
+| Consultar os ficheiros antigos do projeto | Tens `usb_stick` e ainda não os viste | `files_viewed` passa a `true`. Texto: *Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador: alguém acrescentou "Duarte" ao relatório e trocou a fotografia. Recuperas a versão original do trabalho.* A pen fica no inventário. Depois disto, a ação deixa de aparecer. |
 | Voltar à sala de estudo | — | Vais para `study_room` |
 
 **Se tentares consultar sem a pen:**
@@ -235,7 +235,7 @@ Os prompts para gerar cada imagem, e as instruções para as guardar, estão em 
 
 ## 11. Em aberto — para o grupo decidir
 
-1. **Nomes.** "Leonor" e "Duarte Sequeira" servem?
+1. **Nomes.** "Leonor" e "Duarte Sequeira" servem? Decidido (22/11/2026): o intruso chama-se só "Duarte", sem apelido.
 2. **Língua do jogo.** Os textos estão em português. Se a apresentação for em inglês, traduzimos os textos (o código não muda, porque a história é um ficheiro de dados).
 3. **Ações bloqueadas.** A proposta é mostrar a ação e explicar porque está bloqueada. A alternativa é esconder a ação até ser possível. O brief aceita as duas.
 4. **Pen e auditório.** No brief, o exemplo é "chave abre porta". Aqui são dois passos: a pen abre os ficheiros, e ver os ficheiros abre o auditório. Fica mais interessante, mas temos de saber explicar isto na apresentação. A alternativa simples é o auditório exigir a pen diretamente.
