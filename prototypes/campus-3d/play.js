@@ -13,6 +13,9 @@
   // One emoji for each ending (the collection and the share card). It is defined here because the first screen uses it at start-up.
   const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸", fifth_element: "👁️" };
   document.body.classList.add("playable");
+  // A touch screen (a phone or a tablet whose main pointer is a finger): the same test as game3d.html, which
+  // then draws the joystick. Here it only changes the words that name keys (specs/phone-joystick.md, point 5).
+  const TOUCH = window.matchMedia("(pointer: coarse)").matches;
 
   const nameBox = make("div", undefined, "name-box");
   const nameLabel = make("label"); nameLabel.htmlFor = "detective-name";
@@ -250,6 +253,60 @@
       gain.gain.setValueAtTime(0.07, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
       osc.connect(gain); gain.connect(master); osc.start(now); osc.stop(now + 0.12);
     }
+    // ---- sounds that tell the player something happened (specs/sounds-that-tell.md, point 6) ----
+    // Each one starts with the same guard as tone and step, so the Sound button silences it.
+    // One step of someone else: a triangle wave falling from 90 to 45 Hz. `filtered`: heard through a wall.
+    function thump(volume, filtered) {
+      if (!ctx || muted) return;
+      const now = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = "triangle"; osc.frequency.setValueAtTime(90, now); osc.frequency.exponentialRampToValueAtTime(45, now + 0.1);
+      gain.gain.setValueAtTime(volume, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      osc.connect(gain);
+      if (filtered) {
+        const wall = ctx.createBiquadFilter(); wall.type = "lowpass"; wall.frequency.value = 600;
+        gain.connect(wall); wall.connect(master);
+      } else gain.connect(master);
+      osc.start(now); osc.stop(now + 0.14);
+    }
+    // 8 steps, 0.42 s apart: louder and louder when someone comes closer, softer when they go away.
+    function footsteps(coming) {
+      if (!ctx || muted) return;
+      for (let i = 0; i < 8; i++) {
+        const volume = 0.015 + (0.08 - 0.015) * (coming ? i : 7 - i) / 7;
+        setTimeout(() => { if (!muted) thump(volume, true); }, 420 * i);   // the Sound button can stop the steps half way
+      }
+    }
+    // A short noise (random samples, as the sea is made) through a band-pass filter sliding `from` -> `to` Hz.
+    // Returns its gain, so the shutter can shake it.
+    function noise(seconds, from, to, volume) {
+      if (!ctx || muted) return;
+      const now = ctx.currentTime, length = Math.ceil(ctx.sampleRate * seconds);
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate), samples = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) samples[i] = Math.random() * 2 - 1;
+      const source = ctx.createBufferSource(); source.buffer = buffer;
+      const band = ctx.createBiquadFilter(); band.type = "bandpass"; band.Q.value = 1.2;
+      band.frequency.setValueAtTime(from, now); band.frequency.exponentialRampToValueAtTime(to, now + seconds);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(volume, now); gain.gain.setValueAtTime(volume, now + seconds * 0.8);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + seconds);
+      source.connect(band); band.connect(gain); gain.connect(master);
+      source.start(now); source.stop(now + seconds);
+      return gain;
+    }
+    // The print shop's metal shutter rolling down: 1.4 s of rattle, then a thump. `level`: 1 in the print shop, 0.4 elsewhere.
+    function shutter(level) {
+      if (!ctx || muted) return;
+      const gain = noise(1.4, 2200, 700, 0.06 * level), now = ctx.currentTime;
+      const rattle = ctx.createOscillator(), depth = ctx.createGain();   // a 14 Hz wobble of the volume: the slats
+      rattle.frequency.value = 14; depth.gain.value = 0.03 * level;
+      rattle.connect(depth); depth.connect(gain.gain); rattle.start(now); rattle.stop(now + 1.4);
+      setTimeout(() => thump(0.1 * level, false), 1400);   // the shutter hits the counter
+    }
+    // A chair scraping on the floor: a short low noise.
+    function chair() {
+      if (!ctx || muted) return;
+      noise(0.25, 400, 200, 0.05);
+    }
     // music: a low drone and a pulse that get faster and darker as the night goes on (tension 0..1)
     let tension = 0, droneGain = null, droneFilter = null, musicOn = false, beatCount = 0;
     const NOTES = [110, 130.8, 164.8, 196, 220];   // A minor
@@ -302,6 +359,7 @@
       talk: () => tone(340 + Math.random() * 60, 0.07, "triangle", 0.05),
       buzz() { tone(110, 0.13, "square", 0.07); setTimeout(() => tone(110, 0.13, "square", 0.07), 180); },   // the phone
       setTension(value) { tension = Math.max(0, Math.min(1, value)); },
+      footsteps, shutter, chair,   // specs/sounds-that-tell.md
     };
   })();
   // The torch of the 3D scene and the voices of the people; both are remembered in this browser.
@@ -402,6 +460,7 @@
     $("notebook-hint").textContent = t.notebook_hint;
     $("restart").textContent = t.new_game;
     $("controls").textContent = t.controls;
+    if (TOUCH) $("controls").textContent = t.controls_touch;   // the circle, not the arrows (specs/phone-joystick.md)
     $("outside-hint").textContent = t.outside_hint;
     // The top bar has words, not emojis: the phone, and a menu with the other tools.
     $("phone-open").textContent = t.phone;
@@ -492,6 +551,7 @@
   function render(state, operation) {   // operation: the command this snapshot answers
     const roomChanged = !current || current.scene !== state.scene || Boolean(current.ending) !== Boolean(state.ending);
     const gotItem = current && state.inventory.length > current.inventory.length;
+    const before = current;   // the snapshot this one replaces: soundCues compares the two (specs/sounds-that-tell.md)
     current = state;
     window.campusState = state;
     window.lang = state.language;
@@ -521,6 +581,20 @@
           const button = make("button", person.object ? `🖥️ ${t.use} ${person.name}` : `💬 ${t.talk_to} ${person.name}`);
           button.dataset.talk = person.id;
           button.addEventListener("click", () => talkStep(person.id, "start"));
+          box.append(button); group.append(box);
+        }
+        $("action-groups").append(group);
+      }
+      // The things to look at in this room (specs/more-to-find.md, point 7): one button for each, in the side
+      // panel and so in the text mode too. Like investigating, it needs the character inside the room.
+      if ((state.finds || []).length) {
+        const group = make("section", undefined, "actions finds investigate");
+        group.append(make("h3", t.look_title));
+        for (const thing of state.finds) {
+          const box = make("div", undefined, "action-row");
+          const button = make("button", `🔎 ${thing.name}`);
+          button.dataset.thing = thing.id;
+          button.addEventListener("click", () => lookAt(thing.id));
           box.append(button); group.append(box);
         }
         $("action-groups").append(group);
@@ -593,9 +667,29 @@
     showChat(state.chat);
     checkNotices(state);
     sound.setTension(state.ending ? 0 : tensionOf(state));
+    soundCues(before, state, operation);
     if (roomChanged) {
       $("scene-heading").focus({ preventScroll: true });
       document.querySelector(".scene-panel").scrollTop = 0;
+    }
+  }
+
+  // ---------- sounds that tell the player something happened (specs/sounds-that-tell.md, point 5) ----------
+  // Only between two snapshots of the same night: never on opening the game (a reload at 22:40 must not
+  // play the shutter again), never for a new game or another player, never once the night has an ending.
+  function soundCues(before, state, operation) {
+    if (!before || before.player !== state.player || state.ending || ["open", "begin", "restart"].includes(operation)) return;
+    if (!before.night || !state.night) return;
+    const room = state.room;   // the 3D room of the saved scene: the group chat is in the computer lab
+    // Duarte walks to the lab door before a round, and back after it: only heard inside the lab (point 1).
+    if (room === "computer_lab" && before.night.duarte !== state.night.duarte) sound.footsteps(state.night.duarte === "lab_door");
+    const left = person => state.night.gone.includes(person) && !before.night.gone.includes(person);
+    // The clerk's shutter at 22:25: loud in the print shop, softer down the corridor (point 3).
+    if (left("amelia")) sound.shutter(room === "print_shop" ? 1 : 0.4);
+    // Leonor pushes her chair back and walks away: only heard in the library (point 2).
+    if (left("leonor") && room === "library") {
+      sound.chair();
+      setTimeout(() => sound.footsteps(false), 350);
     }
   }
 
@@ -1127,23 +1221,51 @@
   }
   // ---------- walking up to a person: a note says which key starts the conversation ----------
   // The 3D scene sets window.campusNear (the id of the person close enough, or null).
+  // A thing of the room can be near too (specs/more-to-find.md, point 7): the note then says "look".
+  // A function declaration, not a const: updateLabels calls updateNear while the page is still starting.
+  function nearThing() {
+    return window.campusNear && (current?.finds || []).find(thing => thing.id === window.campusNear);
+  }
   function updateNear() {
     $("hud-bottom").classList.toggle("talking", Boolean(talking));
     const person = window.campusNear && current?.people.find(p => p.id === window.campusNear);
-    $("near-hint").hidden = !person || Boolean(talking);
-    if (!person) return;
+    const thing = nearThing();
+    $("near-hint").hidden = !(person || thing) || Boolean(talking);
+    if (!person && !thing) return;
+    const t = ui();
+    // On a touch screen the note is the button for K: it says what a tap does, with no key drawn (specs/phone-joystick.md, point 4).
+    const sentence = thing ? (TOUCH ? t.tap_look : t.press_look).replace("{name}", thing.name)
+      : person.object ? (TOUCH ? t.tap_use : t.press_use).replace("{name}", person.name.toLowerCase())
+      : (TOUCH ? t.tap_talk : t.press_talk).replace("{name}", person.name);
+    if (TOUCH) { $("near-hint").replaceChildren(document.createTextNode(sentence)); return; }
     const key = make("kbd", "K");
-    const sentence = person.object ? ui().press_use.replace("{name}", person.name.toLowerCase()) : ui().press_talk.replace("{name}", person.name);
     $("near-hint").replaceChildren(key, document.createTextNode(" " + sentence));
   }
+  // K (or a click on the note): a thing is looked at, a person is talked to.
+  function useNear() {
+    const thing = nearThing();
+    if (thing) lookAt(thing.id);
+    else talkStep(window.campusNear, "start");
+  }
   window.addEventListener("campus-near", updateNear);
-  $("near-hint").addEventListener("click", () => { if (window.campusNear) talkStep(window.campusNear, "start"); });
+  $("near-hint").addEventListener("click", () => { if (window.campusNear) useNear(); });
   document.addEventListener("keydown", e => {
     if (e.key.toLowerCase() !== "k" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target.closest("input, textarea, dialog") || !window.campusNear || talking || !window.playing || window.campusBusy) return;
     e.preventDefault();
-    talkStep(window.campusNear, "start");
+    useNear();
   });
+  // ---------- looking at a thing of the room (specs/more-to-find.md, points 5 and 7) ----------
+  // The server says what it is and charges its minutes (only the order book costs any). The text is the
+  // note over the picture, with the usual "−2 min" when it cost time, and it is kept in the diary.
+  async function lookAt(thing) {
+    if (window.campusBusy || !current || current.ending) return;
+    if (!await send("examine", { thing })) return;
+    const seen = current.examine;
+    if (!seen) return;   // refused: render has already shown why
+    toast(current.night?.charged > 0 ? `${seen.text} (${chargedNote(current)})` : seen.text);
+    saveDiary(seen.name, seen.text);
+  }
   $("talk-close").addEventListener("click", closeTalk);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && talking && !phone.open && !dialog.open) closeTalk(); });
 
@@ -1377,7 +1499,8 @@
     for (const [id, text] of due) { store.sent.push(id); store.list.push({ text, clock: campusTime() }); }
     saveMsgs(state.player, store);
     showSms(due[due.length - 1][1]);
-    sound.buzz();
+    // One buzz for each new message, 0.7 s apart, at most three; the banner shows only the newest (specs/sounds-that-tell.md, point 4).
+    for (let i = 0; i < Math.min(due.length, 3); i++) setTimeout(() => sound.buzz(), 700 * i);
   }
   function drawMsgs(screen, t) {
     const store = loadMsgs(current?.player || "");
@@ -1426,6 +1549,8 @@
       return item;
     };
     $("howto-list").replaceChildren(...t.rules_items.map(entry));
+    // On a touch screen one more line under the points says how to walk and talk with a finger (specs/phone-joystick.md).
+    if (TOUCH) $("howto-list").append(make("li", t.rules_touch, "rules-touch"));
     $("howto-dev-list").replaceChildren(...t.howto_items.map(entry));
     window.playing = false;
     howto.showModal();

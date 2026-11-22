@@ -36,6 +36,7 @@ EXTRA = {
         "back": "← Língua",
         "skip": "Clica no texto ou carrega em Backspace para ler tudo",
         "help": "⬆️⬇️⬅️➡️ ou WASD para andar",
+        "help_touch": "Arrasta o círculo para andar",   # on a touch screen (specs/phone-joystick.md)
         "corridor": "Corredor",
         "outside_title": "Entrada do campus",
         "outside_text": "É noite. Ouve-se o mar a bater na praia, mesmo ao lado do campus. Quase todas as luzes estão apagadas, mas a porta de vidro da entrada ainda abre. Alguém ficou a trabalhar até tarde.",
@@ -54,6 +55,7 @@ EXTRA = {
         "back": "← Language",
         "skip": "Click the text or press Backspace to read it all",
         "help": "⬆️⬇️⬅️➡️ or WASD to move",
+        "help_touch": "Drag the circle to move",
         "corridor": "Corridor",
         "outside_title": "Campus entrance",
         "outside_text": "It is night. You can hear the sea on the beach, right next to the campus. Almost every light is off, but the glass entrance door still opens. Someone stayed late.",
@@ -75,7 +77,7 @@ def language_data(language):
     return {
         "scenes": scenes,
         "intro": dict(extra, title=ui["title"], premise=ui["premise"]),
-        "ui": {"help": extra["help"], "corridor": extra["corridor"]},
+        "ui": {"help": extra["help"], "help_touch": extra["help_touch"], "corridor": extra["corridor"]},
         "play_ui": dict(ui, **TEXT[language]),
         "endings": [{"id": e["id"], "title": e["title"]} for e in story["endings"]],   # the collection of endings
     }

@@ -22,7 +22,14 @@ TEXT = {
                   "pizza_slice": "Fatia de pizza", "napkin": "Guardanapo", "can": "Lata", "mug": "Caneca",
                   "crisps": "Pacote de batatas fritas", "cable": "Cabo", "sticky_notes": "Post-its", "pen": "Caneta",
                   "highlighter": "Marcador", "headphones": "Auscultadores", "keys": "Chaves", "calculator": "Calculadora",
+                  "student_card": "Cartão de estudante", "timetable": "Calendário de exames", "receipt": "Talão da pizza",
                   "usb_stick": "Pen do grupo"},
+        # things to look at in the rooms (specs/more-to-find.md); their texts are in campus_search.py, never here
+        "look_title": "Ver", "examine_where": "Isso não está aqui.", "press_look": "Clica na tecla K para ver: {name}",
+        # phone controls (specs/phone-joystick.md): on a touch screen the near note is a button, and no text names a key
+        "tap_talk": "Falar com {name}", "tap_use": "Usar: {name}", "tap_look": "Ver: {name}",
+        "controls_touch": "Anda com o círculo no canto inferior esquerdo da imagem: ao atravessares a porta de uma sala, entras nela (ou os botões levam-te lá).",
+        "rules_touch": "No telemóvel: arrasta o círculo no canto inferior esquerdo para andar, e toca na nota que aparece perto de uma pessoa ou de um objeto para falar ou usar.",
         "table_open": "Ver a mesa", "table_title": "A mesa da sala de estudo",
         "table_hint": "Encontra a pen do grupo.",
         "table_close": "Fechar",
@@ -167,7 +174,14 @@ TEXT = {
                   "pizza_slice": "Pizza slice", "napkin": "Napkin", "can": "Can", "mug": "Mug",
                   "crisps": "Bag of crisps", "cable": "Cable", "sticky_notes": "Sticky notes", "pen": "Pen",
                   "highlighter": "Highlighter", "headphones": "Headphones", "keys": "Keys", "calculator": "Calculator",
+                  "student_card": "Student card", "timetable": "Exam timetable", "receipt": "Pizza receipt",
                   "usb_stick": "The group's USB stick"},
+        # things to look at in the rooms (specs/more-to-find.md); their texts are in campus_search.py, never here
+        "look_title": "Look at", "examine_where": "That is not here.", "press_look": "Press the K key to look: {name}",
+        # phone controls (specs/phone-joystick.md): on a touch screen the near note is a button, and no text names a key
+        "tap_talk": "Talk to {name}", "tap_use": "Use {name}", "tap_look": "Look: {name}",
+        "controls_touch": "Walk with the circle at the bottom left of the picture: walking through a room's door takes you in (or use the buttons).",
+        "rules_touch": "On a phone: drag the circle at the bottom left to walk, and tap the note that appears near a person or an object to talk to them or use it.",
         "table_open": "Look at the table", "table_title": "The study room table",
         "table_hint": "Find the group's USB stick.",
         "table_close": "Close",

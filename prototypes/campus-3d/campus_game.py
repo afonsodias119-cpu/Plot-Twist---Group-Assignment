@@ -18,6 +18,9 @@ from campus_clock import (COSTS, LEAVES, NIGHT_MINUTES, ROUNDS, SHUTTER, WARNING
 from campus_memory import TIME_UP, memory_view, night_number, record, round_warning, whispers
 # The answers of the two puzzles: read only here, never sent to the page (specs/pen-and-code.md).
 from campus_search import PC12_CODE, PEN_SPOT, PHOTO_PIECES, PHOTO_SOLUTION, PHOTO_TEXT, SEARCH_TEXT, SPOTS
+# The things to examine in the rooms and their texts (specs/more-to-find.md). Server only too: the page
+# gets a text only when the player examines the thing (the operation `examine`).
+from campus_search import FIND_LATER, FIND_MINUTES, FIND_TEXT, FINDS
 from story import LANGUAGES, STORIES, UI_TEXTS
 
 # The clues the player has to collect, and the room where each one is found. In this 3D version the
@@ -33,6 +36,8 @@ CLOCK_STILL = {"charged": 0, "caught": False, "message": ""}
 # The scenes the 3D campus can show. The five rooms have their own place in game3d.html (ROOMS); the
 # group chat is played inside the computer lab (see campus_people.ROOM_OF_SCENE).
 ROOMS_3D = {"study_room", "print_shop", "library", "computer_lab", "auditorium", "group_chat"}
+# The room of each thing to examine, read from FINDS (specs/more-to-find.md, point 2).
+FIND_ROOM = {thing: room for room, things in FINDS.items() for thing in things}
 
 
 def leads_outside_3d(definition):
@@ -300,6 +305,15 @@ def action_rows(story, state, language, minute=0):
     return actions
 
 
+def find_rows(state, language):
+    """The things of the 3D room of the saved scene, as {"id", "name"}; none after an ending
+    (specs/more-to-find.md, point 6). The group chat is in the computer lab, so it has the lab's things."""
+    if state["ending"] != "none":
+        return []
+    things = FINDS.get(room_of_scene(state["scene"]), ())
+    return [{"id": thing, "name": FIND_TEXT[language][thing]["name"]} for thing in things]
+
+
 def snapshot(player, language, message="", accepted=True, charged=0):
     """Send the current scene, not the full mystery, to the browser.
 
@@ -352,6 +366,8 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         # The 3D room where the saved scene takes place (the group chat happens in the computer lab).
         "room": room_of_scene(state["scene"]),
         "people": people_in_room(state["scene"], state, language, gone),
+        # The things to examine in that room: only their ids and names, never their texts (specs/more-to-find.md, point 6).
+        "finds": find_rows(state, language),
         "clock": clock_text(state),   # the old time from progress, kept for the reviewed tests; not shown
         # The campus minute and the schedule (specs/night-schedule.md, point 10).
         "night": night_view(state, night, language, charged, memory["night"]),
@@ -482,6 +498,32 @@ def assemble_photo(player, language, pieces):
     return dict(clocked_snapshot(player, language, message, result["accepted"], clock), assembled=result["accepted"])
 
 
+def find_thing(player, language, thing):
+    """The player examines one thing of a room (specs/more-to-find.md, point 5).
+
+    The thing must be in the 3D room of the saved scene and the game must not have ended; otherwise
+    the reply says so and nothing is saved. The flavour things and computer 7 cost nothing and write
+    nothing. The order book costs its minutes from FIND_MINUTES, charged like every other cost, until
+    the original photo is held. The reply is the snapshot plus the thing: {"id", "name", "text",
+    "minutes"}, or None when it was refused.
+    """
+    if not isinstance(thing, str) or thing not in FIND_ROOM:
+        raise ValueError("Unknown thing / Coisa desconhecida.")
+    if locked(player):   # nothing else during the hearing (specs/evidence-and-hearing.md, point 12)
+        return locked_reply(player, language, examine=None)
+    state = game.load(player)
+    language = db.load_language(player) or language
+    if state["ending"] != "none" or room_of_scene(state["scene"]) != FIND_ROOM[thing]:
+        return dict(snapshot(player, language, TEXT[language]["examine_where"], accepted=False), examine=None)
+    texts = FIND_TEXT[language][thing]
+    # A red herring reads differently once its condition is true, and then it costs nothing (point 3).
+    later = thing in FIND_LATER and logic._condition_met(FIND_LATER[thing], state)
+    minutes = 0 if later else FIND_MINUTES.get(thing, 0)
+    clock = charge(player, language, minutes) if minutes else CLOCK_STILL
+    seen = {"id": thing, "name": texts["name"], "text": texts["later"] if later else texts["text"], "minutes": minutes}
+    return dict(clocked_snapshot(player, language, "", True, clock), examine=seen)
+
+
 def report_time(player, language, minute):
     """The page reports its own whole campus minute (specs/night-schedule.md, point 3).
 
@@ -503,7 +545,7 @@ def closed_reply(player, language, operation):
     if operation in ("talk", "confront"):
         raise ValueError(closed_text)
     extra = {"search": {"found": False}, "unlock": {"unlocked": False}, "assemble": {"assembled": False},
-             "hearing": {"heard": False}}
+             "hearing": {"heard": False}, "examine": {"examine": None}}
     return dict(snapshot(player, language, closed_text, accepted=False), **extra.get(operation, {}))
 
 
@@ -526,6 +568,8 @@ def command(payload):
         "hearing": {"operation", "player", "language", "answer"},
         # the page reports its campus minute (specs/night-schedule.md, point 3)
         "time": {"operation", "player", "language", "minute"},
+        # examining a thing of a room (specs/more-to-find.md, point 5)
+        "examine": {"operation", "player", "language", "thing"},
     }
     if not isinstance(operation, str) or operation not in allowed_fields:
         raise ValueError("Unknown operation / Operação desconhecida.")
@@ -596,6 +640,8 @@ def command(payload):
         return unlock_computer(player, language, payload["code"])
     if operation == "assemble":
         return assemble_photo(player, language, payload["pieces"])
+    if operation == "examine":
+        return find_thing(player, language, payload["thing"])
     if not isinstance(payload["action"], str):
         raise ValueError("Invalid action / Ação inválida.")
     if locked(player):

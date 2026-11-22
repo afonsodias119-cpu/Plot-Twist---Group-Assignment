@@ -45,6 +45,20 @@
       p("M-8 12 L -30 64 L -22 66 L -20 60 L -14 62 L 2 18 Z", "#b9bcc2") + r(-30, -36, 26, 18, "#1d6fb8", "rx=\"4\""),
     calculator: () => r(-60, -90, 120, 180, "#2b2f36", "rx=\"10\"") + r(-46, -76, 92, 30, "#a9b8a0", "rx=\"3\"") +
       [...Array(16)].map((_, i) => r(-44 + (i % 4) * 23, -34 + Math.floor(i / 4) * 28, 17, 20, i % 4 === 3 ? "#d27a2c" : "#4a505a", "rx=\"3\"")).join(""),
+    // student life (specs/more-to-find.md, point 1). None looks like the stick: the card is twice its size,
+    // white, with a photo and the NOVA stripe; the other two are paper.
+    student_card: () => r(-48, -30, 96, 60, "#fbfbf8", "rx=\"5\" " + line) + r(-48, -30, 96, 13, "#0b2a5b", "rx=\"5\"") +
+      `<text x="-40" y="-20" font-size="9" font-weight="700" fill="#ffffff">NOVA</text>` +
+      r(-40, -11, 26, 33, "#cbb9a4", "rx=\"2\"") + c(-27, -1, 7, "#8a6a50") + p("M-37 22 q 10 -14 20 0", "#8a6a50") +
+      [...Array(4)].map((_, i) => r(-6, -7 + i * 8, i === 3 ? 26 : 44, 3, "#b9bcc4")).join(""),
+    timetable: () => r(-72, -96, 144, 192, "#fbfaf5", line) + r(-60, -84, 90, 6, "#3c3c3c") +
+      [...Array(9)].map((_, i) => r(-60, -64 + i * 17, 120, 1.5, "#c9ccd2")).join("") +
+      [...Array(4)].map((_, i) => r(-60 + i * 40, -64, 1.5, 136, "#c9ccd2")).join("") +
+      [...Array(3)].map((_, i) => `<ellipse cx="0" cy="-4" rx="${26 + i * 3}" ry="${11 + i * 2}" fill="none" stroke="#d0342c" stroke-width="2.5"/>`).join("") +
+      c(42, -4, 7, "#3c3c3c") + c(39.5, -5, 1.8, "#fbfaf5") + c(44.5, -5, 1.8, "#fbfaf5") + r(39, 2, 6, 4, "#3c3c3c"),
+    receipt: () => p("M-28 -84 L 28 -84 L 28 76 L 21 84 L 14 76 L 7 84 L 0 76 L -7 84 L -14 76 L -21 84 L -28 76 Z", "#fdfcf6", line) +
+      r(-18, -72, 36, 5, "#5f656c") + [...Array(7)].map((_, i) => r(-20, -56 + i * 13, i % 3 === 2 ? 22 : 40, 3, "#9ea3aa")).join("") +
+      r(-20, 42, 40, 2, "#5f656c") + r(4, 52, 16, 5, "#5f656c"),
     // the USB stick: a dark body, a metal end with two small squares, and a hole for a key ring
     usb_stick: () => r(-24, -8, 40, 16, "#2a2e33", "rx=\"4\"") + r(16, -6, 13, 12, "#c3c8ce", "rx=\"1\"") +
       r(20, -3, 3, 2, "#5f656c") + r(24, -3, 3, 2, "#5f656c") + c(-18, 0, 2.5, "#15181b"),
@@ -64,6 +78,7 @@
     ["pen", 470, 250, -38, 1], ["pen", 760, 120, 64, 0.9], ["pen", 220, 560, 8, 0.9], ["pen", 640, 510, -70, 0.85],
     ["highlighter", 580, 280, 140, 0.9], ["highlighter", 60, 300, 85, 0.9], ["keys", 285, 500, 25, 1],
     ["crisps", 980, 250, -40, 0.7],
+    ["timetable", 240, 95, -14, 0.95], ["student_card", 700, 250, 18, 1], ["receipt", 375, 590, 78, 0.95],   // far from the stick
     ["usb_stick", 588, 492, 23, 1],
     ["napkin", 618, 470, -15, 0.7],   // lies over half of the USB stick
     ["pizza_slice", 470, 600, -200, 0.8], ["cable", 120, 60, 170, 0.8],
