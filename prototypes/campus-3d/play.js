@@ -611,7 +611,9 @@
     }
     // "Goodbye" (an answer that ends the talk) is not shown: the header has "End conversation".
     // A question already chosen in this conversation is not offered again.
-    const answers = line.options.filter(option => option.next !== null && !asked.has(option.next)).map(option => {
+    // When a decision can be taken, it is the moment of the choice: only the decisions are offered (specs/actions-when-they-make-sense.md).
+    const deciding = (line.actions || []).some(action => action.decision && action.allowed);
+    const answers = deciding ? [] : line.options.filter(option => option.next !== null && !asked.has(option.next)).map(option => {
       const button = make("button", option.label, "answer");
       button.addEventListener("click", () => {
         asked.add(option.next);
@@ -622,20 +624,20 @@
       return button;
     });
     // What can be done by talking to this person (ask for the copy, take the decision...): choices inside the conversation.
+    // They look like any other answer and come after the questions (specs/actions-when-they-make-sense.md).
     const doing = make("div", undefined, "actions investigate talk-actions");
     for (const action of line.actions || []) {
       if (action.id === "open_drawer") continue;   // the USB stick has to be found in the room (specs/pen-and-code.md)
-      const row = make("div", undefined, "talk-action");
+      if (action.decision && !action.allowed) continue;   // a decision shows only when it can be taken
+      if (action.id === "request_copy" && !asked.has("order")) continue;   // the copy only after the clerk mentions the original order
       const isCode = action.id === "view_files";   // computer 12 asks for its code first
-      const button = make("button", isCode ? t.code_enter : `▶ ${action.label}`, action.allowed ? "" : "locked");
+      const button = make("button", isCode ? t.code_enter : action.label, "answer");
       button.dataset.action = action.id;
       button.addEventListener("click", () => isCode ? askCode(line) : talkAction(line, action));
-      row.append(button);
-      if (action.decision) row.append(make("p", t.decision, "action-hint"));
-      doing.append(row);
+      doing.append(button);
     }
     if (doing.children.length && window.campusInside === false) doing.append(make("p", t.outside_hint, "muted"));
-    $("talk-options").replaceChildren(...(doing.children.length ? [doing] : []), ...answers);
+    $("talk-options").replaceChildren(...answers, ...(doing.children.length ? [doing] : []));
     $("talk-options").hidden = !doing.children.length && !answers.length;
     $("talk-close").classList.toggle("only-way", !doing.children.length && !answers.length);   // the way out stands out
     applyInside();

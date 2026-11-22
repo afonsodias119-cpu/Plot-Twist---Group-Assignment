@@ -51,6 +51,10 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 
 Alteração preparada em `maria/continuous-conversations`: depois de cada resposta, as outras perguntas disponíveis continuam no mesmo diálogo, sem terminar e voltar a falar. Mantém as pistas, as condições e as consequências. Ver `specs/continuous-conversations.md`.
 
+### Ações da conversa só quando fazem sentido — Maria (22/11/2026)
+
+Alteração preparada em `actions-when-they-make-sense`: no jogo 3D, os dois botões amarelos da Leonor (pedir ajuda ou acusá-la) só aparecem quando já tens a fotografia original. Antes disso, a conversa mostra só as respostas normais; com a fotografia, mostra só as duas decisões. Na reprografia, "Pedir uma cópia do pedido original" só aparece depois de a funcionária falar do pedido. Nas conversas, as ações deixam de ser botões amarelos: parecem respostas normais e vêm depois das perguntas. O servidor e as regras não mudam. Ver `specs/actions-when-they-make-sense.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.
