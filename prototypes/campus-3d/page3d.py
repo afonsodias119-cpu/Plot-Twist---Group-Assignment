@@ -90,10 +90,15 @@ def build_page(playable=False, inline=False):
         # Streamlit component: there is no server to fetch /play.js from, so the files go inside the page.
         css = (HERE / "play.css").read_text(encoding="utf-8")
         js = (HERE / "play.js").read_text(encoding="utf-8").replace("</script", r"<\/script")
+        # the close-up of the study room table (specs/hidden-object-table.md)
+        table = (HERE / "table.js").read_text(encoding="utf-8").replace("</script", r"<\/script")
         # An inline script ignores "defer", so it goes at the end of the body, when the page elements exist.
-        page = page.replace("</head>", f"<style>{css}</style></head>").replace("</body>", f"<script>{js}</script></body>")
+        # table.js and play.js share one <script> (table.js keeps its names inside its own function).
+        page = page.replace("</head>", f"<style>{css}</style></head>").replace(
+            "</body>", f"<script>{table}\n{js}</script></body>")
     elif playable:
-        page = page.replace("</head>", '<link rel="stylesheet" href="/play.css"><script defer src="/play.js"></script></head>')
+        page = page.replace("</head>", '<link rel="stylesheet" href="/play.css"><script defer src="/table.js"></script>'
+                                       '<script defer src="/play.js"></script></head>')
     return page
 
 

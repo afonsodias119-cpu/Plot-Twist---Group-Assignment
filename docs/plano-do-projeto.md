@@ -63,6 +63,10 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 
 Alteração preparada em `no-endings-on-start`: o ecrã inicial do jogo 3D deixa de mostrar "Finais descobertos: 0/4", para o jogador não saber quantos finais há antes de jogar. O ecrã do fim continua a mostrar os finais descobertos. Ver `specs/no-endings-on-start.md`.
 
+### A pen escondida na mesa — Maria (22/11/2026)
+
+Alteração preparada em `hidden-object-table`: na sala de estudo só a mesa, cheia de tralha, se pode revistar. Clicar nela (ou em "Ver a mesa") abre um grande plano visto de cima, com dezenas de objetos; cada objeto errado custa 1 minuto; os objetos podem ser arrastados (sem custo) e há uma lupa desenhada no canto que se arrasta pela mesa. Nenhum texto diz onde está a pen, e o chão da sala ficou livre. O servidor mantém a operação `search`; só mudou a lista de objetos em `campus_search.py`. Ver `specs/hidden-object-table.md`. No mesmo ramo: as placas das portas deixam de aparecer por cima da mesa, e entrar no auditório sem provas vindo de outra sala já não leva a personagem para a sala de estudo (`specs/auditorium-door-keeps-room.md`).
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

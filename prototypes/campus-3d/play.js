@@ -376,19 +376,16 @@
         }
         $("action-groups").append(group);
       }
-      // Searching the study room for the USB stick (specs/pen-and-code.md). In 3D the objects are clicked
-      // in the picture; the text mode lists the same places as buttons.
+      // Searching the study room for the USB stick (specs/hidden-object-table.md): the button opens the
+      // close-up of the messy table (in 3D, clicking the table does the same).
       if (state.scene === "study_room" && !state.inventory.some(item => item.id === "usb_stick")) {
-        const group = make("section", undefined, "actions search");
-        group.append(make("h3", t.search_title), make("p", t.search_hint, "muted"));
-        if (textMode) {
-          for (const [spot, label] of Object.entries(t.spots)) {
-            const box = make("div", undefined, "action-row");
-            const button = make("button", label, "locked");
-            button.addEventListener("click", () => window.campusSearch(spot));
-            box.append(button); group.append(box);
-          }
-        }
+        // No title or hint: saying where the stick is would give the solution away.
+        const group = make("section", undefined, "actions search investigate");
+        const box = make("div", undefined, "action-row");
+        const button = make("button", t.table_open);
+        button.id = "table-open";
+        button.addEventListener("click", () => window.campusOpenTable());
+        box.append(button); group.append(box);
         $("action-groups").append(group);
       }
       const actionRow = action => {
@@ -700,20 +697,32 @@
     $("talk-close").classList.remove("only-way");
     input.focus();
   }
-  // ---------- searching the study room (specs/pen-and-code.md) ----------
-  // The 3D scene calls this when an object of the study room is clicked; the text mode calls it from its buttons.
+  // ---------- searching the study room: the close-up of the table (specs/hidden-object-table.md) ----------
+  // Asks the server about one kind of object of the table. Answers "found", "wrong" or nothing.
   window.campusSearch = async spot => {
     if (window.campusBusy || !current || current.ending) return;
     const t = ui();
     if (current.scene !== "study_room" || window.campusInside === false) { toast(t.search_where); return; }
     if (current.inventory.some(item => item.id === "usb_stick")) { toast(t.search_done); return; }
     if (!await send("search", { spot })) return;
-    if (current.found) {
-      toast(current.message);
-      window.dispatchEvent(new CustomEvent("campus-found", { detail: spot }));   // the 3D scene opens the box
-    } else if (current.message !== t.search_where && current.message !== t.search_done) {
-      penalize(1, `${current.message} (${t.time_penalty_search})`);   // a wrong place costs 1 minute
+    if (current.found) { toast(current.message); return "found"; }
+    if (current.message !== t.search_where && current.message !== t.search_done) {
+      penalize(1, `${current.message} (${t.time_penalty_search})`);   // a wrong object costs 1 minute
+      return "wrong";
     }
+  };
+  // Opens the close-up (table.js draws it): only inside the study room, before the stick is found.
+  window.campusOpenTable = () => {
+    if (!current || current.ending || !window.campusTable) return;
+    const t = ui();
+    if (current.scene !== "study_room" || window.campusInside === false) { toast(t.search_where); return; }
+    if (current.inventory.some(item => item.id === "usb_stick")) { toast(t.search_done); return; }
+    window.playing = false;   // the character stands still while looking at the table
+    window.campusTable.open({
+      title: t.table_title, hint: t.table_hint, close: t.table_close, lens: t.table_lens, labels: t.spots,
+      pick: kind => window.campusSearch(kind),
+      onClose: () => { if (!talking && !phone.open && !dialog.open) window.playing = true; },
+    });
   };
   async function talkStep(npc, node) {
     if (window.campusBusy || !current) return;
@@ -1150,6 +1159,7 @@
       dialog.close(); window.playing = true; $("scene-heading").focus();
       stopSpeaking();
       window.dispatchEvent(new Event("campus-restarted"));
+      window.campusTable?.reset();   // a new game: no object of the table is marked as checked
       timeLeft = FULL_TIME; timeOwner = current.player; lastTick = null; saveTime();   // a new game: 30 new minutes
       $("timeup-card").hidden = true;
       tick();
