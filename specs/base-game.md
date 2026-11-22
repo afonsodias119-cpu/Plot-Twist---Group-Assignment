@@ -287,7 +287,7 @@ Rows 1 to 5 are section 11 of `docs/historia.md`. This spec follows the proposal
 
 | # | Question | This spec assumes | If the team decides otherwise |
 |---|---|---|---|
-| 1 | Names | Leonor, Duarte Sequeira | Edit texts in `story.py`. No test uses a name. |
+| 1 | Names | Leonor, Duarte (no surname since 2026-11-22) | Edit texts in `story.py`. No test uses a name. |
 | 2 | Language | Decided by the team (2026-11-15): the player chooses English or Portuguese on the Start screen. English is the default. | Remove one entry from `STORIES` and `UI_TEXTS`, and remove the `language` radio and its tests. |
 | 3 | Blocked actions | Shown, and explained on click | `app.py` draws only actions with `allowed` `True`. The rules stay. `test_blocked_click_is_explained` checks that the button is absent instead. The section 6 bullet and the Done when "Rejected" click change: a rejection is then only visible through the old-tab case, which becomes the click check. `blocked_text` stays in the rules but is never shown. |
 | 4 | Pen and auditorium | Two steps: the pen opens the files, and the files open the auditorium | `go_auditorium` requires `{"has": ["usb_stick"]}`. The two auditorium tests are rewritten and `P_SHORT` drops to 3 actions. In Done when, do the "Rejected" click before opening the drawer. Any check whose blocked case is the auditorium with the pen uses `view_files` without the pen instead. |

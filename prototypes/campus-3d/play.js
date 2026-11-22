@@ -200,7 +200,7 @@
       const said = (match[1] || match[2] || match[3]).trim();
       narration += text.slice(last, match.index);
       last = match.index + match[0].length;
-      // A short quote without a full stop is a name or a title (someone added "Duarte Sequeira" to the
+      // A short quote without a full stop is a name or a title (someone added "Duarte" to the
       // report), not a line someone says: it stays in the narration, with its quotation marks.
       if (said.split(/\s+/).length <= 3 && !/[.!?…]/.test(said)) { narration += match[0]; continue; }
       if (narration.trim()) parts.push({ kind: "narration", text: narration.trim() });

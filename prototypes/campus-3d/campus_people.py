@@ -3,8 +3,9 @@
 A conversation is a small tree. Each node has what the person says, optional `trust` (0-3, shown as
 hearts), an optional `note` (a line for the player's diary) and the answers the player can choose:
 {"label", "next"} where next is another node id or None (the conversation ends).
-There is no "Ask something else" answer (specs/chat-dialogues.md): to change subject, the player
-talks to the person again.
+There is no "Ask something else" answer (specs/chat-dialogues.md): the screen keeps the conversation
+open and offers, after each answer, the topics of the opening menu not asked yet
+(specs/continuous-conversations.md).
 An answer can have "if": a story condition ({"has": [...], "flags": {...}}); it is offered only when true.
 An answer can have "cost": minutes taken off the countdown when the player chooses it (the rude answers,
 specs/harder-campus.md). The countdown lives in the browser; the server only passes the cost on.
@@ -47,18 +48,18 @@ def _bye(label):
 PEOPLE = {
     "en": {
         "rita": {"name": "Rita", "nodes": {
-            "start": {"text": "Rita looks up from her laptop. \"You look awful. Did you sleep at all?\"", "options": [
+            "start": {"text": "Rita looks up from her laptop. \"You don't look so good. Did you sleep at all?\"", "options": [
                 {"label": "Ask about the group photo", "next": "photo"},
                 {"label": "Ask what she remembers about Duarte", "next": "duarte"},
                 {"label": "Ask where the USB stick is", "next": "pen"},
                 {"label": "Ask about the chat messages", "next": "chat", "if": {"flags": {"files_viewed": True}}},
                 _bye("Goodbye."),
             ]},
-            "photo": {"text": "\"The photo? We took it after the last meeting. Four of us, Leonor held the timer. I remember counting heads.\"",
+            "photo": {"text": "\"The photo? We took it after the last meeting, the four of us.\"",
                       "note": "Rita remembers four people in the group photo.", "options": [
                 _bye("Goodbye.")]},
-            "pen": {"text": "\"The USB stick? It should be in the group drawer, but it is not.\" She looks at the table. \"We stayed here late last night eating pizza. With this mess, it could be anywhere.\"",
-                    "note": "Rita: the USB stick is not in the drawer. The group ate pizza here last night.", "options": [_bye("Goodbye.")]},
+            "pen": {"text": "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza, but with this mess, it could be anywhere.\"",
+                    "note": "Rita cannot find the USB stick. The group ate pizza here last night.", "options": [_bye("Goodbye.")]},
             "duarte": {"text": "\"Duarte... honestly, I cannot picture him. Every time I try, I only see the name on the cover.\"", "options": [
                 {"label": "Say you think the name was added last night", "next": "warned"}]},
             "warned": {"text": "Rita goes quiet. \"If that is true, somebody wanted us to doubt ourselves.\"",
@@ -69,18 +70,12 @@ PEOPLE = {
                 _bye("Goodbye.")]},
         }},
         "amelia": {"name": "Clerk", "nodes": {
-            "start": {"text": "The clerk adjusts her glasses. \"We close in ten minutes. What do you need?\"", "options": [
+            "start": {"text": "The clerk adjusts her glasses. \"Hello! We close in ten minutes. What do you need?\"", "options": [
                 {"label": "Ask about the cover photo order", "next": "order"},
-                {"label": "Ask if anyone else came asking", "next": "visitor"},
                 _bye("Goodbye."),
             ]},
-            "order": {"text": "\"On 14 November, last week. You took the photo and had it printed the same day. Four people in it, I remember because I had to crop the print. The original order file is still saved.\"",
+            "order": {"text": "\"On 14 November, you took the photo and had it printed the same day. I remember there were four people in it, and I think the original order file is still saved.\"",
                       "note": "The cover photo was taken and printed on 14 November. The print shop still has the original order file.", "options": [
-                _bye("Goodbye.")]},
-            "visitor": {"text": "\"A young man in a hood came by yesterday evening. He asked to reprint the cover with a different photo.\"",
-                        "note": "A hooded stranger asked the print shop to change the cover photo.", "options": [
-                {"label": "Ask what he looked like", "next": "hood"}]},
-            "hood": {"text": "\"A calm smile. He did not want to leave a name. I thought he was one of your group.\"", "options": [
                 _bye("Goodbye.")]},
         }},
         "leonor": {"name": "Leonor", "nodes": {
@@ -109,7 +104,7 @@ PEOPLE = {
                 {"label": "Show him the original photo", "next": "photo", "if": {"has": ["original_photo"]}},
                 _bye("Goodbye."),
             ]},
-            "kind": {"text": "\"Could not sleep. I came to finish the slides. And... I saw someone at computer 12 last night, near midnight.\"", "trust": 3, "options": [
+            "kind": {"text": "\"I could not sleep, I just came here to finish the slides. And... I saw someone at computer 12 last night, near midnight.\"", "trust": 3, "options": [
                 {"label": "Ask who it was", "next": "who"},
                 {"label": "Ask for the password of computer 12", "next": "password"},
                 {"label": "Ask about message 5, the one with his name", "next": "msg5", "if": {"flags": {"files_viewed": True}}}]},
@@ -169,18 +164,18 @@ PEOPLE = {
     },
     "pt": {
         "rita": {"name": "Rita", "nodes": {
-            "start": {"text": "A Rita levanta os olhos do portátil. \"Estás com um ar péssimo. Dormiste alguma coisa?\"", "options": [
+            "start": {"text": "A Rita levanta os olhos do portátil. \"Estás com cara de quem não dormiu nada. Conseguiste descansar alguma coisa?\"", "options": [
                 {"label": "Perguntar pela fotografia do grupo", "next": "photo"},
                 {"label": "Perguntar o que ela se lembra do Duarte", "next": "duarte"},
                 {"label": "Perguntar onde está a pen", "next": "pen"},
                 {"label": "Perguntar pelas mensagens do chat", "next": "chat", "if": {"flags": {"files_viewed": True}}},
                 _bye("Até já."),
             ]},
-            "photo": {"text": "\"A fotografia? Tirámo-la depois da última reunião. Quatro pessoas, a Leonor ficou com o temporizador. Lembro-me de contar as cabeças.\"",
+            "photo": {"text": "\"A fotografia? Tirámo-la depois da última reunião, nós os quatro.\"",
                       "note": "A Rita lembra-se de quatro pessoas na fotografia do grupo.", "options": [
                 _bye("Até já.")]},
-            "pen": {"text": "\"A pen? Devia estar na gaveta do grupo, mas não está.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza. Com esta confusão, pode estar em qualquer lado.\"",
-                    "note": "Rita: a pen não está na gaveta. O grupo comeu pizza aqui ontem à noite.", "options": [_bye("Até já.")]},
+            "pen": {"text": "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado.\"",
+                    "note": "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite.", "options": [_bye("Até já.")]},
             "duarte": {"text": "\"O Duarte... sinceramente, não o consigo imaginar. Sempre que tento, só vejo o nome na capa.\"", "options": [
                 {"label": "Dizer que achas que o nome foi acrescentado ontem à noite", "next": "warned"}]},
             "warned": {"text": "A Rita fica calada. \"Se for verdade, alguém quis que duvidássemos de nós próprios.\"",
@@ -191,18 +186,12 @@ PEOPLE = {
                 _bye("Até já.")]},
         }},
         "amelia": {"name": "Funcionária", "nodes": {
-            "start": {"text": "A funcionária ajeita os óculos. \"Fechamos daqui a dez minutos. Do que precisas?\"", "options": [
+            "start": {"text": "A funcionária ajeita os óculos. \"Fechamos daqui a dez minutos, do que precisas?\"", "options": [
                 {"label": "Perguntar pelo pedido da fotografia da capa", "next": "order"},
-                {"label": "Perguntar se mais alguém veio perguntar", "next": "visitor"},
                 _bye("Até já."),
             ]},
-            "order": {"text": "\"A 14 de novembro, na semana passada. Tiraram a fotografia e mandaram-na imprimir no mesmo dia. Quatro pessoas, lembro-me porque tive de cortar a impressão. O ficheiro original do pedido ainda está guardado.\"",
+            "order": {"text": "\"A 14 de novembro, tiraram a fotografia e mandaram-na imprimir no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado.\"",
                       "note": "A fotografia da capa foi tirada e impressa a 14 de novembro. A reprografia ainda tem o ficheiro original do pedido.", "options": [
-                _bye("Até já.")]},
-            "visitor": {"text": "\"Ontem ao fim da tarde passou por aqui um rapaz de capuz. Pediu para reimprimir a capa com outra fotografia.\"",
-                        "note": "Um desconhecido de capuz pediu à reprografia para mudar a fotografia da capa.", "options": [
-                {"label": "Perguntar como era ele", "next": "hood"}]},
-            "hood": {"text": "\"Um sorriso calmo. Não quis deixar o nome. Pensei que fosse do vosso grupo.\"", "options": [
                 _bye("Até já.")]},
         }},
         "leonor": {"name": "Leonor", "nodes": {
@@ -231,11 +220,11 @@ PEOPLE = {
                 {"label": "Mostrar-lhe a fotografia original", "next": "photo", "if": {"has": ["original_photo"]}},
                 _bye("Até já."),
             ]},
-            "kind": {"text": "\"Não conseguia dormir. Vim acabar os slides. E... vi alguém no computador 12 ontem à noite, perto da meia-noite.\"", "trust": 3, "options": [
+            "kind": {"text": "\"Não conseguia dormir e vim acabar os slides. Ontem à noite, perto da meia-noite, vi alguém no computador 12.\"", "trust": 3, "options": [
                 {"label": "Perguntar quem era", "next": "who"},
                 {"label": "Perguntar a password do computador 12", "next": "password"},
                 {"label": "Perguntar pela mensagem 5, a que tem o nome dele", "next": "msg5", "if": {"flags": {"files_viewed": True}}}]},
-            "password": {"text": "\"A password do 12? É a do grupo: o dia e o mês em que tirámos a fotografia da capa. Quatro algarismos. Eu nunca me lembro da data.\"", "trust": 3,
+            "password": {"text": "\"A password do computador? É o dia e o mês em que tirámos a fotografia da capa. São só 4 números mas nunca me lembro da data.\"", "trust": 3,
                          "note": "Tomás: a password do computador 12 é o dia e o mês em que foi tirada a fotografia da capa (4 algarismos).", "options": [_bye("Até já.")]},
             "who": {"text": "\"Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar.\"", "trust": 3,
                     "note": "O Tomás viu alguém de capuz no computador 12 perto da meia-noite.", "options": [
