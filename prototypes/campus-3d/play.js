@@ -63,6 +63,45 @@
     } catch (error) { /* no storage */ }
   }
 
+  // ---------- where the game is played: a phone shows a joystick, a computer does not ----------
+  // It is chosen on the first screen (the phone is the pre-selected answer on a touch screen) and can be changed in the menu.
+  const DEVICE_KEY = "plot-twist-device";
+  let deviceMode = "computer";
+  try {
+    const saved = localStorage.getItem(DEVICE_KEY);
+    deviceMode = saved === "phone" || saved === "computer" ? saved : (window.matchMedia && matchMedia("(pointer: coarse)").matches ? "phone" : "computer");
+  } catch (error) { /* no storage */ }
+  const deviceBox = make("section", undefined, "device"); deviceBox.setAttribute("aria-labelledby", "device-title");
+  const deviceTitle = make("h3"); deviceTitle.id = "device-title";
+  const deviceRow = make("div", undefined, "device-row");
+  const deviceButtons = {};
+  for (const mode of ["computer", "phone"]) {
+    const button = make("button", undefined, "choice"); button.type = "button";
+    button.addEventListener("click", () => setDevice(mode, true));
+    deviceButtons[mode] = button; deviceRow.append(button);
+  }
+  const deviceHint = make("p", undefined, "muted");
+  const qrIntroButton = make("button", undefined, "choice qr-intro"); qrIntroButton.type = "button";
+  deviceBox.append(deviceTitle, deviceRow, deviceHint, qrIntroButton);
+  function paintDevice() {
+    const t = ui();
+    deviceTitle.textContent = t.device_title;
+    deviceButtons.computer.textContent = t.device_computer; deviceButtons.phone.textContent = t.device_phone;
+    for (const mode of ["computer", "phone"]) deviceButtons[mode].setAttribute("aria-pressed", String(deviceMode === mode));
+    deviceHint.textContent = deviceMode === "phone" ? t.device_hint_phone : t.device_hint_computer;
+    qrIntroButton.textContent = t.qr_open;
+  }
+  function setDevice(mode, remember) {
+    deviceMode = mode;
+    document.body.classList.toggle("device-phone", mode === "phone");
+    if (remember) { try { localStorage.setItem(DEVICE_KEY, mode); } catch (error) { /* no storage */ } }
+    window.campusStick = { x: 0, z: 0 };
+    paintDevice();
+    if (typeof updateLabels === "function" && $("joystick-toggle")) updateLabels();
+  }
+  document.body.classList.toggle("device-phone", deviceMode === "phone");
+  nameBox.append(deviceBox);
+
   const creator = make("section", undefined, "creator"); creator.setAttribute("aria-labelledby", "creator-title");
   const creatorTitle = make("h3"); creatorTitle.id = "creator-title";
   const previewCanvas = make("canvas", undefined, "creator-preview"); previewCanvas.width = 240; previewCanvas.height = 320;
@@ -165,7 +204,7 @@
       <div class="bar-tools"><span id="clock" class="clock"></span><span id="save-status" role="status"></span>
         <div class="tool-row"><button id="phone-open" class="secondary"></button>
           <div class="tool-menu"><button id="menu-toggle" class="secondary" aria-expanded="false" aria-controls="menu-list"></button>
-            <div id="menu-list" class="menu-list" hidden><button id="howto-open" class="secondary"></button><button id="torch-toggle" class="secondary"></button><button id="sound-toggle" class="secondary"></button></div></div></div></div></header>
+            <div id="menu-list" class="menu-list" hidden><button id="howto-open" class="secondary"></button><button id="torch-toggle" class="secondary"></button><button id="sound-toggle" class="secondary"></button><button id="joystick-toggle" class="secondary"></button><button id="qr-open" class="secondary"></button></div></div></div></div></header>
     <section class="scene-panel" aria-labelledby="scene-heading">
       <div class="scene-top"><span id="scene-label" class="label"></span><span id="player-label" class="muted"></span></div>
       <h2 id="scene-heading" tabindex="-1"></h2><p id="feedback" role="status"></p>
@@ -176,6 +215,7 @@
     </section>
     <div id="toast" role="status" aria-live="polite" hidden></div>
     <button id="sms" class="sms" hidden><span id="sms-from" class="sms-from"></span><span id="sms-text"></span></button>
+    <div id="joystick" class="joystick" aria-hidden="true"><div id="stick-base" class="stick-base"><div id="stick-knob" class="stick-knob"></div></div></div>
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
     <section id="chat-card" class="chat-card" role="dialog" aria-labelledby="chat-title" hidden>
       <header><h3 id="chat-title"></h3><button id="chat-close" class="secondary"></button></header>
@@ -184,7 +224,7 @@
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
       <p id="ending-collection" class="collection"></p>
       <div class="share"><pre id="share-text"></pre><button id="share-copy" class="secondary"></button></div>
-      <div class="ending-actions"><button id="ending-again"></button><button id="ending-hide" class="secondary"></button></div></section>
+      <div class="ending-actions"><button id="ending-again"></button><button id="ending-card-btn" class="secondary"></button><button id="ending-hide" class="secondary"></button></div></section>
     <section id="timeup-card" class="ending-card timeup-card" role="alertdialog" aria-labelledby="timeup-title" hidden>
       <p class="stamp">⏳ 22:45</p><h2 id="timeup-title"></h2><div id="timeup-text"></div>
       <div class="ending-actions"><button id="timeup-again"></button></div></section>
@@ -410,6 +450,10 @@
     $("torch-toggle").setAttribute("aria-pressed", String(torchOn));
     $("sound-toggle").textContent = t.sound_on;
     $("sound-toggle").setAttribute("aria-pressed", String(!sound.isMuted()));
+    $("joystick-toggle").textContent = t.joystick;
+    $("joystick-toggle").setAttribute("aria-pressed", String(deviceMode === "phone"));
+    $("qr-open").textContent = t.qr_open;
+    paintDevice();
     $("restart-question").textContent = t.confirm_question;
     $("cancel-restart").textContent = t.confirm_cancel;
     $("confirm-restart").textContent = t.confirm_yes;
@@ -645,6 +689,7 @@
       }
       $("ending-again").textContent = t.play_again;
       $("ending-hide").textContent = t.see_scene;
+      $("ending-card-btn").textContent = t.card_open;
       rememberEnding(ending.id);
       speakEnding(ending, reply);
       $("ending-collection").textContent = collectionText();
@@ -1418,6 +1463,141 @@
   });
   howto.addEventListener("close", () => { window.playing = !talking && $("chat-card").hidden && !phone.open; });
 
+  // ---------- the joystick (phones) ----------
+  const stickBase = $("stick-base"), stickKnob = $("stick-knob");
+  let stickPointer = null;
+  function stickMove(event) {
+    const box = stickBase.getBoundingClientRect(), radius = box.width / 2;
+    let dx = (event.clientX - (box.left + radius)) / radius, dz = (event.clientY - (box.top + radius)) / radius;
+    const length = Math.hypot(dx, dz);
+    if (length > 1) { dx /= length; dz /= length; }
+    stickKnob.style.transform = `translate(${dx * radius * 0.5}px, ${dz * radius * 0.5}px)`;
+    window.campusStick = length < 0.18 ? { x: 0, z: 0 } : { x: dx, z: dz };   // a small dead zone in the middle
+  }
+  function stickEnd(event) {
+    if (event.pointerId !== stickPointer) return;
+    stickPointer = null;
+    stickKnob.style.transform = "";
+    window.campusStick = { x: 0, z: 0 };
+  }
+  stickBase.addEventListener("pointerdown", event => {
+    stickPointer = event.pointerId;
+    try { stickBase.setPointerCapture(event.pointerId); } catch (error) { /* the pointer is not active (a test) */ }
+    stickMove(event);
+    event.preventDefault();
+  });
+  stickBase.addEventListener("pointermove", event => { if (event.pointerId === stickPointer) stickMove(event); });
+  stickBase.addEventListener("pointerup", stickEnd);
+  stickBase.addEventListener("pointercancel", stickEnd);
+  $("joystick-toggle").addEventListener("click", () => setDevice(deviceMode === "phone" ? "computer" : "phone", true));
+
+  // ---------- the QR code of the game, for the class to open it on their phones ----------
+  const qrDialog = make("dialog", undefined, "qr-dialog"); qrDialog.id = "qr-dialog";
+  qrDialog.setAttribute("aria-labelledby", "qr-title");
+  qrDialog.innerHTML = '<h2 id="qr-title"></h2><p id="qr-intro" class="muted"></p><canvas id="qr-canvas" width="300" height="300"></canvas>' +
+    '<p id="qr-failed" class="muted" hidden></p><p><a id="qr-link" target="_blank" rel="noopener noreferrer"></a></p>' +
+    '<div class="dialog-actions"><button id="qr-close"></button></div>';
+  document.body.append(qrDialog);
+  // The code is drawn by a small library from the same CDN as the other scripts; if it cannot be loaded, the address is shown.
+  const QR_LIBRARY = "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";
+  function loadQrLibrary() {
+    return new Promise((resolve, reject) => {
+      if (window.qrcode) { resolve(); return; }
+      const script = document.createElement("script");
+      script.src = QR_LIBRARY; script.onload = resolve; script.onerror = reject;
+      document.head.append(script);
+    });
+  }
+  function drawQr(url) {
+    const canvas = $("qr-canvas"), context = canvas.getContext("2d");
+    const qr = window.qrcode(0, "M"); qr.addData(url); qr.make();
+    const count = qr.getModuleCount(), cell = Math.floor(canvas.width / (count + 8)), offset = Math.floor((canvas.width - cell * count) / 2);
+    context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height);   // the code needs a light margin around it
+    context.fillStyle = "#000";
+    for (let row = 0; row < count; row++) for (let col = 0; col < count; col++) if (qr.isDark(row, col)) context.fillRect(offset + col * cell, offset + row * cell, cell, cell);
+  }
+  async function openQr() {
+    if (qrDialog.open) return;
+    const t = ui();
+    $("qr-title").textContent = t.qr_title; $("qr-intro").textContent = t.qr_intro; $("qr-close").textContent = t.qr_close;
+    $("qr-link").textContent = t.app_url; $("qr-link").href = t.app_url;
+    $("qr-failed").textContent = t.qr_failed; $("qr-failed").hidden = true; $("qr-canvas").hidden = false;
+    if (current) window.playing = false;
+    qrDialog.showModal();
+    try { await loadQrLibrary(); drawQr(t.app_url); }
+    catch (error) { $("qr-canvas").hidden = true; $("qr-failed").hidden = false; }
+  }
+  $("qr-open").addEventListener("click", openQr);
+  qrIntroButton.addEventListener("click", openQr);
+  $("qr-close").addEventListener("click", () => qrDialog.close());
+  qrDialog.addEventListener("close", () => { if (current) window.playing = !talking && $("chat-card").hidden && !phone.open; });
+
+  // ---------- the detective card: a picture to keep, with the detective, the name, the ending and the time ----------
+  const cardDialog = make("dialog", undefined, "card-dialog"); cardDialog.id = "card-dialog";
+  cardDialog.setAttribute("aria-labelledby", "card-title");
+  cardDialog.innerHTML = '<h2 id="card-title"></h2><img id="card-image" alt=""><p id="card-hint" class="muted"></p>' +
+    '<div class="dialog-actions"><a id="card-download" class="button-link"></a><button id="card-close" class="secondary"></button></div>';
+  document.body.append(cardDialog);
+  const CARD_COLORS = { full_case: "#e8b45c", impostor: "#7fd6a0", stolen_credits: "#ff8c7a", fifth_element: "#b79cff" };
+  function loadImage(src) {
+    return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = src; });
+  }
+  function roundedRect(context, x, y, w, h, r) {
+    context.beginPath();
+    context.moveTo(x + r, y); context.arcTo(x + w, y, x + w, y + h, r); context.arcTo(x + w, y + h, x, y + h, r);
+    context.arcTo(x, y + h, x, y, r); context.arcTo(x, y, x + w, y, r); context.closePath();
+  }
+  async function drawCard(ending) {
+    const t = ui(), W = 720, H = 1040, accent = CARD_COLORS[ending.id] || "#e8b45c";
+    const canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
+    const c = canvas.getContext("2d");
+    try { await document.fonts.load('54px "DM Serif Display"'); } catch (error) { /* the system serif is used */ }
+    const gradient = c.createLinearGradient(0, 0, 0, H); gradient.addColorStop(0, "#0a1826"); gradient.addColorStop(1, "#14344f");
+    c.fillStyle = gradient; roundedRect(c, 0, 0, W, H, 36); c.fill();
+    c.strokeStyle = accent; c.lineWidth = 6; roundedRect(c, 18, 18, W - 36, H - 36, 26); c.stroke();
+    c.textAlign = "center";
+    c.fillStyle = accent; c.font = '600 22px Inter, system-ui, sans-serif'; c.fillText(t.card_case, W / 2, 84);
+    c.fillStyle = "#f3eee1"; c.font = '400 46px "DM Serif Display", Georgia, serif'; c.fillText(t.title, W / 2, 140);
+    const glow = c.createRadialGradient(W / 2, 400, 20, W / 2, 400, 260); glow.addColorStop(0, accent + "55"); glow.addColorStop(1, "#0000");
+    c.fillStyle = glow; c.fillRect(0, 150, W, 520);
+    const owner = readLook(lookKey(current?.player || ""));
+    if (window.campusPortrait) {
+      try { c.drawImage(await loadImage(window.campusPortrait(resolvedLook(owner), 360, 540)), (W - 360) / 2, 160, 360, 540); } catch (error) { /* no picture */ }
+    }
+    c.fillStyle = "#f3eee1"; c.font = '400 64px "DM Serif Display", Georgia, serif';
+    c.fillText(current?.player || t.card_name, W / 2, 770);
+    c.save(); c.translate(W / 2, 835); c.rotate(-0.06);
+    c.font = '800 26px Inter, system-ui, sans-serif'; c.fillStyle = accent; c.strokeStyle = accent; c.lineWidth = 4;
+    const stamp = (t.stamps || {})[ending.id] || ending.title, width = c.measureText(stamp).width + 44;
+    roundedRect(c, -width / 2, -32, width, 52, 8); c.stroke(); c.fillText(stamp, 0, 4); c.restore();
+    const clues = current?.clues || [], done = clues.filter(x => x.done).length;
+    c.fillStyle = "#e9e4d6"; c.font = '500 24px Inter, system-ui, sans-serif';
+    c.fillText(ending.title, W / 2, 905);
+    c.fillStyle = "#b7bdc5"; c.font = '500 21px Inter, system-ui, sans-serif';
+    c.fillText(`${done}/${clues.length} ${t.card_clues}  ·  ${t.card_time}: ${minutesSeconds(msLeft())}`, W / 2, 945);
+    c.fillText(collectionText().replace(/\s{2,}/g, "  "), W / 2, 980);
+    c.fillStyle = accent; c.font = '600 18px Inter, system-ui, sans-serif'; c.fillText(t.app_url.replace(/^https?:\/\//, "").replace(/\/$/, ""), W / 2, 1012);
+    return canvas;
+  }
+  let cardUrl = null;
+  async function openCard() {
+    const ending = current?.ending;
+    if (!ending || cardDialog.open) return;
+    const t = ui();
+    $("card-title").textContent = t.card_title; $("card-hint").textContent = t.card_hint; $("card-close").textContent = t.card_close;
+    $("card-download").textContent = t.card_download;
+    const canvas = await drawCard(ending);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (cardUrl) URL.revokeObjectURL(cardUrl);
+    cardUrl = URL.createObjectURL(blob);
+    $("card-image").src = cardUrl; $("card-image").alt = `${t.card_title}: ${current.player}, ${ending.title}`;
+    $("card-download").href = cardUrl;
+    $("card-download").download = `plot-twist-${String(current.player).toLowerCase().replace(/[^a-z0-9]+/g, "-") || "detetive"}.png`;
+    cardDialog.showModal();
+  }
+  $("ending-card-btn").addEventListener("click", openCard);
+  $("card-close").addEventListener("click", () => cardDialog.close());
+
   // ---------- the phone: a map, the to-do list of clues and the diary ----------
   const phone = make("dialog", undefined, "phone-dialog"); phone.id = "phone";
   phone.setAttribute("aria-labelledby", "phone-title");
@@ -1583,6 +1763,7 @@
     if (!await send("open")) return;
     try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
     saveLook(current.player); saveLook(name.value);
+    if (deviceMode === "phone") setPanelHidden(true);
     if (window.campusPreview) window.campusPreview.stop();
     if (window.campusSetLook) window.campusSetLook(resolvedLook(look));
     $("intro").classList.add("gone");

@@ -369,3 +369,32 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .text-mode .creator-preview { display: none; }
 .text-mode .creator { grid-template-columns: 1fr; }
 @media (max-width: 640px) { .creator { grid-template-columns: 1fr; justify-items: center; } .creator-controls { justify-self: stretch; } }
+
+/* where the game is played: the choice on the first screen, the joystick, the QR code and the detective card */
+.device { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; gap: 8px; justify-items: start; }
+.device h3 { margin: 0; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.device-row { display: flex; gap: 8px; }
+.device p { margin: 0; font-size: 12px; }
+.device button { font: 500 12px/1.2 Inter, system-ui, sans-serif; cursor: pointer; border-radius: 7px; border: 1px solid var(--line); background: #ffffff08; color: var(--ink); padding: 8px 14px; }
+.device button:hover { border-color: var(--gold); }
+.device button[aria-pressed="true"] { border-color: var(--gold); background: #e8b45c26; color: var(--gold); }
+.device button.qr-intro { margin-top: 2px; }
+.joystick { display: none; position: absolute; left: 22px; bottom: 30px; width: 140px; height: 140px; z-index: 12; touch-action: none; }
+.device-phone .joystick { display: block; }
+.stick-base { position: relative; width: 100%; height: 100%; border-radius: 50%; background: #0a1826b3; border: 2px solid #e8b45c99; box-shadow: 0 8px 30px #0008; touch-action: none; pointer-events: auto; }
+.stick-knob { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: #e8b45ccc; box-shadow: 0 4px 14px #000a; pointer-events: none; }
+.text-mode .joystick, body:has(#talk:not([hidden])) .joystick, body:has(#chat-card:not([hidden])) .joystick, body:has(#ending-card:not([hidden])) .joystick, body:has(#timeup-card:not([hidden])) .joystick { display: none; }
+@media (max-width: 650px) {
+  .device-phone:not(.panel-hidden) .joystick { display: none; }
+  .device-phone #investigation button.panel-tab { display: grid; top: calc(30% - 46px); right: 0; transform: none; width: 44px; height: 46px; }
+  .device-phone.panel-hidden #investigation button.panel-tab { top: auto; bottom: 190px; }
+  .device-phone.panel-hidden .hud-bottom { bottom: 190px; }
+}
+.qr-dialog { text-align: center; }
+.qr-dialog canvas { display: block; margin: 14px auto; width: 260px; height: 260px; max-width: 80vw; image-rendering: pixelated; border-radius: 10px; background: #fff; }
+.qr-dialog a { color: var(--gold); font-size: 14px; word-break: break-all; }
+.qr-dialog .dialog-actions { justify-content: center; }
+.card-dialog { text-align: center; max-width: min(520px, 94vw); }
+.card-dialog img { display: block; width: 100%; max-height: 62vh; object-fit: contain; margin: 12px auto; border-radius: 14px; }
+.card-dialog .dialog-actions { justify-content: center; flex-wrap: wrap; }
+.button-link { display: inline-block; font: 500 13px/1.5 Inter, system-ui, sans-serif; border-radius: 7px; padding: 11px 13px; color: #101c25; background: var(--gold); text-decoration: none; cursor: pointer; border: 1px solid #e8b45c66; }
