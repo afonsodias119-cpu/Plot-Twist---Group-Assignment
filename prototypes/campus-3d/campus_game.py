@@ -6,13 +6,16 @@ import logic
 from campus_people import ACTION_PERSON, ROOM_OF_PERSON, people_in_room, room_of_scene, talk
 from campus_text import TEXT
 # Evidence cards, confrontations and the hearing (specs/evidence-and-hearing.md). The answers stay on
-# the server: campus_case.py is read only by campus_evidence.py.
+# the server: campus_case.py is read only by campus_evidence.py and campus_memory.py.
 from campus_evidence import (FINAL_ROOM, confront, hand, hearing, hearing_open, hearing_view, read_night,
                              refuse_during_hearing, shown_ending, without_broken_claims, write_night)
 # The night's clock (specs/night-schedule.md): the costs, the departures and the rounds. Server only,
 # like the two files below: the clerk's sentence names the date of the code.
 from campus_clock import (COSTS, LEAVES, NIGHT_MINUTES, ROUNDS, SHUTTER, WARNING, duarte_place, next_mark,
                           round_reached, time_text)
+# What the server remembers of a name's earlier nights (specs/earlier-nights.md). Server only too:
+# its texts (the unknown number's whispers, the true ending) are in campus_case.py.
+from campus_memory import TIME_UP, memory_view, night_number, record, round_warning, whispers
 # The answers of the two puzzles: read only here, never sent to the page (specs/pen-and-code.md).
 from campus_search import PC12_CODE, PEN_SPOT, PHOTO_PIECES, PHOTO_SOLUTION, PHOTO_TEXT, SEARCH_TEXT, SPOTS
 from story import LANGUAGES, STORIES, UI_TEXTS
@@ -136,10 +139,12 @@ def night_closed(state, night):
     return night["minute"] >= NIGHT_MINUTES and state["ending"] == "none"
 
 
-def due_messages(state, night, language):
+def due_messages(state, night, language, number=1):
     """The messages of the unknown number that are due now, as {"id", "text"} (point 7).
 
-    Every rule takes the whole minute: at 9.5 the warning `shop` is still due.
+    Every rule takes the whole minute: at 9.5 the warning `shop` is still due. `number` is which
+    night of this name tonight is: from night 3 the round warnings are a whisper, with the same ids
+    (specs/earlier-nights.md, point 4).
     """
     minute, whole = night["minute"], int(night["minute"])
     text = TEXT[language]["schedule"]
@@ -152,18 +157,19 @@ def due_messages(state, night, language):
     if any(clue_lost(state, clue, minute) for clue, _room in CLUES):
         due.append({"id": "lost", "text": text["lost"]})
     if "tomas" not in night["cracked"]:   # once Tomás watches the door, no round is a danger
-        due += [{"id": f"round-{mark}", "text": text["round"]} for mark in ROUNDS if whole == mark - 1]
+        due += [{"id": f"round-{mark}", "text": round_warning(language, number)} for mark in ROUNDS if whole == mark - 1]
     return due
 
 
-def night_view(state, night, language, charged):
-    """The `night` object of the snapshot (point 10). `charged` is what this command cost."""
+def night_view(state, night, language, charged, number=1):
+    """The `night` object of the snapshot (point 10). `charged` is what this command cost; `number`
+    is which night of this name tonight is (for the round warnings)."""
     minute = night["minute"]
     return {"minute": minute, "time": time_text(minute), "charged": charged,
             "report_at": next_mark(minute), "gone": gone_people(state, minute),
             "notice": room_notice(state, minute, language), "duarte": duarte_place(minute),
             "caught": bool(night["caught"]), "closed": night_closed(state, night),
-            "messages": due_messages(state, night, language)}
+            "messages": due_messages(state, night, language, number)}
 
 
 def move_clock(player, language, minute, since):
@@ -174,7 +180,8 @@ def move_clock(player, language, minute, since):
     nothing moves after an ending: then nothing is written. A round reached while the saved scene is
     the group chat catches the player, unless Tomás has cracked and stands in the lab door: the story's
     own go_computer_lab closes the chat (the flags stay) and 3 minutes are charged. One command catches
-    at most once. Returns {"charged", "caught", "message"}.
+    at most once. A move that reaches 22:45 with no ending ends the night, so tonight's row is written
+    then, as TIME_UP (specs/earlier-nights.md, point 2). Returns {"charged", "caught", "message"}.
     """
     state = game.load(player)
     night = read_night(player, state)
@@ -191,6 +198,8 @@ def move_clock(player, language, minute, since):
             new = min(new + COSTS["caught"], NIGHT_MINUTES)
             caught, message = True, TEXT[language]["schedule"]["caught"]
             night = dict(night, caught=night["caught"] + [mark])
+    if new >= NIGHT_MINUTES:   # the faculty closes with no ending (a catch never ends the story)
+        night = record(player, night, TIME_UP)
     write_night(player, dict(night, minute=new))
     return {"charged": new - min(since, NIGHT_MINUTES), "caught": caught, "message": message}
 
@@ -205,11 +214,16 @@ def play_and_charge(player, action, language):
     """game.play, then the action's minutes from the cost table when it was accepted (point 2).
 
     Every story action of the 3D game is played through here, so a right code and a direct
-    view_files cost the same, and a refused action costs nothing. Returns (result, clock).
+    view_files cost the same, and a refused action costs nothing. An action that ends the story (a
+    direct present_evidence, with no hearing) ends the night: its row is written now, with the
+    story's own ending, which is the one shown (specs/earlier-nights.md, point 2). Returns (result, clock).
     """
     result = game.play(player, action, language)
     if not result["accepted"]:
         return result, CLOCK_STILL
+    state = game.load(player)
+    if state["ending"] != "none":
+        write_night(player, record(player, read_night(player, state), state["ending"]))
     return result, charge(player, language, COSTS.get(action, 0))
 
 
@@ -302,6 +316,8 @@ def snapshot(player, language, message="", accepted=True, charged=0):
     minute = night["minute"]
     gone = gone_people(state, minute)
     actions = action_rows(story, state, language, minute)
+    # What the server remembers of this name's earlier nights (specs/earlier-nights.md, point 3).
+    memory = memory_view(player, night)
 
     # A notebook entry appears only once its evidence was actually discovered.
     sources = []
@@ -338,7 +354,11 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         "people": people_in_room(state["scene"], state, language, gone),
         "clock": clock_text(state),   # the old time from progress, kept for the reviewed tests; not shown
         # The campus minute and the schedule (specs/night-schedule.md, point 10).
-        "night": night_view(state, night, language, charged),
+        "night": night_view(state, night, language, charged, memory["night"]),
+        # The night number, the story endings seen and the two gates; and the unknown number's
+        # messages as this night starts (specs/earlier-nights.md, points 3 and 4).
+        # No whisper once the faculty has closed: 22:45 ends the night as an ending does.
+        "memory": memory, "whispers": [] if night_closed(state, night) else whispers(state, memory, language),
         "chat": chat_view(story, state),
         "flagged": sum(1 for n in range(1, 6) if state["flags"].get(f"flagged_{n}")),   # for the unknown number's messages and the share card
         "leonor_present": choice != "accused" and "leonor" not in gone,
@@ -544,7 +564,9 @@ def command(payload):
     if operation == "talk":
         # Talking only reads the saved game and the notes: nothing is written, so the endings cannot be touched.
         refuse_during_hearing(state, night, language)
-        reply = talk(state, language, payload["npc"], payload["node"], gone_people(state, night["minute"]))
+        # The night number decides which memory answers are offered (specs/earlier-nights.md, point 5).
+        reply = talk(state, language, payload["npc"], payload["node"], gone_people(state, night["minute"]),
+                     night_number(player, night))
         # A claim already broken tonight is not offered again (specs/evidence-and-hearing.md, point 7).
         reply = without_broken_claims(reply, night)
         # The things the player can do by talking to this person (ask for the copy, take the decision, ...).
@@ -555,7 +577,7 @@ def command(payload):
         # Showing a card: cracking a person writes in the night's notes, and the card's minutes are
         # added to the campus minute (specs/night-schedule.md, point 2). They can reach a round.
         result = confront(player, state, night, language, payload["npc"], payload["node"], payload["evidence"],
-                          gone_people(state, night["minute"]))
+                          gone_people(state, night["minute"]), night_number(player, night))
         clock = charge(player, language, result["minutes"])
         return dict(clocked_snapshot(player, language, "", True, clock), confront=result)
     if operation == "hearing":

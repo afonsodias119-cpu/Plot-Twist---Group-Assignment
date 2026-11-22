@@ -97,7 +97,7 @@ TEXT = {
         "howto_items": [
             ["A história", "story.py", "Só dados, em português e inglês: salas, objetos, ações e finais. Não tem regras."],
             ["As regras", "logic.py", "Funções puras que decidem o que se pode fazer, o que bloqueia e que final acontece. Não usa a base de dados nem o ecrã."],
-            ["Guardar o jogo", "db.py", "O único ficheiro que fala com o SQLite: cada jogador tem o seu jogo e a sua língua guardados. O campus 3D também guarda lá as notas desta noite."],
+            ["Guardar o jogo", "db.py", "O único ficheiro que fala com o SQLite: cada jogador tem o seu jogo e a sua língua guardados. O campus 3D também guarda lá as notas desta noite e as noites já acabadas."],
             ["Ligar tudo", "game.py", "Junta a história, as regras e a base de dados: abrir, jogar e recomeçar."],
             ["O mundo 3D", "prototypes/campus-3d/game3d.html", "O campus em Three.js: andar livremente, luzes, pessoas e a lanterna."],
             ["A ponte 3D e Python", "app_3d.py", "Mostra o 3D dentro do Streamlit e passa cada comando ao Python. O browser nunca decide o estado do jogo."],
@@ -105,6 +105,7 @@ TEXT = {
             ["As conversas", "prototypes/campus-3d/campus_people.py", "As pessoas e os diálogos com escolhas e confiança. Falar não grava nada."],
             ["As provas e a audiência", "prototypes/campus-3d/campus_evidence.py", "Que provas o jogador tem, o que acontece quando mostra uma a alguém, e as três afirmações do Duarte. As respostas estão num ficheiro que a página nunca recebe."],
             ["O relógio da noite", "prototypes/campus-3d/campus_clock.py", "Uma tabela diz o que custa minutos, a que horas saem a funcionária e a Leonor e quando o Duarte faz as rondas. O servidor guarda o minuto; a página só o desenha."],
+            ["As noites anteriores", "prototypes/campus-3d/campus_memory.py", "Conta as noites que um nome já acabou e os finais que já viu, para a noite seguinte começar ligeiramente errada."],
             ["O ecrã e os sons", "prototypes/campus-3d/", "O ficheiro play.js (e play.css): botões, conversas, telemóvel, sons e vozes. O texto é sempre escrito com textContent, nunca como HTML. O table.js desenha a mesa da sala de estudo vista de cima, onde se procura a pen, e o photo.js a fotografia triturada da reprografia."],
             ["Os testes", "tests/", "Testes que aceitam, rejeitam e verificam casos limite, para as duas línguas e os quatro finais."],
             ["Especificações", "specs/", "Cada funcionalidade tem primeiro um documento que diz o que faz e quando está pronta."],
@@ -135,6 +136,16 @@ TEXT = {
         "todo_until": "até às {time}", "todo_lost": "Tarde demais",
         "todo_hint_lost": "Uma pista que já não podes obter não te fecha o auditório.",
         "time_charged": "−{n} min",
+        # earlier nights (specs/earlier-nights.md): the line under the name box on nights 2, 3, 4, 5 and
+        # 6-and-later, the line after the true ending, and the label of the ↺ of a memory answer.
+        # The whispers and the true ending are in campus_case.py, never here.
+        "night_lines": ["Noite {n}. A quinta figura da fotografia está mais escura do que ontem.",
+                        "Noite {n}. O casaco comprido da quinta figura agora tem cor. A do teu.",
+                        "Noite {n}. Um casaco comprido, e um cachecol como o teu.",
+                        "Noite {n}. Um casaco, um cachecol e um chapéu. Tu tens os três.",
+                        "Noite {n}. Alguém escreveu a tua inicial onde estava o ponto de interrogação."],
+        "night_done": "Acabaram-se as noites. A fotografia mostra quatro pessoas.",
+        "memory_answer": "Já ouviste isto antes",
     },
     "en": {
         "investigate": "Investigate", "travel": "Change room", "notebook": "Detective notebook",
@@ -231,7 +242,7 @@ TEXT = {
         "howto_items": [
             ["The story", "story.py", "Only data, in Portuguese and English: rooms, items, actions and endings. It has no rules."],
             ["The rules", "logic.py", "Pure functions that decide what can be done, what is blocked and which ending happens. It uses neither the database nor the screen."],
-            ["Saving the game", "db.py", "The only file that talks to SQLite: each player has their own game and language saved. The 3D campus also keeps tonight's notes there."],
+            ["Saving the game", "db.py", "The only file that talks to SQLite: each player has their own game and language saved. The 3D campus also keeps tonight's notes and the nights already finished there."],
             ["Putting it together", "game.py", "Joins the story, the rules and the database: open, play and restart."],
             ["The 3D world", "prototypes/campus-3d/game3d.html", "The campus in Three.js: free walking, lights, people and the torch."],
             ["The 3D and Python bridge", "app_3d.py", "Shows the 3D inside Streamlit and hands every command to Python. The browser never decides the state of the game."],
@@ -239,6 +250,7 @@ TEXT = {
             ["The conversations", "prototypes/campus-3d/campus_people.py", "The people and the dialogues with choices and trust. Talking saves nothing."],
             ["Evidence and the hearing", "prototypes/campus-3d/campus_evidence.py", "Which cards the player holds, what a card does when it is shown to someone, and Duarte's three claims. The answers are in a file the page never receives."],
             ["The night's clock", "prototypes/campus-3d/campus_clock.py", "One table says what costs campus minutes, when the clerk and Leonor leave and when Duarte does his rounds. The server keeps the minute; the page only draws it."],
+            ["Earlier nights", "prototypes/campus-3d/campus_memory.py", "Counts the nights a name has finished and the endings it has seen, so the next night can start slightly wrong."],
             ["The screen and the sounds", "prototypes/campus-3d/", "The play.js file (and play.css): buttons, conversations, phone, sounds and voices. Text is always written with textContent, never as HTML. The table.js file draws the study room table seen from above, where the USB stick is searched for, and photo.js the shredded photo of the print shop."],
             ["The tests", "tests/", "Tests that accept, reject and check edge cases, for both languages and the four endings."],
             ["Specifications", "specs/", "Every feature first has a document saying what it does and when it is done."],
@@ -269,5 +281,13 @@ TEXT = {
         "todo_until": "until {time}", "todo_lost": "Too late",
         "todo_hint_lost": "A clue you can no longer get does not lock the auditorium.",
         "time_charged": "−{n} min",
+        # earlier nights (specs/earlier-nights.md): see the same keys in "pt"
+        "night_lines": ["Night {n}. The fifth figure in the photo is darker than it was yesterday.",
+                        "Night {n}. The fifth figure's long coat has a colour now. Yours.",
+                        "Night {n}. A long coat, and a scarf like yours.",
+                        "Night {n}. A coat, a scarf and a hat. You own all three.",
+                        "Night {n}. Somebody has written your initial where the question mark was."],
+        "night_done": "No more nights. The photo shows four people.",
+        "memory_answer": "You have heard this before",
     },
 }

@@ -1262,7 +1262,8 @@ function syncCampus() {
   for (const k in keys) keys[k] = false;
   npcs[0].visible = state.leonor_present;
   npcs[0].userData.sign.visible = state.leonor_present;
-  npcs[1].visible = !["impostor", "fifth_element"].includes(state.ending?.id);
+  // Duarte is gone in these endings, and in an ending that carries its own stamp (specs/earlier-nights.md, point 9).
+  npcs[1].visible = !["impostor", "fifth_element"].includes(state.ending?.id) && !state.ending?.stamp;
   npcs[1].userData.sign.visible = npcs[1].visible;
   showSchedule(state);
   where.textContent = state.title;

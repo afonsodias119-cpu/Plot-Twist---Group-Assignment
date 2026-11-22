@@ -3,7 +3,9 @@
 SERVER ONLY (specs/evidence-and-hearing.md, point 3): this file is read by campus_evidence.py and is
 never put in the page (page3d.py does not import it), so looking at the page cannot tell which card
 breaks which claim. The page receives a card only when the player holds it, and a line only when the
-player has earned it. The rules that read these tables are in campus_evidence.py.
+player has earned it. The rules that read these tables are in campus_evidence.py. At the end, the
+secret texts of earlier nights (specs/earlier-nights.md): the unknown number's whispers and the true
+ending, read by campus_memory.py.
 
 The same keys exist in "en" and "pt"; only the texts differ.
 """
@@ -159,6 +161,47 @@ CASE_TEXT = {
             "three_help": "O professor fecha a lista antes de a Leonor chegar à porta. \"Já ouvi palpites que cheguem por uma noite.\"",
             "two": "\"Acho que tem razão sobre ele. Mas fez-me duvidar duas vezes esta noite, e eu só escrevo aquilo de que tenho a certeza.\"",
             "no_originals": "O professor fica muito tempo a olhar para o telemóvel do Duarte. \"Uma mensagem está respondida. Ele tem um telemóvel cheio delas, e ninguém aqui guardou as originais.\"",
+        },
+    },
+}
+
+
+# ---------- earlier nights (specs/earlier-nights.md) ----------
+# Read by campus_memory.py, the server only, like everything above: the page gets one of these texts
+# only on the night that earned it (points 4 and 9).
+
+# The id of the true ending, a campus layer over a saved full_case (point 8). It is never in the page.
+TRUE_ENDING = "night_over"
+
+# The unknown number on earlier nights (point 4): the message as a night starts, the dare that takes
+# its place once the four story endings were seen, and the round warning from night 3 on. Then the
+# true ending (point 8): its `voices` say who speaks each of the four spoken quotes of `text`, in order.
+NIGHT_TEXT = {
+    "en": {
+        # The message of night 2, night 3, night 4, and then of night 5 and every later night.
+        "whispers": ["You again?",
+                     "You again. Same coat, same scarf.",
+                     "I have stopped counting the nights. You have not.",
+                     "Look at the photo on your case file. Then tell me which of us is the fifth."],
+        "dare": "Four endings, and still here. You will never get all three of them to stand with you. Not in thirty minutes.",
+        "round": "Close the computer. He is walking.",
+        "ending": {
+            "title": "22:46", "stamp": "THE NIGHT IS OVER", "emoji": "🌅",
+            "voices": ["rita", "duarte", "duarte", "professor"],
+            "text": "You do not wait for Duarte to finish his sentences; you have heard them before. Three claims, three answers, each one on the table before he stops speaking, and the professor never once looks away from you. Then the door opens and nobody is alone any more. Leonor comes in with her phone, Tomás with his slides, Rita counting under her breath. \"Four. I counted.\" Duarte looks at the four of you standing together, and for the first time his smile has nowhere to go. \"You again.\" It is not a question. \"I only ever needed one of you to doubt the other three.\" He pushes back his hood. There is no stranger under it: only a hat, a scarf and a long coat, and they are yours. The professor crosses out the fifth name. When you look back at the front row the seat is empty; on it lies a phone with every message you ever received from the unknown number, written and never sent. Your own phone buzzes one last time. The sender is no longer unknown: the name on the screen is your own. The clock on the wall reads 22:46. Nobody has switched off the lights. \"Tomorrow, the four of you present.\" In the photo on the cover there are four people, and you know every one of them.",
+        },
+    },
+    "pt": {
+        "whispers": ["Outra vez tu?",
+                     "Outra vez tu. O mesmo casaco, o mesmo cachecol.",
+                     "Eu já deixei de contar as noites. Tu não.",
+                     "Olha para a fotografia do teu caso. Depois diz-me qual de nós é o quinto."],
+        "dare": "Quatro finais, e continuas aqui. Nunca vais conseguir que os três fiquem do teu lado. Não em trinta minutos.",
+        "round": "Fecha o computador. Ele vem aí.",
+        "ending": {
+            "title": "22:46", "stamp": "A NOITE ACABOU", "emoji": "🌅",
+            "voices": ["rita", "duarte", "duarte", "professor"],
+            "text": "Não esperas que o Duarte acabe as frases; já as ouviste antes. Três afirmações, três respostas, cada uma em cima da mesa antes de ele se calar, e o professor não tira os olhos de ti uma única vez. Depois a porta abre-se e já ninguém está sozinho. A Leonor entra com o telemóvel, o Tomás com os slides, a Rita a contar baixinho. «Quatro. Eu contei.» O Duarte olha para os quatro, juntos, e pela primeira vez o sorriso dele não tem para onde ir. «Outra vez tu.» Não é uma pergunta. «Só precisava que um de vocês duvidasse dos outros três.» Puxa o capuz para trás. Por baixo não há nenhum desconhecido: só um chapéu, um cachecol e um casaco comprido, e são os teus. O professor risca o quinto nome. Quando voltas a olhar para a primeira fila, a cadeira está vazia; em cima dela ficou um telemóvel com todas as mensagens que recebeste do número desconhecido, escritas e nunca enviadas. O teu telemóvel vibra uma última vez. O remetente já não é desconhecido: o nome no ecrã é o teu. O relógio da parede marca 22:46. Ninguém apagou as luzes. «Amanhã apresentam os quatro.» Na fotografia da capa estão quatro pessoas, e tu conheces todas.",
         },
     },
 }

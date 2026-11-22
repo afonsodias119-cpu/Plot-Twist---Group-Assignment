@@ -3,7 +3,8 @@
 This is the only file that uses sqlite3. The table `games` has one row per player, holding the
 progress (scene, inventory, flags, ending) and the language the game was started in.
 The story itself is not stored: it stays in story.py (see specs/base-game.md, section 4).
-The table `nights` keeps the 3D campus's notes for tonight (specs/evidence-and-hearing.md, point 1).
+The table `nights` keeps the 3D campus's notes for tonight (specs/evidence-and-hearing.md, point 1),
+and the table `runs` one row for every night a name has finished (specs/earlier-nights.md, point 1).
 """
 
 import json
@@ -16,10 +17,10 @@ DB_PATH = Path(__file__).resolve().parent / "data" / "plot_twist.db"
 
 
 def init_db() -> None:
-    """Create the data folder and the two tables, if they are missing.
+    """Create the data folder and the three tables, if they are missing.
 
-    Both tables are created here, in the same call, so no read ever creates a table on its own
-    (specs/evidence-and-hearing.md, point 1).
+    Every table is created here, in the same call, so no read ever creates a table on its own
+    (specs/evidence-and-hearing.md, point 1). An older file gets the tables it lacks and keeps its rows.
     """
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with closing(sqlite3.connect(DB_PATH)) as connection, connection:
@@ -43,6 +44,17 @@ def init_db() -> None:
                 player TEXT PRIMARY KEY,
                 minute INTEGER NOT NULL,
                 notes  TEXT NOT NULL
+            )
+            """
+        )
+        # One row per finished night of the 3D campus, never deleted (specs/earlier-nights.md, point 1):
+        # the ending that was shown, or "time_up" when the faculty closed first.
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS runs (
+                id     INTEGER PRIMARY KEY AUTOINCREMENT,
+                player TEXT NOT NULL,
+                ending TEXT NOT NULL
             )
             """
         )
@@ -132,3 +144,18 @@ def delete_night(player: str) -> None:
     init_db()
     with closing(sqlite3.connect(DB_PATH)) as connection, connection:
         connection.execute("DELETE FROM nights WHERE player = ?", (player,))
+
+
+def add_run(player: str, ending: str) -> None:
+    """Add one row to `runs`: that player has finished a night with this ending."""
+    init_db()
+    with closing(sqlite3.connect(DB_PATH)) as connection, connection:
+        connection.execute("INSERT INTO runs (player, ending) VALUES (?, ?)", (player, ending))
+
+
+def load_runs(player: str) -> list:
+    """The endings of that player's finished nights, oldest first ([] when there is none). It never writes."""
+    init_db()
+    with closing(sqlite3.connect(DB_PATH)) as connection:
+        rows = connection.execute("SELECT ending FROM runs WHERE player = ? ORDER BY id", (player,)).fetchall()
+    return [row[0] for row in rows]

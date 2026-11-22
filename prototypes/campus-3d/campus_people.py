@@ -9,7 +9,9 @@ open and offers, after each answer, the topics of the opening menu not asked yet
 An answer can have "if": a story condition ({"has": [...], "flags": {...}}); it is offered only when true.
 An answer can have "cost": minutes taken off the countdown when the player chooses it (the rude answers,
 specs/harder-campus.md). The countdown lives in the browser; the server only passes the cost on.
-The same ids and conditions exist in "en" and "pt"; only the texts differ.
+An answer can have "night": a campus-only key, the first night of this name on which it is offered
+(a memory answer, specs/earlier-nights.md, point 5). It is never mixed with the story's "if".
+The same ids, conditions and nights exist in "en" and "pt"; only the texts differ.
 
 Talking never changes the saved game. The server only reads it (to check the person is in the saved
 room and which answers are offered).
@@ -53,6 +55,8 @@ PEOPLE = {
                 {"label": "Ask what she remembers about Duarte", "next": "duarte"},
                 {"label": "Ask where the USB stick is", "next": "pen"},
                 {"label": "Ask about the chat messages", "next": "chat", "if": {"flags": {"files_viewed": True}}},
+                # A memory answer (specs/earlier-nights.md, point 5): a shortcut to her claim line.
+                {"label": "Tell her you remember her counting heads", "next": "five", "night": 3},
                 _bye("Goodbye."),
             ]},
             "photo": {"text": "\"The photo? We took it after the last meeting, the four of us.\"",
@@ -76,10 +80,15 @@ PEOPLE = {
         "amelia": {"name": "Clerk", "nodes": {
             "start": {"text": "The clerk adjusts her glasses. \"Hello! We close in ten minutes. What do you need?\"", "options": [
                 {"label": "Ask about the cover photo order", "next": "order"},
+                {"label": "Say the date before she does", "next": "again", "night": 2},
                 _bye("Goodbye."),
             ]},
             "order": {"text": "\"On 14 November, you took the photo and had it printed the same day. I remember there were four people in it, and I think the original order file is still saved.\"",
                       "note": "The cover photo was taken and printed on 14 November. The print shop still has the original order file.", "options": [
+                _bye("Goodbye.")]},
+            # Reached only by her memory answer, from night 2 (specs/earlier-nights.md, point 5).
+            "again": {"text": "The clerk stops with her hand on the printer. \"The fourteenth of November. Yes. How do you...?\" She looks at the clock. \"I have been closing in ten minutes for a very long time.\" She frowns at the counter. \"Odd. I do not remember you leaving.\"",
+                      "note": "The clerk agreed with the date before you finished saying it: the cover photo was printed on 14 November.", "options": [
                 _bye("Goodbye.")]},
         }},
         "leonor": {"name": "Leonor", "nodes": {
@@ -88,6 +97,7 @@ PEOPLE = {
                 {"label": "Tell her you have doubts", "next": "soft"},
                 {"label": "Ask which chat message is really hers", "next": "mine", "if": {"flags": {"colleague_choice": "help"}}},
                 {"label": "Say she is lying", "next": "harsh", "cost": 5},
+                {"label": "Tell her you knew she would say exactly that", "next": "again", "night": 3},
                 _bye("Goodbye."),
             ]},
             # Leonor's claim line (point 7): broken by `tomas_word`.
@@ -106,12 +116,18 @@ PEOPLE = {
                 {"label": "Apologise", "next": "soft"},
                 {"label": "Insist", "next": "closed", "cost": 5}]},
             "closed": {"text": "Leonor stands up. \"Come back with proof, not accusations.\"", "trust": 0, "options": [_bye("Leave.")]},
+            # Reached only by her memory answer, from night 3.
+            "again": {"text": "Leonor's hand stays on the book. \"Word for word? Nobody knows what I am going to say.\" She studies your scarf. \"Have we done this before?\"", "trust": 3, "options": [
+                _bye("Goodbye.")]},
         }},
         "tomas": {"name": "Tomás", "nodes": {
             "start": {"text": "Tomás is hunched over computer 11, avoiding your eyes. \"Oh. Hi. It is late.\"", "trust": 2, "options": [
                 {"label": "Ask kindly what he is doing here", "next": "kind"},
                 {"label": "Demand to know why he lied about Duarte", "next": "hard", "cost": 5},
                 {"label": "Show him the original photo", "next": "photo", "if": {"has": ["original_photo"]}},
+                # A memory answer, a shortcut to his claim line: from night 2 the player already knows the
+                # message, so it has no `if` and is the one way to `slides` before the files are viewed.
+                {"label": "Tell him you know what the chat says about the slides", "next": "slides", "night": 2},
                 _bye("Goodbye."),
             ]},
             "kind": {"text": "\"I could not sleep, I just came here to finish the slides. And... I saw someone at computer 12 last night, near midnight.\"", "trust": 3, "options": [
@@ -151,6 +167,7 @@ PEOPLE = {
             "start": {"text": "The professor looks up from the list of groups. \"Is this about tomorrow's presentations?\"", "options": [
                 {"label": "Ask how many members your group has on the list", "next": "list"},
                 {"label": "Say you will bring proof", "next": "proof"},
+                {"label": "Ask if he has heard this case before", "next": "again", "night": 4},
                 _bye("Goodbye."),
             ]},
             "list": {"text": "\"Five, according to the cover. Is something wrong with that?\"", "options": [
@@ -160,11 +177,15 @@ PEOPLE = {
                 _bye("Goodbye.")]},
             "proof": {"text": "\"Evidence is welcome. Present it when you are ready.\"", "options": [
                 _bye("Goodbye.")]},
+            # Reached only by his memory answer, from night 4.
+            "again": {"text": "The professor turns a page of the list, then turns it back. \"Every year a group comes to me with one name too many. Never the same group. Always the same name.\"", "options": [
+                _bye("Goodbye.")]},
         }},
         "duarte": {"name": "Duarte", "nodes": {
             "start": {"text": "Duarte smiles calmly. \"Ah, the fourth wheel. Ready for tomorrow?\"", "trust": 3, "options": [
                 {"label": "Ask which part of the project he did", "next": "part"},
                 {"label": "Tell him you know the truth", "next": "know", "cost": 5},
+                {"label": "Ask him how many nights this has been", "next": "again", "night": 2},
                 _bye("Goodbye."),
             ]},
             "part": {"text": "\"The slides, of course. Ask anyone.\" He hesitates for a second.", "trust": 3, "options": [
@@ -176,6 +197,9 @@ PEOPLE = {
                 {"label": "Press him", "next": "closed", "cost": 5},
                 {"label": "Back off", "next": "start"}]},
             "closed": {"text": "Duarte laughs and turns away. The conversation is over.", "trust": 0, "options": [_bye("Leave.")]},
+            # Reached only by his memory answer, from night 2.
+            "again": {"text": "Duarte's smile does not move. \"For you? I have lost count. For me there is only ever tonight.\" He looks at your coat as if it were his. \"You again. I was starting to enjoy the company.\"", "trust": 2, "options": [
+                _bye("Goodbye.")]},
         }},
     },
     "pt": {
@@ -185,6 +209,7 @@ PEOPLE = {
                 {"label": "Perguntar o que ela se lembra do Duarte", "next": "duarte"},
                 {"label": "Perguntar onde está a pen", "next": "pen"},
                 {"label": "Perguntar pelas mensagens do chat", "next": "chat", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Dizer-lhe que te lembras de ela contar as cabeças", "next": "five", "night": 3},
                 _bye("Até já."),
             ]},
             "photo": {"text": "\"A fotografia? Tirámo-la depois da última reunião, nós os quatro.\"",
@@ -207,10 +232,14 @@ PEOPLE = {
         "amelia": {"name": "Funcionária", "nodes": {
             "start": {"text": "A funcionária ajeita os óculos. \"Fechamos daqui a dez minutos, do que precisas?\"", "options": [
                 {"label": "Perguntar pelo pedido da fotografia da capa", "next": "order"},
+                {"label": "Dizer a data antes dela", "next": "again", "night": 2},
                 _bye("Até já."),
             ]},
             "order": {"text": "\"A 14 de novembro, tiraram a fotografia e mandaram-na imprimir no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado.\"",
                       "note": "A fotografia da capa foi tirada e impressa a 14 de novembro. A reprografia ainda tem o ficheiro original do pedido.", "options": [
+                _bye("Até já.")]},
+            "again": {"text": "A funcionária fica com a mão parada na impressora. \"Catorze de novembro. Sim. Como é que tu...?\" Olha para o relógio. \"Há muito tempo que estou a fechar daqui a dez minutos.\" Franze a testa para o balcão. \"Estranho. Não me lembro de te ver sair.\"",
+                      "note": "A funcionária confirmou a data antes de acabares de a dizer: a fotografia da capa foi impressa a 14 de novembro.", "options": [
                 _bye("Até já.")]},
         }},
         "leonor": {"name": "Leonor", "nodes": {
@@ -219,6 +248,7 @@ PEOPLE = {
                 {"label": "Dizer-lhe que tens dúvidas", "next": "soft"},
                 {"label": "Perguntar que mensagem do chat é mesmo dela", "next": "mine", "if": {"flags": {"colleague_choice": "help"}}},
                 {"label": "Dizer que ela está a mentir", "next": "harsh", "cost": 5},
+                {"label": "Dizer-lhe que sabias que ela ia dizer exatamente isso", "next": "again", "night": 3},
                 _bye("Até já."),
             ]},
             "sure": {"text": "\"Está em todas as mensagens há semanas. Tenho-as aqui.\" Toca no telemóvel.", "trust": 2, "options": [
@@ -235,12 +265,15 @@ PEOPLE = {
                 {"label": "Pedir desculpa", "next": "soft"},
                 {"label": "Insistir", "next": "closed", "cost": 5}]},
             "closed": {"text": "A Leonor levanta-se. \"Volta com provas, não com acusações.\"", "trust": 0, "options": [_bye("Sair.")]},
+            "again": {"text": "A mão da Leonor fica em cima do livro. \"Palavra por palavra? Ninguém sabe o que eu vou dizer.\" Fica a olhar para o teu cachecol. \"Já fizemos isto antes?\"", "trust": 3, "options": [
+                _bye("Até já.")]},
         }},
         "tomas": {"name": "Tomás", "nodes": {
             "start": {"text": "O Tomás está curvado sobre o computador 11, a evitar o teu olhar. \"Ah. Olá. Já é tarde.\"", "trust": 2, "options": [
                 {"label": "Perguntar com calma o que está ali a fazer", "next": "kind"},
                 {"label": "Exigir saber porque mentiu sobre o Duarte", "next": "hard", "cost": 5},
                 {"label": "Mostrar-lhe a fotografia original", "next": "photo", "if": {"has": ["original_photo"]}},
+                {"label": "Dizer-lhe que já sabes o que o chat diz sobre os slides", "next": "slides", "night": 2},
                 _bye("Até já."),
             ]},
             "kind": {"text": "\"Não conseguia dormir e vim acabar os slides. Ontem à noite, perto da meia-noite, vi alguém no computador 12.\"", "trust": 3, "options": [
@@ -278,6 +311,7 @@ PEOPLE = {
             "start": {"text": "O professor levanta os olhos da lista de grupos. \"É sobre as apresentações de amanhã?\"", "options": [
                 {"label": "Perguntar quantos elementos tem o teu grupo na lista", "next": "list"},
                 {"label": "Dizer que vais trazer provas", "next": "proof"},
+                {"label": "Perguntar se já ouviu este caso", "next": "again", "night": 4},
                 _bye("Até já."),
             ]},
             "list": {"text": "\"Cinco, segundo a capa. Há algum problema?\"", "options": [
@@ -287,11 +321,14 @@ PEOPLE = {
                 _bye("Até já.")]},
             "proof": {"text": "\"Provas são bem-vindas. Apresente-as quando estiver pronto.\"", "options": [
                 _bye("Até já.")]},
+            "again": {"text": "O professor vira uma página da lista e volta a virá-la. \"Todos os anos me aparece um grupo com um nome a mais. Nunca é o mesmo grupo. É sempre o mesmo nome.\"", "options": [
+                _bye("Até já.")]},
         }},
         "duarte": {"name": "Duarte", "nodes": {
             "start": {"text": "O Duarte sorri com calma. \"Ah, o quarto elemento. Pronto para amanhã?\"", "trust": 3, "options": [
                 {"label": "Perguntar que parte do projeto fez", "next": "part"},
                 {"label": "Dizer-lhe que sabes a verdade", "next": "know", "cost": 5},
+                {"label": "Perguntar-lhe quantas noites já foram", "next": "again", "night": 2},
                 _bye("Até já."),
             ]},
             "part": {"text": "\"Os slides, claro. Pergunta a qualquer um.\" Hesita por um segundo.", "trust": 3, "options": [
@@ -303,6 +340,8 @@ PEOPLE = {
                 {"label": "Pressioná-lo", "next": "closed", "cost": 5},
                 {"label": "Recuar", "next": "start"}]},
             "closed": {"text": "O Duarte ri-se e vira-te as costas. A conversa acabou.", "trust": 0, "options": [_bye("Sair.")]},
+            "again": {"text": "O sorriso do Duarte não se mexe. \"Para ti? Já perdi a conta. Para mim só existe esta noite.\" Olha para o teu casaco como se fosse dele. \"Outra vez tu. Já estava a gostar da companhia.\"", "trust": 2, "options": [
+                _bye("Até já.")]},
         }},
     },
 }
@@ -324,10 +363,30 @@ def people_in_room(scene, state, language, gone=()):
     return found
 
 
-def talk(state, language, person, node, gone=()):
+def is_open(option, state, night):
+    """True when an answer can be chosen now: its story condition `if` is true and its `night` has
+    come (specs/earlier-nights.md, point 5). An answer without them is always open."""
+    # logic._condition_met is the story's own rule for "has" / "flags" conditions.
+    return logic._condition_met(option.get("if", {}), state) and night >= option.get("night", 1)
+
+
+def offered(option):
+    """An answer as the reply sends it: its label and next line, its cost, and `memory` for an
+    answer you have heard before (the page draws a small ↺ in front of it)."""
+    shown = {"label": option["label"], "next": option["next"]}
+    if "cost" in option:
+        shown["cost"] = option["cost"]
+    if "night" in option:
+        shown["memory"] = True
+    return shown
+
+
+def talk(state, language, person, node, gone=(), night=1):
     """One step of a conversation: what the person says and the answers offered now. Writes nothing.
 
     `gone` are the people who have left by the night's schedule: they are not here any more.
+    `night` is which night of this name tonight is (campus_memory.night_number): a memory answer is
+    offered only from its own night on (specs/earlier-nights.md, point 5).
     """
     if not isinstance(person, str) or person not in ROOM_OF_PERSON:
         raise ValueError("Unknown person / Pessoa desconhecida.")
@@ -338,13 +397,11 @@ def talk(state, language, person, node, gone=()):
         raise ValueError("This person is not here / Esta pessoa não está aqui.")
     data = PEOPLE[language][person]
     line = data["nodes"][node]
-    # A line that is reached only through conditional answers cannot be asked for directly.
+    # A line cannot be asked for directly when every answer that leads to it is closed now (its `if`
+    # is false, or its `night` has not come). A line no answer leads to (`start`) is never refused.
     inbound = [o for n in data["nodes"].values() for o in n["options"] if o["next"] == node]
-    if inbound and all("if" in o for o in inbound) and not any(logic._condition_met(o["if"], state) for o in inbound):
+    if inbound and not any(is_open(o, state, night) for o in inbound):
         raise ValueError("Unknown answer / Resposta desconhecida.")
-    options = [dict({"label": o["label"], "next": o["next"]}, **({"cost": o["cost"]} if "cost" in o else {}))
-               for o in line["options"]
-               # logic._condition_met is the story's own rule for "has" / "flags" conditions.
-               if logic._condition_met(o.get("if", {}), state)]
+    options = [offered(o) for o in line["options"] if is_open(o, state, night)]
     return {"npc": person, "name": data["name"], "node": node, "text": line["text"],
             "trust": line.get("trust"), "note": line.get("note", ""), "options": options}
