@@ -6,7 +6,7 @@ import logic
 from campus_people import ACTION_PERSON, ROOM_OF_PERSON, people_in_room, room_of_scene, talk
 from campus_text import TEXT
 # The answers of the two puzzles: read only here, never sent to the page (specs/pen-and-code.md).
-from campus_search import PC12_CODE, PEN_SPOT, SEARCH_TEXT, SPOTS
+from campus_search import PC12_CODE, PEN_SPOT, PHOTO_PIECES, PHOTO_SOLUTION, PHOTO_TEXT, SEARCH_TEXT, SPOTS
 from story import LANGUAGES, STORIES, UI_TEXTS
 
 # The clues the player has to collect, and the room where each one is found. In this 3D version the
@@ -223,6 +223,30 @@ def unlock_computer(player, language, code):
     return dict(snapshot(player, language, result["message"], result["accepted"]), unlocked=True)
 
 
+def assemble_photo(player, language, pieces):
+    """The player filled the frame with the pieces of the torn photo (specs/torn-photo.md).
+
+    `pieces` has one [piece id, rotation] for each place of the frame, in reading order. A wrong photo
+    saves nothing. The right one plays the story's own request_copy action, so the photo is saved
+    exactly as before. `assembled` tells the page which.
+    """
+    if (not isinstance(pieces, list) or len(pieces) != len(PHOTO_PIECES)
+            or not all(isinstance(p, list) and len(p) == 2 and isinstance(p[0], str)
+                       and type(p[1]) is int and p[1] in (0, 90, 180, 270) for p in pieces)
+            or sorted(p[0] for p in pieces) != sorted(PHOTO_PIECES)):
+        raise ValueError("Invalid photo / Fotografia inválida.")
+    state = game.load(player)
+    language = db.load_language(player) or language
+    t = TEXT[language]
+    if state["ending"] != "none" or state["scene"] != "print_shop" or "original_photo" in state["inventory"]:
+        return dict(snapshot(player, language, t["photo_wrong"], accepted=False), assembled=False)
+    if [p[0] for p in pieces] != list(PHOTO_SOLUTION) or any(p[1] != 0 for p in pieces):
+        return dict(snapshot(player, language, t["photo_wrong"], accepted=False), assembled=False)
+    result = game.play(player, "request_copy", language)
+    message = PHOTO_TEXT[language] if result["accepted"] else result["message"]
+    return dict(snapshot(player, language, message, result["accepted"]), assembled=result["accepted"])
+
+
 def command(payload):
     """Validate browser input before calling the existing saved-game functions."""
     if not isinstance(payload, dict):
@@ -236,6 +260,7 @@ def command(payload):
         "talk": {"operation", "player", "language", "npc", "node"},
         "search": {"operation", "player", "language", "spot"},
         "unlock": {"operation", "player", "language", "code"},
+        "assemble": {"operation", "player", "language", "pieces"},
     }
     if not isinstance(operation, str) or operation not in allowed_fields:
         raise ValueError("Unknown operation / Operação desconhecida.")
@@ -277,6 +302,8 @@ def command(payload):
         return search_room(player, language, payload["spot"])
     if operation == "unlock":
         return unlock_computer(player, language, payload["code"])
+    if operation == "assemble":
+        return assemble_photo(player, language, payload["pieces"])
     if not isinstance(payload["action"], str):
         raise ValueError("Invalid action / Ação inválida.")
     # Going to the auditorium by the button needs every clue too, exactly as walking in through its door.

@@ -20,8 +20,9 @@
   name.autocomplete = "nickname";
   const nameHint = make("p", undefined, "muted");
   const startError = make("p", "", "error"); startError.setAttribute("role", "alert");
-  const collection = make("p", undefined, "muted collection");   // the endings found so far, kept in this browser
-  nameBox.append(nameLabel, name, nameHint, collection, startError);
+  // No count of endings here: the player should not know how many endings there are before playing
+  // (specs/no-endings-on-start.md). The ending screen still shows the endings found.
+  nameBox.append(nameLabel, name, nameHint, startError);
   // The last name used in this browser is filled in again: if the page reloads (for example after an
   // update of the app), continuing the game is one click (specs/chat-dialogues.md).
   const LAST_NAME_KEY = "plot-twist-last-name";
@@ -251,7 +252,6 @@
     document.documentElement.lang = window.lang || "pt";
     nameLabel.textContent = t.name_label;
     nameHint.textContent = t.continue_hint;
-    collection.textContent = collectionText();
     $("accept").textContent = t.start;
     $("case-eyebrow").textContent = t.case;
     $("game-title").textContent = t.title;
@@ -376,19 +376,16 @@
         }
         $("action-groups").append(group);
       }
-      // Searching the study room for the USB stick (specs/pen-and-code.md). In 3D the objects are clicked
-      // in the picture; the text mode lists the same places as buttons.
+      // Searching the study room for the USB stick (specs/hidden-object-table.md): the button opens the
+      // close-up of the messy table (in 3D, clicking the table does the same).
       if (state.scene === "study_room" && !state.inventory.some(item => item.id === "usb_stick")) {
-        const group = make("section", undefined, "actions search");
-        group.append(make("h3", t.search_title), make("p", t.search_hint, "muted"));
-        if (textMode) {
-          for (const [spot, label] of Object.entries(t.spots)) {
-            const box = make("div", undefined, "action-row");
-            const button = make("button", label, "locked");
-            button.addEventListener("click", () => window.campusSearch(spot));
-            box.append(button); group.append(box);
-          }
-        }
+        // No title or hint: saying where the stick is would give the solution away.
+        const group = make("section", undefined, "actions search investigate");
+        const box = make("div", undefined, "action-row");
+        const button = make("button", t.table_open);
+        button.id = "table-open";
+        button.addEventListener("click", () => window.campusOpenTable());
+        box.append(button); group.append(box);
         $("action-groups").append(group);
       }
       const actionRow = action => {
@@ -628,9 +625,10 @@
       if (action.decision && !action.allowed) continue;   // a decision shows only when it can be taken
       if (action.id === "request_copy" && !asked.has("order")) continue;   // the copy only after the clerk mentions the original order
       const isCode = action.id === "view_files";   // computer 12 asks for its code first
+      const isPhoto = action.id === "request_copy";   // the original photo has to be put together (specs/torn-photo.md)
       const button = make("button", isCode ? t.code_enter : action.label, "answer");
       button.dataset.action = action.id;
-      button.addEventListener("click", () => isCode ? askCode(line) : talkAction(line, action));
+      button.addEventListener("click", () => isCode ? askCode(line) : isPhoto ? openPhoto(line, action) : talkAction(line, action));
       doing.append(button);
     }
     if (doing.children.length && window.campusInside === false) doing.append(make("p", t.outside_hint, "muted"));
@@ -700,20 +698,53 @@
     $("talk-close").classList.remove("only-way");
     input.focus();
   }
-  // ---------- searching the study room (specs/pen-and-code.md) ----------
-  // The 3D scene calls this when an object of the study room is clicked; the text mode calls it from its buttons.
+  // ---------- the torn photo of the print shop (specs/torn-photo.md) ----------
+  // The clerk finds the original print shredded; photo.js shows the pieces. When the frame is full, the
+  // server says if the photo is right (only it knows the solution) and, if so, gives the photo.
+  function openPhoto(line, action) {
+    if (!window.campusPhoto) return;
+    const t = ui();
+    addBubble(action.label, "me");   // the player asks for the copy, and hears that it was shredded
+    addSaid(t.photo_intro);
+    window.campusPhoto.open({
+      title: t.photo_title, hint: t.photo_hint, close: t.photo_close,
+      submit: async pieces => {
+        const scene = current.scene;
+        if (!await send("assemble", { pieces })) return;
+        if (!current.assembled) { toast(current.message); return "wrong"; }   // it does not fit yet: no time is taken
+        if (talking && current.scene === scene) {
+          showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [], options: [] });
+        }
+        return "done";
+      },
+    });
+  }
+  // ---------- searching the study room: the close-up of the table (specs/hidden-object-table.md) ----------
+  // Asks the server about one kind of object of the table. Answers "found", "wrong" or nothing.
   window.campusSearch = async spot => {
     if (window.campusBusy || !current || current.ending) return;
     const t = ui();
     if (current.scene !== "study_room" || window.campusInside === false) { toast(t.search_where); return; }
     if (current.inventory.some(item => item.id === "usb_stick")) { toast(t.search_done); return; }
     if (!await send("search", { spot })) return;
-    if (current.found) {
-      toast(current.message);
-      window.dispatchEvent(new CustomEvent("campus-found", { detail: spot }));   // the 3D scene opens the box
-    } else if (current.message !== t.search_where && current.message !== t.search_done) {
-      penalize(1, `${current.message} (${t.time_penalty_search})`);   // a wrong place costs 1 minute
+    if (current.found) { toast(current.message); return "found"; }
+    if (current.message !== t.search_where && current.message !== t.search_done) {
+      penalize(1, `${current.message} (${t.time_penalty_search})`);   // a wrong object costs 1 minute
+      return "wrong";
     }
+  };
+  // Opens the close-up (table.js draws it): only inside the study room, before the stick is found.
+  window.campusOpenTable = () => {
+    if (!current || current.ending || !window.campusTable) return;
+    const t = ui();
+    if (current.scene !== "study_room" || window.campusInside === false) { toast(t.search_where); return; }
+    if (current.inventory.some(item => item.id === "usb_stick")) { toast(t.search_done); return; }
+    window.playing = false;   // the character stands still while looking at the table
+    window.campusTable.open({
+      title: t.table_title, hint: t.table_hint, close: t.table_close, lens: t.table_lens, labels: t.spots,
+      pick: kind => window.campusSearch(kind),
+      onClose: () => { if (!talking && !phone.open && !dialog.open) window.playing = true; },
+    });
   };
   async function talkStep(npc, node) {
     if (window.campusBusy || !current) return;
@@ -1150,6 +1181,8 @@
       dialog.close(); window.playing = true; $("scene-heading").focus();
       stopSpeaking();
       window.dispatchEvent(new Event("campus-restarted"));
+      window.campusTable?.reset();   // a new game: no object of the table is marked as checked
+      window.campusPhoto?.reset();   // and the pieces of the photo are back on the counter
       timeLeft = FULL_TIME; timeOwner = current.player; lastTick = null; saveTime();   // a new game: 30 new minutes
       $("timeup-card").hidden = true;
       tick();

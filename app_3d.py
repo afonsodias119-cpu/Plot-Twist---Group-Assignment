@@ -79,7 +79,7 @@ BRIDGE = """<script>
 
 
 PAGE_FILES = [PROJECT / "story.py"] + [PROJECT / "prototypes" / "campus-3d" / name for name in (
-    "game3d.html", "play.js", "play.css", "campus_text.py", "campus_people.py", "page3d.py")]
+    "game3d.html", "play.js", "table.js", "photo.js", "play.css", "campus_text.py", "campus_people.py", "page3d.py")]
 
 
 def page_version():

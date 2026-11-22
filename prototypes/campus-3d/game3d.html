@@ -269,7 +269,9 @@ renderer.toneMappingExposure = 0.95;
 wrap.prepend(renderer.domElement);
 renderer.domElement.tabIndex = 0;
 const labelRenderer = new CSS2DRenderer();   // signs are HTML, drawn on top of the 3D picture
-Object.assign(labelRenderer.domElement.style, { position: "absolute", top: "0", left: "0", pointerEvents: "none" });
+// zIndex 1 keeps the signs together in their own layer: CSS2DRenderer gives each sign a z-index to sort them,
+// and without this those numbers competed with the whole page and covered the windows (the table close-up).
+Object.assign(labelRenderer.domElement.style, { position: "absolute", top: "0", left: "0", pointerEvents: "none", zIndex: "1" });
 wrap.insertBefore(labelRenderer.domElement, renderer.domElement.nextSibling);
 
 const scene = new THREE.Scene();
@@ -620,88 +622,69 @@ rbox(2.3, 1.2, 0.06, 0, 0.9, -11.84, mat(0xb0b4b8, { metalness: 0.6, roughness: 
 picture(2.2, 1.1, 0, 1.5, -11.8, whiteboard, 0.15);
 plant(-3.9, -11.4); plant(3.9, -3.6, 0.8);
 
-// ---- The things of the study room the player can search (specs/pen-and-code.md)
-// Each one is a group with userData.spot = its id (the same ids as campus_search.SPOTS). Which one hides
-// the USB stick is decided on the server and never written here: clicking one asks the server.
-const spotObjects = [];
-function spotGroup(id) {
-  const g = new THREE.Group();
-  g.userData.spot = id;
-  scene.add(g); spotObjects.push(g);
-  return g;
-}
+// ---- The study room (specs/hidden-object-table.md): the table is covered in mess and is the only place
+// to search. Clicking it opens its close-up (table.js), where the player looks for the USB stick.
+// The drawer, the coat and the plant are only scenery; the floor is clear.
 const cardboard = mat(0xc49a6c, { roughness: 0.9 });
 {
-  let g = spotGroup("drawer");   // the group drawer, under the table top, facing the door
-  rbox(0.9, 0.12, 0.45, 0, 0.58, -7.48, oak, { parent: g });
-  cyl(0.02, 0.02, 0.03, 0, 0.62, -7.24, blackMetal, 12, g).rotation.x = Math.PI / 2;
-  g = spotGroup("coat");         // a coat hanging on the back of a chair
-  rbox(0.5, 0.48, 0.09, -0.8, 0.5, -6.66, mat(0x3c4a32, { roughness: 0.95 }), { parent: g });
-  rbox(0.12, 0.4, 0.08, -1.08, 0.45, -6.64, mat(0x3c4a32, { roughness: 0.95 }), { parent: g });
-  g = spotGroup("mug");          // a mug of cold coffee on the table
-  cyl(0.045, 0.04, 0.1, -0.35, 0.76, -7.62, mat(0xf2efe8, { roughness: 0.4 }), 16, g);
-  cyl(0.04, 0.04, 0.005, -0.35, 0.85, -7.62, mat(0x3a2418), 16, g);
-  g = spotGroup("backpack");     // a backpack on the floor
-  rbox(0.38, 0.48, 0.22, -2.7, 0, -9.9, mat(0x1f3a5a, { roughness: 0.9 }), { radius: 0.08, parent: g });
-  rbox(0.28, 0.18, 0.05, -2.7, 0.08, -9.77, mat(0x2a4a70, { roughness: 0.9 }), { parent: g });
-  g = spotGroup("books");        // a pile of books on the floor
-  [[0x8a2f2f, 0.42], [0x2f5a8a, 0.38], [0xd8c27a, 0.4], [0x3a6a4a, 0.34]].forEach(([colour, w], i) =>
-    rbox(w, 0.07, 0.28, 2.6 + (i % 2) * 0.03, i * 0.07, -10.9, mat(colour, { roughness: 0.8 }), { radius: 0.01, parent: g }).rotation.y = i * 0.25);
-  g = spotGroup("papers");       // papers scattered on the floor
-  rbox(0.3, 0.05, 0.22, -2.3, 0, -5.4, paper, { radius: 0.005, parent: g });
-  for (let i = 0; i < 5; i++) {
-    const sheet = add(new THREE.Mesh(new THREE.PlaneGeometry(0.21, 0.29), paper), -2.3 + rand(-0.45, 0.45), 0.004 + i * 0.001, -5.4 + rand(-0.35, 0.35), g);
-    sheet.rotation.x = -Math.PI / 2; sheet.rotation.z = rand(-1, 1);
+  rbox(0.9, 0.12, 0.45, 0, 0.58, -7.48, oak);                                        // the group drawer
+  cyl(0.02, 0.02, 0.03, 0, 0.62, -7.24, blackMetal, 12).rotation.x = Math.PI / 2;
+  rbox(0.5, 0.48, 0.09, -0.8, 0.5, -6.66, mat(0x3c4a32, { roughness: 0.95 }));       // a coat on a chair
+  rbox(0.12, 0.4, 0.08, -1.08, 0.45, -6.64, mat(0x3c4a32, { roughness: 0.95 }));
+  // nothing on the floor: all the mess is on the table
+}
+const mess = new THREE.Group();   // everything on the table top, plus an invisible box that makes the table clickable
+scene.add(mess);
+{
+  const top = 0.765, napkin = mat(0xf7f5f0, { roughness: 1 }), cheese = mat(0xf2c14e), sauce = mat(0xc0392b);
+  const cans = [0xc62828, 0x1565c0, 0x2e7d32];
+  rbox(0.42, 0.06, 0.42, 1.05, top, -8.35, cardboard, { radius: 0.005, parent: mess }).rotation.y = 0.3;    // pizza boxes
+  rbox(0.4, 0.02, 0.4, -0.45, top, -8.4, cardboard, { radius: 0.004, parent: mess }).rotation.y = -0.2;
+  rbox(0.4, 0.02, 0.4, 1.3, top + 0.06, -7.7, cardboard, { radius: 0.004, parent: mess }).rotation.y = 0.9;
+  for (const [x, z, a] of [[-0.5, -8.45, 0.4], [-0.38, -8.3, 2.2], [0.2, -7.55, 1.1], [1.2, -7.7, -0.6]]) {   // pizza slices
+    const slice = cyl(0.12, 0.12, 0.012, x, top + 0.022, z, cheese, 3, mess); slice.rotation.y = a; slice.scale.z = 0.6;
+    cyl(0.02, 0.02, 0.013, x + 0.03, top + 0.026, z, sauce, 10, mess);
   }
-  g = spotGroup("bin");          // a bin in the corner
-  cyl(0.18, 0.15, 0.42, 3.9, 0, -10.9, mat(0x5a5f66, { metalness: 0.4, roughness: 0.5 }), 20, g);
-  for (let i = 0; i < 3; i++) add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.06, 0), paper), 3.9 + rand(-0.08, 0.08), 0.43, -10.9 + rand(-0.08, 0.08), g);
-  g = spotGroup("plant");        // the plant pot of the corner: an invisible box makes it clickable
-  rbox(0.5, 1.2, 0.5, -3.9, 0, -11.4, mat(0x000000, { transparent: true, opacity: 0, depthWrite: false }), { parent: g });
-  g = spotGroup("pizza");        // a pizza box on the table
-  rbox(0.42, 0.06, 0.42, 1.05, 0.765, -8.35, cardboard, { radius: 0.005, parent: g });
+  for (let i = 0; i < 14; i++) {                                                        // more sheets of the report
+    const sheet = add(new THREE.Mesh(new THREE.PlaneGeometry(0.21, 0.29), paper), rand(-1.4, 1.4), top + 0.002 + i * 0.0012, rand(-8.6, -7.4), mess);
+    sheet.rotation.x = -Math.PI / 2; sheet.rotation.z = rand(-1.5, 1.5);
+  }
+  for (let i = 0; i < 6; i++) {                                                         // crumpled napkins
+    const n = add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.06, 0), napkin), rand(-1.4, 1.4), top + 0.02, rand(-8.6, -7.4), mess);
+    n.scale.y = 0.45;
+  }
+  for (let i = 0; i < 5; i++) cyl(0.033, 0.033, 0.12, rand(-1.4, 1.4), top, rand(-8.6, -7.4), mat(cans[i % 3], { metalness: 0.5, roughness: 0.35 }), 16, mess);   // cans
+  cyl(0.045, 0.04, 0.1, -0.35, top, -7.62, mat(0xf2efe8, { roughness: 0.4 }), 16, mess);   // mugs of cold coffee
+  cyl(0.04, 0.04, 0.005, -0.35, top + 0.09, -7.62, mat(0x3a2418), 16, mess);
+  cyl(0.045, 0.04, 0.1, 0.95, top, -7.55, mat(0xf2efe8, { roughness: 0.4 }), 16, mess);
+  rbox(0.16, 0.03, 0.24, -1.0, top, -7.7, mat(0xf0a020, { roughness: 0.5 }), { radius: 0.01, parent: mess }).rotation.y = 0.5;   // crisps
+  rbox(0.16, 0.025, 0.21, 0.0, top, -8.5, mat(0x26456e), { radius: 0.01, parent: mess }).rotation.y = -0.4;   // a notebook
+  for (let i = 0; i < 6; i++) {                                                         // pens and highlighters
+    const pen = cyl(0.006, 0.006, 0.15, rand(-1.4, 1.4), top + 0.006, rand(-8.6, -7.4), mat(i % 2 ? 0x2251a8 : 0xf5e100), 8, mess);
+    pen.rotation.z = Math.PI / 2; pen.rotation.y = rand(0, Math.PI);
+  }
+  for (let i = 0; i < 6; i++) rbox(0.07, 0.003, 0.07, rand(-1.4, 1.4), top + 0.003, rand(-8.6, -7.4), mat(0xffe066), { radius: 0.001, parent: mess });   // sticky notes
+  // the invisible box over the whole table top: clicking anywhere on the table opens the close-up
+  rbox(3.2, 0.4, 1.5, 0, 0.6, -8, mat(0x000000, { transparent: true, opacity: 0, depthWrite: false }), { parent: mess });
 }
-// Each group was drawn at the origin of the room; move its centre to the middle of its own object,
-// so making it a little bigger (hover) or turning it (found) happens in place.
-for (const g of spotObjects) {
-  const centre = new THREE.Box3().setFromObject(g).getCenter(new THREE.Vector3());
-  g.children.forEach(child => child.position.sub(centre));
-  g.position.copy(centre);
-}
-// Clicking: a ray from the camera through the mouse finds the object under it.
+// Clicking: a ray from the camera through the mouse finds whether the table is under it.
 const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
-function spotUnder(event) {
+function tableUnder(event) {
   const rect = renderer.domElement.getBoundingClientRect();
   pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(pointer, camera);
-  let object = raycaster.intersectObjects(spotObjects, true)[0]?.object;
-  while (object && !object.userData.spot) object = object.parent;   // up to the group that has the id
-  return object || null;
+  return raycaster.intersectObject(mess, true).length > 0;
 }
 // Searching makes sense only in the study room, before the USB stick is found.
 const canSearch = () => {
   const state = window.campusState;
   return Boolean(state) && !state.ending && state.scene === "study_room" && !state.inventory.some(i => i.id === "usb_stick");
 };
-let hoveredSpot = null;
 renderer.domElement.addEventListener("pointermove", event => {
-  const spot = canSearch() ? spotUnder(event) : null;
-  if (spot === hoveredSpot) return;
-  if (hoveredSpot) hoveredSpot.scale.setScalar(1);
-  hoveredSpot = spot;
-  if (spot) spot.scale.setScalar(1.04);   // a small lift shows what can be searched
-  renderer.domElement.style.cursor = spot ? "pointer" : "";
+  renderer.domElement.style.cursor = canSearch() && tableUnder(event) ? "pointer" : "";
 });
 renderer.domElement.addEventListener("click", event => {
-  if (!canSearch()) return;
-  const spot = spotUnder(event);
-  if (spot && window.campusSearch) window.campusSearch(spot.userData.spot);
-});
-// Where the USB stick was found, the object is left moved aside. (Every object reacts the same way,
-// so reading this page does not tell which one hides it.)
-window.addEventListener("campus-found", event => {
-  const g = spotObjects.find(o => o.userData.spot === event.detail);
-  if (g) { g.scale.setScalar(1); g.position.y += 0.03; g.rotation.y += 0.35; }
+  if (canSearch() && tableUnder(event) && window.campusOpenTable) window.campusOpenTable();
 });
 
 // ---- Print shop (x -13..-4.5)
@@ -1132,8 +1115,13 @@ async function checkEnter() {
   entering = true;
   await window.campusEnter(room.id);
   entering = false;
-  if (window.campusState.scene === state.scene) {   // refused, or the request failed: stay outside
+  const now = window.campusState;
+  // Refused, or the request failed: stay outside, in the corridor by that door. The walk may already have
+  // gone through the study room (the auditorium from another room, specs/auditorium-door-keeps-room.md):
+  // the saved room changed, but the character must not be moved there.
+  if (now.scene === state.scene || now.accepted === false) {
     player.position.z = room.maxZ < 0 ? -2 : 2;
+    savedScene = now.room;
     for (const k in keys) keys[k] = false;
   }
 }
@@ -1221,7 +1209,7 @@ function syncCampus() {
   if (state.fresh && !placedOutside) {
     placeOutside();
     savedScene = state.room;
-  } else if (state.room !== savedScene) {
+  } else if (state.room !== savedScene && !(entering && state.accepted === false)) {   // a refused door moves no one
     const room = ROOMS.find(r => r.id === state.room);
     player.position.set((room.minX + room.maxX) / 2, 0, room.maxZ < 0 ? room.maxZ - 1 : room.minZ + 1);
     savedScene = state.room;
