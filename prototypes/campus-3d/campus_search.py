@@ -62,3 +62,14 @@ SEARCH_TEXT = {
         },
     },
 }
+
+# The torn photo of the print shop (specs/torn-photo.md). photo.js draws the 9 pieces; only here is it
+# written which piece goes in each place of the frame (reading order: top row left to right, then the
+# middle row, then the bottom row), all upright.
+PHOTO_PIECES = ("k", "d", "q", "a", "n", "f", "w", "h", "s")
+PHOTO_SOLUTION = ("q", "w", "a", "f", "k", "s", "d", "n", "h")
+
+PHOTO_TEXT = {
+    "en": "The last piece fits. In the original photo there are four of you, and in the corner the date stamp says 14.11. The clerk tapes the pieces together and hands you the photo.",
+    "pt": "O último pedaço encaixa. Na fotografia original estão quatro pessoas, e no canto o carimbo da data diz 14.11. A funcionária cola os pedaços com fita-cola e dá-te a fotografia.",
+}

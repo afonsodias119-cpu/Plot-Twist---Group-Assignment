@@ -312,3 +312,10 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .table-view { touch-action: none; }   /* on a touch screen, dragging moves objects and the magnifier, not the page */
 .lens-grab { cursor: grab; }
 .lens-grab:active { cursor: grabbing; }
+
+/* the torn photo of the print shop (specs/torn-photo.md); the window reuses .table-card */
+.photo-piece { cursor: grab; }
+.photo-piece:active { cursor: grabbing; }
+.photo-frame.wrong { animation: photo-wrong .7s; }
+.photo-frame.done { stroke: #7fd6a0; stroke-width: 5; filter: drop-shadow(0 0 12px #7fd6a0); }
+@keyframes photo-wrong { 0%, 100% { stroke: #e8b45c; } 30%, 60% { stroke: #ff6b5a; stroke-width: 5; } }

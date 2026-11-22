@@ -625,9 +625,10 @@
       if (action.decision && !action.allowed) continue;   // a decision shows only when it can be taken
       if (action.id === "request_copy" && !asked.has("order")) continue;   // the copy only after the clerk mentions the original order
       const isCode = action.id === "view_files";   // computer 12 asks for its code first
+      const isPhoto = action.id === "request_copy";   // the original photo has to be put together (specs/torn-photo.md)
       const button = make("button", isCode ? t.code_enter : action.label, "answer");
       button.dataset.action = action.id;
-      button.addEventListener("click", () => isCode ? askCode(line) : talkAction(line, action));
+      button.addEventListener("click", () => isCode ? askCode(line) : isPhoto ? openPhoto(line, action) : talkAction(line, action));
       doing.append(button);
     }
     if (doing.children.length && window.campusInside === false) doing.append(make("p", t.outside_hint, "muted"));
@@ -696,6 +697,27 @@
     $("talk-options").hidden = false;
     $("talk-close").classList.remove("only-way");
     input.focus();
+  }
+  // ---------- the torn photo of the print shop (specs/torn-photo.md) ----------
+  // The clerk finds the original print shredded; photo.js shows the pieces. When the frame is full, the
+  // server says if the photo is right (only it knows the solution) and, if so, gives the photo.
+  function openPhoto(line, action) {
+    if (!window.campusPhoto) return;
+    const t = ui();
+    addBubble(action.label, "me");   // the player asks for the copy, and hears that it was shredded
+    addSaid(t.photo_intro);
+    window.campusPhoto.open({
+      title: t.photo_title, hint: t.photo_hint, close: t.photo_close,
+      submit: async pieces => {
+        const scene = current.scene;
+        if (!await send("assemble", { pieces })) return;
+        if (!current.assembled) { toast(current.message); return "wrong"; }   // it does not fit yet: no time is taken
+        if (talking && current.scene === scene) {
+          showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [], options: [] });
+        }
+        return "done";
+      },
+    });
   }
   // ---------- searching the study room: the close-up of the table (specs/hidden-object-table.md) ----------
   // Asks the server about one kind of object of the table. Answers "found", "wrong" or nothing.
@@ -1160,6 +1182,7 @@
       stopSpeaking();
       window.dispatchEvent(new Event("campus-restarted"));
       window.campusTable?.reset();   // a new game: no object of the table is marked as checked
+      window.campusPhoto?.reset();   // and the pieces of the photo are back on the counter
       timeLeft = FULL_TIME; timeOwner = current.player; lastTick = null; saveTime();   // a new game: 30 new minutes
       $("timeup-card").hidden = true;
       tick();

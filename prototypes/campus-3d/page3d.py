@@ -92,13 +92,14 @@ def build_page(playable=False, inline=False):
         js = (HERE / "play.js").read_text(encoding="utf-8").replace("</script", r"<\/script")
         # the close-up of the study room table (specs/hidden-object-table.md)
         table = (HERE / "table.js").read_text(encoding="utf-8").replace("</script", r"<\/script")
+        photo = (HERE / "photo.js").read_text(encoding="utf-8").replace("</script", r"<\/script")   # specs/torn-photo.md
         # An inline script ignores "defer", so it goes at the end of the body, when the page elements exist.
-        # table.js and play.js share one <script> (table.js keeps its names inside its own function).
+        # table.js, photo.js and play.js share one <script> (the first two keep their names inside their own function).
         page = page.replace("</head>", f"<style>{css}</style></head>").replace(
-            "</body>", f"<script>{table}\n{js}</script></body>")
+            "</body>", f"<script>{table}\n{photo}\n{js}</script></body>")
     elif playable:
         page = page.replace("</head>", '<link rel="stylesheet" href="/play.css"><script defer src="/table.js"></script>'
-                                       '<script defer src="/play.js"></script></head>')
+                                       '<script defer src="/photo.js"></script><script defer src="/play.js"></script></head>')
     return page
 
 

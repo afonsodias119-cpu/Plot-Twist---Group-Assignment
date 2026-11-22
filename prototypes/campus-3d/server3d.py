@@ -42,7 +42,7 @@ class CampusHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/":
             return self.reply(200, self.server.campus_page, "text/html")
-        public_files = {"/play.js": "text/javascript", "/table.js": "text/javascript", "/play.css": "text/css"}
+        public_files = {"/play.js": "text/javascript", "/table.js": "text/javascript", "/photo.js": "text/javascript", "/play.css": "text/css"}
         if path in public_files:
             return self.reply(200, (HERE / path[1:]).read_text(encoding="utf-8"), public_files[path])
         self.json_reply(404, {"error": "Not found."})
