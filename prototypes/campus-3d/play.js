@@ -557,11 +557,13 @@
     $("talk-log").append(bubble);
     $("talk-log").scrollTop = $("talk-log").scrollHeight;
   }
+  const topics = new Map();   // unasked subjects learned from this conversation
   const asked = new Set();   // the questions (node ids) already chosen in the open conversation
   function closeTalk() {
     const was = talking;
     talking = null;
     asked.clear();
+    topics.clear();
     stopSpeaking();
     $("talk").hidden = true;
     $("talk-log").replaceChildren();   // the next conversation starts empty
@@ -570,13 +572,34 @@
   }
   function showLine(line) {
     const t = ui();
-    if (talking !== line.npc) { $("talk-log").replaceChildren(); asked.clear(); }   // a different person: a new conversation
+    if (talking !== line.npc) { $("talk-log").replaceChildren(); asked.clear(); topics.clear(); }   // a different person: a new conversation
     talking = line.npc;
     window.playing = false;   // the character stands still while talking
     $("talk-name").textContent = line.name;
     $("talk-avatar").textContent = line.name.charAt(0);
     const firstLine = $("talk-log").children.length === 0;
-    addSaid(line.text);
+    // Returning to the menu keeps the messages already on screen, without another greeting.
+    const sayLine = line.node !== "start" || firstLine;
+    if (sayLine) addSaid(line.text);
+    if (line.npc !== "computer12") {
+      if (line.node === "closed") {
+        topics.clear();
+        line = { ...line, actions: [] };
+      } else {
+        // Root subjects and Tomás's factual leads remain useful after choosing a sibling.
+        // Reactions such as "Apologise" belong only to the current exchange.
+        if (line.node === "start" || line.node === "result" || (line.npc === "tomas" && line.node === "kind")) {
+          for (const option of line.options) {
+            if (option.next && option.next !== "start") topics.set(option.next, option);
+          }
+        }
+        const available = new Map();
+        for (const option of [...line.options, ...topics.values()]) {
+          if (option.next !== "start") available.set(option.next, option);
+        }
+        line = { ...line, options: [...available.values()] };
+      }
+    }
     // Trust hearts in the header. A line without trust (for example the answer to an action) keeps the hearts shown.
     if (line.trust !== null && line.trust !== undefined) {
       $("talk-trust").textContent = "♥".repeat(line.trust) + "♡".repeat(3 - line.trust);
@@ -620,7 +643,7 @@
     $("talk").hidden = false;
     updateNear();
     sound.talk();
-    speak(line.text, line.npc);
+    if (sayLine) speak(line.text, line.npc);
     $("talk-options").querySelector("button")?.focus({ preventScroll: true });
   }
   // The player chose to do something by talking: the story's own action runs, and the person answers with its result.
@@ -631,9 +654,20 @@
     showTyping();
     if (!await send("play", { action: action.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
     if (!talking || current.scene !== scene) return;   // the scene changed (for example the chat opened): the conversation is over
-    // The person answers with the result (or why it is refused). Only goodbye is offered: no "continue" (specs/chat-dialogues.md).
-    showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [],
-               options: [] });
+    // Refresh conditions and available actions after changing the story, retaining the log.
+    // The computer has its own code/chat flow.
+    if (line.npc === "computer12") {
+      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [], options: [] });
+      return;
+    }
+    setBusy(true);
+    try {
+      const menu = await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc: line.npc, node: "start" });
+      showLine({ ...menu, node: "result", text: current.message });
+    } catch (error) {
+      closeTalk();
+      toast(error.name === "Error" ? error.message : ui().network_error);
+    } finally { setBusy(false); }
   }
   // ---------- the code of computer 12 (specs/pen-and-code.md) ----------
   // A small field for 4 digits replaces the answers. The server checks the code; a wrong one costs 1 minute.
