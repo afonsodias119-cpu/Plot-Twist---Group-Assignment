@@ -66,4 +66,26 @@ assert.deepEqual(choices(), []);
 show('rita', 'start', [option('photo')]);
 click('photo'); show('rita', 'result', [option('photo'), option('chat')]);
 assert.deepEqual(choices(), ['chat']);
+// Leonor's decisions stay hidden until they can be taken (specs/actions-when-they-make-sense.md).
+const decisions = allowed => [
+  { id: 'ask_for_help', label: 'Ask for help', decision: true, allowed },
+  { id: 'accuse', label: 'Accuse', decision: true, allowed }];
+const shownActions = () => $('talk-options').children.filter(child => child.children.length)
+  .flatMap(group => group.children.map(button => button.dataset.action));
+show('leonor', 'start', [option('sure')], 'start', decisions(false));
+assert.deepEqual(shownActions(), []);
+assert.deepEqual(choices(), ['sure']);   // without the photo: her normal answers
+show('leonor', 'start', [option('sure')], 'start', decisions(true));
+assert.deepEqual(shownActions(), ['ask_for_help', 'accuse']);
+assert.deepEqual(choices(), ['']);   // with the photo: only the group of decisions, no answers
+
+// The clerk offers the copy only after she mentions the original order.
+const copy = [{ id: 'request_copy', label: 'Ask for a copy', allowed: true }];
+show('amelia', 'start', [option('order'), option('visitor')], 'start', copy);
+assert.deepEqual(shownActions(), []);
+click('order'); show('amelia', 'order', [option(null)], 'order', copy);
+assert.deepEqual(shownActions(), ['request_copy']);
+assert.ok(choices().includes('visitor'));   // her other question is still there
+const replies = $('talk-options').children;
+assert.equal(replies[replies.length - 1].children[0].textContent, 'Ask for a copy');   // after the questions, with no ▶
 console.log('Continuous conversation interaction checks passed.');

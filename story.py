@@ -49,7 +49,7 @@ STORY_EN = {
             "texts": [
                 {
                     "when": {},
-                    "text": 'It is night, the eve of the presentation. In the group folder, the photo shows five people. There are four of you. On the cover of the report there is a fifth name: Duarte Sequeira. In the chat, your teammates insist that he "was with us all along". Only you know that is a lie.',
+                    "text": 'It is night, the eve of the presentation. In the group folder, the photo shows five people. There are four of you. On the cover of the report there is a fifth name: Duarte. In the chat, your teammates insist that he "was with us all along". Only you know that is a lie.',
                 },
                 {
                     "when": {"has": ["usb_stick"]},
@@ -151,7 +151,7 @@ STORY_EN = {
                     "requires": {"has": ["usb_stick"]},
                     "blocked_text": "The shared folder only shows the current version, already with five names. You need the group's backup copy.",
                     "sets": {"files_viewed": True},
-                    "result_text": 'You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer: someone added "Duarte Sequeira" to the report and swapped the photo. You recover the original version of the work.',
+                    "result_text": 'You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer: someone added "Duarte" to the report and swapped the photo. You recover the original version of the work.',
                 },
                 "open_chat": {
                     "label": "Open the group chat on computer 12",
@@ -294,7 +294,7 @@ STORY_PT = {
             "texts": [
                 {
                     "when": {},
-                    "text": 'É noite, véspera da apresentação. Na pasta do grupo, a fotografia mostra cinco pessoas. Vocês são quatro. Na capa do relatório há um quinto nome: Duarte Sequeira. No chat, os teus colegas garantem que ele "esteve sempre connosco". Só tu sabes que isso é mentira.',
+                    "text": 'É noite, véspera da apresentação. Na pasta do grupo, a fotografia mostra cinco pessoas, no entanto vocês são quatro. Na capa do relatório há um quinto nome: Duarte. No chat, os teus colegas garantem que ele "esteve sempre connosco". Só tu sabes que isso é mentira.',
                 },
                 {
                     "when": {"has": ["usb_stick"]},
@@ -396,7 +396,7 @@ STORY_PT = {
                     "requires": {"has": ["usb_stick"]},
                     "blocked_text": "A pasta partilhada só mostra a versão atual, já com cinco nomes. Precisas da cópia de segurança do grupo.",
                     "sets": {"files_viewed": True},
-                    "result_text": 'Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador: alguém acrescentou "Duarte Sequeira" ao relatório e trocou a fotografia. Recuperas a versão original do trabalho.',
+                    "result_text": 'Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador: alguém acrescentou "Duarte" ao relatório e trocou a fotografia. Recuperas a versão original do trabalho.',
                 },
                 "open_chat": {
                     "label": "Abrir o chat do grupo no computador 12",

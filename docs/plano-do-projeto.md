@@ -49,11 +49,15 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 
 ### Conversas corridas — Maria (22/11/2026)
 
-Alteração preparada em `maria/continuous-conversations`: depois de cada resposta, as outras perguntas disponíveis continuam no mesmo diálogo, sem terminar e voltar a falar. Mantém as pistas, as condições e as consequências. Ver `specs/continuous-conversations.md`.
+✅ Integrada na main (#37): depois de cada resposta, as outras perguntas disponíveis continuam no mesmo diálogo, sem terminar e voltar a falar. Mantém as pistas, as condições e as consequências. Ver `specs/continuous-conversations.md`.
+
+### Ações da conversa só quando fazem sentido — Maria (22/11/2026)
+
+✅ Integrada na main (#41): no jogo 3D, os dois botões amarelos da Leonor (pedir ajuda ou acusá-la) só aparecem quando já tens a fotografia original. Antes disso, a conversa mostra só as respostas normais; com a fotografia, mostra só as duas decisões. Na reprografia, "Pedir uma cópia do pedido original" só aparece depois de a funcionária falar do pedido. Nas conversas, as ações deixam de ser botões amarelos: parecem respostas normais e vêm depois das perguntas. O servidor e as regras não mudam. Ver `specs/actions-when-they-make-sense.md`.
 
 ### Interface mais limpa e intuitiva — Maria (22/11/2026)
 
-Alteração preparada em `cleaner-interface`, só no jogo 3D: a ficha do caso diz só "O teu grupo" e o Backspace mostra o texto todo de uma vez; a barra de cima deixa de ter emojis (fica "Telemóvel" e "Menu", com Como foi feito, vozes, lanterna e som por extenso); a lista de pistas do telemóvel já não diz onde está cada pista; e as conversas deixam de mostrar os corações de confiança. O servidor e as regras não mudam. Ver `specs/cleaner-interface.md`.
+Alteração preparada em `cleaner-interface` (PR #40), só no jogo 3D: a ficha do caso diz só "O teu grupo" e o Backspace mostra o texto todo de uma vez; a barra de cima deixa de ter emojis (fica "Telemóvel" e "Menu", com Como foi feito, vozes, lanterna e som por extenso); a lista de pistas do telemóvel já não diz onde está cada pista; e as conversas deixam de mostrar os corações de confiança. O servidor e as regras não mudam. Ver `specs/cleaner-interface.md`.
 
 ### Fase A — passos
 

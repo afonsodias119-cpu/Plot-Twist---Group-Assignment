@@ -9,7 +9,7 @@ English version of the player-facing texts of [historia.md](historia.md). The ga
 - Ids, conditions and effects are **only** in `historia.md`. They are identical in both languages. This file translates texts and nothing else.
 - Sections here use the same numbers as `historia.md` (1 premise, 4 items, 6 scenes, 7 endings).
 - If a text changes in one language, change it in the other in the same pull request.
-- Working title: "The Fifth Element" (translation of "O quinto elemento"). It is also a well known film, so the team may prefer another title. The names Leonor and Duarte Sequeira are kept for now. Both are open decisions in `historia.md` section 11.
+- Working title: "The Fifth Element" (translation of "O quinto elemento"). It is also a well known film, so the team may prefer another title. The intruder is called just "Duarte", with no surname (decided 22/11/2026). Both are open decisions in `historia.md` section 11.
 
 ## 1. Premise (Start screen)
 
@@ -29,7 +29,7 @@ Text the player reads is in italics in `historia.md`; here it is plain.
 ### 6.1 Study room — `study_room`
 
 **Text:**
-> It is night, the eve of the presentation. In the group folder, the photo shows five people. There are four of you. On the cover of the report there is a fifth name: Duarte Sequeira. In the chat, your teammates insist that he "was with us all along". Only you know that is a lie.
+> It is night, the eve of the presentation. In the group folder, the photo shows five people. There are four of you. On the cover of the report there is a fifth name: Duarte. In the chat, your teammates insist that he "was with us all along". Only you know that is a lie.
 
 **Extra text after you take the USB stick:**
 > The group drawer is empty.
@@ -88,7 +88,7 @@ Text the player reads is in italics in `historia.md`; here it is plain.
 
 | Action | Label | Result text |
 |---|---|---|
-| `view_files` | Look at the old project files | You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer: someone added "Duarte Sequeira" to the report and swapped the photo. You recover the original version of the work. |
+| `view_files` | Look at the old project files | You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer: someone added "Duarte" to the report and swapped the photo. You recover the original version of the work. |
 | `go_study_room` | Back to the study room | |
 
 **Blocked text of `view_files` (without the USB stick):**
