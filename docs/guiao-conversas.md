@@ -17,7 +17,7 @@ Tudo o que as pessoas dizem no jogo 3D, em português e em inglês, tal como est
    - As falas nunca podem dizer quais são as mensagens falsas ("message 2", "mensagem 4"…).
 6. Depois de mudar, corre `uv run pytest`. Se ficar verde, recarrega o jogo (no endereço que o Streamlit mostra ao arrancar; por omissão http://localhost:8501).
 
-**Legenda:** ⏳ *custa N minutos* é uma resposta agressiva: tira esses minutos à contagem decrescente (para mudar, altera `"cost": 5` no código). 📁 *prova* é uma carta que podes mostrar numa conversa ("Mostrar uma prova"): a certa, na fala certa, faz a pessoa ceder; qualquer outra custa 2 minutos (com o Duarte, 1). *Confiança* (0 a 3) é o humor da pessoa: não aparece no jogo (não há corações), o jogador percebe-o pelo que ela diz; com 0 a pessoa acaba a conversa. *Diário* é a nota que fica guardada no diário do telemóvel. "→ fim" acaba a conversa: no jogo 3D estas respostas não aparecem (usa-se o botão "Terminar conversa"), mas têm de existir no código, porque cada fala precisa de pelo menos uma resposta. Uma pergunta já feita na mesma conversa não volta a aparecer.
+**Legenda:** ⏳ *custa N minutos* é uma resposta agressiva: tira esses minutos à contagem decrescente (para mudar, altera `"cost": 5` no código). 📁 *prova* é uma carta que podes mostrar numa conversa ("Mostrar uma prova"): a certa, na fala certa, faz a pessoa ceder; qualquer outra custa 2 minutos (com o Duarte, 1). *Confiança* (0 a 3) é o humor da pessoa: não aparece no jogo (não há corações), o jogador percebe-o pelo que ela diz; com 0 a pessoa acaba a conversa. *Diário* é a nota que fica guardada no diário do telemóvel. "→ fim" acaba a conversa: no jogo 3D estas respostas não aparecem (usa-se o botão "Terminar conversa"), mas têm de existir no código, porque cada fala precisa de pelo menos uma resposta. Uma pergunta já feita na mesma conversa não volta a aparecer. 🕙 *até às 22:25* / *até às 22:30* quer dizer que a pessoa se vai embora a essa hora do campus.
 
 ## Rita
 Onde está: **Sala de estudo** (`study_room`).
@@ -80,6 +80,7 @@ Onde está: **Sala de estudo** (`study_room`).
 
 ## Funcionária
 Onde está: **Reprografia** (`print_shop`).
+🕙 Só até às 22:25. Depois, a sala continua aberta mas o balcão está vazio: "A grade está descida e o balcão às escuras. A funcionária foi para casa às 22:25. Há um papel colado na grade: fotografia da capa, pedido de 14 de novembro, levantar amanhã." / "The shutter is down and the counter is dark. The clerk went home at 22:25. A slip is taped to the shutter: cover photo, order of 14 November, collect tomorrow." (a frase está em `campus_clock.py`, não em `campus_text.py`)
 
 ### `start`
 - 🇵🇹 A funcionária ajeita os óculos. "Fechamos daqui a dez minutos, do que precisas?"  *(linha 208)*
@@ -102,6 +103,7 @@ Onde está: **Reprografia** (`print_shop`).
 
 ## Leonor
 Onde está: **Biblioteca** (`library`).
+🕙 Só até às 22:30 enquanto estiver indecisa; se já estiver a ajudar, fica. Depois: "A cadeira da Leonor está vazia. O livro ficou aberto na mesma página." / "Leonor's chair is empty. Her book is still open at the same page."
 
 ### `start` — confiança 2
 - 🇵🇹 A Leonor fecha o livro devagar. "Vens por causa do Duarte. Eu sei."  *(linha 217)*
@@ -437,3 +439,42 @@ A resposta à terceira afirmação aparece no cartão do final, por cima do vere
 | `three_help` | 3 dúvidas com `colleague_choice` = `help` (mostra `stolen_credits`) | O professor fecha a lista antes de a Leonor chegar à porta. "Já ouvi palpites que cheguem por uma noite." | The professor closes the list before Leonor reaches the door. "I have heard enough guesses for one night." |
 | `two` | 2 dúvidas e o final da história é `full_case` (mostra `impostor`) | "Acho que tem razão sobre ele. Mas fez-me duvidar duas vezes esta noite, e eu só escrevo aquilo de que tenho a certeza." | "You are right about him, I think. But you made me doubt you twice tonight, and I write down only what I am sure of." |
 | `no_originals` | sem limite, o final é `stolen_credits` e a afirmação 3 foi desfeita com `tomas_word` | O professor fica muito tempo a olhar para o telemóvel do Duarte. "Uma mensagem está respondida. Ele tem um telemóvel cheio delas, e ninguém aqui guardou as originais." | The professor looks at Duarte's phone for a long moment. "One message is answered. He has a phone full of them, and nobody here kept the originals." |
+
+## O horário da noite (em `prototypes/campus-3d/campus_clock.py` e `campus_text.py`)
+
+A noite começa às 22:15 e a faculdade fecha às 22:45 (30 minutos do campus). O servidor guarda o minuto; a página desenha a contagem decrescente e diz ao servidor o seu próprio minuto. Nenhum texto lista os custos: o jogador aprende-os pelas notas e pelo relógio.
+
+### O que custa minutos
+| O quê | Minutos do campus | O que o jogador vê |
+|---|---|---|
+| Pedir a cópia | 0,5 (meio minuto) | `−0,5 min` (`−0.5 min` em inglês) |
+| A decisão sobre a Leonor; o código certo (comparar os ficheiros) | 1 cada | `−1 min` |
+| A prova certa | 0 | nada |
+| Uma prova errada, ou numa fala errada | 2 | `−2 minutos: isso não provou nada.` |
+| Qualquer prova mostrada ao Duarte | 1 | `−1 minuto: ele nem olhou.` |
+| Apanhado no computador 12 | 3 | a fala `caught` e `−3 min` (na primeira ronda os 3 minutos acabam às 22:30, quando uma Leonor indecisa se vai embora) |
+| Uma resposta agressiva | 5 | `−5 minutos: a conversa correu mal.` (igual) |
+| Um sítio errado; um código errado | 1 | igual |
+| Andar, falar, o sítio certo, abrir e fechar o chat, marcar, responder a uma afirmação | 0 | nada |
+
+### As duas saídas
+- **Funcionária:** sai às 22:25 (minuto 10). A frase da grade está acima, na secção da Funcionária.
+- **Leonor:** sai às 22:30 (minuto 15), só se ainda estiver indecisa. A ajudar, fica; acusada, a mesa já ficou vazia pela história e às 22:30 nada muda.
+- Depois de a pessoa sair, a sala continua aberta, mas a pessoa já não aparece, não se pode falar com ela nem mostrar-lhe provas, e a ação dela (a cópia; as duas decisões da Leonor) é recusada com a frase do horário. Uma conversa aberta quando a pessoa sai acaba com essa frase.
+
+Depois das 22:25 a data do código lê-se no papel colado na grade da reprografia: no modo de texto é o primeiro parágrafo da sala; em 3D aparece como nota ao entrar e fica no diário.
+
+Uma pista que já não se pode obter fica "perdida" e conta como feita para a porta do auditório: a noite acaba sempre.
+
+### As rondas do Duarte: 22:27, 22:34 e 22:41
+Se nesse minuto estiveres no chat do grupo do computador 12 e o Tomás ainda não tiver cedido, és apanhado: o chat fecha (as mensagens já marcadas ficam), custa 3 minutos e começas a audiência com uma dúvida.
+- `caught` 🇵🇹 A porta da sala abre-se atrás de ti. "A trabalhar até tarde?" O Duarte estica o braço por cima do teu ombro e fecha o chat. "Essas mensagens não são para ti." / 🇬🇧 The lab door opens behind you. "Working late?" Duarte reaches past your shoulder and closes the chat. "Those messages are not for you."
+- `door` (o Tomás já cedeu e vigia a porta: a ronda passa e não custa nada) 🇵🇹 O Tomás põe-se à porta. O Duarte segue caminho. / 🇬🇧 Tomás stands in the doorway. Duarte walks on.
+
+### As mensagens do número desconhecido
+| id | quando chega | 🇵🇹 | 🇬🇧 |
+|---|---|---|---|
+| `shop` | do minuto 5 ao 9, sem a fotografia original | A reprografia fecha às 22:25. E tu ainda na conversa. | The print shop closes at 22:25. You are still talking. |
+| `leonor` | do minuto 10 ao 14, a Leonor indecisa e a pista dela não perdida | A Leonor arruma a mochila às dez e meia. Faz sempre isso. | Leonor packs her bag at half past ten. She always does. |
+| `lost` | quando uma pista se perde | Para isso, hoje já é tarde. Amanhã deixo-te a luz acesa. | Too late for that tonight. I will keep the light on for you tomorrow. |
+| `round-12`, `round-19`, `round-26` | no minuto antes de cada ronda (11, 18, 25), se o Tomás ainda não cedeu | Anda alguém no corredor. Não estejas no computador 12 quando ele passar. | Someone is walking the corridor. Do not be at computer 12 when he passes. |

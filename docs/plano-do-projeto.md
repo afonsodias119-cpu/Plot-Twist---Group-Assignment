@@ -1,7 +1,7 @@
 # Plano do projeto — Plot Twist (trabalho de grupo)
 
 Documento de referência da equipa. Resume o que foi decidido até agora e o que falta fazer.
-Última atualização: 22/11/2026 (provas e audiência no branch `evidence-and-hearing`).
+Última atualização: 22/11/2026 (horário da noite no branch `night-schedule`, por cima das provas e audiência).
 
 ## 1. O que o curso pede
 
@@ -44,7 +44,7 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 | **A. Preparar** | Clonar o repositório, criar a estrutura e proteger o `main` | Afonso | 🔄 quase pronta (falta o passo 5: os colegas clonarem) |
 | **B. Inventar a história** | Mistério, 5+ cenas, objetos, finais e personagens, tudo no papel | Grupo todo | ✅ história revista e integrada na main (#3, #4 e #6) |
 | **C. Versão base** | Jogo mínimo que cumpre o brief, com testes | Afonso + revisão | ✅ implementada e no `main` (107 testes a passar) |
-| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | ✅ 3D jogável no `main` (Maria + Afonso) e puzzle do chat de grupo (Guilherme). 🔄 Provas e audiência (`specs/evidence-and-hearing.md`, branch `evidence-and-hearing`): mostrar provas nas conversas, três pessoas que cedem e a audiência com as três afirmações do Duarte; código e testes feitos (299 testes a passar), falta a verificação no browser (3D e modo de texto, nas duas línguas), o Pull Request e a revisão |
+| **D. Extras criativos** | Uma funcionalidade por pessoa | Os 4 | ✅ 3D jogável no `main` (Maria + Afonso) e puzzle do chat de grupo (Guilherme). 🔄 Provas e audiência (`specs/evidence-and-hearing.md`, branch `evidence-and-hearing`): mostrar provas nas conversas, três pessoas que cedem e a audiência com as três afirmações do Duarte; código e testes feitos (299 testes a passar), falta a verificação no browser (3D e modo de texto, nas duas línguas), o Pull Request e a revisão. 🔄 Horário da noite (`specs/night-schedule.md`, branch `night-schedule`, por cima das provas): o servidor passa a saber o minuto do campus (operação `time`, tabela de custos em `campus_clock.py`), a funcionária sai às 22:25 e a Leonor às 22:30 (se estiver indecisa), uma pista perdida não fecha o auditório, o número desconhecido avisa das horas e das rondas, e o Duarte apanha quem estiver no chat às 22:27, 22:34 e 22:41. Na página: a hora do campus antes da contagem, a nota da grade (e no diário), "Tarde demais" nas pistas, a conversa que acaba quando a pessoa sai, o Duarte à porta da sala de informática no 3D. Código e testes feitos (347 testes a passar); verificado no browser com uma base de dados de rascunho (saída da funcionária, aviso, apanhado no computador 12, nota da grade, modo de texto); falta o Pull Request e a revisão |
 | **E. Publicar e ensaiar** | Link público (semana 9, não no último dia) e ensaio de perguntas | Os 4 | 🔄 publicado em https://plot-twist.streamlit.app/ (`app_3d.py`); falta ensaio e dados da equipa no README |
 
 ### Conversas corridas — Maria (22/11/2026)

@@ -36,8 +36,9 @@ SAVES = PROJECT / "data" / "campus3d.db"
 # The game's Python modules, in loading order: a module comes after the ones it imports from.
 # If their files change while the app is running (a deploy without a restart), they are loaded
 # again, so the page and the Python code always match (specs/fresh-code-after-deploy.md).
+# campus_clock (the night's schedule, specs/night-schedule.md) comes before campus_evidence, which uses it.
 CODE_MODULES = ["story", "logic", "db", "game", "campus_text", "campus_people", "campus_search", "campus_case",
-                "campus_evidence", "campus_game", "page3d"]
+                "campus_clock", "campus_evidence", "campus_game", "page3d"]
 CODE_FILES = [PROJECT / f"{name}.py" for name in CODE_MODULES[:4]] + [
     PROJECT / "prototypes" / "campus-3d" / f"{name}.py" for name in CODE_MODULES[4:]]
 
@@ -79,7 +80,8 @@ BRIDGE = """<script>
 </script>"""
 
 
-# The files the page is built from. The case file and its rules are not among them: the page never gets them.
+# The files the page is built from. The case file, the night's clock and their rules are not among
+# them: the page never gets them.
 PAGE_FILES = [PROJECT / "story.py"] + [PROJECT / "prototypes" / "campus-3d" / name for name in (
     "game3d.html", "play.js", "table.js", "photo.js", "play.css", "campus_text.py", "campus_people.py", "page3d.py")]
 

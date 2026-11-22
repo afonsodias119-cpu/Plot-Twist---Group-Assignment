@@ -135,6 +135,11 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 .todo-text { display: grid; gap: 2px; }
 .todo-text strong { font: 600 14px Inter, system-ui, sans-serif; }
 .todo-list li.done strong { text-decoration: line-through; opacity: .75; }
+/* a clue that can no longer be got tonight (specs/night-schedule.md, point 6) */
+.todo-list li.lost { border-color: #8a4a40; background: #4a272333; }
+.todo-list li.lost .todo-box { border-color: #ff8c7a; color: #ff8c7a; }
+.todo-list li.lost strong { opacity: .6; }
+.todo-list li.lost small { color: #ff8c7a; }
 .todo-text small { color: var(--muted); font-size: 12px; }
 .todo-hint { font-size: 12px !important; }
 @media (max-width: 650px) {

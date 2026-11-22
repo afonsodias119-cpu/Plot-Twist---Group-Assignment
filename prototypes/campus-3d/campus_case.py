@@ -96,6 +96,8 @@ CASE_TEXT = {
         },
         # Duarte's line when the player says nothing, on any claim.
         "concede": "The professor waits. Duarte smiles. \"Nothing?\"",
+        # The professor's first line when the player was caught at computer 12 (specs/night-schedule.md, point 8).
+        "caught": "\"Before we begin: Mr Sequeira tells me you were reading the group's messages in secret tonight.\" The professor makes a mark beside your name.",
         # The professor's line above the ending text (point 11).
         "verdicts": {
             "three": "\"Three times tonight you gave me a reason to doubt you. I cannot cross out a name on a guess.\"",
@@ -151,6 +153,7 @@ CASE_TEXT = {
             "messages_flag": "\"Marcou-a. Essa é a sua opinião sobre ela. Quem me vem aqui dizer que nunca a escreveu?\"",
         },
         "concede": "O professor espera. O Duarte sorri. \"Nada?\"",
+        "caught": "\"Antes de começarmos: o senhor Sequeira diz-me que você esteve esta noite a ler as mensagens do grupo às escondidas.\" O professor faz um sinal ao lado do teu nome.",
         "verdicts": {
             "three": "\"Três vezes esta noite me deu razões para duvidar de si. Não risco um nome por um palpite.\"",
             "three_help": "O professor fecha a lista antes de a Leonor chegar à porta. \"Já ouvi palpites que cheguem por uma noite.\"",
