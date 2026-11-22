@@ -3,8 +3,9 @@
 A conversation is a small tree. Each node has what the person says, optional `trust` (0-3, shown as
 hearts), an optional `note` (a line for the player's diary) and the answers the player can choose:
 {"label", "next"} where next is another node id or None (the conversation ends).
-There is no "Ask something else" answer (specs/chat-dialogues.md): to change subject, the player
-talks to the person again.
+There is no "Ask something else" answer (specs/chat-dialogues.md): the screen keeps the conversation
+open and offers, after each answer, the topics of the opening menu not asked yet
+(specs/continuous-conversations.md).
 An answer can have "if": a story condition ({"has": [...], "flags": {...}}); it is offered only when true.
 An answer can have "cost": minutes taken off the countdown when the player chooses it (the rude answers,
 specs/harder-campus.md). The countdown lives in the browser; the server only passes the cost on.
