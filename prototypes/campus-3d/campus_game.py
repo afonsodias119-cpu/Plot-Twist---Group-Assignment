@@ -5,6 +5,10 @@ import game
 import logic
 from campus_people import ACTION_PERSON, ROOM_OF_PERSON, people_in_room, room_of_scene, talk
 from campus_text import TEXT
+# Evidence cards, confrontations and the hearing (specs/evidence-and-hearing.md). The answers stay on
+# the server: campus_case.py is read only by campus_evidence.py.
+from campus_evidence import (FINAL_ROOM, confront, hand, hearing, hearing_open, hearing_view, read_night,
+                             refuse_during_hearing, shown_ending, without_broken_claims)
 # The answers of the two puzzles: read only here, never sent to the page (specs/pen-and-code.md).
 from campus_search import PC12_CODE, PEN_SPOT, SEARCH_TEXT, SPOTS
 from story import LANGUAGES, STORIES, UI_TEXTS
@@ -14,7 +18,7 @@ from story import LANGUAGES, STORIES, UI_TEXTS
 # rule: the old files must have been viewed.)
 CLUES = [("usb_stick", "study_room"), ("original_photo", "print_shop"),
          ("files_viewed", "computer_lab"), ("leonor", "library")]
-FINAL_ROOM = "auditorium"
+# FINAL_ROOM (the auditorium) is imported from campus_evidence.py above: the hearing uses it too.
 # The scenes the 3D campus can show. The five rooms have their own place in game3d.html (ROOMS); the
 # group chat is played inside the computer lab (see campus_people.ROOM_OF_SCENE).
 ROOMS_3D = {"study_room", "print_shop", "library", "computer_lab", "auditorium", "group_chat"}
@@ -133,13 +137,18 @@ def snapshot(player, language, message="", accepted=True):
          "text": story["scenes"][room]["actions"][action]["result_text"]}
         for room, action in sources
     ] + chat_notes(story, state)
-    ending = next(({"id": e["id"], "title": e["title"], "text": e["text"]}
-                   for e in story["endings"] if e["id"] == state["ending"]), None)
+    # The night's notes (who was cracked, the hearing), cleaned in memory: reading writes nothing.
+    night = read_night(player, state)
     return {
         "player": player, "language": language, "scene": state["scene"],
         "title": scene["title"], "texts": logic.scene_text(story, state),
         "inventory": [{"id": item, "label": story["items"][item]} for item in state["inventory"]],
-        "actions": actions, "notebook": notebook, "ending": ending,
+        "actions": actions, "notebook": notebook,
+        # The ending on the screen: after a hearing, the verdict can cap the story's ending (point 11).
+        "ending": shown_ending(state, night, language),
+        # The cards held now, and the hearing (None when none was started tonight).
+        "evidence": hand(state, night, language),
+        "hearing": hearing_view(state, night, language),
         # The to-do list of the phone: what has to be collected, where, and what is already done.
         "clues": [{"id": clue, "label": TEXT[language]["clues"][clue], "room": story["scenes"][room]["title"],
                    "done": clue_done(state, clue)} for clue, room in CLUES],
@@ -154,6 +163,18 @@ def snapshot(player, language, message="", accepted=True):
         # True while the game is untouched: the 3D scene then starts the character outside.
         "fresh": state == story["start"],
     }
+
+
+def locked(player):
+    """True from the start of the hearing until the ending (specs/evidence-and-hearing.md, point 12)."""
+    state = game.load(player)
+    return hearing_open(state, read_night(player, state))
+
+
+def locked_reply(player, language, **extra):
+    """The refusal for play, enter, search and unlock during the hearing. Nothing is played or saved."""
+    language = db.load_language(player) or language
+    return dict(snapshot(player, language, TEXT[language]["hearing_locked"], accepted=False), **extra)
 
 
 def enter_room(player, language, room):
@@ -194,6 +215,8 @@ def search_room(player, language, spot):
     """
     if not isinstance(spot, str) or spot not in SPOTS:
         raise ValueError("Unknown place / Sítio desconhecido.")
+    if locked(player):
+        return locked_reply(player, language, found=False)
     state = game.load(player)
     language = db.load_language(player) or language
     t = TEXT[language]
@@ -216,6 +239,8 @@ def unlock_computer(player, language, code):
     """
     if not isinstance(code, str):
         raise ValueError("Invalid code / Código inválido.")
+    if locked(player):
+        return locked_reply(player, language, unlocked=False)
     language = db.load_language(player) or language
     if code != PC12_CODE:
         return dict(snapshot(player, language, TEXT[language]["code_wrong"], accepted=False), unlocked=False)
@@ -236,6 +261,9 @@ def command(payload):
         "talk": {"operation", "player", "language", "npc", "node"},
         "search": {"operation", "player", "language", "spot"},
         "unlock": {"operation", "player", "language", "code"},
+        # specs/evidence-and-hearing.md, points 6 and 10
+        "confront": {"operation", "player", "language", "npc", "node", "evidence"},
+        "hearing": {"operation", "player", "language", "answer"},
     }
     if not isinstance(operation, str) or operation not in allowed_fields:
         raise ValueError("Unknown operation / Operação desconhecida.")
@@ -250,6 +278,9 @@ def command(payload):
 
     if operation == "open":
         result = game.open_game(player, language)
+        if not result["continued"]:
+            # A new game is a new night: notes left behind by an older game must not help it.
+            db.delete_night(player)
         language = result["language"]
         message = UI_TEXTS[language]["continued" if result["continued"] else "started"]
         return snapshot(player, language, message)
@@ -259,19 +290,38 @@ def command(payload):
         if payload["confirmed"] is not True:
             raise ValueError(UI_TEXTS[language]["confirm_question"])
         game.restart(player)
+        db.delete_night(player)   # a new night: nobody is cracked and no hearing has started
         return snapshot(player, language)
     if operation == "talk":
-        # Talking only reads the saved game: nothing is written, so the endings cannot be touched.
+        # Talking only reads the saved game and the notes: nothing is written, so the endings cannot be touched.
         language = db.load_language(player) or language
         state = game.load(player)
+        night = read_night(player, state)
+        refuse_during_hearing(state, night, language)
         reply = talk(state, language, payload["npc"], payload["node"])
+        # A claim already broken tonight is not offered again (specs/evidence-and-hearing.md, point 7).
+        reply = without_broken_claims(reply, night)
         # The things the player can do by talking to this person (ask for the copy, take the decision, ...).
         reply["actions"] = [a for a in action_rows(STORIES[language], state, language) if a["person"] == reply["npc"]]
         return reply
+    if operation == "confront":
+        # Showing a card: only cracking a person writes, and only in the night's notes.
+        language = db.load_language(player) or language
+        state = game.load(player)
+        result = confront(player, state, read_night(player, state), language,
+                          payload["npc"], payload["node"], payload["evidence"])
+        return dict(snapshot(player, language), confront=result)
+    if operation == "hearing":
+        language = db.load_language(player) or language
+        state = game.load(player)
+        accepted, message, heard = hearing(player, state, read_night(player, state), language, payload["answer"])
+        return dict(snapshot(player, language, message, accepted), heard=heard)
     if operation == "enter":
         room = payload["room"]
         if not isinstance(room, str) or room not in set(ROOM_OF_PERSON.values()):
             raise ValueError("Invalid room / Sala inválida.")
+        if locked(player):
+            return locked_reply(player, language)
         return enter_room(player, language, room)
     if operation == "search":
         return search_room(player, language, payload["spot"])
@@ -279,6 +329,8 @@ def command(payload):
         return unlock_computer(player, language, payload["code"])
     if not isinstance(payload["action"], str):
         raise ValueError("Invalid action / Ação inválida.")
+    if locked(player):
+        return locked_reply(player, language)
     # Going to the auditorium by the button needs every clue too, exactly as walking in through its door.
     state = game.load(player)
     saved_language = db.load_language(player) or language

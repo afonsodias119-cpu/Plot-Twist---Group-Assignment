@@ -296,3 +296,20 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 #talk .code-form input { flex: 0 0 132px; padding: 9px 12px; border: 1px solid #2f3e47; border-radius: 18px; background: #0b141a; color: #e9edef; font: 600 18px/1 Inter, ui-monospace, monospace; letter-spacing: .4em; text-align: center; }
 #talk .code-form input:focus { outline: none; border-color: #00a884; }
 #talk .code-form button[type="submit"] { border-radius: 18px; padding: 8px 16px; }
+
+/* ---------- evidence and the hearing (specs/evidence-and-hearing.md) ---------- */
+/* "Show evidence": its own row between the log and the answers */
+.talk-evidence { padding: 8px 12px 0; background: #111b21; border-top: 1px solid #ffffff0d; }
+#talk .talk-evidence button { border-radius: 18px; padding: 6px 13px; font-size: 12.5px; }
+/* the tray of cards that replaces the answers */
+#talk .evidence-tray { width: 100%; display: grid; gap: 7px; }
+#talk .evidence-tray .evidence-title, #talk .hearing-step { width: 100%; margin: 0 0 2px; font-size: 11px !important; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+#talk .chat-replies button.evidence-card { border-color: #e8b45c55; }
+#talk .evidence-tray button.evidence-back { justify-self: start; border-radius: 18px; padding: 6px 13px; }
+/* each bubble of the hearing carries its speaker's name */
+.bubble .speaker { display: block; margin-bottom: 2px; font-size: 12px; color: var(--gold); }
+.bubble.by-duarte .speaker { color: #ff8c7a; }
+/* the ending card after a hearing: the last reply, then the professor's verdict, above the ending's text */
+.ending-card #ending-text p.hearing-reply, .ending-card #ending-text p.verdict { margin-bottom: 14px; font-style: italic; color: #cfd6dc; }
+.ending-card #ending-text p.verdict { padding-left: 12px; border-left: 3px solid var(--accent); color: var(--ink); }
+.scene-panel p.verdict { font-style: italic; border-left: 3px solid var(--gold); padding-left: 12px; }
