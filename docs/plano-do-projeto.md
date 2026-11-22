@@ -57,7 +57,11 @@ Detalhes completos em [plot-twist-brd.md](plot-twist-brd.md). Em resumo:
 
 ### Interface mais limpa e intuitiva — Maria (22/11/2026)
 
-Alteração preparada em `cleaner-interface` (PR #40), só no jogo 3D: a ficha do caso diz só "O teu grupo" e o Backspace mostra o texto todo de uma vez; a barra de cima deixa de ter emojis (fica "Telemóvel" e "Menu", com Como foi feito, vozes, lanterna e som por extenso); a lista de pistas do telemóvel já não diz onde está cada pista; e as conversas deixam de mostrar os corações de confiança. O servidor e as regras não mudam. Ver `specs/cleaner-interface.md`.
+✅ Integrada na main (#40), só no jogo 3D: a ficha do caso diz só "O teu grupo" e o Backspace mostra o texto todo de uma vez; a barra de cima deixa de ter emojis (fica "Telemóvel" e "Menu", com Como foi feito, vozes, lanterna e som por extenso); a lista de pistas do telemóvel já não diz onde está cada pista; e as conversas deixam de mostrar os corações de confiança. O servidor e as regras não mudam. Ver `specs/cleaner-interface.md`.
+
+### Sem contagem de finais no ecrã inicial — Maria (22/11/2026)
+
+Alteração preparada em `no-endings-on-start`: o ecrã inicial do jogo 3D deixa de mostrar "Finais descobertos: 0/4", para o jogador não saber quantos finais há antes de jogar. O ecrã do fim continua a mostrar os finais descobertos. Ver `specs/no-endings-on-start.md`.
 
 ### Fase A — passos
 

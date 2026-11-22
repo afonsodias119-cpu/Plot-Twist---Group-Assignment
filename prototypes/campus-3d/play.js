@@ -20,8 +20,9 @@
   name.autocomplete = "nickname";
   const nameHint = make("p", undefined, "muted");
   const startError = make("p", "", "error"); startError.setAttribute("role", "alert");
-  const collection = make("p", undefined, "muted collection");   // the endings found so far, kept in this browser
-  nameBox.append(nameLabel, name, nameHint, collection, startError);
+  // No count of endings here: the player should not know how many endings there are before playing
+  // (specs/no-endings-on-start.md). The ending screen still shows the endings found.
+  nameBox.append(nameLabel, name, nameHint, startError);
   // The last name used in this browser is filled in again: if the page reloads (for example after an
   // update of the app), continuing the game is one click (specs/chat-dialogues.md).
   const LAST_NAME_KEY = "plot-twist-last-name";
@@ -251,7 +252,6 @@
     document.documentElement.lang = window.lang || "pt";
     nameLabel.textContent = t.name_label;
     nameHint.textContent = t.continue_hint;
-    collection.textContent = collectionText();
     $("accept").textContent = t.start;
     $("case-eyebrow").textContent = t.case;
     $("game-title").textContent = t.title;
