@@ -1326,6 +1326,24 @@ window.campusPreview = {
   },
 };
 
+// A picture of the detective for the detective card: rendered once in a small scene, returned as a data URL.
+window.campusPortrait = (r, width, height) => {
+  const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setSize(width, height, false);
+  const small = new THREE.Scene();
+  small.add(new THREE.HemisphereLight(0xffffff, 0x556677, 1.6));
+  const key = new THREE.DirectionalLight(0xfff1dd, 2.4); key.position.set(2.5, 4, 5); small.add(key);
+  const rim = new THREE.DirectionalLight(0x9db8ff, 1.2); rim.position.set(-3, 2, -3); small.add(rim);
+  const camera = new THREE.PerspectiveCamera(26, width / height, 0.1, 30);
+  camera.position.set(0, 1.0, 6.4); camera.lookAt(0, 0.95, 0);
+  const model = makePerson(playerLook(r)); model.rotation.y = 0.45; small.add(model);
+  renderer.render(small, camera);
+  const url = canvas.toDataURL("image/png");
+  renderer.dispose(); renderer.forceContextLoss();
+  return url;
+};
+
 window.campus3dReady = true;
 window.dispatchEvent(new Event("campus-renderer-ready"));
 
@@ -1344,6 +1362,8 @@ function loop() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   let dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
   let dz = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
+  const stick = window.campusStick;   // the on-screen joystick of phones: x to the right, z downwards, from -1 to 1
+  if (stick && (Math.abs(stick.x) > 0.01 || Math.abs(stick.z) > 0.01)) { dx = stick.x; dz = stick.z; }
   if (window.campusState && (!window.playing || window.campusBusy || window.campusState.ending)) { dx = 0; dz = 0; }
   const moving = dx !== 0 || dz !== 0;
   window.campusMoving = moving;
