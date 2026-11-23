@@ -216,11 +216,7 @@ Onde está: **Biblioteca** (`library`).
   - Se resultar 🇬🇧: Leonor compares the photo with the one in the report and turns pale. "I got all these messages last night, from a number I did not know. And some of them are dated three weeks ago." She promises to keep the original messages and to meet you in the auditorium.
   - Se ainda não puderes 🇵🇹: A Leonor encolhe os ombros. "O Duarte esteve sempre no grupo, tenho aqui as mensagens. Tens alguma prova do contrário?"
   - Se ainda não puderes 🇬🇧: Leonor shrugs. "Duarte has always been in the group, I have the messages right here. Do you have any proof otherwise?"
-- **▶ Mostrar a fotografia e acusá-la de ajudar o Duarte** / Show the photo and accuse her of helping Duarte (`accuse`)
-  - Se resultar 🇵🇹: "Achas que eu fazia isso ao grupo?" A Leonor levanta-se, ofendida. "Então não preciso destas mensagens para nada." Apaga a conversa à tua frente e sai.
-  - Se resultar 🇬🇧: "You think I would do that to the group?" Leonor stands up, offended. "Then you do not need these messages for anything." She deletes the conversation in front of you and leaves.
-  - Se ainda não puderes 🇵🇹: A Leonor encolhe os ombros. "O Duarte esteve sempre no grupo, tenho aqui as mensagens. Tens alguma prova do contrário?"
-  - Se ainda não puderes 🇬🇧: Leonor shrugs. "Duarte has always been in the group, I have the messages right here. Do you have any proof otherwise?"
+A Leonor já não pode ser acusada (specs/three-proofs.md): a única decisão é pedir-lhe ajuda.
 
 ## Tomás
 Onde está: **Sala de informática** (`computer_lab`).
@@ -522,7 +518,7 @@ Só o servidor lê este ficheiro. A página recebe uma carta quando a tens, e um
 | `files` | `files_viewed` = `True` | O histórico dos ficheiros: quatro autores em todas as cópias | The file history: four authors in every backup |
 | `backup` | `backup_saved` = `True` (guardado no computador 12) | O backup das conversas originais: quatro pessoas, nem uma mensagem do Duarte | The backup of the original conversations: four people, not one message from Duarte |
 
-Ceder a Rita ou o Tomás já não dá uma carta: fica nas notas da noite e conta para o final verdadeiro. A Leonor já não cede com uma prova.
+Ceder a Rita ou o Tomás já não dá uma carta: fica nas notas da noite (o Tomás fica a vigiar a porta). A Leonor já não cede com uma prova.
 
 ### Quem cede, e com que prova (pela resposta certa da fala, specs/two-answers.md)
 | pessoa | fala | provas que a fazem ceder |
@@ -578,11 +574,21 @@ Uma resposta por afirmação, sem segunda tentativa. Uma prova que não a desfaz
 A resposta à terceira afirmação aparece no cartão do final, por cima do veredicto.
 
 ### O veredicto do professor (por cima do texto do final)
+Basta uma afirmação sem prova certa (uma prova errada ou "Não dizer nada") para o final ser "Crédito roubado", com esta fala (specs/three-proofs.md). Com as três respostas certas não há veredicto.
+
 | chave | quando | 🇵🇹 | 🇬🇧 |
 |---|---|---|---|
-| `three` | 3 dúvidas, sem a Leonor a ajudar (mostra `stolen_credits`) | "Três vezes esta noite me deu razões para duvidar de si. Não risco um nome por um palpite." | "Three times tonight you gave me a reason to doubt you. I cannot cross out a name on a guess." |
-| `three_help` | 3 dúvidas com `colleague_choice` = `help` (mostra `stolen_credits`) | O professor fecha a lista antes de a Leonor chegar à porta. "Já ouvi palpites que cheguem por uma noite." | The professor closes the list before Leonor reaches the door. "I have heard enough guesses for one night." |
-| `two` | 2 dúvidas e o final da história é `full_case` (mostra `stolen_credits`) | "Acho que tem razão sobre ele. Mas fez-me duvidar duas vezes esta noite, e eu só escrevo aquilo de que tenho a certeza." | "You are right about him, I think. But you made me doubt you twice tonight, and I write down only what I am sure of." |
+| `missing` | pelo menos uma afirmação sem a prova certa (mostra `stolen_credits`) | O professor olha para os sinais na lista. "Acho que tem razão sobre ele. Mas uma das afirmações dele ficou sem prova, e eu só escrevo aquilo de que tenho a certeza." | The professor looks at the marks on his list. "You are right about him, I think. But one of his claims has no proof against it, and I write down only what I am sure of." |
+
+### Os finais (em `story.py`, nos dois jogos)
+Só há três maneiras de a noite acabar (specs/three-proofs.md): chegas ao professor com as três provas e respondes certo às três afirmações, ou falta-te alguma coisa, ou o tempo acaba às 22:45. O auditório está sempre aberto.
+
+| id | quando | 🇵🇹 | 🇬🇧 |
+|---|---|---|---|
+| `full_case` — Caso encerrado | tens a fotografia original, viste os ficheiros e guardaste o backup (e, em 3D, as três respostas certas) | Pões as três provas na mesa do professor… O professor risca o quinto nome da lista. Amanhã apresentam os quatro, com o caso encerrado. | You put the three proofs on the professor's desk… The professor crosses the fifth name off the list. Tomorrow, the four of you present, with the case closed. |
+| `stolen_credits` — Crédito roubado | falta uma prova (ou, em 3D, uma resposta errada) | Não tens todas as provas de que o professor precisa… "Não risco um nome por um palpite." Amanhã apresentam os cinco. | You do not have every proof the professor needs… "I cannot cross out a name on a hunch." Tomorrow, the five of you present. |
+
+O texto completo de cada final está em `story.py`. O final "O impostor" (acusar a Leonor) e o final verdadeiro ("22:46") já não existem.
 
 ### O número desconhecido nas noites seguintes
 Uma mensagem quando a noite começa (id `night-<n>`), em `NIGHT_TEXT` de `campus_case.py`. Uma noite conta quando acaba (um final, ou as 22:45 sem final), nunca com um "Novo jogo" simples.
@@ -594,17 +600,8 @@ Uma mensagem quando a noite começa (id `night-<n>`), em `NIGHT_TEXT` de `campus
 | noite 3 | Outra vez tu. O mesmo casaco, o mesmo cachecol. | You again. Same coat, same scarf. |
 | noite 4 | Eu já deixei de contar as noites. Tu não. | I have stopped counting the nights. You have not. |
 | noite 5 e seguintes | Olha para a fotografia do teu caso. Depois diz-me qual de nós é o quinto. | Look at the photo on your case file. Then tell me which of us is the fifth. |
-| qualquer noite depois de vistos os três finais da história (em vez da mensagem dessa noite) | Três finais, e continuas aqui. Nunca vais conseguir que os três fiquem do teu lado. Não em trinta minutos. | Three endings, and still here. You will never get all three of them to stand with you. Not in thirty minutes. |
-| depois do final verdadeiro | (nenhuma: o número fica calado) | (none) |
 
 A partir da noite 3, os três avisos das rondas (`round-12`, `round-19`, `round-26`) passam a ser do número desconhecido: 🇵🇹 Fecha o computador. Ele vem aí. / 🇬🇧 Close the computer. He is walking. Nas noites 1 e 2 ficam com o texto de sempre.
-
-### O final verdadeiro
-- **id:** `night_over` (nunca vai para a página). **Título:** 22:46 (nas duas línguas). **Carimbo:** 🇵🇹 A NOITE ACABOU / 🇬🇧 THE NIGHT IS OVER. **Emoji:** 🌅.
-- **Quando:** Os três finais da história já vistos em noites anteriores; nesta noite, o final "Caso encerrado", a audiência sem nenhuma dúvida, e a palavra do Tomás e a da Rita conquistadas.
-- **Vozes**, pela ordem das falas entre aspas: `rita`, `duarte`, `duarte`, `professor`.
-- 🇵🇹 Não esperas que o Duarte acabe as frases; já as ouviste antes. Três afirmações, três respostas, cada uma em cima da mesa antes de ele se calar, e o professor não tira os olhos de ti uma única vez. Depois a porta abre-se e já ninguém está sozinho. A Leonor entra com o telemóvel, o Tomás com os slides, a Rita a contar baixinho. «Quatro. Eu contei.» O Duarte olha para os quatro, juntos, e pela primeira vez o sorriso dele não tem para onde ir. «Outra vez tu.» Não é uma pergunta. «Só precisava que um de vocês duvidasse dos outros três.» Puxa o capuz para trás. Por baixo não há nenhum desconhecido: só um chapéu, um cachecol e um casaco comprido, e são os teus. O professor risca o quinto nome. Quando voltas a olhar para a primeira fila, a cadeira está vazia; em cima dela ficou um telemóvel com todas as mensagens que recebeste do número desconhecido, escritas e nunca enviadas. O teu telemóvel vibra uma última vez. O remetente já não é desconhecido: o nome no ecrã é o teu. O relógio da parede marca 22:46. Ninguém apagou as luzes. «Amanhã apresentam os quatro.» Na fotografia da capa estão quatro pessoas, e tu conheces todas.
-- 🇬🇧 You do not wait for Duarte to finish his sentences; you have heard them before. Three claims, three answers, each one on the table before he stops speaking, and the professor never once looks away from you. Then the door opens and nobody is alone any more. Leonor comes in with her phone, Tomás with his slides, Rita counting under her breath. "Four. I counted." Duarte looks at the four of you standing together, and for the first time his smile has nowhere to go. "You again." It is not a question. "I only ever needed one of you to doubt the other three." He pushes back his hood. There is no stranger under it: only a hat, a scarf and a long coat, and they are yours. The professor crosses out the fifth name. When you look back at the front row the seat is empty; on it lies a phone with every message you ever received from the unknown number, written and never sent. Your own phone buzzes one last time. The sender is no longer unknown: the name on the screen is your own. The clock on the wall reads 22:46. Nobody has switched off the lights. "Tomorrow, the four of you present." In the photo on the cover there are four people, and you know every one of them.
 
 ## O caso do dia (em `prototypes/campus-3d/campus_case.py`, `CASES`)
 
@@ -631,12 +628,12 @@ A noite começa às 22:15 e a faculdade fecha às 22:45 (30 minutos do campus). 
 
 ### As duas saídas
 - **Funcionária:** sai às 22:25 (minuto 10). A frase da grade está acima, na secção da Funcionária.
-- **Leonor:** sai às 22:30 (minuto 15), só se ainda estiver indecisa. A ajudar, fica; acusada, a mesa já ficou vazia pela história e às 22:30 nada muda.
-- Depois de a pessoa sair, a sala continua aberta, mas a pessoa já não aparece, não se pode falar com ela nem mostrar-lhe provas, e a ação dela (a cópia; as duas decisões da Leonor) é recusada com a frase do horário. Uma conversa aberta quando a pessoa sai acaba com essa frase.
+- **Leonor:** sai às 22:30 (minuto 15), só se ainda não tiver aceitado ajudar. A ajudar, fica. Não é uma pista do telemóvel: quando sai, nenhuma pista se perde, mas deixa de estar no computador 12 para lembrar o dia do teste de Finanças.
+- Depois de a pessoa sair, a sala continua aberta, mas a pessoa já não aparece, não se pode falar com ela nem mostrar-lhe provas, e a ação dela (a cópia; o pedido de ajuda à Leonor) é recusada com a frase do horário. Uma conversa aberta quando a pessoa sai acaba com essa frase.
 
 Depois das 22:25 a data do código lê-se no papel colado na grade da reprografia: no modo de texto é o primeiro parágrafo da sala; em 3D aparece como nota ao entrar e fica no diário.
 
-Uma pista que já não se pode obter fica "perdida" e conta como feita para a porta do auditório: a noite acaba sempre.
+Uma pista que já não se pode obter (só a fotografia, depois das 22:25) fica "perdida" no telemóvel. O auditório está sempre aberto: sem essa prova, o final é "Crédito roubado".
 
 ### As rondas do Duarte: 22:27, 22:34 e 22:41
 Se nesse minuto estiveres no computador 12 com os ficheiros abertos e o backup ainda por guardar, e o Tomás ainda não tiver cedido, és apanhado: custa 3 minutos e começas a audiência com uma dúvida (specs/computer-lab-backup.md).
@@ -647,6 +644,6 @@ Se nesse minuto estiveres no computador 12 com os ficheiros abertos e o backup a
 | id | quando chega | 🇵🇹 | 🇬🇧 |
 |---|---|---|---|
 | `shop` | do minuto 5 ao 9, sem a fotografia original | A reprografia fecha às 22:25. E tu ainda na conversa. | The print shop closes at 22:25. You are still talking. |
-| `leonor` | do minuto 10 ao 14, a Leonor indecisa e a pista dela não perdida | A Leonor arruma a mochila às dez e meia. Faz sempre isso. | Leonor packs her bag at half past ten. She always does. |
-| `lost` | quando uma pista se perde | Para isso, hoje já é tarde. Amanhã deixo-te a luz acesa. | Too late for that tonight. I will keep the light on for you tomorrow. |
+| `leonor` | do minuto 10 ao 14, a Leonor indecisa e a fotografia não perdida | A Leonor arruma a mochila às dez e meia. Faz sempre isso. | Leonor packs her bag at half past ten. She always does. |
+| `lost` | quando a fotografia se perde | Para isso, hoje já é tarde. Amanhã deixo-te a luz acesa. | Too late for that tonight. I will keep the light on for you tomorrow. |
 | `round-12`, `round-19`, `round-26` | no minuto antes de cada ronda (11, 18, 25), se o Tomás ainda não cedeu | Anda alguém no corredor. Não estejas no computador 12 quando ele passar. | Someone is walking the corridor. Do not be at computer 12 when he passes. |

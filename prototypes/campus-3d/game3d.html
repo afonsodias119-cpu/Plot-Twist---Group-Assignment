@@ -1622,7 +1622,7 @@ function syncCampus() {
   npcs[0].visible = state.leonor_present;
   npcs[0].userData.sign.visible = state.leonor_present;
   // Duarte is gone in these endings, and in an ending that carries its own stamp (specs/earlier-nights.md, point 9).
-  npcs[1].visible = state.ending?.id !== "impostor" && !state.ending?.stamp;   // in "The impostor" Duarte walks out
+  npcs[1].visible = !state.ending?.stamp;   // an ending with its own stamp takes him away
   npcs[1].userData.sign.visible = npcs[1].visible;
   showSchedule(state);
   showGroup(state);

@@ -1,5 +1,7 @@
 # A campus that does not wait: a clock the server knows, two people who leave, and Duarte's rounds
 
+> **Update (specs/three-proofs.md):** Leonor is no longer a clue of the phone (she still leaves at 22:30 if she is not helping), the auditorium is always open, the map has no lock and the door note is gone.
+
 > **Update (specs/computer-lab-backup.md):** the group chat, its flags, the message cards and "The fifth element" are gone. Computer 12 saves a backup of the original conversations; Leonor's choice decides the three story endings; Duarte catches a player at computer 12 before the backup.
 
 > **Update (specs/calendar-code.md):** the cover photo is now dated Saturday 17 October, so the code of computer 12 is `1710`, the photo's stamp says 17.10 and the slip on the shutter says 17 October. The clerk's `order` line no longer says the date.

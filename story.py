@@ -64,8 +64,6 @@ STORY_EN = {
                 "go_computer_lab": {"label": "Go to the computer lab", "go_to": "computer_lab"},
                 "go_auditorium": {
                     "label": "Go to the auditorium",
-                    "requires": {"flags": {"files_viewed": True, "backup_saved": True}},
-                    "blocked_text": "You have no proof yet. The professor will not listen to you on a suspicion alone.",
                     "go_to": "auditorium",
                 },
             },
@@ -103,10 +101,6 @@ STORY_EN = {
                     "when": {"flags": {"colleague_choice": "help"}},
                     "text": 'Leonor is saving screenshots of the messages. "I will take care of this. See you in the auditorium."',
                 },
-                {
-                    "when": {"flags": {"colleague_choice": "accused"}},
-                    "text": "Leonor's table is empty.",
-                },
             ],
             "actions": {
                 "ask_for_help": {
@@ -116,14 +110,6 @@ STORY_EN = {
                     "blocked_text": 'Leonor shrugs. "Duarte has always been in the group, I have the messages right here. Do you have any proof otherwise?"',
                     "sets": {"colleague_choice": "help"},
                     "result_text": 'Leonor compares the photo with the one in the report and turns pale. "I got all these messages last night, from a number I did not know. And some of them are dated three weeks ago." She promises to keep the original messages and to meet you in the auditorium.',
-                },
-                "accuse": {
-                    "label": "Show the photo and accuse her of helping Duarte",
-                    "offered_if": {"flags": {"colleague_choice": "none"}},
-                    "requires": {"has": ["original_photo"]},
-                    "blocked_text": 'Leonor shrugs. "Duarte has always been in the group, I have the messages right here. Do you have any proof otherwise?"',
-                    "sets": {"colleague_choice": "accused"},
-                    "result_text": '"You think I would do that to the group?" Leonor stands up, offended. "Then you do not need these messages for anything." She deletes the conversation in front of you and leaves.',
                 },
                 "go_study_room": {"label": "Back to the study room", "go_to": "study_room"},
             },
@@ -178,25 +164,19 @@ STORY_EN = {
         },
     },
     "endings": [
-        # The best ending comes first: the first ending whose "when" is true wins.
-        # Leonor's choice decides (specs/computer-lab-backup.md): help, accuse, or no choice at all.
+        # Two endings (specs/three-proofs.md): every proof for the professor, or a proof missing.
+        # The first ending whose "when" is true wins.
         {
             "id": "full_case",
             "title": "Case closed",
-            "when": {"flags": {"colleague_choice": "help"}},
-            "text": "You show the history on the USB stick and the backup of the original conversations: four people, and not a single message from Duarte until last night. Leonor walks in with the messages she received from the unknown number, and their dates do not match the backup. The professor crosses the fifth name off the list and asks Duarte to explain. He has no answer. Tomorrow, the four of you present, with the case closed.",
-        },
-        {
-            "id": "impostor",
-            "title": "The impostor",
-            "when": {"flags": {"colleague_choice": "accused"}},
-            "text": "You show the history on the USB stick and the backup of the original conversations. The professor believes you and crosses the fifth name off the list. But Leonor is not in the auditorium: after you accused her, she deleted her messages and went home. Duarte picks up his bag and smiles at you on his way out. \"You did my job for me,\" he says. \"A group that accuses itself does not need an impostor.\" Tomorrow, three of you present.",
+            "when": {"has": ["original_photo"], "flags": {"files_viewed": True, "backup_saved": True}},
+            "text": "You put the three proofs on the professor's desk: the history on the USB stick, four authors until last night; the original photo from the print shop, four people; and the backup of the group's conversations, without a single message from Duarte. The professor looks from one to the other, then at Duarte. He has no answer. The professor crosses the fifth name off the list. Tomorrow, the four of you present, with the case closed.",
         },
         {
             "id": "stolen_credits",
             "title": "Stolen credit",
             "when": {},
-            "text": 'You show the history on the USB stick and the backup of the original conversations. But Duarte raises his phone: "I have messages from everyone proving I took part. And that backup came from the same computer someone used last night: anyone could have made it." Nobody from the group is there to back you up. The professor sighs: "Without a teammate to confirm it, the name stays." Tomorrow, the five of you present.',
+            "text": 'You do not have every proof the professor needs. Duarte raises his phone: "I have messages from everyone proving I took part." For each claim of his you cannot answer, the professor makes a mark on the list. Then he sighs: "I cannot cross out a name on a hunch." Tomorrow, the five of you present.',
         },
     ],
 }
@@ -249,8 +229,6 @@ STORY_PT = {
                 "go_computer_lab": {"label": "Ir para a sala de informática", "go_to": "computer_lab"},
                 "go_auditorium": {
                     "label": "Ir para o auditório",
-                    "requires": {"flags": {"files_viewed": True, "backup_saved": True}},
-                    "blocked_text": "Ainda não tens provas. O professor não te vai ouvir só com uma suspeita.",
                     "go_to": "auditorium",
                 },
             },
@@ -288,10 +266,6 @@ STORY_PT = {
                     "when": {"flags": {"colleague_choice": "help"}},
                     "text": 'A Leonor está a guardar capturas de ecrã das mensagens. "Eu trato disto. Vemo-nos no auditório."',
                 },
-                {
-                    "when": {"flags": {"colleague_choice": "accused"}},
-                    "text": "A mesa da Leonor está vazia.",
-                },
             ],
             "actions": {
                 "ask_for_help": {
@@ -301,14 +275,6 @@ STORY_PT = {
                     "blocked_text": 'A Leonor encolhe os ombros. "O Duarte esteve sempre no grupo, tenho aqui as mensagens. Tens alguma prova do contrário?"',
                     "sets": {"colleague_choice": "help"},
                     "result_text": 'A Leonor compara a fotografia com a do relatório e fica pálida. "Recebi estas mensagens todas ontem à noite, de um número que não conhecia. E algumas têm datas de há três semanas." Promete guardar as mensagens originais e ir ter contigo ao auditório.',
-                },
-                "accuse": {
-                    "label": "Mostrar a fotografia e acusá-la de ajudar o Duarte",
-                    "offered_if": {"flags": {"colleague_choice": "none"}},
-                    "requires": {"has": ["original_photo"]},
-                    "blocked_text": 'A Leonor encolhe os ombros. "O Duarte esteve sempre no grupo, tenho aqui as mensagens. Tens alguma prova do contrário?"',
-                    "sets": {"colleague_choice": "accused"},
-                    "result_text": '"Achas que eu fazia isso ao grupo?" A Leonor levanta-se, ofendida. "Então não preciso destas mensagens para nada." Apaga a conversa à tua frente e sai.',
                 },
                 "go_study_room": {"label": "Voltar à sala de estudo", "go_to": "study_room"},
             },
@@ -363,25 +329,19 @@ STORY_PT = {
         },
     },
     "endings": [
-        # O melhor final vem primeiro: ganha o primeiro final cujo "when" é verdadeiro.
-        # Decide a escolha da Leonor (specs/computer-lab-backup.md): ajudar, acusar, ou nenhuma escolha.
+        # Dois finais (specs/three-proofs.md): todas as provas para o professor, ou uma prova a faltar.
+        # Ganha o primeiro final cujo "when" é verdadeiro.
         {
             "id": "full_case",
             "title": "Caso encerrado",
-            "when": {"flags": {"colleague_choice": "help"}},
-            "text": "Mostras o histórico da pen e o backup das conversas originais: quatro pessoas, e nem uma mensagem do Duarte até ontem à noite. A Leonor entra com as mensagens que recebeu do número desconhecido, e as datas não batem com o backup. O professor risca o quinto nome da lista e pede ao Duarte que explique. Ele não tem resposta. Amanhã, apresentam os quatro, com o caso encerrado.",
-        },
-        {
-            "id": "impostor",
-            "title": "O impostor",
-            "when": {"flags": {"colleague_choice": "accused"}},
-            "text": "Mostras o histórico da pen e o backup das conversas originais. O professor acredita em ti e risca o quinto nome da lista. Mas a Leonor não está no auditório: depois de a acusares, apagou as mensagens e foi para casa. O Duarte pega na mochila e sorri-te à saída. «Fizeste o meu trabalho por mim», diz. «Um grupo que se acusa a si próprio não precisa de um impostor.» Amanhã, apresentam três.",
+            "when": {"has": ["original_photo"], "flags": {"files_viewed": True, "backup_saved": True}},
+            "text": "Pões as três provas na mesa do professor: o histórico da pen, quatro autores até ontem à noite; a fotografia original da reprografia, quatro pessoas; e o backup das conversas do grupo, sem uma única mensagem do Duarte. O professor olha de uma para a outra, e depois para o Duarte. Ele não tem resposta. O professor risca o quinto nome da lista. Amanhã, apresentam os quatro, com o caso encerrado.",
         },
         {
             "id": "stolen_credits",
             "title": "Créditos roubados",
             "when": {},
-            "text": 'Mostras o histórico da pen e o backup das conversas originais. Mas o Duarte levanta o telemóvel: "Tenho mensagens de todos a provar que participei. E esse backup saiu do mesmo computador que alguém usou ontem à noite: qualquer um o podia ter feito." Ninguém do grupo está lá para te apoiar. O professor suspira: "Sem um colega que o confirme, o nome fica." Amanhã, apresentam os cinco.',
+            "text": 'Não tens todas as provas de que o professor precisa. O Duarte levanta o telemóvel: "Tenho mensagens de todos a provar que participei." Por cada afirmação dele a que não consegues responder, o professor faz um sinal na lista. Depois suspira: "Não risco um nome por um palpite." Amanhã, apresentam os cinco.',
         },
     ],
 }

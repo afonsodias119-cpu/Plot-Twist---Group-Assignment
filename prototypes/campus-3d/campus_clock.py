@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 # Campus minutes charged by the server (point 2): an accepted story action, a card, being caught.
 # The copy costs half a minute because the torn photo already takes its own real time (point 13).
-COSTS = {"request_copy": 0.5, "ask_for_help": 1, "accuse": 1, "view_files": 1,
+COSTS = {"request_copy": 0.5, "ask_for_help": 1, "view_files": 1,
          "card_right": 0, "card_wrong": 2, "card_duarte": 1, "caught": 3}
 # Campus minutes the page takes off by itself, as before, and reports with `time`.
 PAGE_COSTS = {"rude_answer": 5, "wrong_spot": 1, "wrong_code": 2}   # a wrong date on the calendar: 2 (specs/calendar-code.md)

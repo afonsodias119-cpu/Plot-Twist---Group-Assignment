@@ -144,9 +144,10 @@ def test_dialogue_never_names_which_chat_messages_are_fake():
                 assert not any(phrase in text for phrase in ("message 2", "message 4", "mensagem 2", "mensagem 4"))
 
 
-def test_leonor_leaves_after_being_accused():
-    play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "accuse")
-    assert call("open")["people"] == []
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): no accusation; Leonor stays after helping.
+def test_leonor_stays_after_helping():
+    play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help")
+    assert [p["id"] for p in call("open")["people"]] == ["leonor"]
 
 
 def test_people_texts_follow_the_saved_language():
@@ -166,7 +167,7 @@ def test_the_clock_follows_progress():
 def test_the_clock_wraps_past_midnight():
     result = play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help",
                   "go_study_room", "go_computer_lab", "view_files")
-    assert result["clock"] == "00:55"
+    assert result["clock"] == "00:15"   # Changed by specs/three-proofs.md ("Reviewed tests that change"): three clues, so 22:15 + 3 × 40 minutes
 
 
 # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the group chat is gone; the backup takes its place.
@@ -183,13 +184,11 @@ def test_walking_from_the_lab_to_another_room_follows_the_story_paths():
     assert result["accepted"] and result["scene"] == "study_room"
 
 
-def test_walking_to_the_auditorium_from_the_lab_is_still_gated_by_the_clues():
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): the auditorium always opens.
+def test_walking_to_the_auditorium_from_the_lab_always_works():
     play("open_drawer", "go_computer_lab", "view_files", "save_backup")
     result = call("enter", room="auditorium")
-    # The walk stops at the first refusal, as for every other room: it got as far as the study room.
-    assert not result["accepted"] and result["scene"] == "study_room"
-    assert result["message"] == campus.missing_clues_note(game.load(PLAYER), "en")   # it explains what is missing
-    assert game.load(PLAYER)["scene"] == "study_room" and game.load(PLAYER)["ending"] == "none"
+    assert result["accepted"] and result["scene"] == "auditorium"
 
 
 def test_enter_only_accepts_the_five_rooms():
@@ -222,7 +221,7 @@ def test_each_person_offers_the_actions_of_their_room_inside_the_conversation():
     call("play", player="a", action="go_study_room")
     call("play", player="a", action="go_library")
     leonor = offered("leonor", "a")
-    assert set(leonor) == {"ask_for_help", "accuse"} and all(x["allowed"] and x["decision"] for x in leonor.values())
+    assert set(leonor) == {"ask_for_help"} and all(x["allowed"] and x["decision"] for x in leonor.values())   # specs/three-proofs.md
 
 
 def test_blocked_actions_are_still_offered_with_their_reason_and_change_nothing():

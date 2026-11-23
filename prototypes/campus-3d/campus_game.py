@@ -37,11 +37,11 @@ from campus_search import PC12_CODE, PEN_SPOT, PHOTO_PIECES, PHOTO_SOLUTION, PHO
 from campus_search import FIND_LATER, FIND_MINUTES, FIND_TEXT, FINDS
 from story import LANGUAGES, STORIES, UI_TEXTS
 
-# The clues the player has to collect, and the room where each one is found. In this 3D version the
-# auditorium opens only when each of them is done or lost. (The Streamlit game keeps the story's own,
-# looser rule: the old files must have been viewed.)
-CLUES = [("usb_stick", "study_room"), ("original_photo", "print_shop"),
-         ("files_viewed", "computer_lab"), ("leonor", "library")]
+# The clues of the phone's to-do list, and the room where each one is found. The auditorium is
+# always open: the hearing decides with what the player has (specs/three-proofs.md).
+# Leonor is not a clue of the phone any more: she helps at computer 12, but she is not a proof.
+# She still leaves at 22:30 if she is not helping, and the unknown number still warns about it.
+CLUES = [("usb_stick", "study_room"), ("original_photo", "print_shop"), ("files_viewed", "computer_lab")]
 # The clues that only a person who leaves can give (specs/night-schedule.md, point 6).
 CLUE_PERSON = {"original_photo": "amelia", "leonor": "leonor"}
 # What a command that did not move the clock returns (see move_clock).
@@ -79,18 +79,6 @@ def clue_lost(state, clue, minute):
     return minute >= LEAVES[CLUE_PERSON[clue]]
 
 
-def missing_clues_note(state, language, minute=0):
-    """The note for trying the auditorium too early. Empty once every clue is done or lost.
-
-    A lost clue does not lock the auditorium, so every night can end (specs/night-schedule.md,
-    point 6). It does not say which clues are missing (specs/harder-campus.md): the player has to
-    work it out.
-    """
-    if all(clue_done(state, clue) or clue_lost(state, clue, minute) for clue, _room in CLUES):
-        return ""
-    return TEXT[language]["auditorium_note"]
-
-
 def clue_rows(story, state, language, minute):
     """The to-do list of the phone: what has to be collected, where, until when, and what is done or lost."""
     return [{"id": clue, "label": TEXT[language]["clues"][clue], "room": story["scenes"][room]["title"],
@@ -103,8 +91,7 @@ def clue_rows(story, state, language, minute):
 
 def gone_people(state, minute):
     """The people who have left by the schedule (point 5): the clerk from minute 10, and Leonor from
-    minute 15 only while she is undecided (once she helps she stays; once accused the story already
-    emptied her table)."""
+    minute 15 only while she is undecided (once she helps she stays)."""
     gone = []
     if minute >= LEAVES["amelia"]:
         gone.append("amelia")
@@ -281,9 +268,8 @@ def route(story, start, goal):
 
 def action_rows(story, state, language, night):
     """The actions offered in the saved scene, ready for the screen. `person` says who offers it, if anyone.
-    The campus minute of `night` matters: a lost clue no longer locks the auditorium."""
-    scene, minute = story["scenes"][state["scene"]], night["minute"]
-    note = missing_clues_note(state, language, minute)
+    The auditorium always opens: the hearing decides (specs/three-proofs.md)."""
+    scene = story["scenes"][state["scene"]]
     actions = []
     for action in logic.available_actions(story, state):
         definition = scene["actions"][action["id"]]
@@ -296,8 +282,6 @@ def action_rows(story, state, language, night):
             decision="colleague_choice" in definition.get("sets", {}),
             person=ACTION_PERSON.get(action["id"]),
         )
-        if definition.get("go_to") == FINAL_ROOM and note:
-            row.update(allowed=False, blocked_text=note)
         actions.append(row)
     return actions
 
@@ -385,7 +369,7 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         sources.append(("print_shop", "request_copy"))
     choice = state["flags"]["colleague_choice"]
     if choice != "none":
-        sources.append(("library", "ask_for_help" if choice == "help" else "accuse"))
+        sources.append(("library", "ask_for_help"))   # the only decision left (specs/three-proofs.md)
     if state["flags"]["files_viewed"]:
         sources.append(("computer_lab", "view_files"))
     if state["flags"]["backup_saved"]:
@@ -424,7 +408,7 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         # messages as this night starts (specs/earlier-nights.md, points 3 and 4).
         # No whisper once the faculty has closed: 22:45 ends the night as an ending does.
         "memory": memory, "whispers": [] if night_closed(state, night) else whispers(state, memory, language),
-        "leonor_present": choice != "accused" and "leonor" not in gone,
+        "leonor_present": "leonor" not in gone,
         # True while the game is untouched: the 3D scene then starts the character outside.
         "fresh": state == story["start"],
         # The day of the case: its date and "Case of 22 November" (specs/case-of-the-day.md, point 5).
@@ -455,17 +439,12 @@ def enter_room(player, language, room):
     language = db.load_language(player) or language
     story = STORIES[language]
     steps = [] if room_of_scene(state["scene"]) == room else route(story, state["scene"], room) or []
-    minute = read_night(player, state)["minute"]   # walking costs nothing, so it stays the same on the way
     message, accepted, clock = "", True, CLOCK_STILL
     for target in steps:
         actions = story["scenes"][state["scene"]]["actions"]
         action_id = next((a for a, definition in actions.items() if definition.get("go_to") == target), None)
         if action_id is None:
             message, accepted = story["messages"]["not_here"], False
-            break
-        note = missing_clues_note(state, language, minute) if target == FINAL_ROOM and state["ending"] == "none" else ""
-        if note:   # the auditorium stays closed until every clue is done or lost: nothing is played or saved
-            message, accepted = note, False
             break
         result, clock = play_and_charge(player, action_id, language)
         message, accepted = result["message"], result["accepted"]
@@ -742,11 +721,6 @@ def run_command(payload):
     gone_text = schedule_refusal(state, night["minute"], action, language)
     if gone_text:
         return snapshot(player, language, gone_text, accepted=False)
-    # Going to the auditorium by the button needs every clue done or lost too, exactly as walking in through its door.
-    if definition.get("go_to") == FINAL_ROOM and state["ending"] == "none":
-        note = missing_clues_note(state, language, night["minute"])
-        if note:
-            return snapshot(player, language, note, accepted=False)
     result, clock = play_and_charge(player, action, language)
     return clocked_snapshot(player, language, result["message"], result["accepted"], clock)
 

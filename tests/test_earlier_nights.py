@@ -4,9 +4,9 @@ Written before the code: one test for every line under "Checks" in the spec, in 
 under the same headings.
 
 How to read this file:
-- `finish(ending)` plays a night to that story ending through the hearing with no doubt (the
-  spec's own helper). `true_night()` is the perfect night of point 8: `full_case`, Tomás and Rita
-  cracked, no doubt; each of its arguments takes one of those things away.
+- `finish(ending)` plays a night to that story ending through the hearing (the spec's own helper).
+  specs/three-proofs.md removed the true ending of point 8 and its helpers: the story now has two
+  endings, chosen by the proofs.
 - "saves nothing" means the database file has the same bytes before and after (`saved()`).
 - A test that expects a ValueError first sends one valid request of the same operation in the same
   game and checks its reply, and a valid `open` whose reply has `memory`. Without that, the test
@@ -17,9 +17,7 @@ How to read this file:
   a story ending: it moves the night number and opens nothing.
 - The new module campus_memory.py is imported inside `memory_rules()`, not at the top, so pytest
   can read this file while it does not exist yet. The new texts are read inside the tests.
-- The spec does not say how the new texts are laid out inside campus_case.py, so no test reads
-  them by a key: the expected texts are copied from design-notes/texts-3-nights.md below, and
-  `case_strings()` walks through the whole module.
+- The expected texts are copied from design-notes/texts-3-nights.md below.
 - Every game here charges at most 2.5 minutes (the copy, the decision and the files) unless it
   reports a minute on purpose, so the schedule of specs/night-schedule.md never meets it.
 """
@@ -27,7 +25,6 @@ How to read this file:
 import ast
 import importlib
 import json
-import re
 import sqlite3
 import sys
 from contextlib import closing
@@ -37,7 +34,6 @@ import pytest
 
 import db
 import game
-import logic
 from story import STORIES
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -51,11 +47,10 @@ TEXT = importlib.import_module("campus_text").TEXT
 PAGE = page3d.build_page(playable=True, inline=True)
 PLAYER = "detective"
 # The story's endings, in the order of its list (the order of `memory.seen`, point 3).
-# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): "The fifth element" is gone,
-# so there are three story endings and the true ending needs those three.
-ENDINGS = ["full_case", "impostor", "stolen_credits"]
-# The three right answers of the hearing when Leonor helps (specs/evidence-and-hearing.md, point 10).
-PERFECT = ("files", "original_photo", "backup")   # specs/computer-lab-backup.md
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): "The fifth element" is gone.
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor can no longer be accused, so
+# "The impostor" is gone too; the story has two endings and there is no true ending.
+ENDINGS = ["full_case", "stolen_credits"]
 
 # The six memory answers (point 5): person -> (the first night it is offered, the line it leads to,
 # its label in each language), word for word as in design-notes/texts-3-nights.md (A1).
@@ -76,70 +71,34 @@ CLERK_AGAIN = ('The clerk stops with her hand on the printer. "The seventeenth o
                'She looks at the clock. "I have been closing in ten minutes for a very long time." '
                'She frowns at the counter. "Odd. I do not remember you leaving."')
 
-# The unknown number (B1 and B2): the line of each night, the dare that replaces it once the four
-# story endings were seen, and the whisper of the three round warnings from night 3.
+# The unknown number (B1 and B2): the line of each night and the whisper of the three round warnings
+# from night 3. Changed by specs/three-proofs.md: no true ending, so no dare.
 WHISPERS = {
     "en": {"night-2": "You again?",
            "night-3": "You again. Same coat, same scarf.",
            "night-4": "I have stopped counting the nights. You have not.",
            "later": "Look at the photo on your case file. Then tell me which of us is the fifth.",
-           "dare": "Three endings, and still here. You will never get all three of them to stand with you. "
-                   "Not in thirty minutes.",
            "round": "Close the computer. He is walking."},
     "pt": {"night-2": "Outra vez tu?",
            "night-3": "Outra vez tu. O mesmo casaco, o mesmo cachecol.",
            "night-4": "Eu já deixei de contar as noites. Tu não.",
            "later": "Olha para a fotografia do teu caso. Depois diz-me qual de nós é o quinto.",
-           "dare": "Três finais, e continuas aqui. Nunca vais conseguir que os três fiquem do teu lado. "
-                   "Não em trinta minutos.",
            "round": "Fecha o computador. Ele vem aí."},
 }
 
-# The true ending (B3), as the snapshot carries it once it is earned.
-VOICES = ["rita", "duarte", "duarte", "professor"]
-TRUE_ENDING = {
-    "en": {"title": "22:46", "stamp": "THE NIGHT IS OVER", "emoji": "🌅", "voices": VOICES, "text": (
-        'You do not wait for Duarte to finish his sentences; you have heard them before. Three claims, three '
-        'answers, each one on the table before he stops speaking, and the professor never once looks away from '
-        'you. Then the door opens and nobody is alone any more. Leonor comes in with her phone, Tomás with his '
-        'slides, Rita counting under her breath. "Four. I counted." Duarte looks at the four of you standing '
-        'together, and for the first time his smile has nowhere to go. "You again." It is not a question. '
-        '"I only ever needed one of you to doubt the other three." He pushes back his hood. There is no stranger '
-        'under it: only a hat, a scarf and a long coat, and they are yours. The professor crosses out the fifth '
-        'name. When you look back at the front row the seat is empty; on it lies a phone with every message you '
-        'ever received from the unknown number, written and never sent. Your own phone buzzes one last time. The '
-        'sender is no longer unknown: the name on the screen is your own. The clock on the wall reads 22:46. '
-        'Nobody has switched off the lights. "Tomorrow, the four of you present." In the photo on the cover '
-        'there are four people, and you know every one of them.')},
-    "pt": {"title": "22:46", "stamp": "A NOITE ACABOU", "emoji": "🌅", "voices": VOICES, "text": (
-        'Não esperas que o Duarte acabe as frases; já as ouviste antes. Três afirmações, três respostas, cada uma '
-        'em cima da mesa antes de ele se calar, e o professor não tira os olhos de ti uma única vez. Depois a '
-        'porta abre-se e já ninguém está sozinho. A Leonor entra com o telemóvel, o Tomás com os slides, a Rita '
-        'a contar baixinho. «Quatro. Eu contei.» O Duarte olha para os quatro, juntos, e pela primeira vez o '
-        'sorriso dele não tem para onde ir. «Outra vez tu.» Não é uma pergunta. «Só precisava que um de vocês '
-        'duvidasse dos outros três.» Puxa o capuz para trás. Por baixo não há nenhum desconhecido: só um chapéu, '
-        'um cachecol e um casaco comprido, e são os teus. O professor risca o quinto nome. Quando voltas a olhar '
-        'para a primeira fila, a cadeira está vazia; em cima dela ficou um telemóvel com todas as mensagens que '
-        'recebeste do número desconhecido, escritas e nunca enviadas. O teu telemóvel vibra uma última vez. O '
-        'remetente já não é desconhecido: o nome no ecrã é o teu. O relógio da parede marca 22:46. Ninguém apagou '
-        'as luzes. «Amanhã apresentam os quatro.» Na fotografia da capa estão quatro pessoas, e tu conheces todas.')},
-}
-
-# The interface texts of campus_text.py (C1 and C2).
+# The interface texts of campus_text.py (C1 and C2). Changed by specs/three-proofs.md: no "night_done".
 NIGHT_TEXTS = {
     "en": {"night_lines": ["Night {n}. The fifth figure in the photo is darker than it was yesterday.",
                            "Night {n}. The fifth figure's long coat has a colour now. Yours.",
                            "Night {n}. A long coat, and a scarf like yours.",
                            "Night {n}. A coat, a scarf and a hat. You own all three.",
                            "Night {n}. Somebody has written your initial where the question mark was."],
-           "night_done": "No more nights. The photo shows four people.",
            "memory_answer": "You have heard this before"},
     "pt": {"night_lines": ["Noite {n}. A quinta figura da fotografia está mais escura do que ontem.",
                            "Noite {n}. O casaco comprido da quinta figura agora tem cor. A do teu.",
                            "Noite {n}. Um casaco comprido, e um cachecol como o teu.",
                            "Noite {n}. Um casaco, um cachecol e um chapéu. Tu tens os três.",
                            "Noite {n}. Alguém escreveu a tua inicial onde estava o ponto de interrogação."],
-           "night_done": "Acabaram-se as noites. A fotografia mostra quatro pessoas.",
            "memory_answer": "Já ouviste isto antes"},
 }
 
@@ -159,11 +118,6 @@ def saved():
 def memory_rules():
     """The new module campus_memory.py. Imported here so this file can be collected before it exists."""
     return importlib.import_module("campus_memory")
-
-
-def case():
-    """The case file (campus_case.py), where the spec puts every secret text of this feature."""
-    return importlib.import_module("campus_case")
 
 
 def at(minute, player=PLAYER, language="en"):
@@ -251,48 +205,19 @@ def hear(*answers, player=PLAYER, language="en"):
 
 
 def finish(ending, player=PLAYER, language="en"):
-    """Play a night to this story ending through the hearing with no doubt (the spec's `finish`).
+    """Play a night to this story ending through the hearing (the spec's `finish`).
 
-    Leonor's choice chooses the story's ending (specs/computer-lab-backup.md): she helps for
-    `full_case`, she is accused for `impostor`, and for `stolen_credits` she is never asked and leaves
-    at 22:30. The backup answers the claim about the messages in every case.
+    Changed by specs/three-proofs.md: the proofs choose the ending. Leonor always helps. For
+    `full_case` the backup is saved and the three answers are right (no doubt); for `stolen_credits`
+    the backup is never saved, so the claim about the messages is conceded (one doubt).
     """
-    leonor = {"full_case": "ask_for_help", "impostor": "accuse", "stolen_credits": None}[ending]
-    investigate(player, language, leonor)
-    third = "backup"
-    if leonor is None:
-        at(15, player, language)   # Leonor leaves undecided: her clue is lost and the auditorium opens
+    investigate(player, language, backup=ending == "full_case")
     walk("auditorium", player, language)
+    third = "backup" if ending == "full_case" else "concede"
     result = hear("files", "original_photo", third, player=player, language=language)
-    assert result["ending"]["id"] == ending and result["hearing"]["doubts"] == 0, ending
+    assert result["ending"]["id"] == ending, ending
+    assert result["hearing"]["doubts"] == (0 if ending == "full_case" else 1), ending
     return result
-
-
-def true_night(player=PLAYER, language="en", leonor="ask_for_help", tomas=True, rita=True, caught=False,
-               answers=PERFECT):
-    """The perfect night of point 8, or that night with one thing changed: the story's `full_case`
-    (Leonor helps), Tomás and Rita cracked, three right answers.
-    `caught` keeps the player at computer 12, before the backup, when Duarte passes at minute 12
-    (one doubt; specs/computer-lab-backup.md). Returns the reply to the last answer of the hearing."""
-    investigate(player, language, leonor, backup=not caught)
-    if caught:
-        assert at(12, player, language)["night"]["caught"] is True
-        do("save_backup", player, language)
-    if tomas:
-        crack_tomas(player, language)
-    if rita:
-        crack_rita(player, language)
-    walk("auditorium", player, language)
-    return hear(*answers, player=player, language=language)
-
-
-def presented_directly(player=PLAYER, language="en"):
-    """The perfect night, but `present_evidence` is played directly (a hand-made request): no hearing."""
-    investigate(player, language)
-    crack_tomas(player, language)
-    crack_rita(player, language)
-    walk("auditorium", player, language)
-    return do("present_evidence", player, language)
 
 
 # ---------- helpers: the table `runs` and the night's notes ----------
@@ -303,14 +228,6 @@ def remember(player, *endings, language="en"):
     for ending in endings:
         db.add_run(player, ending)
     return call(language=language, player=player)
-
-
-def earned(player, language="en"):
-    """The story endings seen on earlier nights, then the perfect night: the true ending."""
-    remember(player, *ENDINGS, language=language)
-    result = true_night(player, language)
-    assert result["ending"]["id"] == "night_over"
-    return result
 
 
 def runs(player=PLAYER):
@@ -348,10 +265,8 @@ def leads_to(reply):
     return [option["next"] for option in reply["options"]]
 
 
-def whisper(language, night, seen_all=False):
+def whisper(language, night):
     """The message of the unknown number expected as night `night` starts (B1)."""
-    if seen_all:
-        return {"id": f"night-{night}", "text": WHISPERS[language]["dare"]}
     key = f"night-{night}" if night <= 4 else "later"
     return {"id": f"night-{night}", "text": WHISPERS[language][key]}
 
@@ -360,53 +275,6 @@ def round_text(result, mark):
     """The text of the round warning `round-<mark>` in this reply (None when it is not there)."""
     return next((message["text"] for message in result["night"]["messages"] if message["id"] == f"round-{mark}"),
                 None)
-
-
-def shows(where, text):
-    """True when `text` is inside `where`, also in the way JSON writes it: a quote becomes \\" and,
-    in the page, an accented letter becomes \\u00e1."""
-    forms = {text, json.dumps(text)[1:-1], json.dumps(text, ensure_ascii=False)[1:-1]}
-    return any(form in where for form in forms)
-
-
-def as_text(result):
-    """A reply as one text, to search it for sentences that should not be there."""
-    return json.dumps(result, ensure_ascii=False)
-
-
-def flat(table):
-    """Every text inside a table, whatever its layout (dictionaries and lists inside each other)."""
-    if isinstance(table, str):
-        return [table]
-    if isinstance(table, dict):
-        table = list(table.values())
-    if not isinstance(table, (list, tuple)):
-        return []   # a number or None is not a text
-    return [text for value in table for text in flat(value)]
-
-
-def case_strings():
-    """Every text of campus_case.py, in all its tables."""
-    module = case()
-    return flat([value for name, value in vars(module).items() if not name.startswith("_")])
-
-
-def sentences(text):
-    """The sentences of a text with more than three words (shorter ones could be anywhere)."""
-    return [part for part in re.split(r'(?<=[.!?"»])\s+', text) if len(part.split()) > 3]
-
-
-QUOTE = re.compile(r'"([^"]+)"|«([^»]+)»|“([^”]+)”')   # the three kinds of quotation marks play.js knows
-
-
-def quotes(text):
-    """What is between quotation marks in a text."""
-    return [(match.group(1) or match.group(2) or match.group(3)).strip() for match in QUOTE.finditer(text)]
-
-
-def is_spoken(quote):
-    """The rule of partsOf in play.js: a quote is spoken when it has more than three words or . ! ? …"""
-    return len(quote.split()) > 3 or any(mark in quote for mark in ".!?…")
 
 
 def code_only(text):
@@ -430,8 +298,8 @@ def test_the_database_has_a_runs_table_and_old_files_get_it():
     # The two new functions: one row per call, and load_runs gives that name's endings, oldest first.
     db.add_run("ana", "stolen_credits")
     db.add_run("rui", "full_case")
-    db.add_run("ana", "impostor")
-    assert db.load_runs("ana") == ["stolen_credits", "impostor"] == runs("ana")
+    db.add_run("ana", "full_case")   # specs/three-proofs.md: "impostor" is no longer an ending
+    assert db.load_runs("ana") == ["stolen_credits", "full_case"] == runs("ana")
     before = saved()
     assert db.load_runs("nobody") == []
     assert saved() == before   # reading never writes
@@ -451,21 +319,23 @@ def test_the_first_night_is_night_1_with_nothing_seen():
     for language in ("en", "pt"):
         player = f"first {language}"
         result = call(language=language, player=player)
-        assert result["memory"] == {"night": 1, "seen": [], "open": False, "over": False}, language
+        # Changed by specs/three-proofs.md ("Reviewed tests that change"): no "open" and no "over".
+        assert result["memory"] == {"night": 1, "seen": []}, language
         assert result["whispers"] == [], language
         # Every snapshot has it, not only `open`.
         assert do("go_print_shop", player, language)["memory"]["night"] == 1, language
 
 
 def test_a_finished_night_is_recorded_once():
-    ended = finish("impostor")
-    assert runs() == ["impostor"]
-    assert ended["memory"]["seen"] == ["impostor"]
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): the night ends in stolen_credits, not impostor.
+    ended = finish("stolen_credits")
+    assert runs() == ["stolen_credits"]
+    assert ended["memory"]["seen"] == ["stolen_credits"]
     before = saved()
-    assert call()["ending"]["id"] == "impostor"                     # a reload
+    assert call()["ending"]["id"] == "stolen_credits"                     # a reload
     assert answer("concede")["heard"] is False                      # a fourth answer of the hearing
-    assert at(20)["ending"]["id"] == "impostor"                     # a report of the page
-    assert runs() == ["impostor"]
+    assert at(20)["ending"]["id"] == "stolen_credits"                     # a report of the page
+    assert runs() == ["stolen_credits"]
     assert saved() == before
 
 
@@ -490,7 +360,8 @@ def test_the_faculty_closing_is_recorded_once_as_time_up():
     assert call()["night"]["closed"] is True   # and a reload
     assert runs() == ["time_up"]
     assert closed["memory"]["seen"] == []      # a closed faculty is not a story ending
-    assert next_night()["memory"] == {"night": 2, "seen": [], "open": False, "over": False}
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): no "open" and no "over".
+    assert next_night()["memory"] == {"night": 2, "seen": []}
 
 
 def test_a_plain_restart_is_not_a_night():
@@ -503,7 +374,7 @@ def test_a_plain_restart_is_not_a_night():
 
 
 def test_the_night_number_grows_only_after_the_restart():
-    ended = finish("impostor")
+    ended = finish("stolen_credits")
     assert ended["memory"]["night"] == 1   # while the ending is on the screen
     assert call()["memory"]["night"] == 1  # and after a reload of it
     assert next_night()["memory"]["night"] == 2
@@ -521,10 +392,11 @@ def test_the_shown_ending_is_the_one_remembered():
 
 
 def test_memory_belongs_to_the_name():
-    finish("impostor", "ana")
+    finish("stolen_credits", "ana")
     assert next_night("ana")["memory"]["night"] == 2
     other = call(player="rui")
-    assert other["memory"] == {"night": 1, "seen": [], "open": False, "over": False}
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): no "open" and no "over".
+    assert other["memory"] == {"night": 1, "seen": []}
     assert other["whispers"] == []
     assert runs("rui") == []
 
@@ -532,16 +404,16 @@ def test_memory_belongs_to_the_name():
 def test_a_damaged_run_note_cannot_count_a_night_twice_or_raise():
     for number, damaged in enumerate(("yes", 7, None)):   # None: the note is missing
         player = f"damaged {number}"
-        finish("impostor", player)
+        finish("stolen_credits", player)
         if damaged is None:
             change_notes(player, drop=("run",))
         else:
             change_notes(player, run=damaged)
         reloaded = call(player=player)                         # raises nothing
-        assert reloaded["ending"]["id"] == "impostor", damaged
+        assert reloaded["ending"]["id"] == "stolen_credits", damaged
         assert answer("concede", player)["heard"] is False, damaged
         at(20, player)
-        assert runs(player) == ["impostor"], damaged           # no second row
+        assert runs(player) == ["stolen_credits"], damaged           # no second row
         assert reloaded["memory"]["night"] in (1, 2), damaged  # at most one too high
         assert next_night(player)["memory"]["night"] == 2, damaged
 
@@ -551,25 +423,24 @@ def test_a_damaged_run_note_cannot_count_a_night_twice_or_raise():
 def test_night_2_opens_with_you_again_in_both_languages():
     for language in ("en", "pt"):
         player = f"again {language}"
-        finish("impostor", player, language)
+        finish("stolen_credits", player, language)
         second = next_night(player, language)
         assert second["whispers"] == [{"id": "night-2", "text": WHISPERS[language]["night-2"]}], language
 
 
-def test_each_night_has_its_line_and_four_endings_change_it():
+def test_each_night_has_its_line():
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): no dare, so the story endings
+    # seen before no longer change the line of the night.
     for language in ("en", "pt"):
         for night in (3, 4, 5, 9):
-            # Earlier nights that ended at 22:45: they count, and they open nothing.
+            # Earlier nights that ended at 22:45 count; so do earlier story endings.
             result = remember(f"night {night} {language}", *["time_up"] * (night - 1), language=language)
-            assert result["memory"]["night"] == night and result["memory"]["open"] is False
+            assert result["memory"]["night"] == night
             assert result["whispers"] == [whisper(language, night)], (language, night)
-        for night in (4, 9):
-            # The story endings, then the rest: the dare replaces the line of the night.
-            # (specs/computer-lab-backup.md: three endings, so the earliest such night is night 4.)
             earlier = ENDINGS + ["time_up"] * (night - 1 - len(ENDINGS))
-            result = remember(f"open {night} {language}", *earlier, language=language)
-            assert result["memory"]["night"] == night and result["memory"]["open"] is True
-            assert result["whispers"] == [whisper(language, night, seen_all=True)], (language, night)
+            result = remember(f"seen {night} {language}", *earlier, language=language)
+            assert result["memory"]["night"] == night
+            assert result["whispers"] == [whisper(language, night)], (language, night)
 
 
 def test_from_night_3_the_round_warning_changes():
@@ -583,17 +454,12 @@ def test_from_night_3_the_round_warning_changes():
                 assert text == expected, (language, night, mark)
 
 
-def test_no_whisper_after_an_ending_and_none_after_the_true_ending():
-    finish("impostor")
+def test_no_whisper_after_an_ending():
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): there is no true ending to stay quiet after.
+    finish("stolen_credits")
     assert next_night()["whispers"] != []          # night 2 opens with its line
     ended = finish("full_case")
     assert ended["whispers"] == [] and call()["whispers"] == []
-
-    over = earned("over")
-    assert over["whispers"] == [] and call(player="over")["whispers"] == []
-    later = next_night("over")
-    assert later["memory"]["over"] is True and later["memory"]["night"] == len(ENDINGS) + 2   # specs/computer-lab-backup.md
-    assert later["whispers"] == []                 # the number is quiet
 
 
 # ---------- Answers heard before ----------
@@ -683,124 +549,24 @@ def test_talking_on_a_later_night_still_saves_nothing():
         assert saved() == before, person
 
 
-# ---------- The true ending ----------
+# ---------- The endings ----------
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): the true ending is gone, and so are
+# its eight tests (the gate, the doubts, showing it, presenting directly, the damaged verdict, the
+# voices and the secret texts). What is left checks that it really is gone.
 
-def test_the_true_ending_needs_the_four_endings_seen_before_tonight():
-    # Changed by specs/computer-lab-backup.md: three story endings now, so two seen before tonight.
-    remember(PLAYER, "impostor", "stolen_credits")
-    tonight = true_night()   # the perfect night, with two endings seen before it
-    assert tonight["ending"]["id"] == "full_case"
-    assert runs()[-1] == "full_case"
-    assert tonight["memory"]["seen"] == ENDINGS and tonight["memory"]["open"] is True   # this night completes the four
-    assert tonight["memory"]["over"] is False
-    next_night()
-    assert true_night()["ending"]["id"] == "night_over"   # the next perfect night is the true ending
-
-
-def test_the_true_ending_needs_no_doubt_and_both_words():
-    almost = {"one wrong answer": dict(answers=("files", "files", "backup")),
-              "one catch": dict(caught=True),
-              "no tomas": dict(tomas=False),
-              "no rita": dict(rita=False),
-              # specs/computer-lab-backup.md: the story's impostor now comes from accusing Leonor
-              "leonor accused": dict(leonor="accuse")}
-    for player, change in almost.items():
-        remember(player, *ENDINGS)
-        ended = true_night(player, **change)
-        assert ended["ending"]["id"] != "night_over", player
-        assert runs(player)[-1] != "night_over" and ended["memory"]["over"] is False, player
-
-
-def test_the_true_ending_is_shown_saved_and_recorded():
-    for language in ("en", "pt"):
-        player = f"true {language}"
-        ending = earned(player, language)["ending"]
-        expected = TRUE_ENDING[language]
-        assert ending["id"] == "night_over"
-        for key in ("title", "text", "stamp", "emoji", "voices"):
-            assert ending[key] == expected[key], (language, key)
-        assert ending["verdict"] == ""
-        state = game.load(player)
-        assert state["ending"] == "full_case" and logic.is_valid_state(STORIES[language], state)
-        reloaded = call(language=language, player=player)
-        assert reloaded["ending"] == ending
-        assert runs(player)[-1] == "night_over"
-        assert reloaded["memory"]["over"] is True
-
-
-def test_presenting_directly_never_gives_the_true_ending():
+def test_there_is_no_true_ending_any_more():
     remember(PLAYER, *ENDINGS)
-    ended = presented_directly()
-    assert ended["ending"]["id"] == "full_case"
-    assert runs()[-1] == "full_case" and ended["memory"]["over"] is False
-    assert call()["ending"]["id"] == "full_case"
-
-
-def test_the_four_story_endings_stay_reachable_after_the_gate_opens():
-    assert remember(PLAYER, *ENDINGS)["memory"]["open"] is True
-    for ending in ENDINGS:
-        ended = finish(ending)   # it checks the shown ending
-        assert ended["memory"]["open"] is True and ended["memory"]["over"] is False, ending
+    for ending in ENDINGS:   # every night after the story endings were seen still ends in a story ending
+        assert finish(ending)["ending"]["id"] == ending
         next_night()
     assert runs() == ENDINGS + ENDINGS
+    for name in ("campus_case.py", "campus_memory.py", "campus_evidence.py", "play.js"):
+        source = (FOLDER / name).read_text(encoding="utf-8")
+        assert "night_over" not in source and "TRUE_ENDING" not in source, name
 
 
-def test_a_damaged_verdict_cannot_give_the_true_ending():
-    # An earned true ending is shown again after `open`.
-    earned("earned")
-    assert call(player="earned")["ending"]["id"] == "night_over"
-
-    # `night_over` written by hand on a night that ended in stolen_credits.
-    remember("capped", *ENDINGS)
-    finish("stolen_credits", "capped")
-    change_notes("capped", verdict="night_over")
-    assert call(player="capped")["ending"]["id"] == "stolen_credits"
-
-    # And on a full_case with no hearing (present_evidence played directly).
-    remember("direct", *ENDINGS)
-    presented_directly("direct")
-    change_notes("direct", verdict="night_over")
-    assert call(player="direct")["ending"]["id"] == "full_case"
-    assert runs("capped")[-1] == "stolen_credits" and runs("direct")[-1] == "full_case"
-
-
-def test_the_true_ending_says_who_speaks_each_line_in_both_languages():
-    play_js = (FOLDER / "play.js").read_text(encoding="utf-8")
-    table = re.search(r"const VOICES = \{(.*?)\};", play_js, re.S).group(1)
-    speakers = set(re.findall(r"(\w+): \[", table)) - {"narrator"}   # the people play.js has a voice for
-    assert {"rita", "duarte", "professor"} <= speakers
-    for language in ("en", "pt"):
-        ending = earned(f"voices {language}", language)["ending"]
-        spoken = [quote for quote in quotes(ending["text"]) if is_spoken(quote)]
-        assert len(spoken) == 4 == len(ending["voices"]), (language, spoken)
-        assert all(who in speakers for who in ending["voices"]), language
-        assert ending["voices"] == VOICES, language
-
-
-def test_the_secret_texts_are_never_in_the_page_nor_in_an_early_snapshot():
-    secrets = ["night_over", "22:46"]
-    for language in ("en", "pt"):
-        secrets += [TRUE_ENDING[language]["stamp"]] + list(WHISPERS[language].values())
-        secrets += sentences(TRUE_ENDING[language]["text"])
-    # The server has them: every text is in campus_case.py (the id may be a key there, so it is read in the source).
-    strings = case_strings()
-    assert [text for text in secrets[2:] if not any(text in string for string in strings)] == []
-    assert "night_over" in (FOLDER / "campus_case.py").read_text(encoding="utf-8")
-
-    assert [secret for secret in secrets if shows(PAGE, secret)] == []
-    # Night-1 snapshots: a new game, and a perfect first night (the gate is closed).
-    new_game = call(player="newcomer")
-    assert "memory" in new_game
-    ended = true_night("first night")
-    assert ended["ending"]["id"] == "full_case"
-    for snapshot in (new_game, ended):
-        assert [secret for secret in secrets if shows(as_text(snapshot), secret)] == []
-    for language in ("en", "pt"):
-        assert [ending["id"] for ending in page3d.language_data(language)["endings"]] == ENDINGS, language
-
-
-def test_the_story_still_has_its_four_endings_in_the_same_order():
-    # A guard: green before and after the feature.
+def test_the_story_still_has_its_endings_in_the_same_order():
+    # A guard: green before and after the feature. Changed by specs/three-proofs.md: two endings.
     for language in ("en", "pt"):
         assert [ending["id"] for ending in STORIES[language]["endings"]] == ENDINGS, language
         assert set(TEXT[language]["stamps"]) == set(ENDINGS), language
@@ -814,9 +580,9 @@ def test_the_night_texts_exist_in_both_languages():
     for language in ("en", "pt"):
         lines = TEXT[language]["night_lines"]
         assert len(lines) == 5 and all("{n}" in line for line in lines), language
-        for key in ("night_lines", "night_done", "memory_answer"):
+        for key in ("night_lines", "memory_answer"):   # specs/three-proofs.md: no night_done
             assert TEXT[language][key] == NIGHT_TEXTS[language][key], (language, key)
-        assert len(TEXT[language]["notices"]) == 4, language
+        assert len(TEXT[language]["notices"]) == 3, language   # specs/three-proofs.md: no accusing
         assert len(page3d.EXTRA[language]["group"]) == 4, language   # the four names of the case file
 
 
@@ -838,7 +604,7 @@ def test_old_operations_still_refuse_extra_fields():
     before = saved()
     for bad in (dict(operation="open", night=2),
                 dict(operation="talk", npc="rita", node="start", night=2),
-                dict(operation="restart", confirmed=True, seen=["impostor"])):
+                dict(operation="restart", confirmed=True, seen=["stolen_credits"])):
         with pytest.raises(ValueError):
             call(**bad)
     assert saved() == before

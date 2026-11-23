@@ -11,7 +11,7 @@
   };
   const ui = () => data[window.lang || "pt"].play_ui;
   // One emoji for each ending (the collection and the share card). It is defined here because the first screen uses it at start-up.
-  const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸" };
+  const ENDING_EMOJI = { full_case: "🏆", stolen_credits: "💸" };
   document.body.classList.add("playable");
 
   const nameBox = make("div", undefined, "name-box");
@@ -828,7 +828,7 @@
     else if (gotItem) sound.chime();
     // Close the old conversation before the ending card starts speaking: closing stops every voice.
     if (roomChanged) closeTalk();
-    // The person of the open card has left (by the schedule, or Leonor after being accused): that
+    // The person of the open card has left (by the schedule): that
     // conversation ends in place, with the reply's message or the room's notice (specs/night-schedule.md, point 5).
     // A catch changes the scene, so closeTalk above has already closed the card (point 8).
     // Once per conversation: the later snapshots, while that ended card stays open, add nothing.
@@ -866,7 +866,7 @@
   }
 
   // ---------- the ending: a screen over the picture, with a stamp and confetti ----------
-  const CONFETTI = { full_case: ["#e8b45c", "#f4e3b0", "#7fd6a0"], impostor: ["#7fd6a0", "#e8b45c", "#cfe8d8"],
+  const CONFETTI = { full_case: ["#e8b45c", "#f4e3b0", "#7fd6a0"],
                      stolen_credits: ["#ff8c7a", "#9aa4ad"],
                      extra: ["#ffb38a", "#ffe2a8", "#f2d089"] };
   function showEnding(ending) {
@@ -1142,7 +1142,7 @@
     showTyping();
     if (!await send("play", { action: action.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
     if (!talking || current.scene !== scene) return;   // the scene changed: the conversation is over
-    // The person is no longer here (Leonor after `accuse`, or gone by the schedule): send() has already
+    // The person is no longer here (gone by the schedule): send() has already
     // ended the conversation with the reply's message, so the start menu is not asked for again.
     if (!current.people.some(person => person.id === line.npc)) return;
     // Refresh conditions and available actions after changing the story, retaining the log.
@@ -1524,9 +1524,8 @@
   }
   function collectionCount() {
     const all = data[window.lang || "pt"].endings, found = loadEndings();
-    // Still "n/4": the story has four endings. A ★ after it once the night is over (specs/earlier-nights.md, point 9).
-    const star = current?.memory?.over ? " ★" : "";
-    return `${ui().collection}: ${all.filter(e => found.includes(e.id)).length}/${all.length}${star}`;
+    // "n/2": the story has two endings (specs/three-proofs.md).
+    return `${ui().collection}: ${all.filter(e => found.includes(e.id)).length}/${all.length}`;
   }
   function collectionText() {
     const all = data[window.lang || "pt"].endings, found = loadEndings();
@@ -1893,7 +1892,7 @@
   cardDialog.innerHTML = '<h2 id="card-title"></h2><img id="card-image" alt=""><p id="card-hint" class="muted"></p>' +
     '<div class="dialog-actions"><a id="card-download" class="button-link"></a><button id="card-close" class="secondary"></button></div>';
   document.body.append(cardDialog);
-  const CARD_COLORS = { full_case: "#e8b45c", impostor: "#7fd6a0", stolen_credits: "#ff8c7a" };
+  const CARD_COLORS = { full_case: "#e8b45c", stolen_credits: "#ff8c7a" };
   function loadImage(src) {
     return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = src; });
   }
@@ -2255,7 +2254,6 @@
       screen.append(make("p", t.map_no_3d, "muted"), make("p", `${t.map_where}: ${titles[current.room].title}`, "map-where"));
       return;
     }
-    const ready = (current?.clues || []).every(c => c.done || c.lost);   // a lost clue does not lock it (specs/night-schedule.md, point 6)
     const X0 = -30, Z0 = -13, K = 10, W = 44 * K, H = 26 * K;   // the map shows x from -30 to 14 and z from -13 to 13
     const sx = x => (x - X0) * K, sy = z => (z - Z0) * K;
     const board = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "map-svg", role: "img", "aria-label": t.map_title });
@@ -2268,12 +2266,12 @@
       svg("text", { x: sx(0), y: sy(0) + 4, class: "map-label small" }, t.map_corridor),
     );
     for (const room of map.rooms) {
-      const mine = map.here === room.id, locked = room.id === "auditorium" && !ready;
+      const mine = map.here === room.id;   // no room is locked: the auditorium is always open (specs/three-proofs.md)
       const cx = sx((room.minX + room.maxX) / 2), cy = sy((room.minZ + room.maxZ) / 2);
       board.append(
         svg("rect", { x: sx(room.minX), y: sy(room.minZ), width: (room.maxX - room.minX) * K, height: (room.maxZ - room.minZ) * K,
-                      class: `map-room${mine ? " here" : ""}${locked ? " locked" : ""}` }),
-        svg("text", { x: cx, y: cy - 8, class: "map-icon" }, `${room.icon}${locked ? "🔒" : ""}`),
+                      class: `map-room${mine ? " here" : ""}` }),
+        svg("text", { x: cx, y: cy - 8, class: "map-icon" }, room.icon),
       );
       titleLines(titles[room.id].title).forEach((line, i) => board.append(svg("text", { x: cx, y: cy + 10 + i * 15, class: "map-label" }, line)));
     }
@@ -2288,7 +2286,6 @@
     );
     const place = map.here === "outside" ? t.map_outside : map.here ? titles[map.here].title : t.map_corridor;
     screen.append(board, make("p", `${t.map_where}: ${place}`, "map-where"));
-    if (!ready) screen.append(make("p", `🔒 ${titles.auditorium.title}: ${t.map_locked}`, "muted map-lock"));
   }
 
   // The diary: the evidence the server knows, and what people told the player (kept in this browser only).
@@ -2407,25 +2404,25 @@
 
   // ---------- earlier nights: the fifth figure grows on the case-file photo (specs/earlier-nights.md, point 6) ----------
   // The start screen is drawn before the server knows the player, so it uses a display copy kept in this
-  // browser: the night and `over` the server last reported. Only the picture reads it, never the rules.
+  // browser: the night the server last reported. Only the picture reads it, never the rules.
   const NIGHT_KEY = "plot-twist-night";
   function loadNight() {
     try {
       const saved = JSON.parse(localStorage.getItem(NIGHT_KEY) || "{}");
       const night = Math.floor(Number(saved.night));   // a damaged copy (2.5, "x") must not stop the page
-      return { night: night >= 1 ? night : 1, over: saved.over === true };
-    } catch (error) { return { night: 1, over: false }; }
+      return { night: night >= 1 ? night : 1 };
+    } catch (error) { return { night: 1 }; }
   }
   function rememberNight(memory) {   // called by render with the snapshot's `memory`
     if (!memory) return;
-    try { localStorage.setItem(NIGHT_KEY, JSON.stringify({ night: memory.night, over: memory.over })); } catch (error) { /* no storage */ }
+    try { localStorage.setItem(NIGHT_KEY, JSON.stringify({ night: memory.night })); } catch (error) { /* no storage */ }
   }
   // The night shown: the larger of the copy and one more than the story endings in this browser's collection
   // (an ending on screen is still "night 1" for the server until the new game).
   function shownNight() {
     const copy = loadNight(), found = loadEndings();
     const story = data[window.lang || "pt"].endings.filter(ending => found.includes(ending.id)).length;
-    return { night: Math.max(copy.night, story + 1), over: copy.over };
+    return { night: Math.max(copy.night, story + 1) };
   }
   // 1: nothing is added. 2: the fifth silhouette is darker. 3: its long coat has the detective's colour.
   // 4: plus a scarf. 5: plus a hat. 6 (and every later night): the "?" of the red box is the player's initial.
@@ -2438,7 +2435,6 @@
   // The scarf and the hat of the detective in game3d.html. The coat takes the colour chosen in the
   // character creator (OUTFIT_COLORS[look.color]), so "Yours." on night 3 is true.
   const DETECTIVE = { scarf: "#8a1f24", hat: "#3a2a1e" };
-  const PHOTO_PAPER = "#f2d089", PHOTO_FLOOR = "#d9a359";   // the pale yellow behind the people, and the floor
   function silhouette(fill, coat, stroke, width) {   // the head, the long coat and the two legs
     const style = { stroke, "stroke-width": width, "stroke-linejoin": "round" };
     return [svg("circle", { cx: 962, cy: 219, r: 22, fill, ...style }),
@@ -2452,11 +2448,7 @@
   function drawFifthFigure(shown) {
     const stage = nightStage(shown.night), dark = "#03060b";
     fifthFigure.replaceChildren();
-    if (shown.over) {
-      // After the true ending a patch of the photo's own colours covers the fifth silhouette: four people are left.
-      fifthFigure.append(...silhouette(PHOTO_PAPER, PHOTO_PAPER, PHOTO_PAPER, 12),
-                         svg("rect", { x: 930, y: 535, width: 90, height: 14, fill: PHOTO_FLOOR }));
-    } else if (stage >= 2) {
+    if (stage >= 2) {
       fifthFigure.append(...silhouette(dark, stage >= 3 ? OUTFIT_COLORS[look.color] : dark, dark, 5));
       if (stage >= 4) {   // a scarf round the neck, one end hanging
         fifthFigure.append(svg("rect", { x: 938, y: 240, width: 50, height: 13, rx: 5, fill: DETECTIVE.scarf }),
@@ -2468,7 +2460,6 @@
       }
     }
     if (!redBox) return;
-    redBox.hidden = shown.over;   // the red box and its "?" go with the fifth person
     const initial = name.value.trim().charAt(0).toUpperCase();
     if (stage >= 6 && initial) redBox.dataset.initial = initial;   // play.css shows it in place of the "?"
     else delete redBox.dataset.initial;
@@ -2476,9 +2467,8 @@
   function drawNight() {
     const shown = shownNight(), t = ui(), stage = nightStage(shown.night);
     drawFifthFigure(shown);
-    // night_lines has one line for each of nights 2, 3, 4, 5 and 6-and-later; after the true ending, night_done.
-    if (shown.over) nightLine.textContent = t.night_done;
-    else nightLine.textContent = stage === 1 ? "" : t.night_lines[stage - 2].replace("{n}", shown.night);
+    // night_lines has one line for each of nights 2, 3, 4, 5 and 6-and-later.
+    nightLine.textContent = stage === 1 ? "" : t.night_lines[stage - 2].replace("{n}", shown.night);
     nightLine.hidden = !nightLine.textContent;
   }
   window.addEventListener("language", () => { if (!current) drawNight(); });   // only the start screen shows it

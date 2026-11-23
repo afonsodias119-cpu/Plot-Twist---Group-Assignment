@@ -155,10 +155,13 @@ def test_accepted_click_shows_its_result():
 def test_blocked_click_is_explained():
     """A blocked action is shown; clicking it explains why and leaves the scene as it was."""
     at = start_game("ana")
-    click(at, "action_go_auditorium")
-    expected = STORY["scenes"]["study_room"]["actions"]["go_auditorium"]["blocked_text"]
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): the auditorium always opens, so the
+    # blocked action is asking Leonor for help without the photo.
+    click(at, "action_go_library")
+    click(at, "action_ask_for_help")
+    expected = STORY["scenes"]["library"]["actions"]["ask_for_help"]["blocked_text"]
     assert [box.value for box in at.warning] == [expected]
-    assert at.header[0].value == STORY["scenes"]["study_room"]["title"]
+    assert at.header[0].value == STORY["scenes"]["library"]["title"]
 
 
 def test_new_game_asks_first():

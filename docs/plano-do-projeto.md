@@ -113,6 +113,11 @@ Alteração preparada em `two-answers`: o botão "Mostrar prova" sai das convers
 ### "Mostrar prova" quando o segurança a pede, e a fotografia da Rita depois da pen — Maria (23/11/2026)
 
 Alteração preparada em `evidence-after-monitors`: com o segurança, "Mostrar uma prova" só aparece depois de "Explicar a situação", quando ele pede uma prova; com a Rita deixa de aparecer. Depois de a Rita dizer que a pen pode estar em qualquer lado da mesa, já não aparece a pergunta da fotografia: vais procurar a pen, e quando a tens a primeira pergunta à Rita passa a ser a fotografia do grupo. Ver `specs/evidence-after-monitors.md`.
+
+### Três provas decidem o final; sem acusar a Leonor e sem final secreto — Maria (23/11/2026)
+
+Alteração preparada no mesmo branch, `evidence-after-monitors` (nos dois jogos: mexe no `story.py`). Só há três maneiras de a noite acabar: chegas ao professor com as três provas (a pen, a fotografia original e o backup) e respondes certo às três afirmações do Duarte → Caso encerrado; falta-te uma prova ou erras uma resposta → Crédito roubado (fala nova do professor, `missing`); ou o tempo acaba às 22:45. A ação "acusar a Leonor" e o final "O impostor" saem. A Leonor fica, porque ajuda no computador 12, mas deixa de ser uma pista do telemóvel. O auditório está sempre aberto (o mapa já não tem cadeado). O final verdadeiro ("22:46") e o desafio do número desconhecido também saem. Mudam testes revistos de toda a equipa; precisam de aprovação na revisão do PR (lista na spec). Ver `specs/three-proofs.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

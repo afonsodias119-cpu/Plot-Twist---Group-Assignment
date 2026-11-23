@@ -32,7 +32,7 @@ from campus_case import CASES
 from campus_clock import COSTS, NIGHT_MINUTES, ROUNDS
 # What the server remembers of earlier nights (specs/earlier-nights.md): the gate of the true ending
 # and the row of tonight's ending.
-from campus_memory import TRUE_ENDING, record, seen_all, true_ending
+from campus_memory import record
 from campus_people import OBJECTS, PEOPLE, TEMPERS, talk
 # The friends' names of specs/your-own-group.md: kept in the notes, swapped in by retell.
 from campus_people import DEFAULT_GROUP, clean_group
@@ -151,9 +151,6 @@ def read_night(player, state):
         shown, _line = verdict_of(state, night["hearing"], bool(caught), claims_of(night))
         if notes.get("verdict") == shown:
             night["verdict"] = shown
-        # The true ending is believed only when tonight's game agrees with it (specs/earlier-nights.md, point 8).
-        if notes.get("verdict") == TRUE_ENDING and perfect_night(state, night):
-            night["verdict"] = TRUE_ENDING
     return night
 
 
@@ -359,26 +356,13 @@ def doubts(answers, caught=False, claims=HEARING):
 def verdict_of(state, answers, caught=False, claims=HEARING):
     """The ending shown after the hearing and the key of the professor's verdict line ("" for none).
 
-    The story decides the best the player earned (state["ending"]); the hearing can only lose it
-    (point 10 and design-notes, B6). `caught`: the player was caught at a round tonight.
+    Every claim answered with its proof: the story's own ending (Duarte incriminated when every proof is
+    held). A claim with no proof (a wrong card or "concede"): Stolen credit, with the line `missing`
+    (specs/three-proofs.md). A catch at a round costs time and a doubt on the screen, never the ending.
     """
-    story_ending = state["ending"]
-    count = doubts(answers, caught, claims)
-    if count >= MAX_DOUBTS:
-        return "stolen_credits", "three_help" if state["flags"]["colleague_choice"] == "help" else "three"
-    if count == 2 and story_ending == "full_case":   # "The impostor" now means Leonor was accused (specs/computer-lab-backup.md)
-        return "stolen_credits", "two"
-    return story_ending, ""
-
-
-def perfect_night(state, night):
-    """True when tonight could give the true ending (specs/earlier-nights.md, point 8): the story's
-    `full_case`, a hearing of three answers with no doubt (a catch is a doubt) and the words of
-    Tomás and Rita both won tonight. The story endings of earlier nights are checked by the caller."""
-    answers = night["hearing"]
-    return (state["ending"] == "full_case" and answers is not None and len(answers) == len(HEARING)
-            and doubts(answers, bool(night["caught"]), claims_of(night)) == 0
-            and all(person in night["cracked"] for person in FACTS))
+    if any(answer not in claim["accepts"] for claim, answer in zip(claims, answers)):
+        return "stolen_credits", "missing"
+    return state["ending"], ""
 
 
 def hearing(player, state, night, language, answer):
@@ -411,10 +395,6 @@ def hearing(player, state, night, language, answer):
         game.play(player, "present_evidence", language)
         state = game.load(player)
         night["verdict"], _line = verdict_of(state, night["hearing"], bool(night["caught"]), claims_of(night))
-        # The true ending: every story ending seen on earlier nights (tonight's row is not written
-        # yet) and a perfect night. The save keeps the story's full_case (point 8).
-        if seen_all(player) and perfect_night(state, night):
-            night["verdict"] = TRUE_ENDING
         night = record(player, night, night["verdict"])
     write_night(player, night)
     return True, "", True
@@ -477,8 +457,6 @@ def shown_ending(state, night, language):
     """
     if state["ending"] == "none":
         return None
-    if night["verdict"] == TRUE_ENDING:
-        return true_ending(language)
     shown, line = state["ending"], ""
     if night["hearing"] is not None:
         shown, line = verdict_of(state, night["hearing"], bool(night["caught"]), claims_of(night))

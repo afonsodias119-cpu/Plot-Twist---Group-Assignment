@@ -38,7 +38,7 @@ ROOM_OF_SCENE = {}
 
 # The story actions that are done by talking to a person: they appear as choices inside that conversation.
 ACTION_PERSON = {
-    "open_drawer": "rita", "request_copy": "amelia", "ask_for_help": "leonor", "accuse": "leonor",
+    "open_drawer": "rita", "request_copy": "amelia", "ask_for_help": "leonor",
     "view_files": "computer12", "save_backup": "computer12", "present_evidence": "professor",
 }
 
@@ -533,7 +533,7 @@ WARNED = {
 
 
 def people_in_room(scene, state, language, gone=()):
-    """Who stands in the room of this saved scene (Leonor leaves after being accused).
+    """Who stands in the room of this saved scene.
 
     `gone` are the people who have left by the night's schedule (specs/night-schedule.md, point 5).
     """
@@ -541,8 +541,6 @@ def people_in_room(scene, state, language, gone=()):
     found = []
     for person, where in ROOM_OF_PERSON.items():
         if where != room or person in gone:
-            continue
-        if person == "leonor" and state["flags"]["colleague_choice"] == "accused":
             continue
         found.append({"id": person, "name": PEOPLE[language][person]["name"], "object": person in OBJECTS})
     return found

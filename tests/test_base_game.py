@@ -25,7 +25,9 @@ P_HELP = [
     "open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help",
     "go_study_room", "go_computer_lab", "view_files", "save_backup", "go_study_room", "go_auditorium", "present_evidence",
 ]
-P_ACCUSE = ["accuse" if action == "ask_for_help" else action for action in P_HELP]
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): there is no accusation; the proofs decide.
+P_NO_BACKUP = [action for action in P_HELP if action != "save_backup"]
+P_PROOFS_ALONE = P_HELP[:4] + P_HELP[7:]   # every proof, without going to Leonor
 
 
 # ---------- helpers ----------
@@ -78,28 +80,25 @@ def test_new_game_is_the_opening_state():
 
 
 def test_study_room_offers_its_five_actions():
-    """The study room offers its five actions in story order; only the auditorium is not allowed."""
+    """The study room offers its five actions in story order, all allowed: the auditorium always opens."""
     actions = logic.available_actions(STORY, logic.new_game(STORY))
     assert [a["id"] for a in actions] == ["open_drawer", "go_print_shop", "go_library", "go_computer_lab", "go_auditorium"]
-    assert [a["id"] for a in actions if not a["allowed"]] == ["go_auditorium"]
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): the auditorium is no longer locked.
+    assert [a["id"] for a in actions if not a["allowed"]] == []
     for action in actions:
         assert action["label"] == scene_actions("study_room")[action["id"]]["label"]
 
 
-def test_auditorium_is_blocked_until_files_are_viewed():
-    """go_auditorium is blocked in a new game and still blocked holding only the USB stick."""
-    expected = scene_actions("study_room")["go_auditorium"]["blocked_text"]
-    result = assert_rejected(logic.new_game(STORY), "go_auditorium", "blocked")
-    assert result["message"] == expected
-    result = assert_rejected(play_path(["open_drawer"]), "go_auditorium", "blocked")
-    assert result["message"] == expected
-    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the files alone are not enough either.
-    result = assert_rejected(play_path(P_SHORT[:3] + ["go_study_room"]), "go_auditorium", "blocked")
-    assert result["message"] == expected
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): the auditorium always opens; with a proof
+# missing the ending is stolen_credits.
+def test_the_auditorium_always_opens_and_the_proofs_decide():
+    state = play_path(["go_auditorium"])
+    assert state["scene"] == "auditorium"
+    assert play_path(["go_auditorium", "present_evidence"])["ending"] == "stolen_credits"
 
 
 def test_item_actions_are_blocked_without_their_item():
-    """view_files needs the USB stick; ask_for_help and accuse need the original photo."""
+    """view_files needs the USB stick; ask_for_help needs the original photo."""
     with_photo_only = play_path(["go_print_shop", "request_copy", "go_study_room", "go_computer_lab"])
     assert with_photo_only["inventory"] == ["original_photo"]
     result = assert_rejected(with_photo_only, "view_files", "blocked")
@@ -108,7 +107,7 @@ def test_item_actions_are_blocked_without_their_item():
     with_stick_and_files = play_path(P_SHORT[:5] + ["go_library"])
     assert with_stick_and_files["inventory"] == ["usb_stick"]
     assert with_stick_and_files["flags"]["files_viewed"] is True
-    for action_id in ["ask_for_help", "accuse"]:
+    for action_id in ["ask_for_help"]:   # specs/three-proofs.md: no accusation
         result = assert_rejected(with_stick_and_files, action_id, "blocked")
         assert result["message"] == scene_actions("library")[action_id]["blocked_text"]
 
@@ -143,14 +142,14 @@ def test_collected_item_is_not_collected_again():
 
 
 def test_actions_already_done_are_not_offered():
-    """Viewing the files twice, or accusing after asking for help, is rejected as not_offered."""
+    """Viewing the files twice, or asking for help twice, is rejected as not_offered."""
     after_view = play_path(P_SHORT[:3])
     assert "view_files" not in offered_ids(after_view)
     assert_rejected(after_view, "view_files", "not_offered")
 
     after_help = play_path(P_HELP[:6])
-    assert "accuse" not in offered_ids(after_help)
-    assert_rejected(after_help, "accuse", "not_offered")
+    assert "ask_for_help" not in offered_ids(after_help)
+    assert_rejected(after_help, "ask_for_help", "not_offered")
 
 
 def test_action_of_another_scene_is_rejected():
@@ -169,11 +168,12 @@ def test_unknown_action_ids_are_rejected():
 
 
 def test_three_paths_reach_their_endings():
-    """Asking for help ends in full_case; accusing Leonor in impostor; skipping her in stolen_credits."""
-    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): Leonor's choice decides the ending.
+    """Every proof ends in full_case, with or without Leonor's help; a proof missing ends in stolen_credits."""
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): the three proofs decide the ending.
     assert play_path(P_HELP)["ending"] == "full_case"
-    assert play_path(P_SHORT)["ending"] == "stolen_credits"
-    assert play_path(P_ACCUSE)["ending"] == "impostor"
+    assert play_path(P_PROOFS_ALONE)["ending"] == "full_case"
+    assert play_path(P_SHORT)["ending"] == "stolen_credits"      # no photo
+    assert play_path(P_NO_BACKUP)["ending"] == "stolen_credits"  # no backup
 
 
 def test_every_action_is_rejected_after_an_ending():
@@ -207,7 +207,8 @@ def test_every_ending_is_reachable_from_a_new_game():
     # Changed by specs/spot-the-fake.md ("Reviewed tests that change"): the group chat adds full_case.
     # Changed again by specs/fifth-element-ending.md ("Reviewed tests that change"): flagging every message adds fifth_element.
     # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the chat and fifth_element are gone.
-    assert endings_found == {"impostor", "stolen_credits", "full_case"}
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): two endings.
+    assert endings_found == {"stolen_credits", "full_case"}
 
 
 def test_playing_never_changes_the_story():
@@ -238,11 +239,9 @@ def test_scene_text_follows_remembered_changes():
     library = STORY["scenes"]["library"]["texts"]
     before_decision = logic.scene_text(STORY, play_path(["go_library"]))
     after_help = logic.scene_text(STORY, play_path(P_HELP[:6]))
-    after_accuse = logic.scene_text(STORY, play_path(P_ACCUSE[:6]))
     assert before_decision == [library[0]["text"]]
     assert after_help == [library[1]["text"]]
-    assert after_accuse == [library[2]["text"]]
-    assert len({before_decision[0], after_help[0], after_accuse[0]}) == 3
+    assert before_decision[0] != after_help[0]   # specs/three-proofs.md: no accusation text any more
 
     lab = STORY["scenes"]["computer_lab"]["texts"]
     assert logic.scene_text(STORY, play_path(["go_computer_lab"])) == [lab[0]["text"]]
@@ -313,7 +312,7 @@ def test_paths_work_in_every_language():
     for story in STORIES.values():
         assert play_path(P_HELP, story)["ending"] == "full_case"
         assert play_path(P_SHORT, story)["ending"] == "stolen_credits"
-        assert play_path(P_ACCUSE, story)["ending"] == "impostor"
+        assert play_path(P_NO_BACKUP, story)["ending"] == "stolen_credits"   # specs/three-proofs.md: no accusation
 
 
 def conditions_of(story):
@@ -492,8 +491,11 @@ def test_every_accepted_action_is_saved():
 def test_rejected_actions_leave_the_saved_game_unchanged():
     """A blocked, not offered, not here and game over action each leave the save exactly as it was."""
     game.open_game("ana", "en")
-    play_saved("ana", ["open_drawer"])
-    assert_saved_game_unchanged("ana", "go_auditorium", "blocked")
+    play_saved("ana", ["open_drawer", "go_computer_lab", "view_files", "go_study_room"])
+    # specs/three-proofs.md: the auditorium is never blocked; a blocked action is now the photo's.
+    play_saved("ana", ["go_library"])
+    assert_saved_game_unchanged("ana", "ask_for_help", "blocked")
+    play_saved("ana", ["go_study_room"])
     assert_saved_game_unchanged("ana", "open_drawer", "not_offered")
     assert_saved_game_unchanged("ana", "request_copy", "not_here")
 
@@ -660,13 +662,14 @@ def test_there_is_no_group_chat_any_more():
     for story in STORIES.values():
         assert "group_chat" not in story["scenes"]
         assert not any(flag.startswith("flagged_") for flag in story["start"]["flags"])
-        assert [ending["id"] for ending in story["endings"]] == ["full_case", "impostor", "stolen_credits"]
+        assert [ending["id"] for ending in story["endings"]] == ["full_case", "stolen_credits"]   # specs/three-proofs.md
 
 
-def test_leonors_choice_decides_the_ending_in_both_languages():
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): the proofs decide, in both languages.
+def test_the_proofs_decide_the_ending_in_both_languages():
     for story in STORIES.values():
         assert play_path(P_HELP, story)["ending"] == "full_case"
-        assert play_path(P_ACCUSE, story)["ending"] == "impostor"
+        assert play_path(P_NO_BACKUP, story)["ending"] == "stolen_credits"
         assert play_path(P_SHORT, story)["ending"] == "stolen_credits"
 
 
