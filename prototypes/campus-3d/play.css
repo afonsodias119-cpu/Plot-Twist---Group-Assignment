@@ -114,7 +114,6 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 .map-corridor { fill: #26425a; }
 .map-room { fill: #1b3247; stroke: #7f98a8; stroke-width: 1.5; }
 .map-room.here { fill: #3a3a1f; stroke: var(--gold); stroke-width: 3; }
-.map-room.locked { opacity: .6; stroke-dasharray: 5 4; }
 .map-sign { fill: #ecebe6; }
 .map-door { fill: var(--gold); }
 .map-label, .map-icon, .map-you-label { text-anchor: middle; font: 600 13px Inter, system-ui, sans-serif; fill: #e8eef4; pointer-events: none; }
@@ -126,7 +125,6 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 .map-you-label { fill: #fff; font-weight: 800; stroke: #000; stroke-width: 3px; paint-order: stroke; }
 @keyframes map-pulse { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
 .map-where { margin: 14px 0 4px; font: 600 14px Inter, system-ui, sans-serif; }
-.map-lock { font-size: 12px; margin-top: 4px; }
 
 /* to-do app */
 .todo-count { margin: 10px 0 8px; font: 600 14px Inter, system-ui, sans-serif; }
@@ -224,7 +222,7 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 /* the ending screen */
 .ending-card { --accent: #e8b45c; position: absolute; left: calc((100% - 470px) / 2); top: 50%; transform: translate(-50%, -50%); width: min(720px, calc(100% - 540px)); max-height: 82%; overflow-y: auto; padding: 34px 38px; border: 1px solid var(--accent); border-radius: 18px; background: #06111ff5; box-shadow: 0 0 80px color-mix(in srgb, var(--accent) 30%, transparent), 0 30px 80px #000c; pointer-events: auto; z-index: 14; animation: ending-rise .9s ease both; }
 .panel-hidden .ending-card { left: 50%; width: min(720px, calc(100% - 60px)); }
-.ending-impostor { --accent: #7fd6a0; } .ending-stolen_credits { --accent: #ff8c7a; }
+.ending-stolen_credits { --accent: #ff8c7a; }
 /* an ending that is not one of the story's four (specs/earlier-nights.md, point 9): the colour of dawn */
 .ending-extra { --accent: #ffb38a; background: linear-gradient(#06111ff5 55%, #2a1a1af5); }
 .ending-card h2 { font: 400 clamp(30px, 4vw, 46px)/1.1 "DM Serif Display", Georgia, serif; margin: 6px 0 16px; color: var(--ink); }

@@ -1,5 +1,7 @@
 # The computer lab: save the backup of the original conversations (no chat puzzle, no fifth ending)
 
+> **Update (specs/three-proofs.md):** the endings of point 3 are replaced. `accuse` and "The impostor" are gone; the proofs decide: the photo, the files and the backup → "Case closed", anything missing → "Stolen credit". The auditorium of point 2 is always open, and the true ending is removed.
+
 Changes `story.py` (both games: the plain game of `app.py` and the 3D game) and the 3D server. Replaces specs/spot-the-fake.md (the group chat puzzle) and removes specs/fifth-element-ending.md. Every text exists in Portuguese and English.
 
 ## Before writing the spec

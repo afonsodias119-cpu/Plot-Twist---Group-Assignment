@@ -1,5 +1,7 @@
 # The night and the clues
 
+> **Update (specs/three-proofs.md, merged after this spec):** Leonor is not a clue of the phone, so the list has three clues (the USB stick, the photo, computer 12) plus the cameras of specs/camera-clue.md; "accuse" no longer exists. She still helps at computer 12 and still leaves at 22:45 if undecided.
+
 Changes the 3D game only (`prototypes/campus-3d/`): campus_clock.py, campus_game.py, campus_text.py, campus_case.py, play.js, play.css and game3d.html. No change to `story.py`, `logic.py`, `db.py`, `game.py` or `app.py`. Extends specs/night-schedule.md, specs/case-of-the-day.md, specs/earlier-nights.md and specs/campus-3d-streamlit.md.
 
 ## Why

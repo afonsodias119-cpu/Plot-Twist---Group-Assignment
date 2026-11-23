@@ -458,7 +458,8 @@ def test_claims_actions_and_the_code_rule_never_change_with_temper():
             if CLAIMS.get(person) == node:   # a claim line is the story's own
                 assert told == plain, (person, node)
 
-    # Leonor's two decisions are still offered, and taken, by a hostile player.
+    # Leonor's decision is still offered, and taken, by a hostile player.
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): she has one decision (no "accuse").
     for player in ("deciding calm", "deciding hostile"):
         call(player=player)
         for action in ("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library"):
@@ -466,7 +467,7 @@ def test_claims_actions_and_the_code_rule_never_change_with_temper():
     make("leonor", "hostile", "deciding hostile")
     plain, told = talk("leonor", "start", "deciding calm"), talk("leonor", "start", "deciding hostile")
     assert told["actions"] == plain["actions"]
-    assert {action["id"] for action in told["actions"] if action["allowed"]} >= {"ask_for_help", "accuse"}
+    assert {action["id"] for action in told["actions"] if action["allowed"]} >= {"ask_for_help"}
     do("ask_for_help", "deciding hostile")
 
     # The schedule: an undecided Leonor still leaves at 22:30.

@@ -29,9 +29,9 @@ def call(operation="open", language="pt", player="test detective", **extra):
 
 
 @pytest.mark.parametrize("language", ["en", "pt"])
-# In the 3D version the auditorium needs every clue, so the short path (no photo, no Leonor) is not played here.
-# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): Leonor's choice decides the ending.
-@pytest.mark.parametrize("path,ending", [(HELP, "full_case"), (["accuse" if a == "ask_for_help" else a for a in HELP], "impostor")])
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): the three proofs decide: every proof, or the
+# backup missing.
+@pytest.mark.parametrize("path,ending", [(HELP, "full_case"), ([a for a in HELP if a != "save_backup"], "stolen_credits")])
 def test_both_endings_and_accusation_use_the_original_rules(language, path, ending):
     call(language=language)
     for action in path:
@@ -47,10 +47,12 @@ def test_both_endings_and_accusation_use_the_original_rules(language, path, endi
 
 def test_blocked_route_and_duplicate_leave_save_unchanged():
     call()
+    call("play", action="go_library")   # the auditorium always opens now: the blocked action is Leonor's (specs/three-proofs.md)
     before = db.DB_PATH.read_bytes()
-    result = call("play", action="go_auditorium")
-    assert not result["accepted"] and result["scene"] == "study_room"
+    result = call("play", action="ask_for_help")
+    assert not result["accepted"] and result["scene"] == "library"
     assert db.DB_PATH.read_bytes() == before
+    call("play", action="go_study_room")
     call("play", action="open_drawer")
     before = db.DB_PATH.read_bytes()
     result = call("play", action="open_drawer")
@@ -124,39 +126,27 @@ def test_walking_between_two_rooms_goes_through_the_study_room():
     assert call("enter", room="print_shop")["scene"] == "print_shop"
 
 
-def test_entering_the_auditorium_is_refused_without_the_clues():
-    """The door explains itself with a note that does not list the missing clues, and nothing is saved."""
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): the auditorium always opens.
+def test_entering_the_auditorium_works_without_the_clues():
     call()
-    before = saved_bytes()
     result = call("enter", room="auditorium")
-    t = TEXT["pt"]
-    assert not result["accepted"] and result["scene"] == "study_room"
-    assert result["message"] == t["auditorium_note"]   # the door does not list what is missing (specs/harder-campus.md)
-    assert not any(t["clues"][clue] in result["message"] for clue in t["clues"])
-    assert saved_bytes() == before
+    assert result["accepted"] and result["scene"] == "auditorium"
 
 
-def test_a_blocked_second_step_leaves_you_in_the_study_room():
-    """From the library to the locked auditorium: the first move is accepted, the second is refused."""
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): the second step is no longer refused.
+def test_from_the_library_the_walk_reaches_the_auditorium():
     call(); call("play", action="go_library")
     result = call("enter", room="auditorium")
-    assert not result["accepted"] and result["scene"] == "study_room"
-    assert result["message"].startswith(TEXT["pt"]["auditorium_note"])
-    assert game.load("test detective")["scene"] == "study_room"
+    assert result["accepted"] and result["scene"] == "auditorium"
 
 
-def test_the_story_rule_alone_is_not_enough_for_the_auditorium():
-    """With the old files viewed (the story's own rule) but no photo and no talk with Leonor, it stays closed."""
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): nothing is needed for the door.
+def test_the_files_alone_are_enough_to_walk_in():
     call()
     for action in SHORT[:3]:
         call("play", action=action)
-    before = game.load("test detective")
     result = call("enter", room="auditorium")
-    t = TEXT["pt"]
-    assert not result["accepted"] and result["scene"] == "study_room"   # the walk went through the hub, then stopped
-    assert result["message"] == t["auditorium_note"]   # no list of what is missing (specs/harder-campus.md)
-    after = game.load("test detective")
-    assert after["scene"] == "study_room" and dict(after, scene=None) == dict(before, scene=None)   # only the room changed
+    assert result["accepted"] and result["scene"] == "auditorium"
 
 
 def test_the_auditorium_opens_once_every_clue_is_done():
@@ -168,29 +158,23 @@ def test_the_auditorium_opens_once_every_clue_is_done():
     assert result["accepted"] and result["scene"] == "auditorium"
 
 
-def test_the_auditorium_button_needs_every_clue_too():
-    """The on-screen travel button follows the same rule as walking in through the door."""
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): the button always works too.
+def test_the_auditorium_button_always_works():
     call()
-    for action in SHORT[:5]:   # up to the study room, after save_backup (specs/computer-lab-backup.md)
-        call("play", action=action)
-    before = saved_bytes()
     result = call("play", action="go_auditorium")
-    assert not result["accepted"] and result["scene"] == "study_room"
-    assert result["message"].startswith(TEXT["pt"]["auditorium_note"])
-    assert saved_bytes() == before
+    assert result["accepted"] and result["scene"] == "auditorium"
 
 
 def test_the_clue_list_and_the_auditorium_button_follow_the_progress():
     """The snapshot carries the phone's to-do list, and locks the auditorium button until it is complete."""
     start = call()
-    # Changed by specs/night-and-clues.md ("Reviewed tests that change"): the clues are in the order they
-    # are done, Leonor before computer 12. Was: usb_stick, original_photo, files_viewed, leonor.
-    assert [c["id"] for c in start["clues"]] == ["usb_stick", "original_photo", "leonor", "files_viewed"]
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is not a clue and the button is never locked.
+    assert [c["id"] for c in start["clues"]] == ["usb_stick", "original_photo", "files_viewed"]
     assert not any(c["done"] for c in start["clues"])
     assert [c["room"] for c in start["clues"]] == [STORIES["pt"]["scenes"][r]["title"]
-                                                    for r in ["study_room", "print_shop", "library", "computer_lab"]]
+                                                    for r in ["study_room", "print_shop", "computer_lab"]]
     button = next(a for a in start["actions"] if a["id"] == "go_auditorium")
-    assert button["allowed"] is False and button["blocked_text"].startswith(TEXT["pt"]["auditorium_note"])
+    assert button["allowed"] is True
 
     for action in HELP[:10]:   # up to save_backup (specs/computer-lab-backup.md)
         done = call("play", action=action)
@@ -199,20 +183,19 @@ def test_the_clue_list_and_the_auditorium_button_follow_the_progress():
     assert next(a for a in study["actions"] if a["id"] == "go_auditorium")["allowed"] is True
 
 
-def test_leonor_counts_whether_you_ask_for_help_or_accuse():
-    """The clue is the conversation: both choices complete it (the choice only changes the ending)."""
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is not a clue of the phone.
+def test_leonor_is_not_a_clue():
     call()
-    for choice, path in [("help", HELP[:6]), ("accused", ["accuse" if a == "ask_for_help" else a for a in HELP[:6]])]:
-        call("restart", confirmed=True)
-        for action in path:
-            result = call("play", action=action)
-        assert next(c for c in result["clues"] if c["id"] == "leonor")["done"], choice
+    for action in HELP[:6]:
+        result = call("play", action=action)
+    assert "leonor" not in [c["id"] for c in result["clues"]]
 
 
 def test_phone_texts_exist_in_both_languages():
     """Every label of the phone, the map and the panel button exists in English and in Portuguese."""
     assert set(TEXT["pt"]) == set(TEXT["en"])
-    assert set(TEXT["pt"]["clues"]) == set(TEXT["en"]["clues"]) == {"usb_stick", "original_photo", "files_viewed", "leonor"}
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is not a clue, so she has no label.
+    assert set(TEXT["pt"]["clues"]) == set(TEXT["en"]["clues"]) == {"usb_stick", "original_photo", "files_viewed"}
     for language in TEXT:
         assert all(isinstance(v, (str, dict, list)) and v for v in TEXT[language].values())
 
@@ -249,7 +232,6 @@ def test_a_new_game_is_marked_fresh_until_something_is_saved():
     """The 3D scene starts the character outside only while the game is untouched."""
     assert call()["fresh"] is True
     assert call("enter", room="study_room")["fresh"] is True              # walking into the hub changes nothing
-    assert call("enter", room="auditorium")["fresh"] is True              # a refused door changes nothing
     assert call("play", action="go_library")["fresh"] is False            # any accepted move ends it
     assert call(language="en")["fresh"] is False                          # and a resumed game is not fresh
     assert call("restart", confirmed=True)["fresh"] is True               # a restart makes it fresh again

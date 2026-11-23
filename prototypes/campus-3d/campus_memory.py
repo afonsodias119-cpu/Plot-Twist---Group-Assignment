@@ -10,7 +10,7 @@ night (the verdict, a direct present_evidence, or 23:00), and the note `run` of 
 """
 
 import db
-from campus_case import NIGHT_TEXT, TRUE_ENDING
+from campus_case import NIGHT_TEXT
 from campus_text import TEXT
 from story import STORIES
 
@@ -50,11 +50,6 @@ def seen(player):
     return seen_in(db.load_runs(player))
 
 
-def seen_all(player):
-    """True when this name has seen every story ending: the gate of the true ending is open."""
-    return len(seen(player)) == len(STORY_ENDINGS)
-
-
 def record(player, night, ending):
     """Write tonight's row in `runs` once, with the ending that was shown (point 2).
 
@@ -68,29 +63,23 @@ def record(player, night, ending):
 
 
 def memory_view(player, night):
-    """The snapshot's `memory` (point 3): {"night", "seen", "open", "over"}."""
-    runs = db.load_runs(player)   # read once: the four fields come from the same rows
-    found = seen_in(runs)
-    return {"night": number_of(runs, night), "seen": found,
-            "open": len(found) == len(STORY_ENDINGS), "over": TRUE_ENDING in runs}
+    """The snapshot's `memory` (point 3): {"night", "seen"}. There is no true ending any more
+    (specs/three-proofs.md), so no gate and nothing "over"."""
+    runs = db.load_runs(player)   # read once: both fields come from the same rows
+    return {"night": number_of(runs, night), "seen": seen_in(runs)}
 
 
 def whispers(state, memory, language):
     """The snapshot's `whispers`: the unknown number's messages as this night starts, as {"id", "text"}.
 
-    None on night 1, after an ending, and once the true ending was recorded (the number is quiet).
-    Nights 2, 3 and 4 have their own line, night 5 and every later night share one; once the four
-    story endings were seen, the dare takes the place of the line of the night (point 4).
+    None on night 1 and after an ending. Nights 2, 3 and 4 have their own line, night 5 and every
+    later night share one (point 4).
     """
     number = memory["night"]
-    if number == 1 or state["ending"] != "none" or memory["over"]:
+    if number == 1 or state["ending"] != "none":
         return []
-    texts = NIGHT_TEXT[language]
-    if memory["open"]:
-        text = texts["dare"]
-    else:
-        lines = texts["whispers"]   # nights 2, 3, 4, then 5 and later
-        text = lines[min(number - 2, len(lines) - 1)]
+    lines = NIGHT_TEXT[language]["whispers"]   # nights 2, 3, 4, then 5 and later
+    text = lines[min(number - 2, len(lines) - 1)]
     return [{"id": f"night-{number}", "text": text}]
 
 
@@ -100,13 +89,3 @@ def round_warning(language, number):
     if number >= ROUND_WHISPER_NIGHT:
         return NIGHT_TEXT[language]["round"]
     return TEXT[language]["schedule"]["round"]
-
-
-def true_ending(language):
-    """The true ending as the snapshot carries it (point 8), sent only on the night that earned it.
-
-    It has no professor's line: `verdict` is empty, as for an ending without a cap.
-    """
-    ending = NIGHT_TEXT[language]["ending"]
-    return {"id": TRUE_ENDING, "title": ending["title"], "text": ending["text"], "stamp": ending["stamp"],
-            "emoji": ending["emoji"], "voices": list(ending["voices"]), "verdict": ""}

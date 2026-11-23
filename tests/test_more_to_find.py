@@ -143,7 +143,7 @@ def to_the_auditorium(player=PLAYER, language="en"):
 
 
 def ended(player=PLAYER, language="en"):
-    """A game that has ended: every clue, then the evidence presented directly (impostor)."""
+    """A game that has ended: every clue, then the evidence presented directly (a story ending; specs/three-proofs.md)."""
     to_the_auditorium(player, language)
     result = do("present_evidence", player, language)
     assert result["ending"]

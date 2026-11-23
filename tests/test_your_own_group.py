@@ -45,7 +45,8 @@ STORY_GROUP = ["Leonor", "Rita", "Tomás"]
 FRIENDS = ["Ana", "Bea", "João"]
 # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the chat, its messages and the cases of
 # specs/culprit-of-the-night.md are gone; three story endings, and the culprit is always Duarte.
-ENDINGS = ["full_case", "impostor", "stolen_credits"]
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): two story endings, chosen by the proofs, and no
+# true ending, so no night starts with every ending seen and the list ENDINGS is gone.
 STORY_NAME = re.compile(r"\b(Leonor|Rita|Tomás)\b")
 # Part D of design-notes/texts-ideas.md, word for word.
 GROUP_TEXTS = {
@@ -161,31 +162,38 @@ def enter(room):
     return {"operation": "enter", "room": room}
 
 
-def investigation(leonor="ask_for_help"):
-    """Every clue of the night, with a word with each teammate on the way, and the backup saved."""
-    return [speak("rita", "start"), play("open_drawer"), play("go_print_shop"), play("request_copy"),
-            play("go_study_room"), play("go_library"), speak("leonor", "start"), play(leonor),
-            play("go_study_room"), play("go_computer_lab"), speak("tomas", "start"), play("view_files"),
-            play("save_backup")]
+def investigation(backup=True):
+    """Every clue of the night, with a word with each teammate on the way, and (unless `backup` is
+    False) the backup saved."""
+    steps = [speak("rita", "start"), play("open_drawer"), play("go_print_shop"), play("request_copy"),
+             play("go_study_room"), play("go_library"), speak("leonor", "start"), play("ask_for_help"),
+             play("go_study_room"), play("go_computer_lab"), speak("tomas", "start"), play("view_files")]
+    return steps + [play("save_backup"), FOOTAGE] if backup else steps
 
 
-def impostor_night():
-    """Leonor accused: the story's impostor, with every claim answered (specs/computer-lab-backup.md)."""
-    return investigation("accuse") + [enter("auditorium"), answer("start"), answer("files"),
-                                      answer("original_photo"), answer("backup")]
+# Changed by specs/camera-proof.md ("Reviewed tests that change"): the picture of the recordings kept as
+# the fourth proof, in every investigation that saves the backup.
+FOOTAGE = {"operation": "footage", "camera": "computer_lab", "minute": 23 * 60 + 47}
+
+
+def no_backup_night():
+    """The backup was never saved: Duarte's third claim has no proof, so Stolen credit.
+    Changed by specs/three-proofs.md ("Reviewed tests that change"): it replaces the night where Leonor was accused."""
+    return investigation(backup=False) + [enter("auditorium"), answer("start"), answer("files"),
+                                          answer("original_photo"), answer("concede"), answer("concede")]
 
 
 def stolen_night():
-    """Three doubts after asking Leonor for help: stolen_credits, with the verdict that names her."""
+    """Three doubts after asking Leonor for help: stolen_credits."""
     return investigation() + [enter("auditorium"), answer("start"), answer("concede"),
-                              answer("concede"), answer("concede")]
+                              answer("concede"), answer("concede"), answer("concede")]
 
 
 def perfect_night():
     """Both cracks and the three right answers (specs/earlier-nights.md, point 8)."""
     return investigation() + [show("files", "tomas", "slides"), enter("study_room"),
                               show("original_photo", "rita", "five"), enter("auditorium"), answer("start"),
-                              answer("files"), answer("original_photo"), answer("backup")]
+                              answer("files"), answer("original_photo"), answer("backup"), answer("footage")]
 
 
 def twin(monkeypatch, tmp_path, label, variant, language, steps, names=FRIENDS, runs=()):
@@ -257,8 +265,8 @@ def test_no_names_keeps_the_story(monkeypatch, tmp_path):
             monkeypatch.setattr(db, "DB_PATH", tmp_path / f"{way} {language}.db")   # the same name, in its own file
             first = call("open", language) if way == "open" else begin(NO_NAMES, language)
             replies[way] = [first] + [campus.command(dict(step, player=PLAYER, language=language))
-                                      for step in impostor_night()]
-        assert replies["begin"][-1]["ending"]["id"] == "impostor", language
+                                      for step in no_backup_night()]
+        assert replies["begin"][-1]["ending"]["id"] == "stolen_credits", language   # specs/three-proofs.md
         for number, (classic, daily) in enumerate(zip(replies["open"], replies["begin"])):
             assert without(classic, "day") == without(daily, "day"), (language, number)
             if "scene" in classic:   # every snapshot, not the replies of `talk`
@@ -268,12 +276,12 @@ def test_no_names_keeps_the_story(monkeypatch, tmp_path):
 
 def test_the_names_reach_dialogue_chat_cards_hearing_and_endings(monkeypatch, tmp_path):
     for language in ("en", "pt"):
-        nights = {"impostor": twin(monkeypatch, tmp_path, "impostor", "outsider", language, impostor_night()),
+        # Changed by specs/three-proofs.md ("Reviewed tests that change"): the impostor night became the night
+        # without the backup, and the true night is gone with the true ending.
+        nights = {"no backup": twin(monkeypatch, tmp_path, "no backup", "outsider", language, no_backup_night()),
                   "stolen": twin(monkeypatch, tmp_path, "stolen", "outsider", language, stolen_night()),
-                  "perfect": twin(monkeypatch, tmp_path, "perfect", "outsider", language, perfect_night()),
-                  "true": twin(monkeypatch, tmp_path, "true", "outsider", language, perfect_night(),
-                               runs=ENDINGS)}
-        endings = {"impostor": "impostor", "stolen": "stolen_credits", "perfect": "full_case", "true": "night_over"}
+                  "perfect": twin(monkeypatch, tmp_path, "perfect", "outsider", language, perfect_night())}
+        endings = {"no backup": "stolen_credits", "stolen": "stolen_credits", "perfect": "full_case"}
         for night, (story, group) in nights.items():
             assert story[-1]["ending"]["id"] == group[-1]["ending"]["id"] == endings[night], (language, night)
             for number, (told, renamed) in enumerate(zip(story, group)):
@@ -282,29 +290,23 @@ def test_the_names_reach_dialogue_chat_cards_hearing_and_endings(monkeypatch, tm
                 assert not STORY_NAME.search(text_of(renamed)), (language, night, number)
                 if "scene" in renamed:
                     assert renamed["group"] == FRIENDS and told["group"] == STORY_GROUP, (language, night, number)
-        story, group = nights["impostor"]
+        story, group = nights["no backup"]
         # Rita's greeting, and Leonor's name in `people` (the library).
         greeting = group[1]
         assert greeting["npc"] == "rita" and greeting["name"] == "Bea" and "Bea" in greeting["text"], language
         library = next(reply for reply in group if reply.get("scene") == "library")
         assert person(library, "leonor")["name"] == "Ana", language
-        # The clue list (specs/computer-lab-backup.md: there is no chat and no flagged card any more).
+        # The clue list. Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is no longer a row of it.
         back = next(reply for reply in group if reply.get("clues"))
-        clue = next(row["label"] for row in back["clues"] if row["id"] == "leonor")
-        assert "Ana" in clue and "Leonor" not in clue, language
-        # Duarte's third claim says João.
-        third = group[-2]["hearing"]["said"][-1]
+        assert "leonor" not in [row["id"] for row in back["clues"]], language
+        # Duarte's third claim says João (specs/camera-proof.md: a fourth claim follows it, so it is the reply before).
+        third = group[-3]["hearing"]["said"][-1]
         assert third["who"] == "duarte" and "João" in third["text"] and "Tomás" not in third["text"], language
-        # The endings and a verdict line.
-        impostor = group[-1]["ending"]
-        assert "Ana" in impostor["text"] and not STORY_NAME.search(impostor["text"]), language
-        stolen = nights["stolen"][1][-1]["ending"]
-        assert stolen["id"] == "stolen_credits" and "Ana" in stolen["verdict"], language
-        assert not STORY_NAME.search(stolen["text"] + stolen["verdict"]), language
-        # The true ending, with its voices unchanged.
-        true_story, true_group = nights["true"][0][-1]["ending"], nights["true"][1][-1]["ending"]
-        assert all(name in true_group["text"] for name in FRIENDS), language
-        assert true_group["voices"] == true_story["voices"], language
+        # The endings and a verdict line. Changed by specs/three-proofs.md ("Reviewed tests that change"): the two endings and the
+        # verdict `missing` name nobody of the group, so they only must not show a story name.
+        for night in nights.values():
+            ending = night[1][-1]["ending"]
+            assert not STORY_NAME.search(ending["text"] + ending["verdict"]), language
 
 
 def test_names_never_chain(monkeypatch):
@@ -353,7 +355,7 @@ def test_a_clash_or_duarte_brings_back_the_whole_story_group():
 def test_ids_are_never_renamed(monkeypatch, tmp_path):
     # Early: the clerk and Leonor (undecided) have gone at minute 16, so `night.gone` has both ids.
     early = [speak("rita", "start"), play("open_drawer"), {"operation": "time", "minute": 16}]
-    nights = {"early": early, "impostor": impostor_night()}
+    nights = {"early": early, "no backup": no_backup_night()}   # specs/three-proofs.md
     for label, steps in nights.items():
         story, group = twin(monkeypatch, tmp_path, label, "outsider", "en", steps)
         assert any("Bea" in text_of(reply) for reply in group), label   # the group is in use

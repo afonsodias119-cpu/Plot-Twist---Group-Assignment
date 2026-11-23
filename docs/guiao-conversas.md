@@ -8,7 +8,7 @@ Tudo o que as pessoas dizem no jogo 3D, em português e em inglês, tal como est
 
 1. **Conversas** (o que cada pessoa diz quando falas com ela): `prototypes/campus-3d/campus_people.py`, dentro de `PEOPLE`. Há um bloco `"en"` (inglês) e um bloco `"pt"` (português). Ao lado de cada fala deste guião está o número da linha.
 2. **Respostas às ações** (o que acontece quando escolhes ▶ abrir a gaveta, pedir a cópia, etc.): `story.py`, em `result_text` (quando resulta) e `blocked_text` (quando ainda não podes).
-3. **Provas, confrontos e audiência** (o que as pessoas respondem quando lhes mostras uma prova, e as três afirmações do Duarte): `prototypes/campus-3d/campus_case.py`. Só o servidor lê este ficheiro: nada do que lá está pode ir para `campus_text.py`.
+3. **Provas, confrontos e audiência** (o que as pessoas respondem quando lhes mostras uma prova, e as quatro afirmações do Duarte): `prototypes/campus-3d/campus_case.py`. Só o servidor lê este ficheiro: nada do que lá está pode ir para `campus_text.py`.
 4. **O que vai para o balão:** só o que está **entre aspas** (`\"...\"` no código) aparece no balão e é lido pela voz. O resto aparece como narração, em itálico, fora dos balões. Exemplo: `Rita looks up from her laptop. \"You don't look so good.\"`: "Rita looks up from her laptop." é narração, e "You don't look so good." vai para o balão.
 5. **Regras para não estragar nada** (os testes verificam-nas):
    - Muda só o texto entre as aspas de `"text"`, `"label"` e `"note"`. Não mudes os identificadores (`"start"`, `"photo"`, `"next": ...`, `"if": ...`, `"trust"`).
@@ -17,39 +17,40 @@ Tudo o que as pessoas dizem no jogo 3D, em português e em inglês, tal como est
    - As falas nunca podem dizer quais são as mensagens falsas ("message 2", "mensagem 4"…).
 6. Depois de mudar, corre `uv run pytest`. Se ficar verde, recarrega o jogo (no endereço que o Streamlit mostra ao arrancar; por omissão http://localhost:8501).
 
-**Legenda:** ⏳ *custa N minutos* é uma resposta agressiva: tira esses minutos à contagem decrescente (para mudar, altera `"cost": 5` no código) e fica lembrada até ao fim da noite (ver "Quando foste rude", mais abaixo). 📁 *prova* é uma carta que podes mostrar numa conversa ("Mostrar uma prova"), exceto na reprografia e na sala de informática (specs/two-answers.md); qualquer prova errada custa 2 minutos (com o Duarte, 1). 📁 *cede com a resposta certa*: na fala em que a pessoa diz uma coisa falsa, a resposta ✓ lembra-lhe uma prova e fá-la ceder. ✓ é a resposta certa e ✗ a errada (o Tomás e a Rita têm sempre só estas duas). *Confiança* (0 a 3) é o humor da pessoa: não aparece no jogo (não há corações), o jogador percebe-o pelo que ela diz; com 0 a pessoa acaba a conversa. *Diário* é a nota que fica guardada no diário do telemóvel. "→ fim" acaba a conversa: no jogo 3D estas respostas não aparecem (usa-se o botão "Terminar conversa"), mas têm de existir no código, porque cada fala precisa de pelo menos uma resposta. Uma pergunta já feita na mesma conversa não volta a aparecer. 🕙 *até às 22:45* quer dizer que a pessoa se vai embora a essa hora do campus. ↺ *a partir da noite N* é uma resposta que só aparece a quem já acabou N−1 noites com esse nome (chave `"night"` no código). Só é oferecida junto com a primeira fala da conversa.
+**Legenda:** ⏳ *custa N minutos* é uma resposta agressiva: tira esses minutos à contagem decrescente (para mudar, altera `"cost": 5` no código) e fica lembrada até ao fim da noite (ver "Quando foste rude", mais abaixo). 📁 *prova* é uma carta que podes mostrar numa conversa ("Mostrar uma prova"), exceto com a funcionária, o Tomás, o computador 12 e a Rita, e com o segurança só depois de ele pedir uma prova ("Explicar a situação") (specs/two-answers.md, specs/evidence-after-monitors.md); qualquer prova errada custa 2 minutos (com o Duarte, 1). 📁 *cede com a resposta certa*: na fala em que a pessoa diz uma coisa falsa, a resposta ✓ lembra-lhe uma prova e fá-la ceder. ✓ é a resposta certa e ✗ a errada (o Tomás e a Rita têm sempre só estas duas). *Confiança* (0 a 3) é o humor da pessoa: não aparece no jogo (não há corações), o jogador percebe-o pelo que ela diz; com 0 a pessoa acaba a conversa. *Diário* é a nota que fica guardada no diário do telemóvel. "→ fim" acaba a conversa: no jogo 3D estas respostas não aparecem (usa-se o botão "Terminar conversa"), mas têm de existir no código, porque cada fala precisa de pelo menos uma resposta. Uma pergunta já feita na mesma conversa não volta a aparecer. 🕙 *até às 22:45* quer dizer que a pessoa se vai embora a essa hora do campus. ↺ *a partir da noite N* é uma resposta que só aparece a quem já acabou N−1 noites com esse nome (chave `"night"` no código). Só é oferecida junto com a primeira fala da conversa.
 
 ## Rita
 Onde está: **Sala de estudo** (`study_room`).
 
 ### `start`
-- 🇵🇹 A Rita levanta os olhos do portátil. "Estás com cara de quem não dormiu nada. Conseguiste descansar alguma coisa?"  *(linha 269)*
+- 🇵🇹 A Rita levanta os olhos do portátil. "Estás com cara de quem não dormiu nada. Conseguiste descansar alguma coisa?"  *(linha 275)*
 - 🇬🇧 Rita looks up from her laptop. "You don't look so good. Did you sleep at all?"  *(linha 76)*
 - Respostas:
-  - ✓ "Perguntar onde está a pen" / "Ask where the USB stick is" → `pen`
-  - ✗ "Dizer-lhe que foi ela que perdeu a pen" / "Tell her she is the one who lost the USB stick" → `upset`
+  - ✓ "Perguntar onde está a pen" / "Ask where the USB stick is" → `pen` *(só aparece se não tens `usb_stick`)*
+  - ✗ "Dizer-lhe que foi ela que perdeu a pen" / "Tell her she is the one who lost the USB stick" → `upset` *(só aparece se não tens `usb_stick`)*
+  - ✓ "Perguntar pela fotografia do grupo" / "Ask about the group photo" → `photo` *(só aparece se tens `usb_stick`)*
+  - ✗ "Dizer-lhe que a pen estava debaixo da pizza dela" / "Tell her the USB stick was under her own pizza" → `upset` *(só aparece se tens `usb_stick`)*
   - ✓ ↺ "Dizer-lhe que te lembras de ela contar as cabeças" / "Tell her you remember her counting heads" → `five` *(a partir da noite 3)*
   - "Até já." / "Goodbye." → fim
 
 ### `pen`
-- 🇵🇹 "A pen? Devia estar aqui, mas não a encontro." Olha para a mesa. "Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado."  *(linha 276)*
-- 🇬🇧 "The USB stick? It should be here somewhere, but I can't find it." She looks at the table. "We stayed here late last night eating pizza, but with this mess, it could be anywhere."  *(linha 83)*
-- 📓 Diário: Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite. / Rita cannot find the USB stick. The group ate pizza here last night.
+- 🇵🇹 "A pen? Devia estar aqui, mas não a encontro." Olha para a mesa. "Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado da mesa."  *(linha 285)*
+- 🇬🇧 "The USB stick? It should be here somewhere, but I can't find it." She looks at the table. "We stayed here late last night eating pizza, but with this mess, it could be anywhere on the table."  *(linha 86)*
+- 📓 Diário: Rita: não encontra a pen. Pode estar em qualquer lado da mesa da sala de estudo. O grupo comeu pizza aqui ontem à noite. / Rita cannot find the USB stick. It could be anywhere on the study room table. The group ate pizza here last night.
 - Respostas:
-  - ✓ "Perguntar pela fotografia do grupo" / "Ask about the group photo" → `photo`
-  - ✗ "Dizer-lhe que procure ela, que a confusão é dela" / "Tell her to look for it herself, it is her mess" → `upset`
+  - "Até já." / "Goodbye." → fim
 
 ### `photo`
-- 🇵🇹 "A fotografia? Tirámo-la depois da última reunião, nós os quatro."  *(linha 280)*
-- 🇬🇧 "The photo? We took it after the last meeting, the four of us."  *(linha 87)*
+- 🇵🇹 "A fotografia? Tirámo-la depois da última reunião, nós os quatro."  *(linha 289)*
+- 🇬🇧 "The photo? We took it after the last meeting, the four of us."  *(linha 90)*
 - 📓 Diário: A Rita lembra-se de quatro pessoas na fotografia do grupo. / Rita remembers four people in the group photo.
 - Respostas:
   - ✓ "Perguntar porque é que a fotografia da pasta mostra cinco" / "Ask why the photo in the folder shows five" → `five`
   - ✗ "Dizer-lhe que a memória dela não conta" / "Tell her that her memory does not count" → `upset`
 
 ### `five` — 📁 cede com a resposta certa
-- 🇵🇹 "Então contei mal." A Rita vira o portátil para ti: cinco pessoas. "Uma fotografia não muda. A minha memória muda. Ele devia estar mesmo ali."  *(linha 287)*
-- 🇬🇧 "Then I counted wrong." Rita turns the laptop towards you: five people. "A photo cannot change. My memory can. He must have been standing right there."  *(linha 94)*
+- 🇵🇹 "Então contei mal." A Rita vira o portátil para ti: cinco pessoas. "Uma fotografia não muda. A minha memória muda. Ele devia estar mesmo ali."  *(linha 296)*
+- 🇬🇧 "Then I counted wrong." Rita turns the laptop towards you: five people. "A photo cannot change. My memory can. He must have been standing right there."  *(linha 97)*
 - Respostas:
   - ✓ "Lembrar-lhe a fotografia original da reprografia: quatro pessoas" / "Remind her of the print shop's original photo: four people" → cede (mostra `original_photo`) *(só aparece se tens `original_photo`)*
   - ✓ "Lembrar-lhe que o histórico dos ficheiros tem quatro autores em todas as cópias" / "Remind her the file history has four authors in every copy" → cede (mostra `files`) *(só aparece se não tens `original_photo` e `files_viewed` = `True`)*
@@ -57,22 +58,22 @@ Onde está: **Sala de estudo** (`study_room`).
   - ✗ "Concordar que ela deve ter contado mal" / "Agree that she must have counted wrong" → `counted`
 
 ### `counted`
-- 🇵🇹 A Rita acena devagar. "Pois. Uma fotografia não mente." Vira o portátil outra vez.  *(linha 293)*
-- 🇬🇧 Rita nods slowly. "Yes. A photo does not lie." She turns the laptop back.  *(linha 100)*
+- 🇵🇹 A Rita acena devagar. "Pois. Uma fotografia não mente." Vira o portátil outra vez.  *(linha 302)*
+- 🇬🇧 Rita nods slowly. "Yes. A photo does not lie." She turns the laptop back.  *(linha 103)*
 - Respostas:
   - ✓ "Perguntar o que ela se lembra do Duarte" / "Ask what she remembers about Duarte" → `duarte`
   - ✗ "Dizer-lhe que então o Duarte fica no grupo" / "Tell her that then Duarte stays in the group" → `upset`
 
 ### `duarte`
-- 🇵🇹 "O Duarte... sinceramente, não o consigo imaginar. Sempre que tento, só vejo o nome na capa."  *(linha 297)*
-- 🇬🇧 "Duarte... honestly, I cannot picture him. Every time I try, I only see the name on the cover."  *(linha 104)*
+- 🇵🇹 "O Duarte... sinceramente, não o consigo imaginar. Sempre que tento, só vejo o nome na capa."  *(linha 306)*
+- 🇬🇧 "Duarte... honestly, I cannot picture him. Every time I try, I only see the name on the cover."  *(linha 107)*
 - Respostas:
   - ✓ "Dizer que achas que o nome foi acrescentado ontem à noite" / "Say you think the name was added last night" → `warned`
   - ✗ "Dizer que então ele faz mesmo parte do grupo" / "Say that then he must really be part of the group" → `upset`
 
 ### `warned`
-- 🇵🇹 A Rita fica calada. "Se for verdade, alguém quis que duvidássemos de nós próprios."  *(linha 301)*
-- 🇬🇧 Rita goes quiet. "If that is true, somebody wanted us to doubt ourselves."  *(linha 108)*
+- 🇵🇹 A Rita fica calada. "Se for verdade, alguém quis que duvidássemos de nós próprios."  *(linha 310)*
+- 🇬🇧 Rita goes quiet. "If that is true, somebody wanted us to doubt ourselves."  *(linha 111)*
 - 📓 Diário: A Rita também desconfia do quinto nome. / Rita doubts the fifth name too.
 - Respostas:
   - ✓ "Perguntar pelas mensagens do chat" / "Ask about the chat messages" → `chat` *(só aparece se `files_viewed` = `True`)*
@@ -80,35 +81,37 @@ Onde está: **Sala de estudo** (`study_room`).
   - ✗ "Dizer-lhe que é tudo imaginação dela" / "Tell her it is all in her head" → `upset`
 
 ### `promise`
-- 🇵🇹 "Vai. Eu fico aqui." A Rita volta a abrir o portátil.  *(linha 306)*
-- 🇬🇧 "Go. I will stay here." Rita opens her laptop again.  *(linha 113)*
+- 🇵🇹 "Vai. Eu fico aqui." A Rita volta a abrir o portátil.  *(linha 315)*
+- 🇬🇧 "Go. I will stay here." Rita opens her laptop again.  *(linha 116)*
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### `chat`
-- 🇵🇹 "Repara na hora a que as mensagens chegam. Algumas dizem há três semanas, mas no meu telemóvel aparecem como novas, de ontem à noite. Mensagens antigas não funcionam assim."  *(linha 309)*
-- 🇬🇧 "Look at when the messages arrive. Some say three weeks ago, but my phone shows them as new, last night. That is not how old messages work."  *(linha 116)*
+- 🇵🇹 "Repara na hora a que as mensagens chegam. Algumas dizem há três semanas, mas no meu telemóvel aparecem como novas, de ontem à noite. Mensagens antigas não funcionam assim."  *(linha 318)*
+- 🇬🇧 "Look at when the messages arrive. Some say three weeks ago, but my phone shows them as new, last night. That is not how old messages work."  *(linha 119)*
 - 📓 Diário: Rita: uma mensagem antiga não chega como nova. As mensagens sobre o Duarte chegaram ontem à noite. / Rita: an old message does not arrive as new. The messages about Duarte arrived last night.
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### `upset`
-- 🇵🇹 A Rita fecha o portátil devagar. "Não precisas de falar assim comigo. Estamos todos cansados."  *(linha 312)*
-- 🇬🇧 Rita closes her laptop slowly. "You do not have to talk to me like that. We are all tired."  *(linha 119)*
+- 🇵🇹 A Rita fecha o portátil devagar. "Não precisas de falar assim comigo. Estamos todos cansados."  *(linha 321)*
+- 🇬🇧 Rita closes her laptop slowly. "You do not have to talk to me like that. We are all tired."  *(linha 122)*
 - Respostas:
   - ✓ "Pedir desculpa" / "Apologise" → `sorry`
   - ✗ "Dizer que só estás a ser sincero" / "Say you are only being honest" → `closed`
 
 ### `sorry`
-- 🇵🇹 "Está bem. Pergunta lá."  *(linha 316)*
-- 🇬🇧 "Fine. Go on, ask."  *(linha 123)*
+- 🇵🇹 "Está bem. Pergunta lá."  *(linha 325)*
+- 🇬🇧 "Fine. Go on, ask."  *(linha 126)*
 - Respostas:
-  - ✓ "Perguntar onde está a pen" / "Ask where the USB stick is" → `pen`
-  - ✗ "Dizer-lhe que foi ela que perdeu a pen" / "Tell her she is the one who lost the USB stick" → `upset`
+  - ✓ "Perguntar onde está a pen" / "Ask where the USB stick is" → `pen` *(só aparece se não tens `usb_stick`)*
+  - ✗ "Dizer-lhe que foi ela que perdeu a pen" / "Tell her she is the one who lost the USB stick" → `upset` *(só aparece se não tens `usb_stick`)*
+  - ✓ "Perguntar pela fotografia do grupo" / "Ask about the group photo" → `photo` *(só aparece se tens `usb_stick`)*
+  - ✗ "Dizer-lhe que a pen estava debaixo da pizza dela" / "Tell her the USB stick was under her own pizza" → `upset` *(só aparece se tens `usb_stick`)*
 
 ### `closed`
-- 🇵🇹 A Rita põe os auscultadores. Já não te está a ouvir.  *(linha 320)*
-- 🇬🇧 Rita puts her headphones on. She is not listening any more.  *(linha 127)*
+- 🇵🇹 A Rita põe os auscultadores. Já não te está a ouvir.  *(linha 332)*
+- 🇬🇧 Rita puts her headphones on. She is not listening any more.  *(linha 133)*
 - Respostas:
   - "Sair." / "Leave." → fim
 ### Ações feitas nesta conversa (em `story.py`)
@@ -121,23 +124,23 @@ Onde está: **Reprografia** (`print_shop`).
 🕙 Fica a noite toda: a reprografia já não fecha (specs/night-and-clues.md).
 
 ### `start`
-- 🇵🇹 A funcionária ajeita os óculos. "Fechamos daqui a dez minutos, do que precisas?"  *(linha 325)*
-- 🇬🇧 The clerk adjusts her glasses. "Hello! We close in ten minutes. What do you need?"  *(linha 132)*
+- 🇵🇹 A funcionária ajeita os óculos. "Fechamos daqui a dez minutos, do que precisas?"  *(linha 337)*
+- 🇬🇧 The clerk adjusts her glasses. "Hello! We close in ten minutes. What do you need?"  *(linha 138)*
 - Respostas:
   - "Perguntar pelo pedido da fotografia da capa" / "Ask about the cover photo order" → `order`
   - ↺ "Dizer a data antes dela" / "Say the date before she does" → `again` *(a partir da noite 2)*
   - "Até já." / "Goodbye." → fim
 
 ### `order`
-- 🇵🇹 "A fotografia da capa? Tiraram-na e mandaram-na imprimir aqui no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado."  *(linha 330)*
-- 🇬🇧 "The cover photo? You took it and had it printed here the same day. I remember there were four people in it, and I think the original order file is still saved."  *(linha 137)*
+- 🇵🇹 "A fotografia da capa? Tiraram-na e mandaram-na imprimir aqui no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado."  *(linha 342)*
+- 🇬🇧 "The cover photo? You took it and had it printed here the same day. I remember there were four people in it, and I think the original order file is still saved."  *(linha 143)*
 - 📓 Diário: A fotografia da capa foi impressa na reprografia no dia em que foi tirada. A reprografia ainda tem o ficheiro original do pedido. / The cover photo was printed at the print shop the day it was taken. The print shop still has the original order file.
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### `again` — ↺ a partir da noite 2
-- 🇵🇹 A funcionária fica com a mão parada na impressora. "Dezassete de outubro. Sim. Como é que tu...?" Olha para o relógio. "Há muito tempo que estou a fechar daqui a dez minutos." Franze a testa para o balcão. "Estranho. Não me lembro de te ver sair."  *(linha 333)*
-- 🇬🇧 The clerk stops with her hand on the printer. "The seventeenth of October. Yes. How do you...?" She looks at the clock. "I have been closing in ten minutes for a very long time." She frowns at the counter. "Odd. I do not remember you leaving."  *(linha 141)*
+- 🇵🇹 A funcionária fica com a mão parada na impressora. "Dezassete de outubro. Sim. Como é que tu...?" Olha para o relógio. "Há muito tempo que estou a fechar daqui a dez minutos." Franze a testa para o balcão. "Estranho. Não me lembro de te ver sair."  *(linha 345)*
+- 🇬🇧 The clerk stops with her hand on the printer. "The seventeenth of October. Yes. How do you...?" She looks at the clock. "I have been closing in ten minutes for a very long time." She frowns at the counter. "Odd. I do not remember you leaving."  *(linha 147)*
 - 📓 Diário: A funcionária confirmou a data antes de acabares de a dizer: a fotografia da capa foi impressa a 17 de outubro. / The clerk agreed with the date before you finished saying it: the cover photo was printed on 17 October.
 - Respostas:
   - "Até já." / "Goodbye." → fim
@@ -152,8 +155,8 @@ Onde está: **Biblioteca** (`library`).
 🕙 Só até às 22:45 enquanto estiver indecisa; se já estiver a ajudar, fica. Depois: "A cadeira da Leonor está vazia. O livro ficou aberto na mesma página." / "Leonor's chair is empty. Her book is still open at the same page."
 
 ### `start` — confiança 2
-- 🇵🇹 A Leonor fecha o livro devagar. "Vens por causa do Duarte. Eu sei."  *(linha 338)*
-- 🇬🇧 Leonor closes her book slowly. "You are here about Duarte. I know."  *(linha 146)*
+- 🇵🇹 A Leonor fecha o livro devagar. "Vens por causa do Duarte. Eu sei."  *(linha 350)*
+- 🇬🇧 Leonor closes her book slowly. "You are here about Duarte. I know."  *(linha 152)*
 - Respostas:
   - "Perguntar se tem a certeza de que ele estava no grupo" / "Ask if she is sure he was in the group" → `sure`
   - "Dizer-lhe que tens dúvidas" / "Tell her you have doubts" → `soft`
@@ -163,47 +166,47 @@ Onde está: **Biblioteca** (`library`).
   - "Até já." / "Goodbye." → fim
 
 ### `sure` — confiança 2
-- 🇵🇹 "Está em todas as mensagens há semanas. Tenho-as aqui." Toca no telemóvel.  *(linha 346)*
-- 🇬🇧 "He has been in every message for weeks. I have them right here." She taps her phone.  *(linha 155)*
+- 🇵🇹 "Está em todas as mensagens há semanas. Tenho-as aqui." Toca no telemóvel.  *(linha 358)*
+- 🇬🇧 "He has been in every message for weeks. I have them right here." She taps her phone.  *(linha 161)*
 - Respostas:
   - "Pedir para ver as mensagens" / "Ask to see the messages" → `messages`
 
 ### `messages` — confiança 3
-- 🇵🇹 "Olha. Todas de um número que eu não conhecia. Algumas têm data de há semanas, mas chegaram ontem à noite."  *(linha 351)*
-- 🇬🇧 "Look. All from a number I did not know. Some are dated weeks ago, but they arrived last night."  *(linha 161)*
+- 🇵🇹 "Olha. Todas de um número que eu não conhecia. Algumas têm data de há semanas, mas chegaram ontem à noite."  *(linha 363)*
+- 🇬🇧 "Look. All from a number I did not know. Some are dated weeks ago, but they arrived last night."  *(linha 167)*
 - 📓 Diário: A Leonor recebeu as mensagens do Duarte ontem à noite, de um número desconhecido. / Leonor received Duarte's messages last night, from an unknown number.
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### `mine` — confiança 3
-- 🇵🇹 "A que pede para reservar a sala de estudo. Escrevi-a nesta mesa, há três semanas." A Leonor percorre o ecrã com um dedo. "As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite."  *(linha 348)*
-- 🇬🇧 "The one asking to book the study room. I wrote that at this table, three weeks ago." Leonor scrolls with one finger. "The ones from the number I did not know all arrived within minutes of each other, last night."  *(linha 158)*
+- 🇵🇹 "A que pede para reservar a sala de estudo. Escrevi-a nesta mesa, há três semanas." A Leonor percorre o ecrã com um dedo. "As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite."  *(linha 360)*
+- 🇬🇧 "The one asking to book the study room. I wrote that at this table, three weeks ago." Leonor scrolls with one finger. "The ones from the number I did not know all arrived within minutes of each other, last night."  *(linha 164)*
 - 📓 Diário: A Leonor escreveu ela própria a mensagem do chat sobre reservar a sala de estudo. / Leonor wrote the chat message about booking the study room herself.
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### `soft` — confiança 3
-- 🇵🇹 "Eu queria acreditar em ti." Olha para o telemóvel. "Talvez devesse ver outra vez."  *(linha 354)*
-- 🇬🇧 "I wanted to believe you." She looks at her phone. "Maybe I should look again."  *(linha 164)*
+- 🇵🇹 "Eu queria acreditar em ti." Olha para o telemóvel. "Talvez devesse ver outra vez."  *(linha 366)*
+- 🇬🇧 "I wanted to believe you." She looks at her phone. "Maybe I should look again."  *(linha 170)*
 - Respostas:
   - "Pedir para ver as mensagens" / "Ask to see the messages" → `messages`
 
 ### `harsh` — confiança 1
-- 🇵🇹 "Desculpa?" A voz dela endurece.  *(linha 356)*
-- 🇬🇧 "Excuse me?" Her voice hardens.  *(linha 166)*
+- 🇵🇹 "Desculpa?" A voz dela endurece.  *(linha 368)*
+- 🇬🇧 "Excuse me?" Her voice hardens.  *(linha 172)*
 - Respostas:
   - "Pedir desculpa" / "Apologise" → `soft`
   - "Insistir" / "Insist" → `closed` ⏳ **custa 5 minutos**
 
 ### `closed` — confiança 0
-- 🇵🇹 A Leonor levanta-se. "Volta com provas, não com acusações."  *(linha 359)*
-- 🇬🇧 Leonor stands up. "Come back with proof, not accusations."  *(linha 169)*
+- 🇵🇹 A Leonor levanta-se. "Volta com provas, não com acusações."  *(linha 371)*
+- 🇬🇧 Leonor stands up. "Come back with proof, not accusations."  *(linha 175)*
 - Respostas:
   - "Sair." / "Leave." → fim
 
 ### `again` — confiança 3 — ↺ a partir da noite 3
-- 🇵🇹 A mão da Leonor fica em cima do livro. "Palavra por palavra? Ninguém sabe o que eu vou dizer." Fica a olhar para o teu cachecol. "Já fizemos isto antes?"  *(linha 360)*
-- 🇬🇧 Leonor's hand stays on the book. "Word for word? Nobody knows what I am going to say." She studies your scarf. "Have we done this before?"  *(linha 171)*
+- 🇵🇹 A mão da Leonor fica em cima do livro. "Palavra por palavra? Ninguém sabe o que eu vou dizer." Fica a olhar para o teu cachecol. "Já fizemos isto antes?"  *(linha 372)*
+- 🇬🇧 Leonor's hand stays on the book. "Word for word? Nobody knows what I am going to say." She studies your scarf. "Have we done this before?"  *(linha 177)*
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
@@ -213,18 +216,14 @@ Onde está: **Biblioteca** (`library`).
   - Se resultar 🇬🇧: Leonor compares the photo with the one in the report and turns pale. "I got all these messages last night, from a number I did not know. And some of them are dated three weeks ago." She promises to keep the original messages and to meet you in the auditorium.
   - Se ainda não puderes 🇵🇹: A Leonor encolhe os ombros. "O Duarte esteve sempre no grupo, tenho aqui as mensagens. Tens alguma prova do contrário?"
   - Se ainda não puderes 🇬🇧: Leonor shrugs. "Duarte has always been in the group, I have the messages right here. Do you have any proof otherwise?"
-- **▶ Mostrar a fotografia e acusá-la de ajudar o Duarte** / Show the photo and accuse her of helping Duarte (`accuse`)
-  - Se resultar 🇵🇹: "Achas que eu fazia isso ao grupo?" A Leonor levanta-se, ofendida. "Então não preciso destas mensagens para nada." Apaga a conversa à tua frente e sai.
-  - Se resultar 🇬🇧: "You think I would do that to the group?" Leonor stands up, offended. "Then you do not need these messages for anything." She deletes the conversation in front of you and leaves.
-  - Se ainda não puderes 🇵🇹: A Leonor encolhe os ombros. "O Duarte esteve sempre no grupo, tenho aqui as mensagens. Tens alguma prova do contrário?"
-  - Se ainda não puderes 🇬🇧: Leonor shrugs. "Duarte has always been in the group, I have the messages right here. Do you have any proof otherwise?"
+A Leonor já não pode ser acusada (specs/three-proofs.md): a única decisão é pedir-lhe ajuda.
 
 ## Tomás
 Onde está: **Sala de informática** (`computer_lab`).
 
 ### `start` — confiança 2
-- 🇵🇹 O Tomás está curvado sobre o computador 11, a evitar o teu olhar. "Ah. Olá. Já é tarde."  *(linha 364)*
-- 🇬🇧 Tomás is hunched over computer 11, avoiding your eyes. "Oh. Hi. It is late."  *(linha 175)*
+- 🇵🇹 O Tomás está curvado sobre o computador 11, a evitar o teu olhar. "Ah. Olá. Já é tarde."  *(linha 376)*
+- 🇬🇧 Tomás is hunched over computer 11, avoiding your eyes. "Oh. Hi. It is late."  *(linha 181)*
 - Respostas:
   - ✓ "Perguntar com calma o que está ali a fazer" / "Ask kindly what he is doing here" → `kind`
   - ✗ "Exigir saber porque mentiu sobre o Duarte" / "Demand to know why he lied about Duarte" → `hard` ⏳ **custa 5 minutos**
@@ -232,15 +231,15 @@ Onde está: **Sala de informática** (`computer_lab`).
   - "Até já." / "Goodbye." → fim
 
 ### `kind` — confiança 3
-- 🇵🇹 "Não conseguia dormir e vim acabar os slides. Ontem à noite, perto da meia-noite, vi alguém no computador 12."  *(linha 370)*
-- 🇬🇧 "I could not sleep, I just came here to finish the slides. And... I saw someone at computer 12 last night, near midnight."  *(linha 183)*
+- 🇵🇹 "Não conseguia dormir e vim acabar os slides. Ontem à noite, perto da meia-noite, vi alguém no computador 12."  *(linha 382)*
+- 🇬🇧 "I could not sleep, I just came here to finish the slides. And... I saw someone at computer 12 last night, near midnight."  *(linha 189)*
 - Respostas:
   - ✓ "Perguntar quem era" / "Ask who it was" → `who`
   - ✗ "Dizer-lhe que isso parece uma desculpa" / "Tell him that sounds like an excuse" → `hard`
 
 ### `password` — confiança 3
-- 🇵🇹 "A password do computador? É o dia e o mês em que tirámos a fotografia da capa. São só 4 números, mas nunca me lembro da data. Entre todos havemos de lá chegar."  *(linha 373)*
-- 🇬🇧 "The password of computer 12? It is the group's: the day and the month we took the cover photo. Four digits. I can never remember the date, but between all of us we can work it out."  *(linha 186)*
+- 🇵🇹 "A password do computador? É o dia e o mês em que tirámos a fotografia da capa. São só 4 números, mas nunca me lembro da data. Entre todos havemos de lá chegar."  *(linha 385)*
+- 🇬🇧 "The password of computer 12? It is the group's: the day and the month we took the cover photo. Four digits. I can never remember the date, but between all of us we can work it out."  *(linha 192)*
 - 📓 Diário: Tomás: a password do computador 12 é o dia e o mês em que foi tirada a fotografia da capa (4 algarismos). / Tomás: the password of computer 12 is the day and month the cover photo was taken (4 digits).
 - Respostas:
   - ✓ "Perguntar quem fez os slides" / "Ask who made the slides" → `slides` *(só aparece se `files_viewed` = `True`)*
@@ -248,66 +247,66 @@ Onde está: **Sala de informática** (`computer_lab`).
   - ✗ "Dizer-lhe que devia saber a data de cor" / "Tell him he should know the date by heart" → `hard`
 
 ### `who` — confiança 3
-- 🇵🇹 "Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar."  *(linha 379)*
-- 🇬🇧 "Only a hood. Like the one Duarte wears. But nobody ever saw him arrive."  *(linha 194)*
+- 🇵🇹 "Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar."  *(linha 391)*
+- 🇬🇧 "Only a hood. Like the one Duarte wears. But nobody ever saw him arrive."  *(linha 200)*
 - 📓 Diário: O Tomás viu alguém de capuz no computador 12 perto da meia-noite. / Tomás saw someone in a hood at computer 12 near midnight.
 - Respostas:
   - ✓ "Perguntar a password do computador 12" / "Ask for the password of computer 12" → `password`
   - ✗ "Perguntar se o do capuz era ele" / "Ask if the one in the hood was him" → `hard`
 
 ### `slides` — confiança 2 — 📁 cede com a resposta certa
-- 🇵🇹 O Tomás não tira os olhos do ecrã. "Os slides? Estou a acabá-los. Mas o chat diz que foram do Duarte, com o meu nome. Se calhar foram mesmo, e eu só arrumei."  *(linha 383)*
-- 🇬🇧 Tomás keeps his eyes on the screen. "The slides? I am finishing them. But the chat says Duarte did them, under my name. So maybe he did, and I only tidied up."  *(linha 201)*
+- 🇵🇹 O Tomás não tira os olhos do ecrã. "Os slides? Estou a acabá-los. Mas o chat diz que foram do Duarte, com o meu nome. Se calhar foram mesmo, e eu só arrumei."  *(linha 395)*
+- 🇬🇧 Tomás keeps his eyes on the screen. "The slides? I am finishing them. But the chat says Duarte did them, under my name. So maybe he did, and I only tidied up."  *(linha 207)*
 - 📓 Diário: O Tomás acha que os slides podem ter sido do Duarte, só porque uma mensagem do chat com o nome dele o diz. / Tomás thinks Duarte may have made the slides, only because a chat message under his own name says so.
 - Respostas:
   - ✓ "Lembrar-lhe que o histórico dos ficheiros tem o nome dele em todas as versões dos slides" / "Remind him the file history has his name on every version of the slides" → cede (mostra `files`) *(só aparece se `files_viewed` = `True`)*
   - ✗ "Dizer-lhe que então o crédito é do Duarte" / "Tell him that then the credit is Duarte's" → `convinced`
 
 ### `convinced` — confiança 2
-- 🇵🇹 O Tomás acena sem levantar os olhos. "Pois. Se calhar é mais justo. Ele fez mais do que eu penso."  *(linha 388)*
-- 🇬🇧 Tomás nods without looking up. "Yeah. Maybe that is fairer. He did more than I think."  *(linha 206)*
+- 🇵🇹 O Tomás acena sem levantar os olhos. "Pois. Se calhar é mais justo. Ele fez mais do que eu penso."  *(linha 400)*
+- 🇬🇧 Tomás nods without looking up. "Yeah. Maybe that is fairer. He did more than I think."  *(linha 212)*
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### `hard` — confiança 1
-- 🇵🇹 "Como? Eu não menti!" A voz dele treme.  *(linha 390)*
-- 🇬🇧 "Excuse me? I did not lie!" His voice shakes.  *(linha 208)*
+- 🇵🇹 "Como? Eu não menti!" A voz dele treme.  *(linha 402)*
+- 🇬🇧 "Excuse me? I did not lie!" His voice shakes.  *(linha 214)*
 - Respostas:
   - ✓ "Pedir desculpa" / "Apologise" → `calm`
   - ✗ "Pressionar mais" / "Push harder" → `closed` ⏳ **custa 5 minutos**
 
 ### `calm` — confiança 2
-- 🇵🇹 "Está bem. Foi uma noite longa. Pergunta com educação."  *(linha 393)*
-- 🇬🇧 "Fine. It has been a long night. Ask properly."  *(linha 211)*
+- 🇵🇹 "Está bem. Foi uma noite longa. Pergunta com educação."  *(linha 405)*
+- 🇬🇧 "Fine. It has been a long night. Ask properly."  *(linha 217)*
 - Respostas:
   - ✓ "Perguntar com calma o que está ali a fazer" / "Ask kindly what he is doing here" → `kind`
   - ✗ "Insistir que ele mentiu" / "Insist that he lied" → `closed`
 
 ### `photo` — confiança 2
-- 🇵🇹 O Tomás fica a olhar para a fotografia. "Quatro pessoas... nunca tinha reparado." Engole em seco.  *(linha 396)*
-- 🇬🇧 Tomás stares at the photo. "Four people... I never noticed." He swallows.  *(linha 214)*
+- 🇵🇹 O Tomás fica a olhar para a fotografia. "Quatro pessoas... nunca tinha reparado." Engole em seco.  *(linha 408)*
+- 🇬🇧 Tomás stares at the photo. "Four people... I never noticed." He swallows.  *(linha 220)*
 - Respostas:
   - ✓ "Pedir-lhe ajuda" / "Ask him to help you" → `help`
   - ✗ "Dizer-lhe que a culpa é dele" / "Tell him it is his fault" → `hard`
 
 ### `help` — confiança 3
-- 🇵🇹 "Está bem. Guarda as conversas do grupo antes que alguém as apague. Nem tudo o que está no meu telemóvel é meu."  *(linha 399)*
-- 🇬🇧 "All right. Save the group's conversations before someone deletes them. Not everything on my phone is mine."  *(linha 217)*
+- 🇵🇹 "Está bem. Guarda as conversas do grupo antes que alguém as apague. Nem tudo o que está no meu telemóvel é meu."  *(linha 411)*
+- 🇬🇧 "All right. Save the group's conversations before someone deletes them. Not everything on my phone is mine."  *(linha 223)*
 - 📓 Diário: O Tomás sugere que algumas mensagens do chat não são de quem diz. / Tomás hints that some chat messages are not from the people they name.
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### `closed` — confiança 0
-- 🇵🇹 O Tomás cruza os braços. "Ficamos por aqui."  *(linha 402)*
-- 🇬🇧 Tomás crosses his arms. "We are done here."  *(linha 220)*
+- 🇵🇹 O Tomás cruza os braços. "Ficamos por aqui."  *(linha 414)*
+- 🇬🇧 Tomás crosses his arms. "We are done here."  *(linha 226)*
 - Respostas:
   - "Sair." / "Leave." → fim
 ## Computador 12
 Onde está: **Sala de informática** (`computer_lab`).
 
 ### `start`
-- 🇵🇹 O computador 12 ainda está ligado, com a sessão do grupo aberta. Pede uma password de 4 algarismos.  *(linha 405)*
-- 🇬🇧 Computer 12 is still on, with the group's session open. It asks for a 4-digit password.  *(linha 223)*
+- 🇵🇹 O computador 12 ainda está ligado, com a sessão do grupo aberta. Pede uma password de 4 algarismos.  *(linha 417)*
+- 🇬🇧 Computer 12 is still on, with the group's session open. It asks for a 4-digit password.  *(linha 229)*
 - Respostas:
   - "Afastar-me do computador." / "Step away from the computer." → fim
 
@@ -322,52 +321,53 @@ Onde está: **Sala de informática** (`computer_lab`).
   - Se resultar 🇬🇧: Computer 12 still has the group's account open. You copy the whole history of the group's conversations onto the USB stick, as it was before last night: four people, and not one message from Duarte. Now the professor can see the original conversations.
 
 ## Professor
-Onde está: **Auditório** (`auditorium`).
+Onde está: **Auditório** (`auditorium`). Uma só linha de raciocínio (specs/professor-line-of-thought.md): quantos elementos → cinco → só quatro → trazer provas → apresentar as provas.
 
 ### `start`
-- 🇵🇹 O professor levanta os olhos da lista de grupos. "É sobre as apresentações de amanhã?"  *(linha 408)*
-- 🇬🇧 The professor looks up from the list of groups. "Is this about tomorrow's presentations?"  *(linha 226)*
+- 🇵🇹 O professor levanta os olhos da lista de grupos. "É sobre as apresentações de amanhã?"
+- 🇬🇧 The professor looks up from the list of groups. "Is this about tomorrow's presentations?"
 - Respostas:
   - "Perguntar quantos elementos tem o teu grupo na lista" / "Ask how many members your group has on the list" → `list`
-  - "Dizer que vais trazer provas" / "Say you will bring proof" → `proof`
   - ↺ "Perguntar se já ouviu este caso" / "Ask if he has heard this case before" → `again` *(a partir da noite 4)*
   - "Até já." / "Goodbye." → fim
 
 ### `list`
-- 🇵🇹 "Cinco, segundo a capa. Há algum problema?"  *(linha 414)*
-- 🇬🇧 "Five, according to the cover. Is something wrong with that?"  *(linha 232)*
+- 🇵🇹 "Cinco, segundo a capa. Há algum problema?"
+- 🇬🇧 "Five, according to the cover. Is something wrong with that?"
 - Respostas:
   - "Dizer que vocês são só quatro" / "Say there are only four of you" → `evidence`
 
 ### `evidence`
-- 🇵🇹 "Então preciso de provas, não de uma sensação. Traga-me o histórico do projeto."  *(linha 416)*
-- 🇬🇧 "Then I need evidence, not a feeling. Bring me the history of the project."  *(linha 234)*
-- 📓 Diário: O professor quer o histórico do projeto como prova. / The professor wants the project history as evidence.
+- 🇵🇹 "Então preciso de provas, não de uma sensação: quem fez o trabalho, quem está na fotografia, quem escreveu no grupo, e quem esteve no edifício ontem à noite."
+- 🇬🇧 "Then I need evidence, not a feeling: who did the work, who is in the photo, who wrote in the group, and who was in the building last night."
+- 📓 Diário: O professor quer provas de quem fez o trabalho, de quem está na fotografia, de quem escreveu no grupo e de quem esteve no edifício ontem à noite. / The professor wants proof of who did the work, who is in the photo, who wrote in the group and who was in the building last night.
 - Respostas:
-  - "Até já." / "Goodbye." → fim
+  - "Dizer que vais trazer provas" / "Say you will bring proof" → `proof`
 
 ### `proof`
-- 🇵🇹 "Provas são bem-vindas. Apresente-as quando estiver pronto."  *(linha 419)*
-- 🇬🇧 "Evidence is welcome. Present it when you are ready."  *(linha 237)*
+- 🇵🇹 "Provas são bem-vindas. Apresente-as quando estiver pronto."
+- 🇬🇧 "Evidence is welcome. Present it when you are ready."
+- Só nesta fala aparece "▶ Apresentar as provas ao professor" (a audiência).
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### `again` — ↺ a partir da noite 4
-- 🇵🇹 O professor vira uma página da lista e volta a virá-la. "Todos os anos me aparece um grupo com um nome a mais. Nunca é o mesmo grupo. É sempre o mesmo nome."  *(linha 421)*
-- 🇬🇧 The professor turns a page of the list, then turns it back. "Every year a group comes to me with one name too many. Never the same group. Always the same name."  *(linha 240)*
+- 🇵🇹 O professor vira uma página da lista e volta a virá-la. "Todos os anos me aparece um grupo com um nome a mais. Nunca é o mesmo grupo. É sempre o mesmo nome."  *(linha 433)*
+- 🇬🇧 The professor turns a page of the list, then turns it back. "Every year a group comes to me with one name too many. Never the same group. Always the same name."  *(linha 246)*
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### Ações feitas nesta conversa (em `story.py`)
 - **▶ Apresentar as provas ao professor** / Present the evidence to the professor (`present_evidence`)
-  - No jogo 3D este botão abre a audiência (as três afirmações do Duarte, em `campus_case.py`); só depois da terceira resposta o jogo acaba. O servidor continua a aceitar a ação direta.
+  - No jogo 3D este botão abre a audiência (as quatro afirmações do Duarte, em `campus_case.py`); só depois da quarta resposta o jogo acaba. O servidor continua a aceitar a ação direta.
 
 ## Duarte
+> **O jogador já não fala com o Duarte** (specs/duarte-only-in-the-hearing.md): ele só fala na audiência, com as afirmações ao professor. As falas abaixo continuam no servidor, mas a página nunca as mostra.
 Onde está: **Auditório** (`auditorium`).
 
 ### `start` — confiança 3
-- 🇵🇹 O Duarte sorri com calma. "Ah, o quarto elemento. Pronto para amanhã?"  *(linha 425)*
-- 🇬🇧 Duarte smiles calmly. "Ah, the fourth wheel. Ready for tomorrow?"  *(linha 244)*
+- 🇵🇹 O Duarte sorri com calma. "Ah, o quarto elemento. Pronto para amanhã?"  *(linha 437)*
+- 🇬🇧 Duarte smiles calmly. "Ah, the fourth wheel. Ready for tomorrow?"  *(linha 250)*
 - Respostas:
   - "Perguntar que parte do projeto fez" / "Ask which part of the project he did" → `part`
   - "Dizer-lhe que sabes a verdade" / "Tell him you know the truth" → `know` ⏳ **custa 5 minutos**
@@ -375,34 +375,34 @@ Onde está: **Auditório** (`auditorium`).
   - "Até já." / "Goodbye." → fim
 
 ### `part` — confiança 3
-- 🇵🇹 "Os slides, claro. Pergunta a qualquer um." Hesita por um segundo.  *(linha 431)*
-- 🇬🇧 "The slides, of course. Ask anyone." He hesitates for a second.  *(linha 250)*
+- 🇵🇹 "Os slides, claro. Pergunta a qualquer um." Hesita por um segundo.  *(linha 443)*
+- 🇬🇧 "The slides, of course. Ask anyone." He hesitates for a second.  *(linha 256)*
 - Respostas:
   - "Perguntar que slide" / "Ask which slide" → `slide`
 
 ### `slide` — confiança 2
-- 🇵🇹 "A... introdução. A bonita." O Duarte olha para a porta. "Porquê tantas perguntas?"  *(linha 433)*
-- 🇬🇧 "The... intro. The nice one." Duarte glances at the door. "Why all these questions?"  *(linha 252)*
+- 🇵🇹 "A... introdução. A bonita." O Duarte olha para a porta. "Porquê tantas perguntas?"  *(linha 445)*
+- 🇬🇧 "The... intro. The nice one." Duarte glances at the door. "Why all these questions?"  *(linha 258)*
 - 📓 Diário: O Duarte não soube dizer que slide fez. / Duarte could not say which slide he made.
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
 ### `know` — confiança 1
-- 🇵🇹 "Que verdade? Cuidado com as acusações."  *(linha 436)*
-- 🇬🇧 "Know what? Careful with accusations."  *(linha 255)*
+- 🇵🇹 "Que verdade? Cuidado com as acusações."  *(linha 448)*
+- 🇬🇧 "Know what? Careful with accusations."  *(linha 261)*
 - Respostas:
   - "Pressioná-lo" / "Press him" → `closed` ⏳ **custa 5 minutos**
   - "Recuar" / "Back off" → `start`
 
 ### `closed` — confiança 0
-- 🇵🇹 O Duarte ri-se e vira-te as costas. A conversa acabou.  *(linha 439)*
-- 🇬🇧 Duarte laughs and turns away. The conversation is over.  *(linha 258)*
+- 🇵🇹 O Duarte ri-se e vira-te as costas. A conversa acabou.  *(linha 451)*
+- 🇬🇧 Duarte laughs and turns away. The conversation is over.  *(linha 264)*
 - Respostas:
   - "Sair." / "Leave." → fim
 
 ### `again` — confiança 2 — ↺ a partir da noite 2
-- 🇵🇹 O sorriso do Duarte não se mexe. "Para ti? Já perdi a conta. Para mim só existe esta noite." Olha para o teu casaco como se fosse dele. "Outra vez tu. Já estava a gostar da companhia."  *(linha 440)*
-- 🇬🇧 Duarte's smile does not move. "For you? I have lost count. For me there is only ever tonight." He looks at your coat as if it were his. "You again. I was starting to enjoy the company."  *(linha 260)*
+- 🇵🇹 O sorriso do Duarte não se mexe. "Para ti? Já perdi a conta. Para mim só existe esta noite." Olha para o teu casaco como se fosse dele. "Outra vez tu. Já estava a gostar da companhia."  *(linha 452)*
+- 🇬🇧 Duarte's smile does not move. "For you? I have lost count. For me there is only ever tonight." He looks at your coat as if it were his. "You again. I was starting to enjoy the company."  *(linha 266)*
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
@@ -416,60 +416,60 @@ Só muda o texto (e às vezes a nota) de uma fala: as respostas, as ações (a c
 
 ### Falas secas (`COLD`): desconfiado ou hostil; o diário guarda a nota de sempre
 - **Tomás, `start`**
-  - 🇵🇹 O Tomás nem levanta os olhos do computador 11. "O que foi agora?"  *(linha 468)*
+  - 🇵🇹 O Tomás nem levanta os olhos do computador 11. "O que foi agora?"  *(linha 480)*
   - 🇬🇧 Tomás does not look up from computer 11. "What now?"  *(linha 381)*
 - **Tomás, `kind`**
-  - 🇵🇹 "A acabar os slides." Continua a escrever. "Esteve alguém no computador 12 ontem à noite. É tudo o que sei."  *(linha 469)*
+  - 🇵🇹 "A acabar os slides." Continua a escrever. "Esteve alguém no computador 12 ontem à noite. É tudo o que sei."  *(linha 481)*
   - 🇬🇧 "Finishing the slides." He keeps typing. "Someone was at computer 12 last night. That is all I know."  *(linha 382)*
 - **Tomás, `password`** (a regra do código não muda: só fica mais seca)
-  - 🇵🇹 "O dia e o mês da fotografia da capa. Quatro algarismos." Nem levanta os olhos.  *(linha 470)*
+  - 🇵🇹 "O dia e o mês da fotografia da capa. Quatro algarismos." Nem levanta os olhos.  *(linha 482)*
   - 🇬🇧 "The day and month of the cover photo. Four digits." He does not look up.  *(linha 383)*
 - **Tomás, `who`** (a nota de sempre fica, por isso o diário guarda o que o caso diz)
-  - 🇵🇹 "Alguém de capuz, no computador 12." Continua a escrever.  *(linha 471)*
+  - 🇵🇹 "Alguém de capuz, no computador 12." Continua a escrever.  *(linha 483)*
   - 🇬🇧 "Someone in a hood, at computer 12." He keeps typing.  *(linha 384)*
 - **Leonor, `start`**
-  - 🇵🇹 Desta vez a Leonor não fecha o livro. "Sim?"  *(linha 472)*
+  - 🇵🇹 Desta vez a Leonor não fecha o livro. "Sim?"  *(linha 484)*
   - 🇬🇧 Leonor does not close her book this time. "Yes?"  *(linha 385)*
 - **Leonor, `messages`** (só desconfiada; hostil, mente: ver abaixo)
-  - 🇵🇹 "De um número que eu não conhecia. Ontem à noite."  *(linha 473)*
+  - 🇵🇹 "De um número que eu não conhecia. Ontem à noite."  *(linha 485)*
   - 🇬🇧 "From a number I did not know. Last night."  *(linha 386)*
 - **Duarte, `start`**
-  - 🇵🇹 O Duarte nem se dá ao trabalho de sorrir. "Ainda por aqui?"  *(linha 474)*
+  - 🇵🇹 O Duarte nem se dá ao trabalho de sorrir. "Ainda por aqui?"  *(linha 486)*
   - 🇬🇧 Duarte does not bother to smile. "Still here?"  *(linha 387)*
 - **Duarte, `part`**
-  - 🇵🇹 "Os slides. Pergunta a qualquer um." Olha para além de ti.  *(linha 475)*
+  - 🇵🇹 "Os slides. Pergunta a qualquer um." Olha para além de ti.  *(linha 487)*
   - 🇬🇧 "The slides. Ask anyone." He looks past you.  *(linha 388)*
 
 ### Pistas que ficam por dar (`WITHHELD`): desconfiado ou hostil; sem nota no diário
 São só pistas: tudo o que é preciso para um final tem outra fonte.
 - **Tomás, `help`**
-  - 🇵🇹 O Tomás fica a olhar para a fotografia um segundo a mais. "Vê o que quiseres. Estou ocupado."  *(linha 488)*
+  - 🇵🇹 O Tomás fica a olhar para a fotografia um segundo a mais. "Vê o que quiseres. Estou ocupado."  *(linha 500)*
   - 🇬🇧 Tomás looks at the photo a second too long. "Check what you like. I am busy."  *(linha 406)*
 - **Leonor, `mine`**
-  - 🇵🇹 "Descobre tu."  *(linha 489)*
+  - 🇵🇹 "Descobre tu."  *(linha 501)*
   - 🇬🇧 "Work it out yourself."  *(linha 407)*
 - **Duarte, `slide`**
-  - 🇵🇹 "Porque é que te havia de dizer?" O Duarte olha para a porta.  *(linha 490)*
+  - 🇵🇹 "Porque é que te havia de dizer?" O Duarte olha para a porta.  *(linha 502)*
   - 🇬🇧 "Why would I tell you?" Duarte glances at the door.  *(linha 408)*
 
 ### Mentiras (`LIES`): só hostil; o diário guarda o que te disseram
 Uma mentira não é uma afirmação: mostrar-lhe uma prova dá a resposta habitual da pessoa e custa os minutos de sempre. Vence-se não acreditando nela. O Duarte mente de qualquer maneira: hostil, não ganha uma mentira nova.
 - **Tomás**: já não mente (a fala da mensagem 5 saiu com o chat, specs/two-answers.md).
 - **Leonor, `messages`** (desmentem-na o mesmo backup e a fala `chat` da Rita)
-  - 🇵🇹 "Não têm nada de estranho. Chegaram nas datas que lá dizem, há semanas." Vira o telemóvel ao contrário.  *(linha 504)*
+  - 🇵🇹 "Não têm nada de estranho. Chegaram nas datas que lá dizem, há semanas." Vira o telemóvel ao contrário.  *(linha 516)*
   - 🇬🇧 "Nothing strange about them. They came on the dates they say, weeks ago." She turns the phone face down.  *(linha 424)*
   - 📓 Diário: A Leonor diz que as mensagens chegaram nas datas delas, há semanas. / Leonor says the messages arrived on their dates, weeks ago.
 
 ### O aviso que passa (`WARNS` e `WARNED`): enquanto quem avisa estiver hostil e não tiver cedido
 A cadeia é fixa: o Tomás avisa a Leonor, a Leonor avisa a Rita, o Duarte avisa o professor. Só muda a primeira fala (`start`) de quem foi avisado; as respostas, as ações e as decisões dessa pessoa ficam iguais.
 - **Leonor** (avisada pelo Tomás)
-  - 🇵🇹 A Leonor fecha o livro antes de chegares à mesa. "O Tomás mandou-me mensagem. Diz que andas por aí a chamar mentirosos às pessoas."  *(linha 517)*
+  - 🇵🇹 A Leonor fecha o livro antes de chegares à mesa. "O Tomás mandou-me mensagem. Diz que andas por aí a chamar mentirosos às pessoas."  *(linha 529)*
   - 🇬🇧 Leonor closes her book before you reach the table. "Tomás texted me. He says you are going round calling people liars."  *(linha 440)*
 - **Rita** (avisada pela Leonor)
-  - 🇵🇹 A Rita levanta os olhos e não sorri. "A Leonor diz que lhe gritaste na biblioteca. É verdade?"  *(linha 518)*
+  - 🇵🇹 A Rita levanta os olhos e não sorri. "A Leonor diz que lhe gritaste na biblioteca. É verdade?"  *(linha 530)*
   - 🇬🇧 Rita looks up and does not smile. "Leonor says you shouted at her in the library. Is that true?"  *(linha 441)*
 - **Professor** (avisado pelo Duarte)
-  - 🇵🇹 O professor levanta os olhos da lista e não sorri. "O Duarte diz-me que o ameaçou. Espero que amanhã me traga provas, e não isso."  *(linha 519)*
+  - 🇵🇹 O professor levanta os olhos da lista e não sorri. "O Duarte diz-me que o ameaçou. Espero que amanhã me traga provas, e não isso."  *(linha 531)*
   - 🇬🇧 The professor looks up from the list and does not smile. "Duarte tells me you threatened him. I hope you bring evidence tomorrow, not that."  *(linha 442)*
 
 ## Procurar a pen e o código do computador 12 (em `prototypes/campus-3d/campus_search.py`)
@@ -518,8 +518,9 @@ Só o servidor lê este ficheiro. A página recebe uma carta quando a tens, e um
 | `original_photo` | tens o objeto `original_photo` (a fotografia triturada, reconstruída na reprografia) | A fotografia original, colada com fita-cola: quatro pessoas | The original photo, taped back together: four people |
 | `files` | `files_viewed` = `True` | O histórico dos ficheiros: quatro autores em todas as cópias | The file history: four authors in every backup |
 | `backup` | `backup_saved` = `True` (guardado no computador 12) | O backup das conversas originais: quatro pessoas, nem uma mensagem do Duarte | The backup of the original conversations: four people, not one message from Duarte |
+| `footage` | a imagem das 23:47 da câmara da sala de informática guardada na secretária do segurança (nota `footage` da noite, specs/camera-proof.md) | A gravação da câmara: uma figura de capuz no computador 12 às 23h47 | The security recording: a hooded figure at computer 12 at 23:47 |
 
-Ceder a Rita ou o Tomás já não dá uma carta: fica nas notas da noite e conta para o final verdadeiro. A Leonor já não cede com uma prova.
+Ceder a Rita ou o Tomás já não dá uma carta: fica nas notas da noite (o Tomás fica a vigiar a porta). A Leonor já não cede com uma prova.
 
 ### Quem cede, e com que prova (pela resposta certa da fala, specs/two-answers.md)
 | pessoa | fala | provas que a fazem ceder |
@@ -546,8 +547,8 @@ Ceder a Rita ou o Tomás já não dá uma carta: fica nas notas da noite e conta
 - **Professor** 🇵🇹 O professor não lhe pega. "Assim não. Apresente as provas como deve ser, quando estiver pronto." / 🇬🇧 The professor does not take it. "Not like this. Present your evidence properly, when you are ready."
 - **Duarte (qualquer prova, em qualquer fala; 1 minuto)** 🇵🇹 O Duarte nem olha. "Guarda isso para o professor. Eu vou estar na primeira fila." / 🇬🇧 Duarte does not look at it. "Keep it for the professor. I will be sitting in the front row."
 
-### A audiência: as três afirmações do Duarte
-Uma resposta por afirmação, sem segunda tentativa. Uma prova que não a desfaz, ou "Não dizer nada", é uma dúvida. O Afonso vai juntar uma quarta afirmação, desfeita com as imagens da câmara (specs/security-desk.md, fase 2).
+### A audiência: as quatro afirmações do Duarte
+No cartão aparece a linha 🇵🇹 "O Duarte faz uma afirmação. Responde com a prova que mostra que é falsa, ou não digas nada." / 🇬🇧 "Duarte makes a claim. Answer with the proof that shows it is false, or say nothing." Uma resposta por afirmação, sem segunda tentativa. Uma prova que não a desfaz, ou "Não dizer nada", é uma dúvida. A quarta afirmação desfaz-se com a gravação da câmara (specs/camera-proof.md).
 
 **1. `name`** (fala o Duarte) — desfaz-se com `files`
 - 🇵🇹 O Duarte levanta-se sem pressa. "Professor, abra o relatório. O meu nome está na capa. Está lá desde o primeiro rascunho."
@@ -568,18 +569,34 @@ Uma resposta por afirmação, sem segunda tentativa. Uma prova que não a desfaz
 - Certa, `backup` (professor): 🇵🇹 O professor percorre o backup. "As conversas do próprio grupo, tal como estavam antes de ontem à noite: quatro pessoas, e nem uma mensagem dele. Uma data escreve-se. Um backup de semanas, não." / 🇬🇧 The professor scrolls through the backup. "The group's own conversations, as they were before last night: four people, and not one message from him. A date can be typed. A backup of weeks cannot."
 - Errada, qualquer outra (professor): 🇵🇹 "Isso não me diz quem enviou uma mensagem." Faz um sinal na lista. / 🇬🇧 "That does not tell me who sent a message." He makes a mark on the list.
 
+**4. `here`** (fala o Duarte) — desfaz-se com `footage`
+- 🇵🇹 O Duarte encosta-se e cruza os braços. "E quem mudou a pasta às 23h47? Eu não. Nem cá estive ontem à noite."
+- 🇬🇧 Duarte leans back and folds his arms. "And who changed the folder at 23:47? Not me. I was not even here last night."
+- Certa, `footage` (professor): 🇵🇹 O professor fica muito tempo a olhar para a imagem. "Computador 12, ontem às 23h47, o minuto em que o quinto nome foi acrescentado. Um capuz, um casaco comprido. E a câmara da entrada viu o mesmo casaco entrar às 23h38." Levanta os olhos. "Esteve cá, Duarte." / 🇬🇧 The professor looks at the picture for a long time. "Computer 12, last night at 23:47, the minute the fifth name was added. A hood, a long coat. And the entrance camera saw the same coat come in at 23:38." He looks up. "You were here, Duarte."
+- Errada, qualquer outra (professor): 🇵🇹 "Isso não me diz quem estava no edifício ontem à noite." Faz um sinal na lista. / 🇬🇧 "That does not tell me who was in the building last night." He makes a mark on the list.
+
 **"Não dizer nada"** / "Say nothing" (`concede`, em qualquer afirmação; fala o Duarte; é sempre uma dúvida)
 - 🇵🇹 O professor espera. O Duarte sorri. "Nada?"
 - 🇬🇧 The professor waits. Duarte smiles. "Nothing?"
 
-A resposta à terceira afirmação aparece no cartão do final, por cima do veredicto.
+A resposta à quarta afirmação aparece no cartão do final, por cima do veredicto.
 
 ### O veredicto do professor (por cima do texto do final)
+Basta uma afirmação sem prova certa (uma prova errada ou "Não dizer nada") para o final ser "Crédito roubado", com esta fala (specs/three-proofs.md). Com as três respostas certas não há veredicto.
+
 | chave | quando | 🇵🇹 | 🇬🇧 |
 |---|---|---|---|
-| `three` | 3 dúvidas, sem a Leonor a ajudar (mostra `stolen_credits`) | "Três vezes esta noite me deu razões para duvidar de si. Não risco um nome por um palpite." | "Three times tonight you gave me a reason to doubt you. I cannot cross out a name on a guess." |
-| `three_help` | 3 dúvidas com `colleague_choice` = `help` (mostra `stolen_credits`) | O professor fecha a lista antes de a Leonor chegar à porta. "Já ouvi palpites que cheguem por uma noite." | The professor closes the list before Leonor reaches the door. "I have heard enough guesses for one night." |
-| `two` | 2 dúvidas e o final da história é `full_case` (mostra `stolen_credits`) | "Acho que tem razão sobre ele. Mas fez-me duvidar duas vezes esta noite, e eu só escrevo aquilo de que tenho a certeza." | "You are right about him, I think. But you made me doubt you twice tonight, and I write down only what I am sure of." |
+| `missing` | pelo menos uma afirmação sem a prova certa (mostra `stolen_credits`) | O professor olha para os sinais na lista. "Acho que tem razão sobre ele. Mas uma das afirmações dele ficou sem prova, e eu só escrevo aquilo de que tenho a certeza." | The professor looks at the marks on his list. "You are right about him, I think. But one of his claims has no proof against it, and I write down only what I am sure of." |
+
+### Os finais (em `story.py`, nos dois jogos)
+Só há três maneiras de a noite acabar (specs/three-proofs.md): chegas ao professor com as provas e respondes certo às afirmações do Duarte (três provas no jogo simples; quatro no 3D, com a gravação da câmara), ou falta-te alguma coisa, ou o tempo acaba às 22:45. O auditório está sempre aberto.
+
+| id | quando | 🇵🇹 | 🇬🇧 |
+|---|---|---|---|
+| `full_case` — Caso encerrado | tens a fotografia original, viste os ficheiros e guardaste o backup (e, em 3D, a gravação da câmara e as quatro respostas certas) | Pões as tuas provas na mesa do professor… O professor risca o quinto nome da lista. Amanhã apresentam os quatro, com o caso encerrado. | You put your proofs on the professor's desk… The professor crosses the fifth name off the list. Tomorrow, the four of you present, with the case closed. |
+| `stolen_credits` — Crédito roubado | falta uma prova (ou, em 3D, uma resposta errada) | Não tens todas as provas de que o professor precisa… "Não risco um nome por um palpite." Amanhã apresentam os cinco. | You do not have every proof the professor needs… "I cannot cross out a name on a hunch." Tomorrow, the five of you present. |
+
+O texto completo de cada final está em `story.py`. O final "O impostor" (acusar a Leonor) e o final verdadeiro ("22:46") já não existem.
 
 ### O número desconhecido nas noites seguintes
 Uma mensagem quando a noite começa (id `night-<n>`), em `NIGHT_TEXT` de `campus_case.py`. Uma noite conta quando acaba (um final, ou as 23:00 sem final), nunca com um "Novo jogo" simples.
@@ -591,17 +608,8 @@ Uma mensagem quando a noite começa (id `night-<n>`), em `NIGHT_TEXT` de `campus
 | noite 3 | Outra vez tu. O mesmo casaco, o mesmo cachecol. | You again. Same coat, same scarf. |
 | noite 4 | Eu já deixei de contar as noites. Tu não. | I have stopped counting the nights. You have not. |
 | noite 5 e seguintes | Olha para a fotografia do teu caso. Depois diz-me qual de nós é o quinto. | Look at the photo on your case file. Then tell me which of us is the fifth. |
-| qualquer noite depois de vistos os três finais da história (em vez da mensagem dessa noite) | Três finais, e continuas aqui. Nunca vais conseguir que os três fiquem do teu lado. Não em trinta minutos. | Three endings, and still here. You will never get all three of them to stand with you. Not in thirty minutes. |
-| depois do final verdadeiro | (nenhuma: o número fica calado) | (none) |
 
 A partir da noite 3, os três avisos das rondas (`round-12`, `round-19`, `round-26`) passam a ser do número desconhecido: 🇵🇹 Fecha o computador. Ele vem aí. / 🇬🇧 Close the computer. He is walking. Nas noites 1 e 2 ficam com o texto de sempre.
-
-### O final verdadeiro
-- **id:** `night_over` (nunca vai para a página). **Título:** 22:46 (nas duas línguas). **Carimbo:** 🇵🇹 A NOITE ACABOU / 🇬🇧 THE NIGHT IS OVER. **Emoji:** 🌅.
-- **Quando:** Os três finais da história já vistos em noites anteriores; nesta noite, o final "Caso encerrado", a audiência sem nenhuma dúvida, e a palavra do Tomás e a da Rita conquistadas.
-- **Vozes**, pela ordem das falas entre aspas: `rita`, `duarte`, `duarte`, `professor`.
-- 🇵🇹 Não esperas que o Duarte acabe as frases; já as ouviste antes. Três afirmações, três respostas, cada uma em cima da mesa antes de ele se calar, e o professor não tira os olhos de ti uma única vez. Depois a porta abre-se e já ninguém está sozinho. A Leonor entra com o telemóvel, o Tomás com os slides, a Rita a contar baixinho. «Quatro. Eu contei.» O Duarte olha para os quatro, juntos, e pela primeira vez o sorriso dele não tem para onde ir. «Outra vez tu.» Não é uma pergunta. «Só precisava que um de vocês duvidasse dos outros três.» Puxa o capuz para trás. Por baixo não há nenhum desconhecido: só um chapéu, um cachecol e um casaco comprido, e são os teus. O professor risca o quinto nome. Quando voltas a olhar para a primeira fila, a cadeira está vazia; em cima dela ficou um telemóvel com todas as mensagens que recebeste do número desconhecido, escritas e nunca enviadas. O teu telemóvel vibra uma última vez. O remetente já não é desconhecido: o nome no ecrã é o teu. O relógio da parede marca 22:46. Ninguém apagou as luzes. «Amanhã apresentam os quatro.» Na fotografia da capa estão quatro pessoas, e tu conheces todas.
-- 🇬🇧 You do not wait for Duarte to finish his sentences; you have heard them before. Three claims, three answers, each one on the table before he stops speaking, and the professor never once looks away from you. Then the door opens and nobody is alone any more. Leonor comes in with her phone, Tomás with his slides, Rita counting under her breath. "Four. I counted." Duarte looks at the four of you standing together, and for the first time his smile has nowhere to go. "You again." It is not a question. "I only ever needed one of you to doubt the other three." He pushes back his hood. There is no stranger under it: only a hat, a scarf and a long coat, and they are yours. The professor crosses out the fifth name. When you look back at the front row the seat is empty; on it lies a phone with every message you ever received from the unknown number, written and never sent. Your own phone buzzes one last time. The sender is no longer unknown: the name on the screen is your own. The clock on the wall reads 22:46. Nobody has switched off the lights. "Tomorrow, the four of you present." In the photo on the cover there are four people, and you know every one of them.
 
 ## O caso do dia (em `prototypes/campus-3d/campus_case.py`, `CASES`)
 
@@ -628,11 +636,11 @@ A noite começa às 22:30 e a faculdade fecha às 23:00 (30 minutos do campus, s
 | Andar, falar, o sítio certo, guardar o backup, responder a uma afirmação | 0 | nada |
 
 ### A única saída: a Leonor
-- **Funcionária:** já não sai; a reprografia fica aberta a noite toda.
-- **Leonor:** sai às 22:45 (minuto 15), só se ainda estiver indecisa. A ajudar, fica; acusada, a mesa já ficou vazia pela história e às 22:45 nada muda.
-- Depois de ela sair, a biblioteca continua aberta, mas ela já não aparece, não se pode falar com ela nem mostrar-lhe provas, e as decisões dela são recusadas com a frase do horário. Uma conversa aberta quando ela sai acaba com essa frase.
+- **Funcionária:** já não sai; a reprografia fica aberta a noite toda (specs/night-and-clues.md).
+- **Leonor:** sai às 22:45 (minuto 15), só se ainda não tiver aceitado ajudar. A ajudar, fica. Não é uma pista do telemóvel (specs/three-proofs.md): quando sai, nenhuma pista se perde, mas deixa de estar no computador 12 para lembrar o dia do teste de Finanças.
+- Depois de ela sair, a biblioteca continua aberta, mas ela já não aparece, não se pode falar com ela nem mostrar-lhe provas, e o pedido de ajuda é recusado com a frase do horário. Uma conversa aberta quando ela sai acaba com essa frase.
 
-A pista da Leonor, se ela sair indecisa, fica "perdida" e conta como feita para a porta do auditório: a noite acaba sempre.
+Nenhuma pista se perde: a reprografia não fecha e a Leonor não é uma pista. O auditório está sempre aberto: sem as provas, o final é "Crédito roubado".
 
 ### As rondas do Duarte: 22:42, 22:49 e 22:56
 Se nesse minuto estiveres no computador 12 com os ficheiros abertos e o backup ainda por guardar, e o Tomás ainda não tiver cedido, és apanhado: custa 3 minutos e começas a audiência com uma dúvida (specs/computer-lab-backup.md).
@@ -642,6 +650,5 @@ Se nesse minuto estiveres no computador 12 com os ficheiros abertos e o backup a
 ### As mensagens do número desconhecido
 | id | quando chega | 🇵🇹 | 🇬🇧 |
 |---|---|---|---|
-| `leonor` | do minuto 10 ao 14, a Leonor indecisa e a pista dela não perdida | A Leonor arruma a mochila às quinze para as onze. Faz sempre isso. | Leonor packs her bag at a quarter to eleven. She always does. |
-| `lost` | quando uma pista se perde | Para isso, hoje já é tarde. Amanhã deixo-te a luz acesa. | Too late for that tonight. I will keep the light on for you tomorrow. |
+| `leonor` | do minuto 10 ao 14, a Leonor indecisa | A Leonor arruma a mochila às quinze para as onze. Faz sempre isso. | Leonor packs her bag at a quarter to eleven. She always does. |
 | `round-12`, `round-19`, `round-26` | no minuto antes de cada ronda (11, 18, 25), se o Tomás ainda não cedeu | Anda alguém no corredor. Não estejas no computador 12 quando ele passar. | Someone is walking the corridor. Do not be at computer 12 when he passes. |

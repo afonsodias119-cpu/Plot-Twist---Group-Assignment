@@ -14,7 +14,9 @@ PLAY = (FOLDER / "play.js").read_text(encoding="utf-8")
 def test_the_clue_texts_exist_in_both_languages():
     for language in ("pt", "en"):
         security = TEXT[language]["security"]
-        assert "23:47" in security["clue_label"], language
+        # Changed by specs/clues-without-answers.md ("Reviewed tests that change"): the clue says what to find,
+        # not the answer, so it no longer gives the minute. Was: "23:47" in the label.
+        assert "23:47" not in security["clue_label"] and security["clue_label"].strip(), language
         assert security["clue_room"].strip(), language
 
 

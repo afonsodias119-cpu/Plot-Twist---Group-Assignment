@@ -34,13 +34,13 @@ def costly_answers(language):
 
 # ---------- the door ----------
 
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): the door never refuses, so it has no note.
 def test_the_door_does_not_list_the_missing_clues():
     call()
-    message = call("enter", room="auditorium")["message"]
-    assert message == TEXT["en"]["auditorium_note"]
-    assert not any(clue in message for clue in TEXT["en"]["clues"].values())
+    result = call("enter", room="auditorium")
+    assert result["accepted"] and result["message"] == ""
     for language in ("en", "pt"):
-        assert "missing" not in TEXT[language]
+        assert "missing" not in TEXT[language] and "auditorium_note" not in TEXT[language]
 
 
 # ---------- rude answers cost time ----------

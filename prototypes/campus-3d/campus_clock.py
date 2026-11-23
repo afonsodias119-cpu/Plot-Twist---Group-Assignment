@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 # Campus minutes charged by the server (point 2). Only the wrong choices cost time
 # (specs/night-and-clues.md): the copy of the photo, asking Leonor for help and computer 12 are free.
-COSTS = {"request_copy": 0, "ask_for_help": 0, "accuse": 1, "view_files": 0,
+COSTS = {"request_copy": 0, "ask_for_help": 0, "view_files": 0,
          "card_right": 0, "card_wrong": 2, "card_duarte": 1, "caught": 3}
 # Campus minutes the page takes off by itself, as before, and reports with `time`.
 PAGE_COSTS = {"rude_answer": 5, "wrong_spot": 1, "wrong_code": 2}   # a wrong date on the calendar: 2 (specs/calendar-code.md)

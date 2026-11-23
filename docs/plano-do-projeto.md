@@ -113,6 +113,31 @@ Alteração preparada em `computer-lab-backup` (nos dois jogos: mexe no `story.p
 ### Duas respostas nas conversas do Tomás e da Rita — Maria (23/11/2026)
 
 Alteração preparada em `two-answers`: o botão "Mostrar prova" sai das conversas da reprografia e da sala de informática (fica nas outras, incluindo o segurança). Cada fala do Tomás tem só duas respostas, uma certa e uma errada, pela ordem perguntar com calma → quem era → a password → (depois dos ficheiros) quem fez os slides; a resposta certa nos slides fá-lo ceder, como a prova fazia. A Rita passa a ter também só duas respostas em cada fala (a pen → a fotografia → "porque mostra cinco" → o Duarte → o nome acrescentado → as mensagens), e cede na fala "Então contei mal"; uma resposta errada deixa-a chateada e "Pedir desculpa" volta ao início. A pergunta sobre a mensagem 5 saiu, e com ela a mentira do Tomás hostil. Ver `specs/two-answers.md`.
+
+### "Mostrar prova" quando o segurança a pede, e a fotografia da Rita depois da pen — Maria (23/11/2026)
+
+Alteração preparada em `evidence-after-monitors`: com o segurança, "Mostrar uma prova" só aparece depois de "Explicar a situação", quando ele pede uma prova; com a Rita deixa de aparecer. Depois de a Rita dizer que a pen pode estar em qualquer lado da mesa, já não aparece a pergunta da fotografia: vais procurar a pen, e quando a tens a primeira pergunta à Rita passa a ser a fotografia do grupo. Ver `specs/evidence-after-monitors.md`.
+
+### Três provas decidem o final; sem acusar a Leonor e sem final secreto — Maria (23/11/2026)
+
+Alteração preparada no mesmo branch, `evidence-after-monitors` (nos dois jogos: mexe no `story.py`). Só há três maneiras de a noite acabar: chegas ao professor com as três provas (a pen, a fotografia original e o backup) e respondes certo às três afirmações do Duarte → Caso encerrado; falta-te uma prova ou erras uma resposta → Crédito roubado (fala nova do professor, `missing`); ou o tempo acaba às 22:45. A ação "acusar a Leonor" e o final "O impostor" saem. A Leonor fica, porque ajuda no computador 12, mas deixa de ser uma pista do telemóvel. O auditório está sempre aberto (o mapa já não tem cadeado). O final verdadeiro ("22:46") e o desafio do número desconhecido também saem. Mudam testes revistos de toda a equipa; precisam de aprovação na revisão do PR (lista na spec). Ver `specs/three-proofs.md`.
+
+### O professor numa só linha de raciocínio — Maria (23/11/2026)
+
+Alteração preparada no mesmo branch: a conversa com o professor segue uma ordem só (quantos elementos tem o grupo → "cinco" → "só somos quatro" → ele pede provas → "vou trazer provas" → "apresente-as quando estiver pronto"), e só no fim aparece o botão para apresentar as provas. Na audiência, uma linha explica o que fazer quando o Duarte fala: responder com a prova que mostra que a afirmação é falsa. Ver `specs/professor-line-of-thought.md`.
+
+### A câmara de segurança é a quarta prova — Maria (23/11/2026)
+
+Alteração preparada no mesmo branch: a fase 2 da secretária do segurança (o José, os cabos e as gravações, feitos pelo Afonso). Ao guardar a imagem das 23:47 da sala de informática, o servidor regista-a (pedido `footage`) e ela passa a ser uma prova na mão. O Duarte ganha uma quarta afirmação ("Nem cá estive ontem à noite"), que só a gravação desfaz: sem ela não há "Caso encerrado". A noite continua com 30 minutos; os limites dos testes de equilíbrio foram medidos de novo (uma noite cuidadosa cabe até ~37 s por clique). Muda um teste revisto do Afonso (`test_security_desk.py`) e outros da audiência e do horário; precisam de aprovação (lista na spec). Ver `specs/camera-proof.md`.
+
+### Na audiência, "Mostrar uma prova"; o Duarte só fala na audiência — Maria (23/11/2026)
+
+Na audiência, cada afirmação do Duarte responde-se com "📁 Mostrar uma prova" (abre as provas que tens, ou diz que ainda não tens nenhuma) ou "Não dizer nada" (`specs/hearing-show-evidence.md`). O jogador já não fala com o Duarte: ele só aparece a fazer as afirmações ao professor. O K deixa de o escolher, e o corredor entre as cadeiras do auditório ficou mais largo para chegares ao professor (`specs/duarte-only-in-the-hearing.md`).
+
+### As pistas dizem o que encontrar, não onde — Maria (23/11/2026)
+
+O cartão do início e o telemóvel mostram só quatro pistas, sem a sala e sem dicas de onde ou com quem: a pen do grupo, a fotografia original, as imagens da câmara da sala de informática e o histórico dos ficheiros. Ver `specs/clues-without-answers.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

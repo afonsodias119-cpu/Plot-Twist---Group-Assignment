@@ -8,7 +8,8 @@ FOLDER = Path(__file__).resolve().parents[1] / "prototypes" / "campus-3d"
 sys.path.insert(0, str(FOLDER))
 campus = importlib.import_module("campus_game")
 
-DECISIONS = {"ask_for_help", "accuse"}
+# Changed by specs/three-proofs.md ("Reviewed tests that change"): no accusation.
+DECISIONS = {"ask_for_help"}
 
 
 def leonor_actions(*actions, player):

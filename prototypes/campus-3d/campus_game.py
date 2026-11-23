@@ -24,6 +24,8 @@ from campus_clock import (COSTS, LEAVES, NIGHT_MINUTES, ROUNDS, WARNING, duarte_
 # case's data stays on the server: campus_evidence.case_of gives it, and the page sees only the date.
 from campus_clock import case_day, case_of_day
 from campus_evidence import CLASSIC
+# The security recording that is the fourth proof (specs/camera-proof.md): server only.
+from campus_case import CAMERAS, FOOTAGE
 # Every reply is told on its way out with the friends' names (specs/your-own-group.md). The culprit is
 # always Duarte now (specs/computer-lab-backup.md removed the cases of specs/culprit-of-the-night.md).
 from campus_evidence import retell
@@ -37,15 +39,13 @@ from campus_search import PC12_CODE, PEN_SPOT, PHOTO_PIECES, PHOTO_SOLUTION, PHO
 from campus_search import FIND_LATER, FIND_MINUTES, FIND_TEXT, FINDS
 from story import LANGUAGES, STORIES, UI_TEXTS
 
-# The clues the player has to collect, and the room where each one is found. In this 3D version the
-# auditorium opens only when each of them is done or lost. (The Streamlit game keeps the story's own,
-# looser rule: the old files must have been viewed.)
-# They are in the order they have to be done (specs/night-and-clues.md): Leonor helps only once she
-# has seen the photo, and computer 12 needs the memories of the whole group, Leonor's too.
-CLUES = [("usb_stick", "study_room"), ("original_photo", "print_shop"),
-         ("leonor", "library"), ("files_viewed", "computer_lab")]
-# The clue that only a person who leaves can give (specs/night-schedule.md, point 6). The clerk no
-# longer leaves (specs/night-and-clues.md), so the photo can always be got.
+# The clues of the phone's to-do list, and the room where each one is found, in the order they have to
+# be done (specs/night-and-clues.md). The auditorium is always open: the hearing decides with what the
+# player has (specs/three-proofs.md). Leonor is not a clue of the phone: she helps at computer 12, but
+# she is not a proof. She still leaves at 22:45 if she is not helping, and the unknown number warns about it.
+CLUES = [("usb_stick", "study_room"), ("original_photo", "print_shop"), ("files_viewed", "computer_lab")]
+# The person who leaves (specs/night-schedule.md, point 6). The clerk no longer leaves
+# (specs/night-and-clues.md), so the photo can always be got; only Leonor's warning reads this.
 CLUE_PERSON = {"leonor": "leonor"}
 # What a command that did not move the clock returns (see move_clock).
 CLOCK_STILL = {"charged": 0, "caught": False, "message": ""}
@@ -79,18 +79,6 @@ def clue_lost(state, clue, minute):
     return minute >= LEAVES[CLUE_PERSON[clue]]
 
 
-def missing_clues_note(state, language, minute=0):
-    """The note for trying the auditorium too early. Empty once every clue is done or lost.
-
-    A lost clue does not lock the auditorium, so every night can end (specs/night-schedule.md,
-    point 6). It does not say which clues are missing (specs/harder-campus.md): the player has to
-    work it out.
-    """
-    if all(clue_done(state, clue) or clue_lost(state, clue, minute) for clue, _room in CLUES):
-        return ""
-    return TEXT[language]["auditorium_note"]
-
-
 def clue_rows(story, state, language, minute):
     """The to-do list of the phone: what has to be collected, where, until when, and what is done or lost."""
     return [{"id": clue, "label": TEXT[language]["clues"][clue], "room": story["scenes"][room]["title"],
@@ -103,8 +91,7 @@ def clue_rows(story, state, language, minute):
 
 def gone_people(state, minute):
     """The people who have left by the schedule (point 5): Leonor from minute 15 only while she is
-    undecided (once she helps she stays; once accused the story already emptied her table). The clerk
-    stays all night (specs/night-and-clues.md)."""
+    undecided (once she helps she stays). The clerk stays all night (specs/night-and-clues.md)."""
     gone = []
     if minute >= LEAVES["leonor"] and state["flags"]["colleague_choice"] == "none":
         gone.append("leonor")
@@ -273,9 +260,8 @@ def route(story, start, goal):
 
 def action_rows(story, state, language, night):
     """The actions offered in the saved scene, ready for the screen. `person` says who offers it, if anyone.
-    The campus minute of `night` matters: a lost clue no longer locks the auditorium."""
-    scene, minute = story["scenes"][state["scene"]], night["minute"]
-    note = missing_clues_note(state, language, minute)
+    The auditorium always opens: the hearing decides (specs/three-proofs.md)."""
+    scene = story["scenes"][state["scene"]]
     actions = []
     for action in logic.available_actions(story, state):
         definition = scene["actions"][action["id"]]
@@ -288,8 +274,6 @@ def action_rows(story, state, language, night):
             decision="colleague_choice" in definition.get("sets", {}),
             person=ACTION_PERSON.get(action["id"]),
         )
-        if definition.get("go_to") == FINAL_ROOM and note:
-            row.update(allowed=False, blocked_text=note)
         actions.append(row)
     return actions
 
@@ -377,7 +361,7 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         sources.append(("print_shop", "request_copy"))
     choice = state["flags"]["colleague_choice"]
     if choice != "none":
-        sources.append(("library", "ask_for_help" if choice == "help" else "accuse"))
+        sources.append(("library", "ask_for_help"))   # the only decision left (specs/three-proofs.md)
     if state["flags"]["files_viewed"]:
         sources.append(("computer_lab", "view_files"))
     if state["flags"]["backup_saved"]:
@@ -416,7 +400,7 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         # messages as this night starts (specs/earlier-nights.md, points 3 and 4).
         # No whisper once the faculty has closed: 23:00 ends the night as an ending does.
         "memory": memory, "whispers": [] if night_closed(state, night) else whispers(state, memory, language),
-        "leonor_present": choice != "accused" and "leonor" not in gone,
+        "leonor_present": "leonor" not in gone,
         # True while the game is untouched: the 3D scene then starts the character outside.
         "fresh": state == story["start"],
         # The day of the case: its date and "Case of 22 November" (specs/case-of-the-day.md, point 5).
@@ -447,17 +431,12 @@ def enter_room(player, language, room):
     language = db.load_language(player) or language
     story = STORIES[language]
     steps = [] if room_of_scene(state["scene"]) == room else route(story, state["scene"], room) or []
-    minute = read_night(player, state)["minute"]   # walking costs nothing, so it stays the same on the way
     message, accepted, clock = "", True, CLOCK_STILL
     for target in steps:
         actions = story["scenes"][state["scene"]]["actions"]
         action_id = next((a for a, definition in actions.items() if definition.get("go_to") == target), None)
         if action_id is None:
             message, accepted = story["messages"]["not_here"], False
-            break
-        note = missing_clues_note(state, language, minute) if target == FINAL_ROOM and state["ending"] == "none" else ""
-        if note:   # the auditorium stays closed until every clue is done or lost: nothing is played or saved
-            message, accepted = note, False
             break
         result, clock = play_and_charge(player, action_id, language)
         message, accepted = result["message"], result["accepted"]
@@ -566,6 +545,36 @@ def find_thing(player, language, thing):
     return dict(clocked_snapshot(player, language, "", True, clock), examine=seen)
 
 
+def keep_footage(player, language, camera, minute):
+    """The player keeps a picture of last night's recordings as a proof (specs/camera-proof.md).
+
+    `camera` is one of the six cameras and `minute` a minute of last night (minutes after midnight,
+    22:00 to 23:59). The guard only lets a convinced player see the recordings, so the server asks for
+    what convinces him (the original photo or the old files, specs/security-desk.md). Only the picture
+    of computer 12 between 23:46 and 23:49 is the proof: then the note `footage` is written and the
+    card is in the hand. Anything else writes nothing. `footage` tells the page which. It costs nothing.
+    """
+    if not isinstance(camera, str) or camera not in CAMERAS:
+        raise ValueError("Unknown camera / Câmara desconhecida.")
+    if type(minute) is not int or not 22 * 60 <= minute <= 23 * 60 + 59:   # True is not a minute
+        raise ValueError("Invalid minute / Minuto inválido.")
+    if locked(player):   # nothing else during the hearing (specs/evidence-and-hearing.md, point 12)
+        return locked_reply(player, language, footage=False)
+    state = game.load(player)
+    language = db.load_language(player) or language
+    t = TEXT[language]["security"]
+    if state["ending"] != "none":
+        return dict(snapshot(player, language, STORIES[language]["messages"]["game_over"], accepted=False), footage=False)
+    if "original_photo" not in state["inventory"] and not state["flags"]["files_viewed"]:
+        return dict(snapshot(player, language, t["footage_unconvinced"], accepted=False), footage=False)
+    if camera != FOOTAGE["camera"] or not FOOTAGE["from"] <= minute <= FOOTAGE["to"]:
+        return dict(snapshot(player, language, t["footage_wrong"], accepted=False), footage=False)
+    night = read_night(player, state)
+    if not night["footage"]:
+        write_night(player, dict(night, footage=True))
+    return dict(snapshot(player, language, t["cctv_saved"], accepted=True), footage=True)
+
+
 def report_time(player, language, minute):
     """The page reports its own whole campus minute (specs/night-schedule.md, point 3).
 
@@ -602,7 +611,7 @@ def closed_reply(player, language, operation):
     if operation in ("talk", "rude", "confront"):
         raise ValueError(closed_text)
     extra = {"search": {"found": False}, "unlock": {"unlocked": False}, "assemble": {"assembled": False},
-             "hearing": {"heard": False}, "examine": {"examine": None}}
+             "hearing": {"heard": False}, "examine": {"examine": None}, "footage": {"footage": False}}
     return dict(snapshot(player, language, closed_text, accepted=False), **extra.get(operation, {}))
 
 
@@ -631,6 +640,8 @@ def run_command(payload):
         "time": {"operation", "player", "language", "minute"},
         # examining a thing of a room (specs/more-to-find.md, point 5)
         "examine": {"operation", "player", "language", "thing"},
+        # keeping a picture of the security recordings as a proof (specs/camera-proof.md)
+        "footage": {"operation", "player", "language", "camera", "minute"},
     }
     if not isinstance(operation, str) or operation not in allowed_fields:
         raise ValueError("Unknown operation / Operação desconhecida.")
@@ -722,6 +733,8 @@ def run_command(payload):
         return assemble_photo(player, language, payload["pieces"])
     if operation == "examine":
         return find_thing(player, language, payload["thing"])
+    if operation == "footage":
+        return keep_footage(player, language, payload["camera"], payload["minute"])
     if not isinstance(payload["action"], str):
         raise ValueError("Invalid action / Ação inválida.")
     if locked(player):
@@ -734,11 +747,6 @@ def run_command(payload):
     gone_text = schedule_refusal(state, night["minute"], action, language)
     if gone_text:
         return snapshot(player, language, gone_text, accepted=False)
-    # Going to the auditorium by the button needs every clue done or lost too, exactly as walking in through its door.
-    if definition.get("go_to") == FINAL_ROOM and state["ending"] == "none":
-        note = missing_clues_note(state, language, night["minute"])
-        if note:
-            return snapshot(player, language, note, accepted=False)
     result, clock = play_and_charge(player, action, language)
     return clocked_snapshot(player, language, result["message"], result["accepted"], clock)
 
