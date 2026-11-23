@@ -88,13 +88,10 @@ def test_the_print_shop_clerk_has_no_name():
 
 # ---------- a clearer start ----------
 
-def test_the_case_file_lists_the_four_real_members():
-    for language in ("en", "pt"):
-        extra = page3d.EXTRA[language]
-        assert len(extra["group"]) == 4 and extra["group"][1:] == ["Leonor", "Rita", "Tomás"]
-        assert "Duarte" in extra["group_note"] and extra["group_label"].strip()
+def test_the_intro_omits_the_mission_and_group_summary():
     page = page3d.build_page(playable=True, inline=True)
-    assert 'id="groupList"' in page and 'id="groupNote"' in page
+    for element in ("missionLabel", "missionText", "groupList", "groupNote"):
+        assert f'id="{element}"' not in page
 
 
 def test_the_start_screen_remembers_the_last_name():

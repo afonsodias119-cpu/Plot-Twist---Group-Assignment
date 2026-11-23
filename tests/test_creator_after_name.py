@@ -55,8 +55,9 @@ def test_outside_the_room_the_panel_names_the_place_and_hides_the_description():
     assert '$("scene-paragraphs").hidden = outside;' in PLAY
 
 
-def test_the_warning_says_when_the_faculty_closes_and_has_the_mission_and_the_group():
-    assert 'stepBrief.querySelector(".brief-body").append($("mission"))' in PLAY
+def test_the_warning_says_when_the_faculty_closes_and_includes_the_clues():
+    briefing = PLAY.split("stepBrief.innerHTML = ", 1)[1].split("stepLook.after(stepBrief)", 1)[0]
+    assert 'id="brief-title"' in briefing and 'id="brief-clues-order"' in briefing
     assert "stepLook.after(stepBrief)" in PLAY
     for language in ("pt", "en"):
         text = campus_text.TEXT[language]

@@ -50,9 +50,13 @@ def test_the_clues_are_in_the_order_they_are_done():
             assert t[key].strip(), (language, key)
 
 
-def test_the_clues_card_opens_at_the_start_and_after_a_new_game():
+def test_the_briefing_shows_the_ordered_clues_and_the_popup_is_only_for_restarts():
     assert 'id="clues-card"' in PLAY
-    assert PLAY.count("showCluesNotice();") == 2   # campusStart and the confirmed restart
+    assert '$("brief-clues-order").replaceChildren(...orderedClues(' in PLAY
+    start = PLAY.split("window.campusStart = async () => {", 1)[1].split("window.campusEnter", 1)[0]
+    restart = PLAY.split('$("confirm-restart").addEventListener', 1)[1]
+    assert "showCluesNotice(" not in start
+    assert "showCluesNotice();" in restart
     assert '$("clues-card").hidden;   // reading the clues is free' in PLAY
 
 
