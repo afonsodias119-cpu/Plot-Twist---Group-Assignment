@@ -302,14 +302,14 @@ ROUTES = {
     # With the photo, Leonor's card offers only the two decisions (specs/actions-when-they-make-sense.md).
     7: "; ".join(["rita: start, pen; search can; search usb_stick; > print_shop; amelia: start, order; "
                   "photo; > library; leonor: start; do ask_for_help; > computer_lab; "
-                  "tomas: start, kind, password; computer12: start; code; backup",
+                  "tomas: start, kind, who, password; computer12: start; code; backup",
                   END, "hearing files, original_photo, backup"]),
     9: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo; > study_room; "
                   "rita: start, photo, five; show original_photo; > library; leonor: start; do ask_for_help",
-                  LAB, "tomas: start, kind, slides; show files",
+                  LAB, "tomas: start, kind, who, password, slides; show files",   # specs/two-answers.md: the order
                   END, "hearing files, original_photo, backup"]),
     11: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo",
-                   LAB, "tomas: start, kind, who, password, msg5, photo, help, slides; show files; "
+                   LAB, "tomas: start, kind, who, password, slides; show files; "
                    "> library; leonor: start; do ask_for_help; leonor: soft, messages, mine, sure; "
                    "> study_room; rita: start, photo, duarte, warned, pen, chat, five; show files; "
                    "> auditorium; duarte: start, part, slide; show files; professor: start, list, evidence, proof",
@@ -1283,9 +1283,10 @@ def test_doing_everything_does_not_fit_at_30_seconds():
     charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 2 * costs["card_right"]
                + costs["card_duarte"])
     assert real_minutes + charges > rules.NIGHT_MINUTES, (lines, commands, real_minutes, charges)
-    # Route 11 (not every polite line) lost the same commands: it now fits up to 32 seconds a
-    # command (28.3 minutes at 30) and no longer at 33.
-    assert paced(33, 11)["ending"] is None
+    # Route 11 (not every polite line) lost the same commands, and Tomás's conversation is shorter
+    # (specs/two-answers.md): it now fits up to 34 seconds a command (26.8 minutes at 30) and no longer at 35.
+    assert paced(34, 11)["ending"] == "full_case"
+    assert paced(35, 11)["ending"] is None
 
 
 # ---------- The texts, the page and the files ----------
