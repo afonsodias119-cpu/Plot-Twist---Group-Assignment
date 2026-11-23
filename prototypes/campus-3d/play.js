@@ -2320,7 +2320,9 @@
       list.append(item);
     }
     screen.append(bar, list, make("p", t.todo_hint, "muted todo-hint"));
-    screen.append(make("p", t.todo_kindness_hint, "todo-hint"));
+    const kindnessHint = make("p", undefined, "todo-hint");
+    kindnessHint.append(make("strong", t.todo_kindness_label, "todo-hint-label"), " ", t.todo_kindness_hint);
+    screen.append(kindnessHint);
     if ((current?.clues || []).some(c => c.lost)) screen.append(make("p", t.todo_hint_lost, "muted todo-hint"));
   }
 
