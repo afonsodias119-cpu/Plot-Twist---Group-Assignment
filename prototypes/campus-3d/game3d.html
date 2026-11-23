@@ -1353,7 +1353,7 @@ const FIND_SPOTS = [
   { id: "price_list", x: -11.0, z: -5.4 }, { id: "order_book", x: -6.0, z: -5.4 },     // the print shop counter, its two ends
   { id: "noticeboard", x: 5.3, z: -8.0 }, { id: "returns_trolley", x: 6.0, z: -4.4 },  // the library: the west wall, the trolley
   { id: "lab_whiteboard", x: -12.3, z: 4.6 }, { id: "computer7", x: -11.2, z: 9.0 },   // the lab: the whiteboard, desk 4 left-hand screen
-  { id: "podium", x: 6.5, z: 9.3 },                                                     // in front of the podium
+  { id: "podium", x: 5.0, z: 9.2 },                                                     // beside the podium, away from the professor (specs/professor-before-podium.md)
 ];
 let player = makePerson({ topColor: 0xb3895a, long: true, hat: 0x3a2a1e, scarf: 0x8a1f24 });
 scene.add(player);
@@ -1805,10 +1805,13 @@ function loop() {
       const d = Math.hypot(player.position.x - o.x, player.position.z - o.z);
       if (d < nearDistance) { nearDistance = d; near = o.id; }
     }
-    // things to look at: only the ones of the saved room, as the snapshot lists them (`finds`)
+    // things to look at: only the ones of the saved room, as the snapshot lists them (`finds`).
+    // A person close by comes first (specs/professor-before-podium.md): K talks to them, not to the thing
+    // beside them. Rita and Leonor walking behind you do not count, or they would hide every thing.
+    const someone = near !== null && !USABLE.some(o => o.id === near) && !followerList().ids.includes(near);
     const finds = window.campusState.finds || [];
     for (const o of FIND_SPOTS) {
-      if (!finds.some(f => f.id === o.id)) continue;
+      if (someone || !finds.some(f => f.id === o.id)) continue;
       const d = Math.hypot(player.position.x - o.x, player.position.z - o.z);
       if (d < nearDistance) { nearDistance = d; near = o.id; }
     }
