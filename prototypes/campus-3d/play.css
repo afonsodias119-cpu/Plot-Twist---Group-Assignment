@@ -185,6 +185,9 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 #talk .chat-replies button.answer:hover, #talk .chat-replies button.answer:focus-visible { border-color: #00a884; background: #1f3a36; }
 .panel-hidden .talk-card { width: min(440px, calc(100% - 52px)); }
 .actions.people button { background: #e8b45c1f !important; color: var(--ink) !important; border-color: #e8b45c66 !important; }
+/* things to look at in the room (specs/more-to-find.md): quieter than the people, like the travel buttons */
+#investigation .actions.finds button { background: #ffffff06; border-color: var(--line); color: var(--ink); }
+#investigation .actions.finds button:hover { border-color: var(--gold); background: #e8b45c14; }
 .diary-heading { margin-top: 18px !important; }
 .diary-note { border-left: 2px solid #e8b45c66; padding-left: 10px; margin: 10px 0; }
 .diary-note h4 { margin: 0 0 4px; font-size: 12px; color: var(--gold); }
@@ -361,6 +364,25 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .text-mode .creator-preview { display: none; }
 .text-mode .creator { grid-template-columns: 1fr; }
 @media (max-width: 640px) { .creator { grid-template-columns: 1fr; justify-items: center; } .creator-controls { justify-self: stretch; } }
+/* the three friends' names (specs/your-own-group.md): closed under the creator, one field for each place */
+.group-box { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.group-box summary { cursor: pointer; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.group-box summary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.group-box[open] summary { margin-bottom: 6px; }
+/* it sits in the "Your detective" step, under the creator (specs/creator-after-name.md), so it has its own field style */
+.group-box p { margin: 0 0 8px; font-size: 12px; line-height: 1.5; }
+.group-box .group-field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+.group-box .group-field input { width: 100%; padding: 8px 10px; border: 1px solid #b8c5d35c; border-radius: 7px; color: var(--ink); background: #071524; font: inherit; }
+@media (max-width: 640px) { .group-box .group-field { grid-template-columns: 1fr; gap: 4px; } }
+
+/* the day of the case on the case file, after the game's name in its top bar (specs/case-of-the-day.md, point 6).
+   At phone width the "Confidential" pill and the clock give way, and the label may go to a second line. */
+.case-day { color: var(--gold); }
+#stepCase .file-top #caseNo, #stepCase .file-top .case-day { white-space: nowrap; }
+@media (max-width: 520px) {
+  #stepCase .file-top { flex-wrap: wrap; row-gap: 4px; }
+  #stepCase .file-top #stamp, #stepCase .file-top .clock { display: none; }
+}
 
 /* where the game is played: the choice on the first screen, the joystick, the QR code and the detective card */
 .device { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; gap: 8px; justify-items: start; }
@@ -439,3 +461,40 @@ dialog .app-grid .app-name { font-size: 11px; max-width: 100%; overflow-wrap: an
 .calendar-events { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
 .calendar-events li { display: grid; grid-template-columns: 64px 1fr; gap: 8px; padding: 6px 10px; border-radius: 10px; background: #ffffff0d; }
 .calendar-events b { font-weight: 500; color: var(--muted); }
+
+/* the security desk: the guard, the cables and the recordings (specs/security-desk.md) */
+.guard-card #guard-options { display: grid; gap: 8px; }
+.guard-card #guard-options button { text-align: left; width: 100%; }
+.guard-card #guard-options button.answer { background: #ffffff08; border-color: var(--line); color: var(--ink); }
+.guard-card #guard-options button.answer:hover { border-color: var(--gold); background: #e8b45c14; }
+.guard-card header { display: flex; align-items: center; gap: 12px; }
+.guard-card #guard-text { margin: 12px 0 14px; font-size: 15px; line-height: 1.6; }
+.wires-dialog { max-width: min(720px, 96vw); }
+.wires-dialog svg { width: 100%; height: auto; display: block; background: #08121c; border-radius: 12px; border: 1px solid var(--line); }
+.wires-status { min-height: 1.5em; font-size: 14px; color: var(--gold); }
+.wires-caption { fill: #8fa3b3; font: 12px Inter, system-ui, sans-serif; text-anchor: middle; }
+.wires-room { fill: #0f1d2a; stroke: #2b3d4d; stroke-width: 2; }
+.wires-corridor { fill: #0b1620; stroke: #1f2e3b; stroke-width: 1.5; stroke-dasharray: 5 4; }
+.wires-entrance { fill: #e8b45c; }
+.wires-monitor { fill: #131c26; stroke: #536a7d; stroke-width: 2; }
+.wires-port { cursor: pointer; outline: none; }
+.wires-port:hover .wires-monitor, .wires-port:focus-visible .wires-monitor { stroke: var(--gold); }
+.wires-port.linked .wires-monitor { stroke: #7fd6a0; }
+.wires-hole { fill: #05090d; stroke: #536a7d; stroke-width: 2; }
+.wires-cable { cursor: pointer; outline: none; }
+.wires-cable .wires-body { opacity: .9; }
+.wires-cable:hover .wires-body, .wires-cable:focus-visible .wires-body { opacity: 1; }
+.wires-cable.selected .wires-body { stroke: #fff; stroke-width: 3; }
+.wires-label { fill: #0b1b29; font: 700 14px Inter, system-ui, sans-serif; }
+.wires-line { fill: none; stroke-width: 6; stroke-linecap: round; opacity: .95; }
+.wires-dialog.sparks svg { animation: wires-sparks .6s ease-in-out 1; }
+@keyframes wires-sparks { 0%, 100% { transform: none; box-shadow: none; } 15% { transform: translateX(-4px); box-shadow: 0 0 40px #ffd36b; } 30% { transform: translateX(4px); } 50% { box-shadow: 0 0 30px #ff8c7a; } 70% { transform: translateX(-2px); } }
+.cctv-dialog { max-width: min(760px, 96vw); }
+.cctv-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.cctv-tabs button { padding: 6px 10px; font-size: 12px; }
+.cctv-tabs button[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); background: #e8b45c1f; }
+.cctv-dialog canvas { width: 100%; height: auto; display: block; border-radius: 10px; background: #000; border: 1px solid #2b3d4d; }
+.cctv-controls { display: flex; align-items: center; gap: 10px; margin: 12px 0 4px; }
+.cctv-controls input[type="range"] { flex: 1; min-width: 0; accent-color: #e8b45c; }
+.cctv-controls output { font: 700 15px ui-monospace, Consolas, monospace; color: #b8ffd0; min-width: 54px; text-align: right; }
+.cctv-saved { color: #7fd6a0; font-weight: 600; }

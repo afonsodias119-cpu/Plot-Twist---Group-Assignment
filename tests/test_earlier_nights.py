@@ -55,7 +55,7 @@ PLAYER = "detective"
 # so there are three story endings and the true ending needs those three.
 ENDINGS = ["full_case", "impostor", "stolen_credits"]
 # The three right answers of the hearing when Leonor helps (specs/evidence-and-hearing.md, point 10).
-PERFECT = ("files", "original_photo", "leonor_messages")
+PERFECT = ("files", "original_photo", "backup")   # specs/computer-lab-backup.md
 
 # The six memory answers (point 5): person -> (the first night it is offered, the line it leads to,
 # its label in each language), word for word as in design-notes/texts-3-nights.md (A1).
@@ -226,12 +226,12 @@ def show(card, npc, node, player=PLAYER, language="en"):
 
 
 def crack_tomas(player=PLAYER, language="en"):
-    """In the computer lab: the file history on his claim line gives `tomas_word` (specs/computer-lab-backup.md)."""
+    """In the computer lab: the file history on his claim line cracks him (specs/computer-lab-backup.md)."""
     assert show("files", "tomas", "slides", player, language)["confront"]["cracked"] is True
 
 
 def crack_rita(player=PLAYER, language="en"):
-    """With the original photo: walk to the study room and break her claim line. Gives `rita_word`."""
+    """With the original photo: walk to the study room and break her claim line."""
     walk("study_room", player, language)
     assert show("original_photo", "rita", "five", player, language)["confront"]["cracked"] is True
 
@@ -255,14 +255,11 @@ def finish(ending, player=PLAYER, language="en"):
 
     Leonor's choice chooses the story's ending (specs/computer-lab-backup.md): she helps for
     `full_case`, she is accused for `impostor`, and for `stolen_credits` she is never asked and leaves
-    at 22:30. Without her screenshots, only Tomás's word can answer the claim about the messages.
+    at 22:30. The backup answers the claim about the messages in every case.
     """
     leonor = {"full_case": "ask_for_help", "impostor": "accuse", "stolen_credits": None}[ending]
     investigate(player, language, leonor)
-    third = "leonor_messages"
-    if ending != "full_case":
-        crack_tomas(player, language)
-        third = "tomas_word"
+    third = "backup"
     if leonor is None:
         at(15, player, language)   # Leonor leaves undecided: her clue is lost and the auditorium opens
     walk("auditorium", player, language)
@@ -701,12 +698,12 @@ def test_the_true_ending_needs_the_four_endings_seen_before_tonight():
 
 
 def test_the_true_ending_needs_no_doubt_and_both_words():
-    almost = {"one wrong answer": dict(answers=("files", "files", "leonor_messages")),
+    almost = {"one wrong answer": dict(answers=("files", "files", "backup")),
               "one catch": dict(caught=True),
               "no tomas": dict(tomas=False),
               "no rita": dict(rita=False),
               # specs/computer-lab-backup.md: the story's impostor now comes from accusing Leonor
-              "leonor accused": dict(leonor="accuse", answers=("files", "original_photo", "tomas_word"))}
+              "leonor accused": dict(leonor="accuse")}
     for player, change in almost.items():
         remember(player, *ENDINGS)
         ended = true_night(player, **change)

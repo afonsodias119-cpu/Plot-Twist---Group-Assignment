@@ -1,0 +1,31 @@
+# Runs every test on GitHub for each push and pull request (specs/tests-on-github.md).
+# The result shows on the pull request (a tick or a cross) and in the README badge.
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+# The workflow only reads the code; it cannot change the repository.
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Python and the exact libraries of uv.lock, as on our computers.
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: uv run pytest
+
+      # The page's JavaScript: a syntax check of each file, and Maria's conversation test.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --check prototypes/campus-3d/play.js
+      - run: node --check prototypes/campus-3d/table.js
+      - run: node --check prototypes/campus-3d/photo.js
+      - run: node tests/continuous-conversations.cjs

@@ -292,28 +292,28 @@ ROUTES = {
     # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): no chat, no flags and no
     # "fifth_element"; Leonor's choice decides the story's ending, and LAB saves the backup.
     1: "; ".join([clues("accuse"), LAB, END, "hearing files, original_photo, -"]),
-    2: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, leonor_messages"]),
+    2: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
     # Route 3 is route 2, the careful night that route 6 is compared with.
-    3: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, leonor_messages"]),
+    3: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
     # Only the lab: the photo is lost at 22:25 and Leonor at 22:30, so the auditorium opens.
     5: "; ".join(["search usb_stick", LAB, "wait until 22:30", END, "hearing files, -, -"]),
     # Route 6 is route 3 played by a player who waits at computer 12, the files open, until Duarte comes.
-    6: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, leonor_messages"]),
+    6: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
     # With the photo, Leonor's card offers only the two decisions (specs/actions-when-they-make-sense.md).
     7: "; ".join(["rita: start, pen; search can; search usb_stick; > print_shop; amelia: start, order; "
                   "photo; > library; leonor: start; do ask_for_help; > computer_lab; "
                   "tomas: start, kind, password; computer12: start; code; backup",
-                  END, "hearing files, original_photo, leonor_messages"]),
+                  END, "hearing files, original_photo, backup"]),
     9: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo; > study_room; "
                   "rita: start, photo, five; show original_photo; > library; leonor: start; do ask_for_help",
                   LAB, "tomas: start, kind, slides; show files",
-                  END, "hearing files, rita_word, tomas_word"]),
+                  END, "hearing files, original_photo, backup"]),
     11: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo",
                    LAB, "tomas: start, kind, who, password, msg5, photo, help, slides; show files; "
-                   "> library; leonor: start; do ask_for_help; leonor: soft, messages, mine, sure; show tomas_word; "
+                   "> library; leonor: start; do ask_for_help; leonor: soft, messages, mine, sure; "
                    "> study_room; rita: start, photo, duarte, warned, pen, chat, five; show files; "
-                   "> auditorium; duarte: start, part, slide; show tomas_word; professor: start, list, evidence, proof",
-                   "hearing files, original_photo, leonor_messages"]),
+                   "> auditorium; duarte: start, part, slide; show files; professor: start, list, evidence, proof",
+                   "hearing files, original_photo, backup"]),
 }
 
 # How each route treats a round while Tomás has not cracked (the rule under the routes in the spec):
@@ -327,7 +327,7 @@ ROUND_HABITS = {1: "knows", 2: "knows", 3: "knows", 5: "knows", 6: "linger", 7: 
 # One of them takes QUICK_SECONDS: opening the table.
 OTHER_COMMANDS = {"open the table": 1, "search": 1, "doors (print shop, library, lab, back to Rita, auditorium)": 5,
                   "copy (the answer and the full frame)": 2, "decision": 1, "code": 1, "backup": 1,
-                  "cards (Tomás, Rita, Leonor, Duarte)": 4, "hearing (start and three answers)": 4}
+                  "cards (Tomás, Rita, Duarte)": 3, "hearing (start and three answers)": 4}
 
 
 def photo_hands():
@@ -418,7 +418,7 @@ def next_round(run):
 
 def tomas_cracked(run):
     """Tomás stands in the lab door once he has cracked: a round can no longer catch the player."""
-    return "tomas_word" in [card["id"] for card in run["last"]["evidence"]]
+    return "tomas" in db.load_night(run["player"])["notes"].get("cracked", [])   # a fact, not a card (specs/computer-lab-backup.md)
 
 
 def warned_round(run):
@@ -634,7 +634,7 @@ def test_walking_talking_the_backup_and_the_hearing_cost_nothing():
     assert unlock()["night"]["minute"] == 2.5
     costs_nothing(do("save_backup"), 2.5)                     # the backup (specs/computer-lab-backup.md: it replaces the chat)
     costs_nothing(walk("auditorium"), 2.5)
-    for value in ("start", "files", "original_photo", "leonor_messages"):   # the four hearing commands
+    for value in ("start", "files", "original_photo", "backup"):   # the four hearing commands
         costs_nothing(answer(value), 2.5)
     assert game.load(PLAYER)["ending"] != "none"
 
@@ -1272,19 +1272,20 @@ def test_doing_everything_does_not_fit_at_30_seconds():
     lines = sum(len(polite_lines(person)) for person in people.PEOPLE["en"])
     commands = lines + sum(OTHER_COMMANDS.values())
     # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): opening the chat, the five
-    # flags and closing it (7 commands) became one backup, so 20 commands instead of 26.
-    assert sum(OTHER_COMMANDS.values()) == 20
+    # flags and closing it (7 commands) became one backup, and Leonor is no longer shown a card: 19
+    # commands instead of 26.
+    assert sum(OTHER_COMMANDS.values()) == 19
     # Every command at half a minute, except opening the table (QUICK_SECONDS) and the hands on the
     # pieces of the photo.
     real_minutes = ((commands - 1) * 30 + QUICK_SECONDS + photo_hands()) / 60
-    # The smallest charges of such a night: the copy, the decision, the files, three right cards, Duarte's card.
+    # The smallest charges of such a night: the copy, the decision, the files, two right cards, Duarte's card.
     costs = rules.COSTS
-    charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 3 * costs["card_right"]
+    charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 2 * costs["card_right"]
                + costs["card_duarte"])
     assert real_minutes + charges > rules.NIGHT_MINUTES, (lines, commands, real_minutes, charges)
-    # Route 11 (not every polite line) lost the same 7 commands: it now fits up to 31 seconds a
-    # command (28.8 minutes at 30) and no longer at 32.
-    assert paced(32, 11)["ending"] is None
+    # Route 11 (not every polite line) lost the same commands: it now fits up to 32 seconds a
+    # command (28.3 minutes at 30) and no longer at 33.
+    assert paced(33, 11)["ending"] is None
 
 
 # ---------- The texts, the page and the files ----------

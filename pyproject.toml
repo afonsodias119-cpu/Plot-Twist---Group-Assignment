@@ -3,8 +3,16 @@ name = "plot-twist"
 version = "0.1.0"
 description = "Plot Twist — team project, Introduction to Programming, Nova SBE 2026/27"
 requires-python = ">=3.12,<3.13"
+# What the published app needs. Pillow comes with Streamlit; it is listed so that a version
+# with known vulnerabilities is never installed (specs/safe-dependencies.md).
 dependencies = [
-    "streamlit==1.62.0",
+    "streamlit==1.67.0",
+    "pillow>=13.0.0",
+]
+
+# Only for the team's computers: `uv sync` installs it, the public app does not need it.
+[dependency-groups]
+dev = [
     "pytest==9.1.1",
 ]
 

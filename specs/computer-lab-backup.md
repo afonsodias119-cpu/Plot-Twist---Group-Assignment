@@ -20,6 +20,9 @@ Changes `story.py` (both games: the plain game of `app.py` and the 3D game) and 
   5. **Duarte's rounds (3D)** catch a player who is **at computer 12 with the files open and the backup not saved yet** (it was: in the chat). A catch only costs its 3 minutes and its doubt; nothing else is saved. His line says he closes the window: "Those conversations are not for you."
   6. **The page** loses the chat screen, the 🟨 square of the share card, the unknown number's message about the first flag, the fifth ending's colours, flickering lights and stamp. After the right code, computer 12's card offers the backup.
 
+7. **The proofs for the professor (after the merge with #53–#56, agreed with the team).** The cards are the USB stick's history (`files`), the original photo and the **backup** (new card `backup`, held once `backup_saved`). Duarte's claims: `name` ← `files`, `photo` ← `original_photo`, `messages` ← `backup`. Leonor's screenshots and the words of Tomás and Rita are no longer cards: cracking Tomás or Rita is kept in the night's notes (Tomás still stands in the lab door, and the true ending still needs both), and Leonor is no longer cracked with a card. The security camera will be the fourth proof, with a fourth claim, added by Afonso (specs/security-desk.md, phase 2).
+8. **No culprit cases.** The cases "tomas" and "rita" of specs/culprit-of-the-night.md changed the fake chat messages; they are removed and the culprit is always Duarte. The case of the day keeps only the classic case, so the start screen and the share card still show the date. The friends' names of specs/your-own-group.md still work. The lies of specs/trust-has-consequences.md are now contradicted by the backup.
+
 ## What
 
 - [ ] `story.py`: start flags (`backup_saved` instead of `flagged_1`…`flagged_5`); computer lab text and `save_backup`; `go_auditorium` requires `backup_saved`; no `group_chat` scene; three endings with new texts (EN and PT).
@@ -43,7 +46,9 @@ Approved by the team (the decision to remove the chat and the fifth ending was t
 - `tests/test_earlier_nights.py`: three story endings; the dare and the night numbers follow; a catch happens at computer 12 before the backup.
 - `tests/test_night_schedule.py`: the balance model's "chat 5 2 4" step becomes "backup" (and the careful player waits before the code, not before the chat); the routes lose the chat and the fifth ending; the catch tests happen at computer 12 before the backup; "doing everything" lost 7 commands (26 → 20): the estimate still does not fit at 30 seconds, and route 11 now fits up to 31 seconds a command and no longer at 32.
 
+- After the merge with #53–#56: `tests/test_culprit_of_the_night.py` **deleted** (only the removed cases); `tests/test_evidence_and_hearing.py` (the three cards, the facts are notes, Leonor is not cracked, the backup answers `messages`), `tests/test_earlier_nights.py` and `tests/test_night_schedule.py` (the hearings answer with the backup; "doing everything" is 19 commands, route 11 now fits up to 32 seconds a command and no longer at 33), `tests/test_more_to_find.py`, `tests/test_trust_has_consequences.py` (the backup contradicts the lies; Leonor's half of `test_cracking_forgives` is gone) and `tests/test_your_own_group.py` (no chat, no cases).
+
 ## Done when
 
-- [ ] Every test passes.
+- [ ] Every test passes (520 after the merge with #53–#56).
 - [ ] In the browser: computer 12 asks for the code, then offers the backup; the backup text appears and goes to the diary; there is no chat screen.

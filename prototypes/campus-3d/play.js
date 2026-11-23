@@ -26,6 +26,9 @@
   // The last name used in this browser is filled in again: if the page reloads (for example after an
   // update of the app), continuing the game is one click (specs/chat-dialogues.md).
   const LAST_NAME_KEY = "plot-twist-last-name";
+  // The page's copy of game.NAME_PATTERN, so a name the server would refuse is caught under the field
+  // (specs/name-check-first-step.md). The server still checks every name.
+  const NAME_RULE = /^[\p{L}\p{N}_ -]{1,20}$/u;
   try { name.value = localStorage.getItem(LAST_NAME_KEY) || ""; } catch (error) { /* no storage */ }
   // ---------- the character creator: boy or girl, clothes, colours (kept in this browser, for each name) ----------
   // It only changes how the detective looks; the server never sees it (specs/rules-and-character.md).
@@ -227,6 +230,7 @@
   }
   window.campusNext = () => {
     if (!name.value.trim()) { startError.textContent = ui().name_needed; name.focus(); return; }
+    if (!NAME_RULE.test(name.value.trim())) { startError.textContent = ui().name_invalid; name.focus(); return; }
     startError.textContent = ""; lookError.textContent = "";
     goStep($("stepCase"), stepLook);
   };
@@ -241,6 +245,63 @@
   });
   $("brief-back").addEventListener("click", () => goStep(stepBrief, stepLook));
   $("brief-start").addEventListener("click", () => window.campusStart());
+
+  // ---------- your own group: three friends' names in the teammates' places (specs/your-own-group.md) ----------
+  // Under the creator, in a closed <details>, so a first player still sees only the name field, its hint and
+  // the creator (specs/no-endings-on-start.md). The server cleans the names again: it never trusts this browser.
+  const STORY_GROUP = ["Leonor", "Rita", "Tomás"];   // the order of the fields, as campus_people.DEFAULT_GROUP
+  const GROUP_KEY = "plot-twist-group";
+  const groupBox = make("details", undefined, "group-box");
+  const groupTitle = make("summary"), groupHint = make("p", undefined, "muted");
+  const groupFields = STORY_GROUP.map((storyName, i) => {
+    const label = make("label", undefined, "group-field"), caption = make("span");
+    const input = make("input"); input.id = `group-name-${i + 1}`; input.maxLength = 14;
+    input.placeholder = storyName; input.autocomplete = "off"; input.spellcheck = false;
+    label.append(caption, input);
+    return { caption, input };
+  });
+  groupBox.append(groupTitle, groupHint, ...groupFields.map(field => field.caption.parentNode));
+  // In the "Your detective" step, under the creator (specs/your-own-group.md, point 1; specs/creator-after-name.md).
+  stepLook.querySelector(".look-body").append(groupBox);
+  // Whatever is read from the browser is checked, as cleanLook does: a damaged note gives three empty fields.
+  function cleanGroup(raw) {
+    if (!Array.isArray(raw) || raw.length !== 3) return ["", "", ""];
+    return raw.map(value => (typeof value === "string" ? value.slice(0, 14) : ""));
+  }
+  try { cleanGroup(JSON.parse(localStorage.getItem(GROUP_KEY) || "null")).forEach((value, i) => { groupFields[i].input.value = value; }); } catch (error) { /* no storage */ }
+  const typedGroup = () => groupFields.map(field => field.input.value);
+  // A typed name as the server would write it: single spaces, the first letter upper-cased (point 3).
+  const tidyName = text => text.normalize("NFC").trim().replace(/\s+/g, " ").replace(/\p{L}/u, letter => letter.toUpperCase());
+  function paintGroup() {
+    const t = ui();
+    groupTitle.textContent = t.group_title;
+    groupHint.textContent = t.group_hint;
+    groupFields.forEach((field, i) => { field.caption.textContent = t.group_slots[i]; });
+  }
+  // The name chips of the case file (#groupList: "You" first, then the three teammates) show the names
+  // typed. Only the text changes, with textContent, so a name is never read as HTML.
+  function paintGroupChips() {
+    const chips = $("groupList") ? $("groupList").children : [];
+    groupFields.forEach((field, i) => {
+      if (chips[i + 1]) chips[i + 1].textContent = tidyName(field.input.value) || STORY_GROUP[i];
+    });
+  }
+  groupFields.forEach(field => field.input.addEventListener("input", () => {
+    paintGroupChips();
+    try { localStorage.setItem(GROUP_KEY, JSON.stringify(typedGroup())); } catch (error) { /* no storage */ }
+  }));
+  // game3d.html draws the chips again when the language is chosen: they are renamed after it (a microtask).
+  window.addEventListener("language", () => queueMicrotask(() => { paintGroup(); if (!current) paintGroupChips(); }));
+  paintGroup();
+  // The note of point 8, after `begin`: a field the server gave the story's name back, or a continued
+  // game that kept the group it started with. "" when the names are the ones typed.
+  function groupNote(state) {
+    if (!Array.isArray(state.group)) return "";
+    const t = ui(), typed = typedGroup().map(tidyName);
+    const differs = typed.some((value, i) => value && value.toLowerCase() !== String(state.group[i]).toLowerCase());
+    if (!differs) return "";
+    return state.message === t.continued ? t.group_kept : t.group_reset;
+  }
 
   $("premise").after(nameBox);   // the mission box went to step 4 (specs/creator-after-name.md)
   // Which night of this name it is, under the name box (specs/earlier-nights.md, point 6). Empty on night 1,
@@ -267,6 +328,9 @@
     <button id="sms" class="sms" hidden><span id="sms-from" class="sms-from"></span><span id="sms-text"></span></button>
     <div id="joystick" class="joystick" aria-hidden="true"><div id="stick-base" class="stick-base"><div id="stick-knob" class="stick-knob"></div></div></div>
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
+    <section id="guard-card" class="talk-card guard-card" role="dialog" aria-labelledby="guard-name" aria-live="polite" hidden>
+      <header><h3 id="guard-name"></h3><button id="guard-close" class="secondary"></button></header>
+      <p id="guard-text"></p><div id="guard-options"></div></section>
     <section id="ending-card" class="ending-card" role="dialog" aria-labelledby="ending-title" hidden>
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
       <p id="ending-collection" class="collection"></p>
@@ -332,6 +396,60 @@
       gain.gain.setValueAtTime(0.07, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
       osc.connect(gain); gain.connect(master); osc.start(now); osc.stop(now + 0.12);
     }
+    // ---- sounds that tell the player something happened (specs/sounds-that-tell.md, point 6) ----
+    // Each one starts with the same guard as tone and step, so the Sound button silences it.
+    // One step of someone else: a triangle wave falling from 90 to 45 Hz. `filtered`: heard through a wall.
+    function thump(volume, filtered) {
+      if (!ctx || muted) return;
+      const now = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = "triangle"; osc.frequency.setValueAtTime(90, now); osc.frequency.exponentialRampToValueAtTime(45, now + 0.1);
+      gain.gain.setValueAtTime(volume, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      osc.connect(gain);
+      if (filtered) {
+        const wall = ctx.createBiquadFilter(); wall.type = "lowpass"; wall.frequency.value = 600;
+        gain.connect(wall); wall.connect(master);
+      } else gain.connect(master);
+      osc.start(now); osc.stop(now + 0.14);
+    }
+    // 8 steps, 0.42 s apart: louder and louder when someone comes closer, softer when they go away.
+    function footsteps(coming) {
+      if (!ctx || muted) return;
+      for (let i = 0; i < 8; i++) {
+        const volume = 0.015 + (0.08 - 0.015) * (coming ? i : 7 - i) / 7;
+        setTimeout(() => { if (!muted) thump(volume, true); }, 420 * i);   // the Sound button can stop the steps half way
+      }
+    }
+    // A short noise (random samples, as the sea is made) through a band-pass filter sliding `from` -> `to` Hz.
+    // Returns its gain, so the shutter can shake it.
+    function noise(seconds, from, to, volume) {
+      if (!ctx || muted) return;
+      const now = ctx.currentTime, length = Math.ceil(ctx.sampleRate * seconds);
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate), samples = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) samples[i] = Math.random() * 2 - 1;
+      const source = ctx.createBufferSource(); source.buffer = buffer;
+      const band = ctx.createBiquadFilter(); band.type = "bandpass"; band.Q.value = 1.2;
+      band.frequency.setValueAtTime(from, now); band.frequency.exponentialRampToValueAtTime(to, now + seconds);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(volume, now); gain.gain.setValueAtTime(volume, now + seconds * 0.8);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + seconds);
+      source.connect(band); band.connect(gain); gain.connect(master);
+      source.start(now); source.stop(now + seconds);
+      return gain;
+    }
+    // The print shop's metal shutter rolling down: 1.4 s of rattle, then a thump. `level`: 1 in the print shop, 0.4 elsewhere.
+    function shutter(level) {
+      if (!ctx || muted) return;
+      const gain = noise(1.4, 2200, 700, 0.06 * level), now = ctx.currentTime;
+      const rattle = ctx.createOscillator(), depth = ctx.createGain();   // a 14 Hz wobble of the volume: the slats
+      rattle.frequency.value = 14; depth.gain.value = 0.03 * level;
+      rattle.connect(depth); depth.connect(gain.gain); rattle.start(now); rattle.stop(now + 1.4);
+      setTimeout(() => thump(0.1 * level, false), 1400);   // the shutter hits the counter
+    }
+    // A chair scraping on the floor: a short low noise.
+    function chair() {
+      if (!ctx || muted) return;
+      noise(0.25, 400, 200, 0.05);
+    }
     // music: a low drone and a pulse that get faster and darker as the night goes on (tension 0..1)
     let tension = 0, droneGain = null, droneFilter = null, musicOn = false, beatCount = 0;
     const NOTES = [110, 130.8, 164.8, 196, 220];   // A minor
@@ -384,6 +502,7 @@
       talk: () => tone(340 + Math.random() * 60, 0.07, "triangle", 0.05),
       buzz() { tone(110, 0.13, "square", 0.07); setTimeout(() => tone(110, 0.13, "square", 0.07), 180); },   // the phone
       setTension(value) { tension = Math.max(0, Math.min(1, value)); },
+      footsteps, shutter, chair,   // specs/sounds-that-tell.md
     };
   })();
   // The torch of the 3D scene and the voices of the people; both are remembered in this browser.
@@ -474,7 +593,7 @@
     const t = ui();
     document.documentElement.lang = window.lang || "pt";
     nameLabel.textContent = t.name_label;
-    nameHint.textContent = t.continue_hint;
+    nameHint.textContent = t.continue_here;   // a name continues only in its own browser (specs/name-belongs-to-browser.md)
     $("accept").textContent = t.next_step;
     $("look-case").textContent = data[window.lang || "pt"].intro.title;   // the name of the game
     $("look-back").textContent = t.look_back;
@@ -486,6 +605,8 @@
     $("brief-back").textContent = t.brief_back;
     $("brief-start").textContent = t.start;
     $("case-eyebrow").textContent = t.case;
+    // In the game, the day of the case before " · NOVA SBE" (specs/case-of-the-day.md, point 7).
+    if (current?.day?.label) $("case-eyebrow").textContent = t.case.replace(" · NOVA SBE", ` · ${current.day.label} · NOVA SBE`);
     $("game-title").textContent = t.title;
     $("scene-label").textContent = current?.ending ? t.the_end : t.scene;
     $("inventory-label").textContent = t.inventory;
@@ -576,7 +697,7 @@
     if (location.protocol === "file:") { introError.textContent = ui().local_only; return; }
     // Before a command the server hears the page's own minute (specs/night-schedule.md, point 4). The
     // command is for the person of the open card: it is not sent if the report shows that person gone.
-    if (!["open", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
+    if (!["open", "begin", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
     setBusy(true);
     try {
       const result = await request({ operation, player: current?.player || name.value,
@@ -589,6 +710,14 @@
       uncertain = true;
       const message = error.name === "Error" ? error.message : ui().network_error;
       (current ? $("feedback") : introError).textContent = message;
+      // Another browser holds this name's key: back to the name, with the message under the field
+      // (specs/name-belongs-to-browser.md, point 6).
+      if (!current && message === ui().name_taken) {
+        const from = [stepBrief, stepLook].find(step => step.classList.contains("on"));
+        if (from) goStep(from, $("stepCase"));
+        introError.textContent = ""; startError.textContent = message;
+        setTimeout(() => name.focus({ preventScroll: true }), 450);
+      }
       if (current) { $("feedback").className = "error"; $("feedback").hidden = false; toast(message); }
       return false;
     } finally { setBusy(false); }
@@ -597,6 +726,7 @@
   function render(state, operation) {   // operation: the command this snapshot answers
     const roomChanged = !current || current.scene !== state.scene || Boolean(current.ending) !== Boolean(state.ending);
     const gotItem = current && state.inventory.length > current.inventory.length;
+    const before = current;   // the snapshot this one replaces: soundCues compares the two (specs/sounds-that-tell.md)
     current = state;
     window.campusState = state;
     window.lang = state.language;
@@ -626,6 +756,20 @@
           const button = make("button", person.object ? `🖥️ ${t.use} ${person.name}` : `💬 ${t.talk_to} ${person.name}`);
           button.dataset.talk = person.id;
           button.addEventListener("click", () => talkStep(person.id, "start"));
+          box.append(button); group.append(box);
+        }
+        $("action-groups").append(group);
+      }
+      // The things to look at in this room (specs/more-to-find.md, point 7): one button for each, in the side
+      // panel and so in the text mode too. Like investigating, it needs the character inside the room.
+      if ((state.finds || []).length) {
+        const group = make("section", undefined, "actions finds investigate");
+        group.append(make("h3", t.look_title));
+        for (const thing of state.finds) {
+          const box = make("div", undefined, "action-row");
+          const button = make("button", `🔎 ${thing.name}`);
+          button.dataset.thing = thing.id;
+          button.addEventListener("click", () => lookAt(thing.id));
           box.append(button); group.append(box);
         }
         $("action-groups").append(group);
@@ -696,10 +840,31 @@
     showNotice(state);
     showEnding(state.ending);
     checkNotices(state);
+    syncSecurity();
     sound.setTension(state.ending ? 0 : tensionOf(state));
+    soundCues(before, state, operation);
     if (roomChanged) {
       $("scene-heading").focus({ preventScroll: true });
       document.querySelector(".scene-panel").scrollTop = 0;
+    }
+  }
+
+  // ---------- sounds that tell the player something happened (specs/sounds-that-tell.md, point 5) ----------
+  // Only between two snapshots of the same night: never on opening the game (a reload at 22:40 must not
+  // play the shutter again), never for a new game or another player, never once the night has an ending.
+  function soundCues(before, state, operation) {
+    if (!before || before.player !== state.player || state.ending || ["open", "begin", "restart"].includes(operation)) return;
+    if (!before.night || !state.night) return;
+    const room = state.room;   // the 3D room of the saved scene
+    // Duarte walks to the lab door before a round, and back after it: only heard inside the lab (point 1).
+    if (room === "computer_lab" && before.night.duarte !== state.night.duarte) sound.footsteps(state.night.duarte === "lab_door");
+    const left = person => state.night.gone.includes(person) && !before.night.gone.includes(person);
+    // The clerk's shutter at 22:25: loud in the print shop, softer down the corridor (point 3).
+    if (left("amelia")) sound.shutter(room === "print_shop" ? 1 : 0.4);
+    // Leonor pushes her chair back and walks away: only heard in the library (point 2).
+    if (left("leonor") && room === "library") {
+      sound.chair();
+      setTimeout(() => sound.footsteps(false), 350);
     }
   }
 
@@ -887,7 +1052,7 @@
         asked.add(option.next);
         addBubble(option.label, "me");   // the player's answer goes on the right, like a sent message
         if (option.cost) penalize(option.cost);   // a rude answer: minutes off the countdown
-        talkStep(line.npc, option.next);
+        talkStep(line.npc, option.next, Boolean(option.cost));   // and the server remembers it (specs/trust-has-consequences.md)
       });
       return button;
     });
@@ -950,7 +1115,7 @@
     addBubble(action.label, "me");
     showTyping();
     if (!await send("play", { action: action.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
-    if (!talking || current.scene !== scene) return;   // the scene changed (for example the chat opened): the conversation is over
+    if (!talking || current.scene !== scene) return;   // the scene changed: the conversation is over
     // The person is no longer here (Leonor after `accuse`, or gone by the schedule): send() has already
     // ended the conversation with the reply's message, so the start menu is not asked for again.
     if (!current.people.some(person => person.id === line.npc)) return;
@@ -976,11 +1141,18 @@
   // along (the server's `followers`). Each remembers one thing; the Weather and Calendar apps of the phone
   // turn those memories into one day. The code is typed in the usual 4-digit field and checked by the server.
   const HELPER_NAMES = { tomas: "Tomás", rita: "Rita", leonor: "Leonor" };
+  // With your own group the names and the memories say tonight's names (specs/your-own-group.md, point 5):
+  // these lines are the page's own, so the server's retell never sees them. One pass over whole words,
+  // like retell, so "Leonor -> Rita, Rita -> Ana" can never chain.
+  function inGroup(text) {
+    const group = Array.isArray(current?.group) && current.group.length === 3 ? current.group : STORY_GROUP;
+    return text.replace(/(?<!\p{L})(Leonor|Rita|Tomás)(?!\p{L})/gu, story => group[STORY_GROUP.indexOf(story)]);
+  }
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   function addHelper(who, text) {   // a line of the group: a speech bubble with the name of who says it
     $("talk-log").querySelector(".typing")?.remove();
     const bubble = make("div", undefined, "bubble them helper");
-    bubble.append(make("b", HELPER_NAMES[who], "helper-name"), make("p", text), make("time", campusTime()));
+    bubble.append(make("b", inGroup(HELPER_NAMES[who]), "helper-name"), make("p", text), make("time", campusTime()));
     $("talk-log").append(bubble);
     $("talk-log").scrollTop = $("talk-log").scrollHeight;
   }
@@ -997,12 +1169,12 @@
     button.remove();
     addBubble(t.group_ask, "me");
     const helpers = helpersHere();
-    if (canSpeak && !sound.isMuted()) { stopSpeaking(); say(helpers.map(who => [t.group_clues[who], who])); }
+    if (canSpeak && !sound.isMuted()) { stopSpeaking(); say(helpers.map(who => [inGroup(t.group_clues[who]), who])); }
     for (const who of helpers) {
       showTyping();
       await wait(1100);
       if (talking !== card) return;   // the conversation was closed meanwhile
-      addHelper(who, t.group_clues[who]);
+      addHelper(who, inGroup(t.group_clues[who]));
       sound.talk();
     }
     if (helpers.length < 3) addSaid(t.group_alone);
@@ -1231,7 +1403,9 @@
       onClose: () => { if (!talking && !phone.open && !dialog.open) window.playing = true; },
     });
   };
-  async function talkStep(npc, node) {
+  // `rude` is true for an answer with a cost: the operation `rude` is a `talk` that the server remembers
+  // for the rest of the night (specs/trust-has-consequences.md, point 9). Nothing new is drawn.
+  async function talkStep(npc, node, rude = false) {
     if (window.campusBusy || !current) return;
     // During the hearing, the professor's card shows the hearing where it stopped (specs/evidence-and-hearing.md, point 9).
     // Anyone else cannot be talked to until the hearing ends: a note says so and the hearing card stays open.
@@ -1246,7 +1420,7 @@
     if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)
     setBusy(true);
     try {
-      const line = await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc, node });
+      const line = await request({ operation: rude ? "rude" : "talk", player: current.player, language: window.lang || "pt", npc, node });
       screenLine = line;
       showLine(line);
     } catch (error) {
@@ -1256,23 +1430,53 @@
   }
   // ---------- walking up to a person: a note says which key starts the conversation ----------
   // The 3D scene sets window.campusNear (the id of the person close enough, or null).
+  // A thing of the room can be near too (specs/more-to-find.md, point 7): the note then says "look".
+  // A function declaration, not a const: updateLabels calls updateNear while the page is still starting.
+  function nearThing() {
+    return window.campusNear && (current?.finds || []).find(thing => thing.id === window.campusNear);
+  }
   function updateNear() {
-    $("hud-bottom").classList.toggle("talking", Boolean(talking));
-    const person = window.campusNear && current?.people.find(p => p.id === window.campusNear);
-    $("near-hint").hidden = !person || Boolean(talking);
-    if (!person) return;
+    $("hud-bottom").classList.toggle("talking", Boolean(talking) || Boolean(window.campusGuardOpen));
+    const person = window.campusNear && (window.campusNear === "guard" ? { id: "guard", name: ui().security.guard_name } : current?.people.find(p => p.id === window.campusNear));
+    const thing = nearThing();
+    $("near-hint").hidden = !(person || thing) || Boolean(talking) || Boolean(window.campusGuardOpen);
+    if (!person && !thing) return;
+    const t = ui();
+    // A thing says "look" (specs/more-to-find.md, point 7). On a phone the note is tapped instead of K
+    // (specs/touch-card-qr.md): the click below does the same as K, for a thing and for a person.
+    const sentence = thing ? t.press_look.replace("{name}", thing.name)
+      : person.object ? t.press_use.replace("{name}", person.name.toLowerCase())
+      : t.press_talk.replace("{name}", person.name);
     const key = make("kbd", "K");
-    const sentence = person.object ? ui().press_use.replace("{name}", person.name.toLowerCase()) : ui().press_talk.replace("{name}", person.name);
     $("near-hint").replaceChildren(key, document.createTextNode(" " + sentence));
   }
+  // K (or a click on the note): the guard opens his desk (specs/security-desk.md), a thing is looked at,
+  // a person is talked to.
+  function useNear() {
+    const thing = nearThing();
+    if (window.campusNear === "guard") openGuard();
+    else if (thing) lookAt(thing.id);
+    else talkStep(window.campusNear, "start");
+  }
   window.addEventListener("campus-near", updateNear);
-  $("near-hint").addEventListener("click", () => { if (window.campusNear) talkStep(window.campusNear, "start"); });
+  $("near-hint").addEventListener("click", () => { if (window.campusNear) useNear(); });
   document.addEventListener("keydown", e => {
     if (e.key.toLowerCase() !== "k" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target.closest("input, textarea, dialog") || !window.campusNear || talking || !window.playing || window.campusBusy) return;
     e.preventDefault();
-    talkStep(window.campusNear, "start");
+    useNear();
   });
+  // ---------- looking at a thing of the room (specs/more-to-find.md, points 5 and 7) ----------
+  // The server says what it is and charges its minutes (only the order book costs any). The text is the
+  // note over the picture, with the usual "−2 min" when it cost time, and it is kept in the diary.
+  async function lookAt(thing) {
+    if (window.campusBusy || !current || current.ending) return;
+    if (!await send("examine", { thing })) return;
+    const seen = current.examine;
+    if (!seen) return;   // refused: render has already shown why
+    toast(current.night?.charged > 0 ? `${seen.text} (${chargedNote(current)})` : seen.text);
+    saveDiary(seen.name, seen.text);
+  }
   $("talk-close").addEventListener("click", closeTalk);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && talking && !phone.open && !dialog.open) closeTalk(); });
 
@@ -1299,7 +1503,9 @@
   function shareText(ending) {
     const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
     const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("");
-    return [`${t.share_title} 🕵️`, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
+    // The day of the case, never the case itself: no name, no code (specs/case-of-the-day.md, point 8).
+    const day = current?.day?.label ? [`📅 ${current.day.label}`] : [];
+    return [`${t.share_title} 🕵️`, ...day, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
             `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
   }
   $("share-copy").addEventListener("click", async () => {
@@ -1371,7 +1577,7 @@
     // A fresh game at minute 0, opened or restarted: the server is starting a new night, so the page starts
     // from 30 minutes too (after a restart of the host the browser would otherwise push its old time onto
     // the new night). Only then: the other replies of an untouched game must not give time back.
-    const opening = operation === "open" || operation === "restart";
+    const opening = operation === "open" || operation === "begin" || operation === "restart";
     if (opening && state.fresh && night.minute === 0) timeLeft = FULL_TIME;
     timeLeft = Math.max(0, timeLeft - night.charged * 60000);   // the countdown counts in ms: half a minute is 30 seconds
     timeLeft = Math.min(timeLeft, (COUNTDOWN_MINUTES - night.minute) * 60000);
@@ -1505,7 +1711,8 @@
     for (const [id, text] of due) { store.sent.push(id); store.list.push({ text, clock: campusTime() }); }
     saveMsgs(state.player, store);
     showSms(due[due.length - 1][1]);
-    sound.buzz();
+    // One buzz for each new message, 0.7 s apart, at most three; the banner shows only the newest (specs/sounds-that-tell.md, point 4).
+    for (let i = 0; i < Math.min(due.length, 3); i++) setTimeout(() => sound.buzz(), 700 * i);
   }
   function drawMsgs(screen, t) {
     const store = loadMsgs(current?.player || "");
@@ -1618,6 +1825,9 @@
       if (window.qrcode) { resolve(); return; }
       const script = document.createElement("script");
       script.src = QR_LIBRARY; script.onload = resolve; script.onerror = reject;
+      // The browser refuses the file if it is not exactly this version (specs/safe-dependencies.md).
+      script.integrity = "sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1";
+      script.crossOrigin = "anonymous";
       document.head.append(script);
     });
   }
@@ -1710,6 +1920,253 @@
   }
   $("ending-card-btn").addEventListener("click", openCard);
   $("card-close").addEventListener("click", () => cardDialog.close());
+
+  // ---------- the security desk: a guard, five cables and the cameras (specs/security-desk.md) ----------
+  // Everything here is on the screen; what the player has done is kept in this browser, like the diary.
+  const securityKey = () => `plot-twist-security:${current?.player || ""}`;
+  function loadSecurity() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(securityKey()) || "{}");
+      return { convinced: saved.convinced === true, wired: saved.wired === true, footage: saved.footage === true };
+    } catch (error) { return { convinced: false, wired: false, footage: false }; }
+  }
+  function saveSecurity(state) { try { localStorage.setItem(securityKey(), JSON.stringify(state)); } catch (error) { /* no storage */ } }
+  function syncSecurity() { window.campusDeskPower = loadSecurity().wired; }   // the monitors of the 3D desk light up when it is true
+  const anyDialogOpen = () => Boolean(document.querySelector("dialog[open]"));
+  const backToPlay = () => { if (!talking && $("chat-card").hidden && !anyDialogOpen() && !window.campusGuardOpen) window.playing = true; };
+
+  // ----- the guard -----
+  function guardSay(text, options) {
+    $("guard-text").textContent = text;
+    $("guard-options").replaceChildren(...options.map(([label, handler]) => {
+      const button = make("button", label, "answer");
+      button.addEventListener("click", handler);
+      return button;
+    }));
+    $("guard-options").querySelector("button")?.focus({ preventScroll: true });
+  }
+  function openGuard() {
+    if (!current || current.ending || window.campusGuardOpen) return;
+    window.campusGuardOpen = true;
+    window.playing = false;
+    const t = ui().security;
+    $("guard-name").textContent = t.guard_name;
+    $("guard-close").textContent = ui().talk_close;
+    $("guard-card").hidden = false;
+    updateNear();
+    const state = loadSecurity();
+    guardNode(state.footage ? "done" : state.wired ? "ready" : state.convinced ? "cables" : "hello");
+  }
+  function closeGuard() {
+    window.campusGuardOpen = false;
+    $("guard-card").hidden = true;
+    updateNear();
+    backToPlay();
+  }
+  function guardNode(id) {
+    const t = ui().security, bye = [t.opt_bye, closeGuard], state = loadSecurity();
+    if (id === "hello") guardSay(t.hello, [[t.opt_explain, () => guardNode("explain")], [t.opt_broken, () => guardNode("broken")], bye]);
+    else if (id === "broken") guardSay(t.broken, [[t.opt_explain, () => guardNode("explain")], bye]);
+    else if (id === "explain") guardSay(t.explain, [[t.opt_show, () => guardNode("evidence")], [t.opt_rude, () => { penalize(2); guardNode("rude"); }], bye]);
+    else if (id === "rude") guardSay(t.rude, [[t.opt_back, () => guardNode("explain")], bye]);
+    else if (id === "evidence") {
+      const cards = current?.evidence || [];
+      if (!cards.length) { guardSay(t.evidence_none, [[t.opt_back, () => guardNode("explain")], bye]); return; }
+      // The photo with four people, or the old files with four authors, are what makes him doubt the report.
+      guardSay(t.evidence_title, [...cards.map(card => [card.label, () => {
+        if (card.id === "original_photo" || card.id === "files") { state.convinced = true; saveSecurity(state); guardNode("convinced"); }
+        else { penalize(1); guardNode("rebuff"); }
+      }]), [t.opt_back, () => guardNode("explain")]]);
+    }
+    else if (id === "rebuff") guardSay(t.rebuff, [[t.opt_show, () => guardNode("evidence")], bye]);
+    else if (id === "convinced") guardSay(t.convinced, [[t.opt_wire, openWires], [t.opt_who, () => guardNode("who")], bye]);
+    else if (id === "who") guardSay(t.who, [[t.opt_wire, openWires], bye]);
+    else if (id === "cables") guardSay(t.cables, [[t.opt_wire, openWires], [t.opt_who, () => guardNode("who")], bye]);
+    else if (id === "ready") guardSay(t.ready, [[t.opt_watch, openCctv], bye]);
+    else guardSay(t.done, [[t.opt_rewatch, openCctv], bye]);
+  }
+  $("guard-close").addEventListener("click", closeGuard);
+
+  // ----- the five cables -----
+  // The monitors are placed like the rooms are on the plan of the building (print shop, study room and library
+  // above the corridor; computer lab and auditorium below it). A cable says its room; the player must know where it is.
+  const SVG_NS_SEC = "http://www.w3.org/2000/svg";
+  const WIRE_CABLES = [["library", "#6aa8ff"], ["computer_lab", "#ff8c7a"], ["print_shop", "#e8b45c"], ["auditorium", "#c79bff"], ["study_room", "#7fd6a0"]];
+  const WIRE_PORTS = [{ room: "print_shop", x: 380, y: 98 }, { room: "study_room", x: 470, y: 98 }, { room: "library", x: 560, y: 98 },
+                      { room: "computer_lab", x: 410, y: 250 }, { room: "auditorium", x: 530, y: 250 }];
+  const wiresDialog = make("dialog", undefined, "wires-dialog"); wiresDialog.id = "wires-dialog";
+  wiresDialog.setAttribute("aria-labelledby", "wires-title");
+  wiresDialog.innerHTML = '<h2 id="wires-title"></h2><p id="wires-intro" class="muted"></p><svg id="wires-svg" viewBox="0 0 640 330" role="img"></svg>' +
+    '<p id="wires-status" role="status" class="wires-status"></p><div class="dialog-actions"><button id="wires-connect"></button><button id="wires-close" class="secondary"></button></div>';
+  document.body.append(wiresDialog);
+  let wireSelected = null, wireLinks = {};
+  const sec = (tag, attributes, text) => {
+    const element = document.createElementNS(SVG_NS_SEC, tag);
+    for (const [name, value] of Object.entries(attributes || {})) element.setAttribute(name, value);
+    if (text !== undefined) element.textContent = text;
+    return element;
+  };
+  function drawWires() {
+    const t = ui().security, svgBox = $("wires-svg");
+    svgBox.replaceChildren();
+    // the plan of the building, without names
+    svgBox.append(sec("text", { x: 470, y: 24, class: "wires-caption" }, t.wires_plan));
+    for (const [x, y, w, h] of [[335, 50, 90, 95], [425, 50, 90, 95], [515, 50, 90, 95], [335, 205, 135, 90], [470, 205, 135, 90]]) svgBox.append(sec("rect", { x, y, width: w, height: h, class: "wires-room" }));
+    svgBox.append(sec("rect", { x: 335, y: 150, width: 270, height: 50, class: "wires-corridor" }), sec("path", { d: "M 318 175 l 14 -10 v 20 z", class: "wires-entrance" }));
+    WIRE_PORTS.forEach((port, index) => {
+      const linked = Object.values(wireLinks).includes(index);
+      const group = sec("g", { class: `wires-port${linked ? " linked" : ""}`, tabindex: "0", role: "button", "aria-label": `${index + 1}` });
+      group.append(sec("rect", { x: port.x - 26, y: port.y - 18, width: 52, height: 36, rx: 6, class: "wires-monitor" }), sec("circle", { cx: port.x, cy: port.y, r: 7, class: "wires-hole" }));
+      const connect = () => { if (wireSelected !== null) { for (const cable of Object.keys(wireLinks)) if (wireLinks[cable] === index) delete wireLinks[cable]; wireLinks[wireSelected] = index; wireSelected = null; setWiresStatus(t.wires_pick); drawWires(); } };
+      group.addEventListener("click", connect);
+      group.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); connect(); } });
+      svgBox.append(group);
+    });
+    WIRE_CABLES.forEach(([room, color], row) => {
+      const y = 48 + row * 62, linked = wireLinks[room], end = { x: 200, y };
+      if (linked !== undefined) {
+        const port = WIRE_PORTS[linked];
+        svgBox.append(sec("path", { d: `M ${end.x} ${end.y} C ${end.x + 70} ${end.y}, ${port.x - 70} ${port.y}, ${port.x} ${port.y}`, class: "wires-line", stroke: color }));
+      }
+      const group = sec("g", { class: `wires-cable${wireSelected === room ? " selected" : ""}`, tabindex: "0", role: "button", "aria-pressed": String(wireSelected === room) });
+      group.append(sec("rect", { x: 30, y: y - 17, width: 170, height: 34, rx: 8, fill: color, class: "wires-body" }),
+                   sec("text", { x: 44, y: y + 5, class: "wires-label" }, t[`cable_${room}`]), sec("circle", { cx: end.x, cy: end.y, r: 9, fill: "#0b1b29", stroke: color, "stroke-width": 4 }));
+      const pick = () => { wireSelected = room; setWiresStatus(t.wires_selected); drawWires(); };
+      group.addEventListener("click", pick);
+      group.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+      svgBox.append(group);
+    });
+    $("wires-connect").disabled = Object.keys(wireLinks).length < WIRE_CABLES.length;
+  }
+  function setWiresStatus(text) { $("wires-status").textContent = text; }
+  function openWires() {
+    const t = ui().security;
+    wireSelected = null; wireLinks = {};
+    $("wires-title").textContent = t.wires_title; $("wires-intro").textContent = t.wires_intro;
+    $("wires-connect").textContent = t.wires_connect; $("wires-close").textContent = t.wires_close;
+    setWiresStatus(t.wires_pick);
+    drawWires();
+    wiresDialog.showModal();
+  }
+  $("wires-close").addEventListener("click", () => wiresDialog.close());
+  $("wires-connect").addEventListener("click", () => {
+    const t = ui().security;
+    const right = Object.entries(wireLinks).filter(([room, port]) => WIRE_PORTS[port].room === room).length;
+    if (right === WIRE_CABLES.length) {
+      const state = loadSecurity(); state.convinced = true; state.wired = true; saveSecurity(state);
+      syncSecurity();
+      sound.chime();
+      toast(t.wires_ok);
+      wiresDialog.close();
+      guardNode("ready");
+    } else {
+      wiresDialog.classList.remove("sparks"); void wiresDialog.offsetWidth; wiresDialog.classList.add("sparks");   // the sparks
+      setWiresStatus(t.wires_wrong.replace("{n}", right));
+      penalize(1);
+      sound.refuse();
+    }
+  });
+  wiresDialog.addEventListener("close", backToPlay);
+
+  // ----- the recordings of last night -----
+  // The cameras keep what they saw. The detective moves a bar to the minute the folder was changed (23:47) and
+  // finds the hooded figure at computer 12 in the computer lab. Everything drawn here is made up in the browser.
+  const CCTV_CAMERAS = ["entrance", "print_shop", "study_room", "library", "computer_lab", "auditorium"];
+  const CCTV_FROM = 22 * 60, CCTV_TO = 23 * 60 + 59;
+  const CCTV_EVENTS = {   // [from minute, to minute, where the figure is, is it the proof?]
+    entrance: [[23 * 60 + 38, 23 * 60 + 39, "door", false]],
+    computer_lab: [[23 * 60 + 41, 23 * 60 + 41, "door", false], [23 * 60 + 46, 23 * 60 + 49, "desk", true]],
+  };
+  const cctvDialog = make("dialog", undefined, "cctv-dialog"); cctvDialog.id = "cctv-dialog";
+  cctvDialog.setAttribute("aria-labelledby", "cctv-title");
+  cctvDialog.innerHTML = '<h2 id="cctv-title"></h2><div id="cctv-tabs" class="cctv-tabs"></div><canvas id="cctv-canvas" width="640" height="360"></canvas>' +
+    '<div class="cctv-controls"><button id="cctv-minus" class="secondary">◀</button><input id="cctv-slider" type="range"><button id="cctv-plus" class="secondary">▶</button><output id="cctv-clock"></output></div>' +
+    '<p id="cctv-hint" class="muted"></p><p id="cctv-saved" role="status" class="cctv-saved" hidden></p>' +
+    '<div class="dialog-actions"><button id="cctv-save" hidden></button><button id="cctv-close" class="secondary"></button></div>';
+  document.body.append(cctvDialog);
+  let cctvCamera = "computer_lab", cctvMinute = 23 * 60 + 20, cctvFigure = null, cctvTimer = null;
+  const hoodedFigure = { topColor: 0x15171b, pants: 0x1a1a1f, hood: true, hair: 0x0e0b09, skin: 0xd9a27e };
+  function cctvEvent() {
+    return (CCTV_EVENTS[cctvCamera] || []).find(([from, to]) => cctvMinute >= from && cctvMinute <= to) || null;
+  }
+  function drawCctvFrame() {
+    const canvas = $("cctv-canvas"), c = canvas.getContext("2d"), W = canvas.width, H = canvas.height, t = ui().security;
+    const event = cctvEvent();
+    const sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#12181c"); sky.addColorStop(1, "#1d262b");
+    c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#0d1316"; c.fillRect(0, H * 0.62, W, H * 0.38);   // the floor
+    // the furniture of each room, in a few dark shapes
+    c.fillStyle = "#0a0f12";
+    if (cctvCamera === "computer_lab") for (const x of [60, 250, 440]) { c.fillRect(x, 190, 150, 26); c.fillRect(x + 20, 150, 40, 36); c.fillRect(x + 90, 150, 40, 36); }
+    else if (cctvCamera === "library") for (const x of [40, 150, 260, 370, 480]) c.fillRect(x, 70, 80, 200);
+    else if (cctvCamera === "auditorium") for (const row of [0, 1, 2]) for (let i = 0; i < 7; i++) c.fillRect(50 + i * 80, 200 + row * 40, 56, 26);
+    else if (cctvCamera === "entrance") { c.fillStyle = "#1a2328"; c.fillRect(250, 60, 140, 250); c.fillStyle = "#0a0f12"; c.fillRect(318, 60, 4, 250); }
+    else c.fillRect(150, 200, 340, 30);
+    if (event) {
+      const [, , where, proof] = event;
+      if (proof) { c.fillStyle = "#59ff9c"; c.globalAlpha = 0.18; c.fillRect(460, 130, 90, 70); c.globalAlpha = 1; }   // computer 12 glows
+      if (cctvFigure) {
+        c.save(); c.filter = "grayscale(1) contrast(1.25) brightness(0.85)";
+        const x = where === "door" ? 70 : 405, w = where === "door" ? 130 : 150;
+        c.drawImage(cctvFigure, x, H - w * 2 - 20 + (where === "door" ? 10 : 0), w, w * 2);
+        c.restore();
+      }
+    }
+    // the picture of an old camera: grain, lines, a dark edge and a green tint
+    for (let i = 0; i < 900; i++) { c.fillStyle = `rgba(255,255,255,${Math.random() * 0.1})`; c.fillRect(Math.random() * W, Math.random() * H, 2, 1); }
+    c.fillStyle = "rgba(0,0,0,0.18)"; for (let y = 0; y < H; y += 3) c.fillRect(0, y, W, 1);
+    const edge = c.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.85); edge.addColorStop(0, "#0000"); edge.addColorStop(1, "#000c");
+    c.fillStyle = edge; c.fillRect(0, 0, W, H);
+    c.fillStyle = "rgba(40,110,70,0.12)"; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#b8ffd0"; c.font = "bold 16px ui-monospace, Consolas, monospace";
+    const number = CCTV_CAMERAS.indexOf(cctvCamera) + 1;
+    c.fillText(`CAM ${String(number).padStart(2, "0")} · ${t[`cctv_${cctvCamera}`].toUpperCase()}`, 16, 28);
+    c.fillText(`${t.cctv_yesterday} ${Math.floor(cctvMinute / 60)}:${String(cctvMinute % 60).padStart(2, "0")}:${String(Math.floor(Math.random() * 60)).padStart(2, "0")}`, 16, H - 16);
+    if (Math.floor(Date.now() / 600) % 2) { c.fillStyle = "#ff5b5b"; c.beginPath(); c.arc(W - 62, 24, 6, 0, 7); c.fill(); }
+    c.fillStyle = "#ff8c8c"; c.fillText("REC", W - 48, 29);
+    if (event) { c.fillStyle = "#ffd36b"; c.fillText(t.cctv_motion, W - 130, H - 16); }
+    $("cctv-clock").textContent = `${String(Math.floor(cctvMinute / 60)).padStart(2, "0")}:${String(cctvMinute % 60).padStart(2, "0")}`;
+    const proof = event && event[3];
+    $("cctv-save").hidden = !(proof && !loadSecurity().footage);
+  }
+  function paintCctv() {
+    const t = ui().security;
+    $("cctv-title").textContent = t.cctv_title; $("cctv-hint").textContent = t.cctv_hint; $("cctv-close").textContent = t.cctv_close;
+    $("cctv-save").textContent = t.cctv_save; $("cctv-minus").setAttribute("aria-label", t.cctv_previous); $("cctv-plus").setAttribute("aria-label", t.cctv_next);
+    $("cctv-slider").setAttribute("aria-label", t.cctv_time);
+    $("cctv-tabs").replaceChildren(...CCTV_CAMERAS.map(camera => {
+      const tab = make("button", t[`cctv_${camera}`], "secondary"); tab.type = "button";
+      tab.setAttribute("aria-pressed", String(camera === cctvCamera));
+      tab.addEventListener("click", () => { cctvCamera = camera; paintCctv(); drawCctvFrame(); });
+      return tab;
+    }));
+  }
+  function openCctv() {
+    $("cctv-slider").min = CCTV_FROM; $("cctv-slider").max = CCTV_TO; $("cctv-slider").value = cctvMinute;
+    $("cctv-saved").hidden = true;
+    paintCctv();
+    // the hooded figure, seen from behind, drawn once by the 3D scene
+    if (!cctvFigure && window.campusFigure) {
+      try { const image = new Image(); image.onload = () => { cctvFigure = image; drawCctvFrame(); }; image.src = window.campusFigure(hoodedFigure, 200, 400, Math.PI); } catch (error) { /* no picture */ }
+    }
+    drawCctvFrame();
+    clearInterval(cctvTimer); cctvTimer = setInterval(drawCctvFrame, 400);   // the grain moves
+    cctvDialog.showModal();
+  }
+  $("cctv-slider").addEventListener("input", () => { cctvMinute = Number($("cctv-slider").value); drawCctvFrame(); });
+  $("cctv-minus").addEventListener("click", () => { cctvMinute = Math.max(CCTV_FROM, cctvMinute - 1); $("cctv-slider").value = cctvMinute; drawCctvFrame(); });
+  $("cctv-plus").addEventListener("click", () => { cctvMinute = Math.min(CCTV_TO, cctvMinute + 1); $("cctv-slider").value = cctvMinute; drawCctvFrame(); });
+  $("cctv-save").addEventListener("click", () => {
+    const t = ui().security, state = loadSecurity();
+    state.footage = true; saveSecurity(state);
+    saveDiary(t.cctv_diary_title, t.cctv_proof);   // the proof goes to the diary
+    $("cctv-saved").textContent = t.cctv_saved; $("cctv-saved").hidden = false;
+    $("cctv-save").hidden = true;
+    sound.chime();
+    toast(t.cctv_saved);
+  });
+  $("cctv-close").addEventListener("click", () => cctvDialog.close());
+  cctvDialog.addEventListener("close", () => { clearInterval(cctvTimer); backToPlay(); if (window.campusGuardOpen) guardNode(loadSecurity().footage ? "done" : "ready"); });
 
   // ---------- the phone: a map, the to-do list of clues and the diary ----------
   const phone = make("dialog", undefined, "phone-dialog"); phone.id = "phone";
@@ -1998,9 +2455,27 @@
   window.addEventListener("campus-look", () => { if (!current) drawNight(); });   // and the coat follows the look
   drawNight();
 
+  // ---------- the day of the case on the case file (specs/case-of-the-day.md, point 6) ----------
+  // The browser's own day and month in Lisbon, written with the same words as the server, so both say
+  // exactly the same. It is only a label: the server decides the case when the game begins.
+  const caseDay = make("span", undefined, "case-day"); caseDay.id = "case-day";
+  $("caseNo")?.after(caseDay);
+  function todayLabel() {
+    const t = ui();
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Lisbon", day: "numeric", month: "numeric" }).formatToParts(new Date());
+    const part = type => Number(parts.find(p => p.type === type).value);
+    return t.case_of_day.replace("{d}", part("day")).replace("{month}", t.months[part("month") - 1]);
+  }
+  const drawCaseDay = () => { caseDay.textContent = todayLabel(); };
+  window.addEventListener("language", drawCaseDay);
+  drawCaseDay();
+
   window.campusStart = async () => {
     sound.start();
-    if (!await send("open")) return;
+    // `begin` is `open` plus the case of the day and the three names typed (specs/your-own-group.md, point 2).
+    if (!await send("begin", { names: typedGroup() })) return;
+    const note = groupNote(current);   // a name could not be used, or a continued game kept its group (point 8)
+    if (note) toast(note);
     try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
     try { localStorage.setItem(briefKey(current.player), "yes"); localStorage.setItem(briefKey(name.value), "yes"); } catch (error) { /* no storage */ }
     saveLook(current.player); saveLook(name.value);
@@ -2041,7 +2516,7 @@
         timeLeft = FULL_TIME; timeOwner = current.player; lastTick = null; saveTime();   // a new game: 30 new minutes
         $("timeup-card").hidden = true;
         tick();
-        try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); } catch (error) { /* no storage */ }
+        try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); localStorage.removeItem(securityKey()); } catch (error) { /* no storage */ }
         restarting = false;
         checkNotices(current);   // now the new night's whisper lands in an empty phone, at 22:15
       }
