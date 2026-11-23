@@ -304,6 +304,8 @@ def test_the_page_knows_every_ending_for_the_collection_in_both_languages():
 def test_the_page_has_the_messages_app_the_share_card_the_collection_and_the_music():
     page3d = importlib.import_module("page3d")
     page = page3d.build_page(playable=True, inline=True)
+    # Changed by specs/no-endings-count.md ("Reviewed tests that change"): no "collectionText" (no count of endings).
     for needle in ('id="sms"', "checkNotices", "drawMsgs", 'id="share-text"', "shareText", "plot-twist-endings",
-                   "collectionText", "startMusic", "tensionOf", "setTension"):
+                   "startMusic", "tensionOf", "setTension"):
         assert needle in page
+    assert "collectionText" not in page

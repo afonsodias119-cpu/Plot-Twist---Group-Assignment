@@ -37,8 +37,12 @@ def test_the_labels_say_the_steps():
     assert "Dizer que vais trazer provas" not in labels["pt"]["start"]
 
 
-def test_the_hearing_button_waits_for_the_proof_line():
-    assert 'const present = line.node === "proof" && (line.actions || []).find(action => action.id === "present_evidence");' in PLAY_JS
+def test_show_evidence_is_only_on_his_first_line():
+    # Changed by specs/select-the-proofs.md ("Reviewed tests that change"): the professor's first line offers "Show
+    # evidence" (select the proofs) and "Ask how many members"; the story's own button is gone. Was: the
+    # button "Present the evidence" only on `proof`.
+    assert 'const professorWaits = line.npc === "professor" && line.node !== "start";' in PLAY_JS
+    assert "const present = " not in PLAY_JS
 
 
 def test_the_hearing_says_what_to_do_when_duarte_speaks():

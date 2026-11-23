@@ -140,6 +140,22 @@ Na audiência, cada afirmação do Duarte responde-se com "📁 Mostrar uma prov
 
 O cartão do início e o telemóvel mostram só quatro pistas, sem a sala e sem dicas de onde ou com quem: a pen do grupo, a fotografia original, as imagens da câmara da sala de informática e o histórico dos ficheiros. Ver `specs/clues-without-answers.md`.
 
+### O professor: apresentar as provas ou perguntar — Maria (23/11/2026)
+
+Na primeira fala, o professor oferece duas coisas: apresentar as provas ou perguntar quantos elementos tem o grupo (essa conversa acaba em "vou trazer provas"). Apresentar entrega de uma vez todas as provas que tens; se faltar alguma, o final diz quais. Ver `specs/hand-over-the-proofs.md`.
+
+### Sem contagem de finais — Maria (23/11/2026)
+
+O ecrã do final, o texto de partilha e o cartão deixam de mostrar "Finais descobertos: 1/2". Ver `specs/no-endings-count.md`.
+
+### Uma prova em falta é um aviso — Maria (23/11/2026)
+
+Se apresentares as provas e faltar alguma, o professor diz só quantas faltam ("Falta-lhe uma das provas") e o jogo continua: podes ir buscá-la e voltar. Se a faculdade fechar às 23:00 antes, o Duarte fica com o crédito. Ver `specs/missing-proof-is-a-warning.md`.
+
+### O professor: "Mostrar uma prova" ou perguntar — Maria (23/11/2026)
+
+Na primeira fala do professor só há "📁 Mostrar uma prova" e "Perguntar quantos elementos tem o grupo". "Mostrar uma prova" deixa escolher as provas que tens e entregá-las; se faltar alguma, ele diz quantas e podes ir buscá-las. Saiu o botão "Apresentar as provas ao professor" e a frase "Entregas de uma vez…". Ver `specs/select-the-proofs.md`.
+
 ### O José primeiro ouve porque vieste — 23/11/2026
 
 Alteração preparada em `guard-explain-first`, só na página do 3D: a primeira fala do José (o segurança) oferece só "Explicar a situação". Depois de explicares, ele pede uma prova e aparecem "Perguntar pelos monitores" e "Exigir as imagens" (2 minutos, como antes), cada uma até ser escolhida. A resposta sobre os monitores deixa de dizer "diz-me primeiro porque queres imagens" e passa a dizer que ele continua a precisar de ver uma prova. Os menus depois de convencido não mudam. Ver `specs/guard-explain-first.md`.

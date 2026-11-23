@@ -10,7 +10,7 @@
     return el;
   };
   const ui = () => data[window.lang || "pt"].play_ui;
-  // One emoji for each ending (the collection and the share card). It is defined here because the first screen uses it at start-up.
+  // One emoji for each ending (the share text). It is defined here because the first screen uses it at start-up.
   const ENDING_EMOJI = { full_case: "🏆", stolen_credits: "💸" };
   document.body.classList.add("playable");
 
@@ -321,7 +321,6 @@
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
     <section id="ending-card" class="ending-card" role="dialog" aria-labelledby="ending-title" hidden>
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
-      <p id="ending-collection" class="collection"></p>
       <div class="share"><pre id="share-text"></pre><button id="share-copy" class="secondary"></button></div>
       <div class="ending-actions"><button id="ending-again"></button><button id="ending-card-btn" class="secondary"></button><button id="ending-hide" class="secondary"></button></div></section>
     <section id="timeup-card" class="ending-card timeup-card" role="alertdialog" aria-labelledby="timeup-title" hidden>
@@ -731,7 +730,7 @@
     window.lang = state.language;
     window.dispatchEvent(new Event("language"));
     window.dispatchEvent(new Event("campus-state"));
-    rememberNight(state.memory);   // before showEnding: the ★ of the collection reads it
+    rememberNight(state.memory);   // the night shown on the case file reads it
     const t = ui();
     $("scene-heading").textContent = state.ending ? state.ending.title : state.title;
     $("scene-label").textContent = state.ending ? t.the_end : t.scene;
@@ -901,7 +900,6 @@
       $("ending-card-btn").textContent = t.card_open;
       rememberEnding(ending.id);
       speakEnding(ending, reply);
-      $("ending-collection").textContent = collectionText();
       $("share-text").textContent = shareText(ending);
       $("share-copy").textContent = t.share_copy;
       const colors = CONFETTI[kind] || CONFETTI.full_case;
@@ -1109,13 +1107,9 @@
     // a short line under it says the hearing cannot be left. The hearing is played in this same card (showHearing).
     // Only once he has said "Present it when you are ready" (`proof`), at the end of his one line of thought
     // (specs/professor-line-of-thought.md).
-    const present = line.node === "proof" && (line.actions || []).find(action => action.id === "present_evidence");
-    if (present) {
-      const button = make("button", present.label, "answer");
-      button.dataset.action = "hearing";
-      button.addEventListener("click", () => startHearing(present));
-      doing.append(button, make("p", t.hearing_hint, "muted"));
-    }
+    // On his first line, beside "Ask how many members…" (specs/hand-over-the-proofs.md).
+    // The professor's own story button is gone: on his first line "Show evidence" opens the proofs to
+    // select and hand over (specs/select-the-proofs.md).
     // "📁 Show evidence", in its own row between the log and the answers, on every line of a person
     // (not computer 12, not a closed line, not during the hearing: specs/evidence-and-hearing.md, point 5),
     // except in the print shop and the computer lab: there the right answer does it (specs/two-answers.md).
@@ -1124,9 +1118,11 @@
     // says the footage is not given to just anyone (specs/evidence-after-monitors.md).
     const NO_EVIDENCE = ["amelia", "tomas", "computer12", "rita"];
     const guardWaits = line.npc === "guard" && line.node !== "explain" && !asked.has("explain");
-    const showsEvidence = !NO_EVIDENCE.includes(line.npc) && !guardWaits && line.node !== "closed" && !(current && current.hearing) && !leonorHelping;
+    // The professor: only on his first line, beside "Ask how many members…" (specs/select-the-proofs.md).
+    const professorWaits = line.npc === "professor" && line.node !== "start";
+    const showsEvidence = !NO_EVIDENCE.includes(line.npc) && !guardWaits && !professorWaits && line.node !== "closed" && !(current && current.hearing) && !leonorHelping;
     const evidenceButton = make("button", t.evidence_show, "secondary evidence-show");
-    evidenceButton.addEventListener("click", () => askEvidence(line));
+    evidenceButton.addEventListener("click", () => line.npc === "professor" ? handOver(line) : askEvidence(line));
     const evidenceNow = showsEvidence && !(leonorDeciding && !asked.has("soft"));   // Leonor: only after the right answer
     $("talk-evidence").replaceChildren(...(evidenceNow ? [evidenceButton] : []));
     $("talk-evidence").hidden = !evidenceNow;
@@ -1335,17 +1331,58 @@
     }
     endGoneTalk();   // a rebuff whose minutes reach a departure: the rebuff first, then the last line
   }
+  // ---------- handing the proofs to the professor (specs/select-the-proofs.md) ----------
+  // "Show evidence" on his first line lists the proofs held, each with a box to tick, and one button to hand
+  // the ticked ones over. A proof missing: he says how many and the night goes on. Every proof: the ending.
+  function handOver(line) {
+    const t = ui();
+    const kept = [...$("talk-options").children], wasHidden = $("talk-options").hidden;
+    const back = () => {
+      $("talk-options").replaceChildren(...kept);
+      $("talk-options").hidden = wasHidden;
+      $("talk-evidence").hidden = false;
+      applyInside();
+    };
+    const tray = make("div", undefined, "evidence-tray hand-over");
+    tray.append(make("p", t.hand_title, "evidence-title"));
+    const cards = current.evidence || [], chosen = new Set();
+    if (!cards.length) tray.append(make("p", t.evidence_empty, "muted"));
+    const give = make("button", t.hand_give, "answer hand-give");
+    give.disabled = true;
+    for (const card of cards) {
+      const box = make("button", `☐ 📁 ${card.label}`, "answer evidence-card");
+      box.setAttribute("aria-pressed", "false");
+      box.addEventListener("click", () => {
+        if (chosen.has(card.id)) chosen.delete(card.id); else chosen.add(card.id);
+        box.textContent = `${chosen.has(card.id) ? "☑" : "☐"} 📁 ${card.label}`;
+        box.setAttribute("aria-pressed", String(chosen.has(card.id)));
+        give.disabled = !chosen.size;
+      });
+      tray.append(box);
+    }
+    give.addEventListener("click", async () => {
+      if (!chosen.size || window.campusBusy) return;
+      const ids = cards.map(card => card.id).filter(id => chosen.has(id));   // in the order of the hand
+      addBubble(cards.filter(card => chosen.has(card.id)).map(card => `📁 ${card.label}`).join("\n"), "me");
+      showTyping();
+      if (!await send("hearing", { answer: ids })) { $("talk-log").querySelector(".typing")?.remove(); return; }
+      $("talk-log").querySelector(".typing")?.remove();
+      // A proof missing: his warning, and back to his first line (the night goes on).
+      if (!current.heard && current.message) { addHeard({ who: "professor", name: "Professor", text: current.message }); back(); }
+    });
+    if (cards.length) tray.append(give);
+    const away = make("button", t.evidence_back, "secondary evidence-back");
+    away.addEventListener("click", back);
+    tray.append(away);
+    $("talk-evidence").hidden = true;
+    $("talk-options").replaceChildren(tray);
+    $("talk-options").hidden = false;
+    tray.querySelector("button").focus({ preventScroll: true });
+  }
   // ---------- the hearing, inside the professor's conversation card (specs/evidence-and-hearing.md, points 9 to 11) ----------
   // It is not an ordinary conversation: no kept topics, no start menu. The server sends the whole log
   // (`hearing.said`), and this card is drawn again from it after every answer.
-  async function startHearing(action) {
-    if (window.campusBusy || !current) return;
-    addBubble(action.label, "me");
-    showTyping();
-    if (!await send("hearing", { answer: "start" })) { $("talk-log").querySelector(".typing")?.remove(); return; }
-    $("talk-log").querySelector(".typing")?.remove();
-    if (current.heard && current.hearing && !current.ending) showHearing(current.hearing);
-  }
+
   async function answerHearing(answer) {
     if (window.campusBusy || !current) return;
     showTyping();
@@ -1546,7 +1583,7 @@
   $("talk-close").addEventListener("click", closeTalk);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && talking && !phone.open && !dialog.open) closeTalk(); });
 
-  // ---------- the share card, the collection of endings and the tension of the night ----------
+  // ---------- the share card, the endings seen in this browser and the tension of the night ----------
   function loadEndings() {
     try { const found = JSON.parse(localStorage.getItem("plot-twist-endings") || "[]"); return Array.isArray(found) ? found : []; } catch (error) { return []; }
   }
@@ -1556,20 +1593,13 @@
     found.push(id);
     try { localStorage.setItem("plot-twist-endings", JSON.stringify(found)); } catch (error) { /* no storage */ }
   }
-  function collectionCount() {
-    const all = data[window.lang || "pt"].endings, found = loadEndings();
-    // "n/2": the story has two endings (specs/three-proofs.md).
-    return `${ui().collection}: ${all.filter(e => found.includes(e.id)).length}/${all.length}`;
-  }
-  function collectionText() {
-    const all = data[window.lang || "pt"].endings, found = loadEndings();
-    return `${collectionCount()}   ${all.map(e => found.includes(e.id) ? ENDING_EMOJI[e.id] || "✔" : "🔒").join(" ")}`;
-  }
+  // No "Endings found: n/2" anywhere (specs/no-endings-count.md): with two endings it means nothing. The list of
+  // endings seen is still kept in this browser, because the fifth figure on the case file reads it.
   function shareText(ending) {
     const t = ui(), clues = phoneClues(), done = clues.filter(c => c.done).length;
     const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("");
     return [`${t.share_title} 🕵️`, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
-            `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
+            `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())}`].join("\n");
   }
   $("share-copy").addEventListener("click", async () => {
     const t = ui(), box = $("share-text");
@@ -1961,7 +1991,6 @@
     c.fillText(ending.title, W / 2, 905);
     c.fillStyle = "#b7bdc5"; c.font = '500 21px Inter, system-ui, sans-serif';
     c.fillText(`${done}/${clues.length} ${t.card_clues}  ·  ${t.card_time}: ${minutesSeconds(msLeft())}`, W / 2, 945);
-    c.fillText(collectionText().replace(/\s{2,}/g, "  "), W / 2, 980);
     c.fillStyle = accent; c.font = '600 18px Inter, system-ui, sans-serif'; c.fillText(t.app_url.replace(/^https?:\/\//, "").replace(/\/$/, ""), W / 2, 1012);
     return canvas;
   }

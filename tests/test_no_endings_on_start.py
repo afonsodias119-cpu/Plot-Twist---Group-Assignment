@@ -10,5 +10,7 @@ def test_the_name_box_has_no_line_about_the_endings():
     assert '"muted collection"' not in PLAY_JS
 
 
-def test_the_ending_screen_still_shows_the_endings_found():
-    assert '$("ending-collection").textContent = collectionText();' in PLAY_JS
+def test_the_ending_screen_no_longer_shows_the_endings_found():
+    # Changed by specs/no-endings-count.md ("Reviewed tests that change"): "Endings found: n/2" is gone from the ending
+    # screen, the share text and the share card. Was: the ending screen still showed it.
+    assert "ending-collection" not in PLAY_JS and "collectionText" not in PLAY_JS and "collectionCount" not in PLAY_JS
