@@ -991,6 +991,29 @@ for (const z of [5.6, 7.0, 8.4]) {
   block(3.7, z - 0.05, 4.9, 0.7); block(9.4, z - 0.05, 4.9, 0.7);
 }
 
+// ---- A security camera high in a corner of every room, and one by the entrance (specs/guard-answer-and-cameras.md):
+// a pole from the ceiling, a white body looking down at the middle of the room, a black lens and a red light that
+// blinks (all the lights share one material, so one line in the animation loop blinks them all). Only scenery.
+const cameraLed = mat(0xff2a2a, { emissive: 0xff2a2a, emissiveIntensity: 3 });
+function securityCamera(x, z, lookX, lookZ) {
+  const mount = new THREE.Group(), head = new THREE.Group();
+  rbox(0.04, 0.3, 0.04, 0, 0.05, 0, blackMetal, { parent: mount });                              // the pole, up to the ceiling
+  head.rotation.x = 0.45;                                                                        // looking down
+  mount.add(head);
+  rbox(0.13, 0.11, 0.26, 0, -0.05, 0.08, mat(0xe8e8e4, { roughness: 0.4 }), { radius: 0.03, parent: head });   // the body
+  add(new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 16), mat(0x0c0e12, { metalness: 0.6, roughness: 0.2 })), 0, 0.005, 0.22, head);   // the lens
+  add(new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 10), cameraLed), 0.045, 0.07, 0.17, head);   // the red light
+  mount.position.set(x, 1.85, z);
+  mount.rotation.y = Math.atan2(lookX - x, lookZ - z);   // the body points at the middle of the room
+  scene.add(mount);
+}
+securityCamera(-12.75, -11.75, -8.75, -7.5);   // print shop
+securityCamera(-4.25, -11.75, 0, -7.5);        // study room
+securityCamera(12.75, -11.75, 8.75, -7.5);     // library
+securityCamera(-12.75, 3.3, -6.5, 7.5);        // computer lab
+securityCamera(12.75, 3.3, 6.5, 7.5);          // auditorium
+securityCamera(-12.75, -2.75, -9, 0);          // the entrance
+
 // ---- Corridor
 plant(-12.3, -2.3); plant(12.3, -2.3); plant(-12.3, 2.3); plant(12.3, 2.3);
 function bench(x, z) {
@@ -1773,6 +1796,7 @@ function loop() {
   ring.material.opacity = 0.4 + Math.sin(t * 3) * 0.15;
 
   for (const s of students) s.userData.head.rotation.x = 0.3 + Math.sin(t * 0.6 + s.userData.phase) * 0.06;   // reading
+  cameraLed.emissiveIntensity = t % 1.2 < 0.25 ? 4 : 0.15;   // the cameras' red lights blink (specs/guard-answer-and-cameras.md)
   updateFollowers(dt, t);   // Rita and Leonor, when they come with you
   // the others turn towards you when you come close
   for (const [i, n] of npcs.entries()) {

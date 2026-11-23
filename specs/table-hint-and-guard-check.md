@@ -11,7 +11,7 @@ Extends specs/hidden-object-table.md, specs/more-to-find.md (the K note) and spe
    - K, or a tap on the note, opens the table's close-up, as a click on the table does.
    - A person closer than the table's edge still comes first.
    - Once the stick is found the note no longer appears.
-2. **José checks.** After the cables are plugged in, "Watch the recordings" no longer opens them straight away. José asks **"So you want to see who was in the computer lab at 23:47, right?"** (`confirm`). Only the answer **"Yes, exactly"** (`opt_yes`) opens the recordings. Once the picture is kept, "Watch the recordings again" opens them directly, as before.
+2. **José checks.** *(Replaced by specs/guard-answer-and-cameras.md: now the player answers his question "Which camera, and at what time?".)* After the cables are plugged in, "Watch the recordings" no longer opens them straight away. José asks **"So you want to see who was in the computer lab at 23:47, right?"** (`confirm`). Only the answer **"Yes, exactly"** (`opt_yes`) opens the recordings. Once the picture is kept, "Watch the recordings again" opens them directly, as before.
 
 ## Done when
 - Existing tests pass unchanged.
