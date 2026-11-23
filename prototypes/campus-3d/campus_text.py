@@ -139,7 +139,7 @@ TEXT = {
         "security": {
             "guard_name": "José",
             "hello": "O segurança está sentado diante de uma parede de monitores, todos apagados. \"Boa noite. Se vens pelas câmaras, perdes o teu tempo: não ligam.\"",
-            "broken": "\"Desde ontem à noite que os monitores estão sem sinal. Alguém desligou os cabos atrás do rack, e não fui eu. Mas diz-me primeiro porque queres imagens.\"",
+            "broken": "\"Desde ontem à noite que os monitores estão sem sinal. Alguém desligou os cabos atrás do rack, e não fui eu. E continuo a precisar de ver uma prova antes de te deixar chegar perto deles.\"",
             "explain": "Contas-lhe tudo: o quinto nome no relatório, a pasta do grupo alterada às 23:47 a partir da sala de informática, e que precisas de ver quem lá estava. Ele cruza os braços. \"Imagens das câmaras não se dão a qualquer um. Mostra-me alguma coisa que prove o que dizes.\"",
             "rude": "\"Não me dês ordens.\" O segurança volta a olhar para os monitores apagados. \"Ou me mostras alguma coisa, ou vais à tua vida.\"",
             "rebuff": "Ele olha para aquilo sem se mexer. \"Isso não me diz nada sobre quem esteve na sala de informática. Traz-me outra coisa.\"",
@@ -366,7 +366,7 @@ TEXT = {
         "security": {
             "guard_name": "José",
             "hello": "The guard sits in front of a wall of monitors, all of them dark. \"Good evening. If you came for the cameras, you are wasting your time: they do not turn on.\"",
-            "broken": "\"The monitors have had no signal since last night. Somebody unplugged the cables behind the rack, and it was not me. But first tell me why you want footage.\"",
+            "broken": "\"The monitors have had no signal since last night. Somebody unplugged the cables behind the rack, and it was not me. And I still need to see a proof before I let you near them.\"",
             "explain": "You tell him everything: the fifth name on the report, the group folder changed at 23:47 from the computer lab, and that you need to see who was there. He folds his arms. \"Camera footage is not given to just anyone. Show me something that proves what you say.\"",
             "rude": "\"Do not give me orders.\" The guard goes back to looking at the dark monitors. \"Either you show me something, or you go on your way.\"",
             "rebuff": "He looks at it without moving. \"That tells me nothing about who was in the computer lab. Bring me something else.\"",

@@ -2028,7 +2028,15 @@
     // He asks which camera and what time (`ready`): the player says the computer lab at 23:47 (specs/guard-answer-and-cameras.md).
     if (state.wired) return [{ label: t.opt_ask_lab, next: "granted" }];
     if (state.convinced) return [{ label: t.opt_wire, next: "wire" }, { label: t.opt_who, next: "who" }];
-    return [{ label: t.opt_explain, next: "explain" }, { label: t.opt_broken, next: "broken" }];
+    // Before he is convinced, he must first hear why you came: only "Explain the situation" until it is said
+    // in this conversation, then the questions that make sense after it (specs/guard-explain-first.md).
+    if (!asked.has("explain")) return [{ label: t.opt_explain, next: "explain" }];
+    return guardFollowUps(t);
+  }
+  // After "Explain the situation": the monitors, and demanding the footage (2 minutes). A question already
+  // chosen is not offered again (showLine's own rule), so each stays until it is asked.
+  function guardFollowUps(t) {
+    return [{ label: t.opt_broken, next: "broken" }, { label: t.opt_rude, next: "rude", cost: 2 }];
   }
   const guardLine = (node, text, options) => ({ npc: "guard", name: guardName(), node, text, trust: null, note: "", actions: [], options });
   function guardStart() {
@@ -2050,9 +2058,10 @@
     setTimeout(() => {
       $("talk-log").querySelector(".typing")?.remove();
       if (talking !== "guard") return;
-      // "explain": demanding costs 2 minutes. "granted": he agrees to show the computer lab at 23:47, and
+      // "explain", "broken", "rude": what is left of asking about the monitors and demanding the footage
+      // (2 minutes, specs/guard-explain-first.md). "granted": he agrees to show the computer lab at 23:47, and
       // "Watch the recordings" opens them there (specs/guard-answer-and-cameras.md).
-      const options = node === "explain" ? [{ label: t.opt_rude, next: "rude", cost: 2 }]
+      const options = ["explain", "broken", "rude"].includes(node) ? guardFollowUps(t)
         : node === "granted" ? [{ label: t.opt_watch, next: "watch_lab" }] : [];
       showLine(guardLine(node, t[node], options));
     }, 600);
