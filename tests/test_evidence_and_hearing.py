@@ -1114,9 +1114,7 @@ def test_the_page_and_early_snapshots_never_contain_the_case_file():
 
 
 def test_the_page_has_the_tray_and_the_hearing_inside_the_conversation_card():
-    # Changed by specs/two-answers.md ("Reviewed tests that change"): no "Show evidence" tray; the right
-    # answer of a claim line shows its card (`option.crack`).
-    new = ["function confrontWith(", "function showHearing(", 'action.id === "present_evidence"', "option.crack",
+    new = ["function askEvidence(", "function showHearing(", 'action.id === "present_evidence"', "talk-evidence",
            "ending.verdict", "hearing.said", "topics.delete(", 'line.npc === "rita" && line.node === "photo"']
     kept = ['action.id === "open_drawer"', "if (option.cost) penalize(option.cost)",
             "line.options.filter(option => option.next !== null && !asked.has(option.next))",
@@ -1126,9 +1124,9 @@ def test_the_page_has_the_tray_and_the_hearing_inside_the_conversation_card():
     assert 'id="hearing-card"' not in PAGE   # the hearing has no card of its own
     # PAGE holds every key of campus_text.py, used or not, so the use of these two is looked for in play.js itself.
     play_js = (FOLDER / "play.js").read_text(encoding="utf-8")
-    assert "evidence_show" not in play_js and "talk-evidence" not in play_js and "hearing_concede" in play_js
+    assert "evidence_show" in play_js and "hearing_concede" in play_js
     # The same for the other texts the page shows (points 5, 6 and 9), and for the two new operations it sends.
-    for key in ("hearing_hint", "time_penalty_card", "time_penalty_duarte"):   # evidence_back went with the tray
+    for key in ("evidence_back", "hearing_hint", "time_penalty_card", "time_penalty_duarte"):
         assert key in play_js, key
     for operation in ("confront", "hearing"):
         assert f'"{operation}"' in play_js or f"'{operation}'" in play_js, operation
@@ -1138,7 +1136,7 @@ def test_the_page_has_the_tray_and_the_hearing_inside_the_conversation_card():
     # passing are also read here, in the source.
     start = play_js.index("  function showLine(line) {")
     block = play_js[start:play_js.index("  // The player chose to do something", start)]
-    assert "option.crack" in block   # the right answer of a claim line is handled inside showLine
+    assert "talk-evidence" in block   # the evidence row is drawn inside showLine, on every line
     assert "classList.add" not in block and ".remove()" not in block   # the fake page has neither
     assert not re.search(r"\bt\.\w+\[", block)   # ui() is {} there: t.night_lines[0] would break
 

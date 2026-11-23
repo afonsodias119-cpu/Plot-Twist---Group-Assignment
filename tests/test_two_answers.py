@@ -80,7 +80,9 @@ def test_tomas_gives_in_through_the_right_answer():
     assert reply["confront"]["cracked"] is True
 
 
-def test_the_page_has_no_show_evidence_in_conversations():
-    assert 'id="talk-evidence"' not in PLAY and "function askEvidence(" not in PLAY
+def test_show_evidence_is_gone_only_in_the_print_shop_and_the_computer_lab():
+    assert 'const NO_EVIDENCE = ["amelia", "tomas", "computer12"];' in PLAY
+    assert "const showsEvidence = !NO_EVIDENCE.includes(line.npc)" in PLAY
+    assert 'if (line.npc === "guard") { guardShown(card); return; }' in PLAY   # the guard is not touched
     assert "if (option.crack) {" in PLAY and "confrontWith(line, { id: option.crack, label: option.label }, true)" in PLAY
     assert 'const TWO_ANSWERS = new Set(["tomas", "rita"]);' in PLAY
