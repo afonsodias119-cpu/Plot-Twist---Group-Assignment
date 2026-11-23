@@ -643,6 +643,105 @@ const whiteboard = textPanel(512, 256, (g, w, h) => {
 rbox(2.3, 1.2, 0.06, 0, 0.9, -11.84, mat(0xb0b4b8, { metalness: 0.6, roughness: 0.3 }));
 picture(2.2, 1.1, 0, 1.5, -11.8, whiteboard, 0.15);
 plant(-3.9, -11.4); plant(3.9, -3.6, 0.8);
+// A lived-in study room (specs/study-room-detail.md): furniture along the walls only, so the floor around the
+// table and the way from the door stay clear. Nothing here can be clicked or searched.
+function wallPicture(w, h, x, y, z, texture, facing) {   // a picture on a side wall: facing +1 looks east, -1 looks west
+  const m = picture(w, h, x, y, z, texture, 0.12); m.rotation.y = facing * Math.PI / 2; return m;
+}
+{
+  // the west wall: a low cabinet with binders, a printer and a tray of paper, a corkboard and a "silence" sign above
+  rbox(0.45, 0.85, 3.0, -4.13, 0, -9.0, oak, { radius: 0.02 });
+  for (const z of [-10.0, -9.0, -8.0]) rbox(0.01, 0.75, 0.9, -3.9, 0.05, z, walnut, { radius: 0.005 });   // three doors
+  block(-4.13, -9.0, 0.45, 3.0);
+  [0x1f3f7a, 0x7a1f1f, 0x2f5a2f, 0xd9a23a, 0x1f3f7a, 0x5a3f7a, 0x2f7f86].forEach((colour, i) =>
+    rbox(0.3, 0.32, 0.07, -4.15, 0.85, -10.35 + i * 0.09, mat(colour, { roughness: 0.6 }), { radius: 0.01 }));   // binders standing up
+  rbox(0.4, 0.22, 0.45, -4.12, 0.85, -9.2, mat(0xe8e8e4, { roughness: 0.5 }), { radius: 0.03 });                // the printer
+  rbox(0.3, 0.012, 0.25, -4.12, 1.07, -9.2, paper);                                                              // a sheet waiting in it
+  rbox(0.32, 0.06, 0.24, -4.12, 0.85, -8.2, blackPlastic, { radius: 0.01 });                                     // a tray of paper
+  rbox(0.26, 0.04, 0.2, -4.12, 0.91, -8.2, paper);
+  cyl(0.04, 0.035, 0.11, -4.1, 0.85, -7.75, mat(0x2f7f86, { roughness: 0.5 }), 16);                               // a pot of pens
+  for (const dz of [-0.015, 0.015]) cyl(0.004, 0.004, 0.14, -4.1, 0.9, -7.75 + dz, mat(dz > 0 ? 0xc0392b : 0x2251a8), 8);
+  const cork = textPanel(512, 300, (g, w, h) => {
+    g.fillStyle = "#b9895a"; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(80,50,20,${rand(0.1, 0.3)})`; g.fillRect(rand(0, w), rand(0, h), 2, 2); }
+    g.strokeStyle = "#6b4a2a"; g.lineWidth = 14; g.strokeRect(0, 0, w, h);
+    const notes = [["#fff7a8", "Entrega: 23/11", "23:59 !!"], ["#d0f0ff", "Grupo de estudo", "sala 2.14, 18h"], ["#ffd0d0", "Quem levou o", "carregador azul?"], ["#ffffff", "Horário de exames", "Microeconomia 25/11"]];
+    notes.forEach(([colour, a, b], i) => {
+      const x = 30 + (i % 2) * 240, y = 30 + Math.floor(i / 2) * 130;
+      g.fillStyle = colour; g.fillRect(x, y, 210, 110);
+      g.fillStyle = "#c0392b"; g.beginPath(); g.arc(x + 105, y + 10, 7, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#333"; g.font = "22px 'Comic Sans MS', cursive"; g.fillText(a, x + 12, y + 52); g.fillText(b, x + 12, y + 86);
+    });
+  });
+  wallPicture(1.7, 1.0, -4.36, 1.6, -9.0, cork, 1);
+  const quiet = textPanel(256, 96, (g, w, h) => {
+    g.fillStyle = "#0B1B2B"; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#E8A33D"; g.font = "bold 34px sans-serif"; g.textAlign = "center"; g.fillText("🤫 Silêncio", w / 2, 60);
+  });
+  wallPicture(0.6, 0.22, -4.36, 1.85, -5.6, quiet, 1);
+  // the east wall: a sofa with cushions, a low coffee table with a mug and a magazine, a poster and a clock
+  const sofaFabric = mat(0x4a5a6e, { roughness: 0.95 });
+  rbox(0.8, 0.42, 1.8, 3.98, 0, -9.5, sofaFabric, { radius: 0.06 });                                   // the seat
+  rbox(0.22, 0.85, 1.8, 4.28, 0, -9.5, sofaFabric, { radius: 0.08 });                                  // the back
+  for (const dz of [-0.95, 0.95]) rbox(0.8, 0.6, 0.18, 3.98, 0, -9.5 + dz, sofaFabric, { radius: 0.07 });   // the arms
+  for (const [dz, colour] of [[-0.45, 0xd9a23a], [0.45, 0xd9674e]]) rbox(0.14, 0.36, 0.42, 4.1, 0.42, -9.5 + dz, mat(colour, { roughness: 0.9 }), { radius: 0.07 }).rotation.z = -0.25;
+  block(3.98, -9.5, 0.85, 2.0);
+  rbox(0.55, 0.04, 0.95, 2.95, 0.36, -9.5, walnut, { radius: 0.02 });                                 // the coffee table
+  for (const sx of [-0.2, 0.2]) for (const sz of [-0.38, 0.38]) rbox(0.04, 0.36, 0.04, 2.95 + sx, 0, -9.5 + sz, blackMetal);
+  block(2.95, -9.5, 0.6, 1.0);
+  cyl(0.04, 0.035, 0.09, 2.85, 0.4, -9.75, mat(0xf2efe8, { roughness: 0.4 }), 16);                    // a mug
+  rbox(0.2, 0.008, 0.28, 3.0, 0.4, -9.3, mat(0xc0392b, { roughness: 0.6 }), { radius: 0.002 }).rotation.y = 0.4;   // a magazine
+  const poster = textPanel(256, 360, (g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, "#0B1B2B"); grad.addColorStop(1, "#1d4e89");
+    g.fillStyle = grad; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#E8A33D"; g.font = "bold 40px Georgia"; g.textAlign = "center"; g.fillText("NOVA SBE", w / 2, 80);
+    g.fillStyle = "#f2f2ee"; g.font = "24px Georgia"; g.fillText("Semana de", w / 2, 170); g.fillText("apresentações", w / 2, 205);
+    g.font = "18px Georgia"; g.fillText("Boa sorte a todos!", w / 2, 300);
+  });
+  rbox(0.03, 0.98, 0.72, 4.39, 1.1, -9.5, blackMetal, { radius: 0.005 });                             // its frame
+  wallPicture(0.66, 0.92, 4.36, 1.59, -9.5, poster, -1);
+  const clockFace = textPanel(128, 128, (g, w, h) => {
+    g.fillStyle = "#f7f5f0"; g.beginPath(); g.arc(64, 64, 60, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = "#1b1c1f"; g.lineWidth = 6; g.stroke();
+    for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; g.lineWidth = 3; g.beginPath(); g.moveTo(64 + Math.sin(a) * 46, 64 - Math.cos(a) * 46); g.lineTo(64 + Math.sin(a) * 54, 64 - Math.cos(a) * 54); g.stroke(); }
+    g.fillStyle = "#1b1c1f"; g.beginPath(); g.arc(64, 64, 4, 0, Math.PI * 2); g.fill();   // no hands: the time is the one on the screen
+  });
+  wallPicture(0.4, 0.4, 4.36, 1.9, -6.9, clockFace, -1);
+  // a water cooler by the east wall, near the door (Rita stands further in)
+  rbox(0.34, 0.95, 0.34, 4.1, 0, -4.6, mat(0xe8e8e4, { roughness: 0.5 }), { radius: 0.03 });
+  cyl(0.15, 0.15, 0.42, 4.1, 0.95, -4.6, mat(0x9fd3f0, { transparent: true, opacity: 0.55, roughness: 0.1 }), 24);
+  rbox(0.06, 0.05, 0.04, 4.0, 0.72, -4.42, mat(0x2251a8));
+  block(4.1, -4.6, 0.4, 0.4);
+  // the south-west corner: a coat stand with a coat and a scarf
+  cyl(0.18, 0.2, 0.03, -3.95, 0, -3.75, blackMetal, 20);
+  cyl(0.02, 0.02, 1.75, -3.95, 0.03, -3.75, blackMetal, 10);
+  rbox(0.4, 0.75, 0.16, -3.95, 0.95, -3.62, mat(0x6b3a2a, { roughness: 0.95 }), { radius: 0.06 });   // a coat
+  rbox(0.09, 0.7, 0.05, -3.82, 0.9, -3.86, mat(0xd9a23a, { roughness: 0.95 }), { radius: 0.02 });    // a scarf
+  block(-3.95, -3.75, 0.45, 0.45);
+  // the south-west: a small round table for two, with a laptop someone left open and a cup
+  cyl(0.42, 0.42, 0.04, -2.6, 0.72, -5.4, walnut, 32);
+  cyl(0.04, 0.04, 0.72, -2.6, 0, -5.4, blackMetal, 12);
+  cyl(0.25, 0.27, 0.03, -2.6, 0, -5.4, blackMetal, 24);
+  block(-2.6, -5.4, 0.85, 0.85);
+  chair(-3.35, -5.4, Math.PI / 2); chair(-1.85, -5.4, -Math.PI / 2);
+  laptop(-2.75, -5.4, Math.PI / 2);
+  cyl(0.04, 0.035, 0.1, -2.35, 0.765, -5.2, mat(0xf2efe8, { roughness: 0.4 }), 16);
+  // the west wall, nearer the door: a row of three student lockers
+  for (let i = 0; i < 3; i++) {
+    const z = -7.05 + i * 0.5;
+    rbox(0.45, 1.8, 0.48, -4.13, 0, z, mat([0x2f7f86, 0x1f3f7a, 0x2f7f86][i], { metalness: 0.4, roughness: 0.45 }), { radius: 0.01 });
+    rbox(0.01, 0.12, 0.03, -3.9, 1.0, z + 0.15, metal);                                               // the handle
+    for (let v = 0; v < 3; v++) rbox(0.01, 0.02, 0.3, -3.9, 1.5 + v * 0.06, z, blackMetal, { radius: 0.005 });   // air slots
+  }
+  block(-4.13, -6.55, 0.45, 1.5);
+  // a floor lamp beside the sofa, lit
+  cyl(0.15, 0.17, 0.03, 4.0, 0, -8.2, blackMetal, 20);
+  cyl(0.015, 0.015, 1.45, 4.0, 0.03, -8.2, blackMetal, 8);
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.2, 0.26, 24, 1, true), mat(0xf2e6cc, { side: THREE.DoubleSide, emissive: 0xffd590, emissiveIntensity: 0.6 })), 4.0, 1.55, -8.2);
+  block(4.0, -8.2, 0.35, 0.35);
+  // under the windows: two radiators
+  for (const x of [-3, 3]) for (let i = 0; i < 9; i++) rbox(0.1, 0.5, 0.08, x - 0.56 + i * 0.14, 0.12, -11.76, mat(0xe8e8e4, { metalness: 0.3, roughness: 0.4 }), { radius: 0.02 });
+}
 
 // ---- The study room (specs/hidden-object-table.md): the table is covered in mess and is the only place
 // to search. Clicking it opens its close-up (table.js), where the player looks for the USB stick.
