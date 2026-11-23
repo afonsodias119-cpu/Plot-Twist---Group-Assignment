@@ -183,10 +183,12 @@ def test_the_auditorium_button_needs_every_clue_too():
 def test_the_clue_list_and_the_auditorium_button_follow_the_progress():
     """The snapshot carries the phone's to-do list, and locks the auditorium button until it is complete."""
     start = call()
-    assert [c["id"] for c in start["clues"]] == ["usb_stick", "original_photo", "files_viewed", "leonor"]
+    # Changed by specs/night-and-clues.md ("Reviewed tests that change"): the clues are in the order they
+    # are done, Leonor before computer 12. Was: usb_stick, original_photo, files_viewed, leonor.
+    assert [c["id"] for c in start["clues"]] == ["usb_stick", "original_photo", "leonor", "files_viewed"]
     assert not any(c["done"] for c in start["clues"])
     assert [c["room"] for c in start["clues"]] == [STORIES["pt"]["scenes"][r]["title"]
-                                                    for r in ["study_room", "print_shop", "computer_lab", "library"]]
+                                                    for r in ["study_room", "print_shop", "library", "computer_lab"]]
     button = next(a for a in start["actions"] if a["id"] == "go_auditorium")
     assert button["allowed"] is False and button["blocked_text"].startswith(TEXT["pt"]["auditorium_note"])
 

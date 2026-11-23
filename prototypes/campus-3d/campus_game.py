@@ -16,9 +16,9 @@ from campus_evidence import (FINAL_ROOM, confront, hand, hearing, hearing_open, 
 # The rude answers remembered tonight and the temper they give (specs/trust-has-consequences.md).
 # The temper stays on the server: only the text and the note of a line change.
 from campus_evidence import moods, remember_rude
-# The night's clock (specs/night-schedule.md): the costs, the departures and the rounds. Server only,
-# like the two files below: the clerk's sentence names the date of the code.
-from campus_clock import (COSTS, LEAVES, NIGHT_MINUTES, ROUNDS, SHUTTER, WARNING, duarte_place, next_mark,
+# The night's clock (specs/night-schedule.md): the costs, Leonor's departure and the rounds. Server only,
+# like the two files below.
+from campus_clock import (COSTS, LEAVES, NIGHT_MINUTES, ROUNDS, WARNING, duarte_place, next_mark,
                           round_reached, time_text)
 # The case of the day (specs/case-of-the-day.md): the date picks the case, the notes keep it. The
 # case's data stays on the server: campus_evidence.case_of gives it, and the page sees only the date.
@@ -40,10 +40,13 @@ from story import LANGUAGES, STORIES, UI_TEXTS
 # The clues the player has to collect, and the room where each one is found. In this 3D version the
 # auditorium opens only when each of them is done or lost. (The Streamlit game keeps the story's own,
 # looser rule: the old files must have been viewed.)
+# They are in the order they have to be done (specs/night-and-clues.md): Leonor helps only once she
+# has seen the photo, and computer 12 needs the memories of the whole group, Leonor's too.
 CLUES = [("usb_stick", "study_room"), ("original_photo", "print_shop"),
-         ("files_viewed", "computer_lab"), ("leonor", "library")]
-# The clues that only a person who leaves can give (specs/night-schedule.md, point 6).
-CLUE_PERSON = {"original_photo": "amelia", "leonor": "leonor"}
+         ("leonor", "library"), ("files_viewed", "computer_lab")]
+# The clue that only a person who leaves can give (specs/night-schedule.md, point 6). The clerk no
+# longer leaves (specs/night-and-clues.md), so the photo can always be got.
+CLUE_PERSON = {"leonor": "leonor"}
 # What a command that did not move the clock returns (see move_clock).
 CLOCK_STILL = {"charged": 0, "caught": False, "message": ""}
 # FINAL_ROOM (the auditorium) is imported from campus_evidence.py above: the hearing uses it too.
@@ -69,13 +72,10 @@ def clue_done(state, clue):
 def clue_lost(state, clue, minute):
     """True when a clue that is not done can no longer be got tonight (specs/night-schedule.md, point 6).
 
-    The photo is lost when the clerk has gone home. Leonor is lost when she has left, or as soon as
-    the photo is lost: her decision needs it.
+    Only Leonor can be lost: when she has left undecided.
     """
     if clue not in CLUE_PERSON or clue_done(state, clue):
         return False
-    if clue == "leonor" and clue_lost(state, "original_photo", minute):
-        return True
     return minute >= LEAVES[CLUE_PERSON[clue]]
 
 
@@ -102,22 +102,17 @@ def clue_rows(story, state, language, minute):
 # ---------- the night's schedule (specs/night-schedule.md) ----------
 
 def gone_people(state, minute):
-    """The people who have left by the schedule (point 5): the clerk from minute 10, and Leonor from
-    minute 15 only while she is undecided (once she helps she stays; once accused the story already
-    emptied her table)."""
+    """The people who have left by the schedule (point 5): Leonor from minute 15 only while she is
+    undecided (once she helps she stays; once accused the story already emptied her table). The clerk
+    stays all night (specs/night-and-clues.md)."""
     gone = []
-    if minute >= LEAVES["amelia"]:
-        gone.append("amelia")
     if minute >= LEAVES["leonor"] and state["flags"]["colleague_choice"] == "none":
         gone.append("leonor")
     return gone
 
 
 def gone_sentence(person, language):
-    """The schedule sentence of a person who has left. The clerk's is kept in the server-only
-    campus_clock.py, because the slip on the shutter names the date of the code."""
-    if person == "amelia":
-        return SHUTTER[language]
+    """The schedule sentence of a person who has left (only Leonor leaves)."""
     return TEXT[language]["schedule"]["leonor_gone"]
 
 
@@ -153,22 +148,19 @@ def room_texts(story, state, notice):
 
 
 def night_closed(state, night):
-    """True at 22:45 when the story has not ended: the faculty is closed (point 9)."""
+    """True at 23:00 when the story has not ended: the faculty is closed (point 9)."""
     return night["minute"] >= NIGHT_MINUTES and state["ending"] == "none"
 
 
 def due_messages(state, night, language, number=1):
     """The messages of the unknown number that are due now, as {"id", "text"} (point 7).
 
-    Every rule takes the whole minute: at 9.5 the warning `shop` is still due. `number` is which
-    night of this name tonight is: from night 3 the round warnings are a whisper, with the same ids
-    (specs/earlier-nights.md, point 4).
+    Every rule takes the whole minute. `number` is which night of this name tonight is: from night 3
+    the round warnings are a whisper, with the same ids (specs/earlier-nights.md, point 4).
     """
     minute, whole = night["minute"], int(night["minute"])
     text = TEXT[language]["schedule"]
     due = []
-    if LEAVES["amelia"] - WARNING <= whole < LEAVES["amelia"] and "original_photo" not in state["inventory"]:
-        due.append({"id": "shop", "text": text["warn_shop"]})
     if (LEAVES["leonor"] - WARNING <= whole < LEAVES["leonor"] and state["flags"]["colleague_choice"] == "none"
             and not clue_lost(state, "leonor", minute)):
         due.append({"id": "leonor", "text": text["warn_leonor"]})
@@ -199,7 +191,7 @@ def move_clock(player, language, minute, since):
     computer 12 (the files seen, the backup not saved yet: specs/computer-lab-backup.md) catches the
     player, unless Tomás has cracked and stands in the lab door: 3 minutes are charged and nothing else
     is saved. One command catches
-    at most once. A move that reaches 22:45 with no ending ends the night, so tonight's row is written
+    at most once. A move that reaches 23:00 with no ending ends the night, so tonight's row is written
     then, as TIME_UP (specs/earlier-nights.md, point 2). Returns {"charged", "caught", "message"}.
     """
     state = game.load(player)
@@ -422,7 +414,7 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         "night": night_view(state, night, language, charged, memory["night"]),
         # The night number, the story endings seen and the two gates; and the unknown number's
         # messages as this night starts (specs/earlier-nights.md, points 3 and 4).
-        # No whisper once the faculty has closed: 22:45 ends the night as an ending does.
+        # No whisper once the faculty has closed: 23:00 ends the night as an ending does.
         "memory": memory, "whispers": [] if night_closed(state, night) else whispers(state, memory, language),
         "leonor_present": choice != "accused" and "leonor" not in gone,
         # True while the game is untouched: the 3D scene then starts the character outside.
@@ -604,7 +596,7 @@ def rude_answer(player, state, night, language, person, node):
 
 
 def closed_reply(player, language, operation):
-    """At 22:45 the faculty is closed (point 9): `talk`, `rude` and `confront` raise, every other
+    """At 23:00 the faculty is closed (point 9): `talk`, `rude` and `confront` raise, every other
     operation is refused with "The faculty is closed". Nothing is played or written."""
     closed_text = TEXT[language]["time_up_title"]
     if operation in ("talk", "rude", "confront"):
@@ -673,7 +665,7 @@ def run_command(payload):
         old_night = read_night(player, game.load(player))
         daily = old_night["case"] is not None
         game.restart(player)
-        db.delete_night(player)   # a new night at 22:15: nobody is cracked, gone or caught, no hearing
+        db.delete_night(player)   # a new night at 22:30: nobody is cracked, gone or caught, no hearing
         if daily:   # the same group plays the new night (specs/your-own-group.md, point 2)
             write_night(player, dict(read_night(player, game.load(player)), case=todays_case(),
                                      names=old_night["names"]))

@@ -275,8 +275,12 @@ def test_the_day_never_names_the_case(monkeypatch):
 
 def test_the_page_shows_the_day_and_the_share_line():
     play_js = (FOLDER / "play.js").read_text(encoding="utf-8")
-    for needle in ("case-day", "Europe/Lisbon", 'send("begin"', "day.label"):
-        assert needle in play_js, needle
+    # Changed by specs/night-and-clues.md ("Reviewed tests that change"): the page no longer shows the day
+    # (was: "case-day", "Europe/Lisbon" and "day.label" in the page). It still sends `begin`; the server
+    # still keeps the day and its words, checked below.
+    assert 'send("begin"' in play_js
+    for needle in ("case-day", "day.label"):
+        assert needle not in play_js, needle
     for language in ("en", "pt"):
         t = TEXT[language]
         assert t["case_of_day"] == CASE_OF_DAY[language], language
