@@ -204,8 +204,8 @@ def test_every_ending_is_reachable_from_a_new_game():
                 if key not in seen:
                     seen.add(key)
                     to_visit.append(result["state"])
-    # Changed by specs/spot-the-fake.md ("Reviewed tests that change"): the group chat adds full_case.
-    # Changed again by specs/fifth-element-ending.md ("Reviewed tests that change"): flagging every message adds fifth_element.
+    # Changed by specs/archive/spot-the-fake.md ("Reviewed tests that change"): the group chat adds full_case.
+    # Changed again by specs/archive/fifth-element-ending.md ("Reviewed tests that change"): flagging every message adds fifth_element.
     # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the chat and fifth_element are gone.
     # Changed by specs/three-proofs.md ("Reviewed tests that change"): two endings.
     assert endings_found == {"stolen_credits", "full_case"}
@@ -637,7 +637,7 @@ def test_broken_save_counts_as_no_save():
 
 
 # ---------- The backup of the original conversations (specs/computer-lab-backup.md) ----------
-# It replaces the group chat puzzle of specs/spot-the-fake.md ("Reviewed tests that change").
+# It replaces the group chat puzzle of specs/archive/spot-the-fake.md ("Reviewed tests that change").
 
 def test_the_backup_is_offered_only_after_the_files_are_viewed():
     """Saving the backup appears in the computer lab only once the old files were viewed, and only once."""

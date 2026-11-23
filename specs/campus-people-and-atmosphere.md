@@ -5,7 +5,7 @@
 Extends specs/playable-campus-3d.md and specs/campus-3d-streamlit.md. No change to `logic.py`, `story.py`, `db.py`, `game.py`, `app.py` or any reviewed test.
 
 ## Why
-The 3D campus has the mystery but little life: three silent characters, and the group chat puzzle (specs/spot-the-fake.md) only works in the plain app. This adds people to talk to, a clock, a diary, the chat in 3D, and sound and light.
+The 3D campus has the mystery but little life: three silent characters, and the group chat puzzle (specs/archive/spot-the-fake.md) only works in the plain app. This adds people to talk to, a clock, a diary, the chat in 3D, and sound and light.
 
 ## What
 1. **People in every room.** Rita (study room), the print shop clerk Amélia, Leonor (library), Tomás (computer lab), the Professor and Duarte (auditorium). Walking up to a person (about 2.4 units) shows a note "Press the K key to talk to <name>" over the picture; the key starts the conversation, also with the side panel hidden. The panel still lists "Talk to <name>" for the people in the saved room (it works from anywhere, because talking only reads the saved game), and it is the only way in text mode. The "play without 3D" button was removed; the text mode still starts by itself when the 3D scenery cannot load.

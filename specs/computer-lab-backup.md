@@ -2,7 +2,7 @@
 
 > **Update (specs/three-proofs.md):** the endings of point 3 are replaced. `accuse` and "The impostor" are gone; the proofs decide: the photo, the files and the backup → "Case closed", anything missing → "Stolen credit". The auditorium of point 2 is always open, and the true ending is removed.
 
-Changes `story.py` (both games: the plain game of `app.py` and the 3D game) and the 3D server. Replaces specs/spot-the-fake.md (the group chat puzzle) and removes specs/fifth-element-ending.md. Every text exists in Portuguese and English.
+Changes `story.py` (both games: the plain game of `app.py` and the 3D game) and the 3D server. Replaces specs/archive/spot-the-fake.md (the group chat puzzle) and removes specs/archive/fifth-element-ending.md. Every text exists in Portuguese and English.
 
 ## Before writing the spec
 
@@ -23,7 +23,7 @@ Changes `story.py` (both games: the plain game of `app.py` and the 3D game) and 
   6. **The page** loses the chat screen, the 🟨 square of the share card, the unknown number's message about the first flag, the fifth ending's colours, flickering lights and stamp. After the right code, computer 12's card offers the backup.
 
 7. **The proofs for the professor (after the merge with #53–#56, agreed with the team).** The cards are the USB stick's history (`files`), the original photo and the **backup** (new card `backup`, held once `backup_saved`). Duarte's claims: `name` ← `files`, `photo` ← `original_photo`, `messages` ← `backup`. Leonor's screenshots and the words of Tomás and Rita are no longer cards: cracking Tomás or Rita is kept in the night's notes (Tomás still stands in the lab door, and the true ending still needs both), and Leonor is no longer cracked with a card. The security camera will be the fourth proof, with a fourth claim, added by Afonso (specs/security-desk.md, phase 2).
-8. **No culprit cases.** The cases "tomas" and "rita" of specs/culprit-of-the-night.md changed the fake chat messages; they are removed and the culprit is always Duarte. The case of the day keeps only the classic case, so the start screen and the share card still show the date. The friends' names of specs/your-own-group.md still work. The lies of specs/trust-has-consequences.md are now contradicted by the backup.
+8. **No culprit cases.** The cases "tomas" and "rita" of specs/archive/culprit-of-the-night.md changed the fake chat messages; they are removed and the culprit is always Duarte. The case of the day keeps only the classic case, so the start screen and the share card still show the date. The friends' names of specs/your-own-group.md still work. The lies of specs/trust-has-consequences.md are now contradicted by the backup.
 
 ## What
 

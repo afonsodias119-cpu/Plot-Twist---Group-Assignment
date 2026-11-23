@@ -13,7 +13,7 @@ How to read this file:
 - "saves nothing" means the database file has the same bytes before and after (`saved()`).
 - A test that expects a ValueError first sends one valid `begin` and checks its reply, so it cannot
   pass only because the operation does not exist yet.
-- The case ids, the order and the texts of each case belong to specs/culprit-of-the-night.md: here
+- The case ids, the order and the texts of each case belong to specs/archive/culprit-of-the-night.md: here
   the tests ask `campus_clock.case_of_day` which case a date gives, so they hold with one case and
   with three.
 """

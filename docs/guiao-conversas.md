@@ -613,7 +613,7 @@ A partir da noite 3, os três avisos das rondas (`round-12`, `round-19`, `round-
 
 ## O caso do dia (em `prototypes/campus-3d/campus_case.py`, `CASES`)
 
-(specs/case-of-the-day.md) O jogo começa com a operação `begin` e o ecrã inicial mostra a data do caso. Só existe o caso clássico (`outsider`): o culpado é sempre o Duarte. Os casos `tomas` e `rita` (specs/culprit-of-the-night.md) mudavam as mensagens falsas do chat e saíram com ele (specs/computer-lab-backup.md).
+(specs/case-of-the-day.md) O jogo começa com a operação `begin` e o ecrã inicial mostra a data do caso. Só existe o caso clássico (`outsider`): o culpado é sempre o Duarte. Os casos `tomas` e `rita` (specs/archive/culprit-of-the-night.md) mudavam as mensagens falsas do chat e saíram com ele (specs/computer-lab-backup.md).
 
 O dia já não aparece no ecrã (specs/night-and-clues.md): o servidor guarda a data de cada jogo, mas o ecrã inicial, a barra de cima e o cartão de partilha não a mostram.
 

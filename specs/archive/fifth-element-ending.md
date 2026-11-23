@@ -2,7 +2,7 @@
 
 > **Removed by specs/computer-lab-backup.md:** the ending "The fifth element" no longer exists (its test file was deleted).
 
-Extends specs/spot-the-fake.md and specs/campus-people-and-atmosphere.md. No change to `logic.py`, `db.py`, `game.py` or `app.py`.
+Extends specs/archive/spot-the-fake.md and specs/campus-people-and-atmosphere.md. No change to `logic.py`, `db.py`, `game.py` or `app.py`.
 
 ## Why
 After "Present the evidence" the 3D game only changed the text of a side panel, which the player may have closed, so the game looked stuck. A story this twisty also deserves one ending nobody expects.

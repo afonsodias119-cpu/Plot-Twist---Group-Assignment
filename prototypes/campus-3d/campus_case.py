@@ -185,7 +185,7 @@ NIGHT_TEXT = {
 #   line for each of those new pairs.
 # - `texts`: {exact classic text: what this case says instead}, in each language (campus_evidence.retell).
 # Only the classic case is left (specs/computer-lab-backup.md): the culprit is always Duarte. The cases
-# "tomas" and "rita" of specs/culprit-of-the-night.md changed the fake chat messages, and the chat is gone.
+# "tomas" and "rita" of specs/archive/culprit-of-the-night.md changed the fake chat messages, and the chat is gone.
 CASES = {
     "outsider": {"accepts": {}, "right": {"en": {}, "pt": {}}, "texts": {"en": {}, "pt": {}}},
 }
