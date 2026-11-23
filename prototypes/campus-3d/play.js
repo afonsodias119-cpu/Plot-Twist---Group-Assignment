@@ -1048,6 +1048,8 @@
     // there is nothing more to ask her, so no answers, no actions and no "Show evidence" (specs/leonor-after-help.md).
     const leonorHelping = line.npc === "leonor" && (current?.followers?.ids || []).includes("leonor");
     if (leonorHelping) line = { ...line, options: [], actions: [] };
+    // The password hint finishes this exchange; keep its text and the close control (specs/tomas-password-end.md).
+    if (line.npc === "tomas" && line.node === "password") line = { ...line, options: [], actions: [] };
     // No trust hearts on screen: the player reads the mood in what the person says (specs/cleaner-interface.md).
     // The server still sends `trust`, and a person with trust 0 still ends the conversation.
     // "Goodbye" (an answer that ends the talk) is not shown: the header has "End conversation".
@@ -1453,6 +1455,8 @@
     // not asked for when that person has gone meanwhile (specs/night-schedule.md, point 4).
     if (npc === "guard") { guardStep(node); return; }   // José: his lines are made on the screen, not by the server
     if (!await catchUp(npc)) return;
+    // A return with the file history starts the later slides discussion, not the finished password route.
+    if (npc === "tomas" && node === "start" && (current.evidence || []).some(card => card.id === "files")) node = "slides";
     if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)
     setBusy(true);
     try {
