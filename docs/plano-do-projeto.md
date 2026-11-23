@@ -142,6 +142,10 @@ O cartão do início e o telemóvel mostram só quatro pistas, sem a sala e sem 
 
 Na primeira fala, o professor oferece duas coisas: apresentar as provas ou perguntar quantos elementos tem o grupo (essa conversa acaba em "vou trazer provas"). Apresentar entrega de uma vez todas as provas que tens; se faltar alguma, o final diz quais. Ver `specs/hand-over-the-proofs.md`.
 
+### Sem contagem de finais — Maria (23/11/2026)
+
+O ecrã do final, o texto de partilha e o cartão deixam de mostrar "Finais descobertos: 1/2". Ver `specs/no-endings-count.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

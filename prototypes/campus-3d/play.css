@@ -254,8 +254,6 @@ body:has(#ending-card:not([hidden])) .sign { visibility: hidden; }
 .sms-row { border-left: 2px solid #ff8c7a99; padding-left: 10px; margin: 12px 0; }
 .sms-row h4 { margin: 0 0 4px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #ff8c7a; }
 .sms-row p { margin: 0; font-size: 14px !important; }
-.collection { font-size: 13px; letter-spacing: .04em; white-space: pre-wrap; }
-.ending-card .collection { margin: 18px 0 0; color: var(--accent); }
 .share { margin-top: 16px; display: grid; gap: 10px; justify-items: start; }
 .share pre { margin: 0; padding: 12px 14px; width: 100%; border: 1px dashed color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 8px; background: #ffffff0a; color: #e9e4d6; font: 14px/1.6 ui-monospace, Consolas, monospace; white-space: pre-wrap; user-select: all; }
 @media (max-width: 900px) { #investigation button.sms { right: calc(400px + 16px); width: min(300px, calc(100% - 460px)); } }

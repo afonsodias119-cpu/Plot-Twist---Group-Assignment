@@ -10,7 +10,7 @@
     return el;
   };
   const ui = () => data[window.lang || "pt"].play_ui;
-  // One emoji for each ending (the collection and the share card). It is defined here because the first screen uses it at start-up.
+  // One emoji for each ending (the share text). It is defined here because the first screen uses it at start-up.
   const ENDING_EMOJI = { full_case: "🏆", stolen_credits: "💸" };
   document.body.classList.add("playable");
 
@@ -330,7 +330,6 @@
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
     <section id="ending-card" class="ending-card" role="dialog" aria-labelledby="ending-title" hidden>
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
-      <p id="ending-collection" class="collection"></p>
       <div class="share"><pre id="share-text"></pre><button id="share-copy" class="secondary"></button></div>
       <div class="ending-actions"><button id="ending-again"></button><button id="ending-card-btn" class="secondary"></button><button id="ending-hide" class="secondary"></button></div></section>
     <section id="timeup-card" class="ending-card timeup-card" role="alertdialog" aria-labelledby="timeup-title" hidden>
@@ -735,7 +734,7 @@
     window.lang = state.language;
     window.dispatchEvent(new Event("language"));
     window.dispatchEvent(new Event("campus-state"));
-    rememberNight(state.memory);   // before showEnding: the ★ of the collection reads it
+    rememberNight(state.memory);   // the night shown on the case file reads it
     const t = ui();
     $("scene-heading").textContent = state.ending ? state.ending.title : state.title;
     $("scene-label").textContent = state.ending ? t.the_end : t.scene;
@@ -909,7 +908,6 @@
       $("ending-card-btn").textContent = t.card_open;
       rememberEnding(ending.id);
       speakEnding(ending, reply);
-      $("ending-collection").textContent = collectionText();
       $("share-text").textContent = shareText(ending);
       $("share-copy").textContent = t.share_copy;
       const colors = CONFETTI[kind] || CONFETTI.full_case;
@@ -1552,7 +1550,7 @@
   $("talk-close").addEventListener("click", closeTalk);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && talking && !phone.open && !dialog.open) closeTalk(); });
 
-  // ---------- the share card, the collection of endings and the tension of the night ----------
+  // ---------- the share card, the endings seen in this browser and the tension of the night ----------
   function loadEndings() {
     try { const found = JSON.parse(localStorage.getItem("plot-twist-endings") || "[]"); return Array.isArray(found) ? found : []; } catch (error) { return []; }
   }
@@ -1562,20 +1560,13 @@
     found.push(id);
     try { localStorage.setItem("plot-twist-endings", JSON.stringify(found)); } catch (error) { /* no storage */ }
   }
-  function collectionCount() {
-    const all = data[window.lang || "pt"].endings, found = loadEndings();
-    // "n/2": the story has two endings (specs/three-proofs.md).
-    return `${ui().collection}: ${all.filter(e => found.includes(e.id)).length}/${all.length}`;
-  }
-  function collectionText() {
-    const all = data[window.lang || "pt"].endings, found = loadEndings();
-    return `${collectionCount()}   ${all.map(e => found.includes(e.id) ? ENDING_EMOJI[e.id] || "✔" : "🔒").join(" ")}`;
-  }
+  // No "Endings found: n/2" anywhere (specs/no-endings-count.md): with two endings it means nothing. The list of
+  // endings seen is still kept in this browser, because the fifth figure on the case file reads it.
   function shareText(ending) {
     const t = ui(), clues = phoneClues(), done = clues.filter(c => c.done).length;
     const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("");
     return [`${t.share_title} 🕵️`, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
-            `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
+            `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())}`].join("\n");
   }
   $("share-copy").addEventListener("click", async () => {
     const t = ui(), box = $("share-text");
@@ -1967,7 +1958,6 @@
     c.fillText(ending.title, W / 2, 905);
     c.fillStyle = "#b7bdc5"; c.font = '500 21px Inter, system-ui, sans-serif';
     c.fillText(`${done}/${clues.length} ${t.card_clues}  ·  ${t.card_time}: ${minutesSeconds(msLeft())}`, W / 2, 945);
-    c.fillText(collectionText().replace(/\s{2,}/g, "  "), W / 2, 980);
     c.fillStyle = accent; c.font = '600 18px Inter, system-ui, sans-serif'; c.fillText(t.app_url.replace(/^https?:\/\//, "").replace(/\/$/, ""), W / 2, 1012);
     return canvas;
   }
