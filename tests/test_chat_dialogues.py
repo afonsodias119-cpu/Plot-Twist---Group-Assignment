@@ -89,12 +89,13 @@ def test_the_print_shop_clerk_has_no_name():
 # ---------- a clearer start ----------
 
 def test_the_case_file_lists_the_four_real_members():
+    # Changed by specs/combined-start-briefing.md ("Reviewed tests that change"): the start screen no longer has the
+    # mission and group box. Was: the four names, the note about Duarte and the group list on the case file.
     for language in ("en", "pt"):
         extra = page3d.EXTRA[language]
-        assert len(extra["group"]) == 4 and extra["group"][1:] == ["Leonor", "Rita", "Tomás"]
-        assert "Duarte" in extra["group_note"] and extra["group_label"].strip()
+        assert "group" not in extra and "group_note" not in extra and "group_label" not in extra
     page = page3d.build_page(playable=True, inline=True)
-    assert 'id="groupList"' in page and 'id="groupNote"' in page
+    assert 'id="groupList"' not in page and 'id="groupNote"' not in page
 
 
 def test_the_start_screen_remembers_the_last_name():

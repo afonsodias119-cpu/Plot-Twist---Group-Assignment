@@ -208,14 +208,15 @@
   stepLook.querySelector(".look-body").append(creator);
   $("stepCase").after(stepLook);
   const lookError = stepLook.querySelector("#look-error");
-  // ---------- step 4: the warning before the game (the faculty closes at 23:00), the mission and the group ----------
-  // The mission box of the case file moves here, so the case file only tells the story and asks for the name.
+  // ---------- step 4: the closing-time warning and the ordered clues ----------
   const stepBrief = make("section", undefined, "step"); stepBrief.id = "stepBrief";
   stepBrief.innerHTML = `<div class="file"><div class="file-top"><span class="rec"></span><span id="brief-case"></span><span class="clock">22:30</span></div>
     <div class="brief-body"><div class="brief-warning" role="note"><p class="stamp">⏳ 23:00</p><p id="brief-label" class="label"></p>
-      <h2 id="brief-title"></h2><p id="brief-text"></p></div></div>
+      <h2 id="brief-title"></h2><p id="brief-text"></p></div>
+      <section class="brief-clues" aria-labelledby="brief-clues-title"><h2 id="brief-clues-title"></h2>
+        <p id="brief-clues-intro"></p><ol id="brief-clues-order" class="clues-order"></ol>
+        <p id="brief-clues-end" class="muted"></p></section></div>
     <div class="file-foot"><button class="ghost" id="brief-back"></button><p id="brief-error" class="error" role="alert"></p><button id="brief-start"></button></div></div>`;
-  stepBrief.querySelector(".brief-body").append($("mission"));
   stepLook.after(stepBrief);
   const briefError = stepBrief.querySelector("#brief-error");
   // Before the game starts, a message goes under the step on screen: the name, the detective or the warning.
@@ -278,20 +279,10 @@
     groupHint.textContent = t.group_hint;
     groupFields.forEach((field, i) => { field.caption.textContent = t.group_slots[i]; });
   }
-  // The name chips of the case file (#groupList: "You" first, then the three teammates) show the names
-  // typed. Only the text changes, with textContent, so a name is never read as HTML.
-  function paintGroupChips() {
-    const chips = $("groupList") ? $("groupList").children : [];
-    groupFields.forEach((field, i) => {
-      if (chips[i + 1]) chips[i + 1].textContent = tidyName(field.input.value) || STORY_GROUP[i];
-    });
-  }
   groupFields.forEach(field => field.input.addEventListener("input", () => {
-    paintGroupChips();
     try { localStorage.setItem(GROUP_KEY, JSON.stringify(typedGroup())); } catch (error) { /* no storage */ }
   }));
-  // game3d.html draws the chips again when the language is chosen: they are renamed after it (a microtask).
-  window.addEventListener("language", () => queueMicrotask(() => { paintGroup(); if (!current) paintGroupChips(); }));
+  window.addEventListener("language", paintGroup);
   paintGroup();
   // The note of point 8, after `begin`: a field the server gave the story's name back, or a continued
   // game that kept the group it started with. "" when the names are the ones typed.
@@ -303,7 +294,7 @@
     return state.message === t.continued ? t.group_kept : t.group_reset;
   }
 
-  $("premise").after(nameBox);   // the mission box went to step 4 (specs/creator-after-name.md)
+  $("premise").after(nameBox);
   // Which night of this name it is, under the name box (specs/earlier-nights.md, point 6). Empty on night 1,
   // so a first player sees only the name field and its hint. It never counts endings. drawNight fills it.
   const nightLine = make("p", "", "night-line");
@@ -601,6 +592,11 @@
     $("brief-label").textContent = t.brief_label;
     $("brief-title").textContent = t.brief_title;
     $("brief-text").textContent = t.brief_text;
+    $("brief-clues-title").textContent = t.clues_notice_title;
+    $("brief-clues-intro").textContent = t.clues_notice_intro;
+    const firstNightClues = Object.entries(t.clues).map(([id, label]) => ({ id, label }));
+    $("brief-clues-order").replaceChildren(...orderedClues({ clues: firstNightClues }, { done: false }).map(clue => make("li", clue.label)));
+    $("brief-clues-end").textContent = t.clues_notice_end;
     $("brief-back").textContent = t.brief_back;
     $("brief-start").textContent = t.start;
     $("case-eyebrow").textContent = t.case;   // no date on screen any more (specs/night-and-clues.md)
@@ -1544,6 +1540,11 @@
     const t = ui();
     // A thing says "look" (specs/more-to-find.md, point 7). On a phone the note is tapped instead of K
     // (specs/touch-card-qr.md): the click below does the same as K, for a thing and for a person.
+    if (deviceMode === "phone") {   // the note is tapped, so it names no key
+      const label = table ? t.tap_table : thing ? t.tap_look : person.object ? t.tap_use : t.tap_talk;
+      $("near-hint").textContent = table ? label : label.replace("{name}", thing?.name ?? person.name);
+      return;
+    }
     const sentence = table ? t.press_table   // specs/table-hint-and-guard-check.md
       : thing ? t.press_look.replace("{name}", thing.name)
       : person.object ? t.press_use.replace("{name}", person.name.toLowerCase())
@@ -2030,11 +2031,19 @@
   function phoneClues() {
     const clues = current?.clues || [];
     if (!clues.length) return clues;
-    const t = ui().security;
-    const cameras = { id: "cameras", label: t.clue_label, room: t.clue_room, done: loadSecurity().footage, lost: false, until: "" };
-    const after = clues.findIndex(clue => clue.id === "original_photo");
-    return [...clues.slice(0, after + 1), cameras, ...clues.slice(after + 1)];
-  }   // the monitors of the 3D desk light up when it is true
+    return orderedClues(current, { done: loadSecurity().footage });
+  }
+  function orderedClues(current, cameraProgress) {
+    const clues = current.clues;
+    const t = ui();
+    const cameras = { id: "cameras", label: t.security.clue_label, room: t.security.clue_room, done: cameraProgress.done, lost: false, until: "" };
+    // Leonor is not a proof (specs/three-proofs.md), but the list tells the player to ask for her help:
+    // it is done once she follows the player (the server's `followers`) (specs/clue-order.md).
+    const leonor = { id: "leonor", label: t.clue_leonor, room: "", done: (current.followers?.ids || []).includes("leonor"), lost: false, until: "" };
+    // The order the team chose (specs/clue-order.md): the photo, the USB stick, Leonor, the cameras, the files.
+    const server = id => clues.filter(clue => clue.id === id);
+    return [...server("original_photo"), ...server("usb_stick"), leonor, cameras, ...server("files_viewed")];
+  }
   const anyDialogOpen = () => Boolean(document.querySelector("dialog[open]"));
   const backToPlay = () => { if (!talking && !anyDialogOpen()) window.playing = true; };
 
@@ -2048,7 +2057,15 @@
     // He asks which camera and what time (`ready`): the player says the computer lab at 23:47 (specs/guard-answer-and-cameras.md).
     if (state.wired) return [{ label: t.opt_ask_lab, next: "granted" }];
     if (state.convinced) return [{ label: t.opt_wire, next: "wire" }, { label: t.opt_who, next: "who" }];
-    return [{ label: t.opt_explain, next: "explain" }, { label: t.opt_broken, next: "broken" }];
+    // Before he is convinced, he must first hear why you came: only "Explain the situation" until it is said
+    // in this conversation, then the questions that make sense after it (specs/guard-explain-first.md).
+    if (!asked.has("explain")) return [{ label: t.opt_explain, next: "explain" }];
+    return guardFollowUps(t);
+  }
+  // After "Explain the situation": the monitors, and demanding the footage (2 minutes). A question already
+  // chosen is not offered again (showLine's own rule), so each stays until it is asked.
+  function guardFollowUps(t) {
+    return [{ label: t.opt_broken, next: "broken" }, { label: t.opt_rude, next: "rude", cost: 2 }];
   }
   const guardLine = (node, text, options) => ({ npc: "guard", name: guardName(), node, text, trust: null, note: "", actions: [], options });
   function guardStart() {
@@ -2070,9 +2087,10 @@
     setTimeout(() => {
       $("talk-log").querySelector(".typing")?.remove();
       if (talking !== "guard") return;
-      // "explain": demanding costs 2 minutes. "granted": he agrees to show the computer lab at 23:47, and
+      // "explain", "broken", "rude": what is left of asking about the monitors and demanding the footage
+      // (2 minutes, specs/guard-explain-first.md). "granted": he agrees to show the computer lab at 23:47, and
       // "Watch the recordings" opens them there (specs/guard-answer-and-cameras.md).
-      const options = node === "explain" ? [{ label: t.opt_rude, next: "rude", cost: 2 }]
+      const options = ["explain", "broken", "rude"].includes(node) ? guardFollowUps(t)
         : node === "granted" ? [{ label: t.opt_watch, next: "watch_lab" }] : [];
       showLine(guardLine(node, t[node], options));
     }, 600);
@@ -2331,6 +2349,7 @@
       list.append(item);
     }
     screen.append(bar, list, make("p", t.todo_hint, "muted todo-hint"));
+    screen.append(make("p", t.todo_kindness_hint, "todo-hint"));
     if ((current?.clues || []).some(c => c.lost)) screen.append(make("p", t.todo_hint_lost, "muted todo-hint"));
   }
 
@@ -2566,7 +2585,7 @@
   // The day of the case ("Case of 23 November") is no longer shown on the case file, in the top bar or
   // on the share card (specs/night-and-clues.md). The server still keeps the date of each game.
 
-  // ---------- the clues, when the game starts (specs/night-and-clues.md) ----------
+  // ---------- the clues after an in-game restart (specs/night-and-clues.md) ----------
   // A card lists the clues of the phone in the order they have to be done (the server sends them in
   // that order), each with its room, and says that the evidence is shown to the professor at the end.
   // While it is open the character stands still and the countdown waits.
@@ -2615,7 +2634,6 @@
     window.playing = true;
     window.dispatchEvent(new Event("start-game"));
     $("scene-heading").focus({ preventScroll: true });
-    showCluesNotice();   // the clues, in order, as the night starts
   };
   // The 3D scene calls this when the character walks through a door into another room.
   window.campusEnter = room => send("enter", { room });

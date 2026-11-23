@@ -588,7 +588,8 @@ def test_the_night_texts_exist_in_both_languages():
         for key in ("night_lines", "memory_answer"):   # specs/three-proofs.md: no night_done
             assert TEXT[language][key] == NIGHT_TEXTS[language][key], (language, key)
         assert len(TEXT[language]["notices"]) == 3, language   # specs/three-proofs.md: no accusing
-        assert len(page3d.EXTRA[language]["group"]) == 4, language   # the four names of the case file
+        # Changed by specs/combined-start-briefing.md ("Reviewed tests that change"): no group on the case file. Was: its four names.
+        assert "group" not in page3d.EXTRA[language], language
 
 
 def test_the_page_draws_the_fifth_figure_and_keeps_you_again_through_a_new_game():

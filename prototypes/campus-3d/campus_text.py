@@ -15,6 +15,7 @@ TEXT = {
         "map_no_3d": "O mapa desenhado precisa do cenário 3D.",
         "todo_title": "Pistas a recolher", "todo_progress": "pistas feitas",
         "todo_hint": "Reúne todas as pistas antes de entrares no auditório.",
+        "todo_kindness_hint": "A simpatia pode levar-vos mais longe do que imaginam.",
         "todo_done": "Feito", "todo_open": "Por fazer",
         # searching the study room and the code of computer 12 (specs/pen-and-code.md); the answers are NOT here
         "spots": {"papers": "Folhas do relatório", "notebook": "Caderno", "pizza_box": "Caixa de pizza",
@@ -66,9 +67,10 @@ TEXT = {
         "clues": {
             # What to get, never where or with whom (specs/clues-without-answers.md).
             "usb_stick": "Encontrar a pen do grupo",
-            "original_photo": "Arranjar a fotografia original do grupo",
+            "original_photo": "Encontrar a fotografia original do grupo",
             "files_viewed": "Ver o histórico dos ficheiros do grupo",
         },
+        "clue_leonor": "Falar com a Leonor e pedir a sua ajuda",   # a clue of the list only (specs/clue-order.md)
         # the reminder of the clues when the game starts (specs/night-and-clues.md)
         "clues_notice_title": "📱 As tuas pistas",
         "clues_notice_intro": "Estão no telemóvel, na app Pistas. Faz por esta ordem:",
@@ -76,6 +78,7 @@ TEXT = {
         "clues_notice_ok": "Percebi",
         "decision": "Esta decisão fica registada e pode mudar o final.",
         "scene": "Localização", "press_talk": "Clica na tecla K para falar com {name}",
+        "tap_talk": "Falar com {name}", "tap_use": "Usar {name}", "tap_look": "Ver: {name}", "tap_table": "Procurar a pen na mesa",
         "render_loading": "A carregar o cenário. Já podes jogar com os botões.",
         "render_ready": "Cenário 3D disponível", "network_error": "Não foi possível confirmar a ação. Verifica a ligação e reabre o jogo com o mesmo nome para confirmar o progresso.",
         "local_only": "Para jogar, inicia server3d.py e abre o endereço local indicado.",
@@ -136,7 +139,7 @@ TEXT = {
         "security": {
             "guard_name": "José",
             "hello": "O segurança está sentado diante de uma parede de monitores, todos apagados. \"Boa noite. Se vens pelas câmaras, perdes o teu tempo: não ligam.\"",
-            "broken": "\"Desde ontem à noite que os monitores estão sem sinal. Alguém desligou os cabos atrás do rack, e não fui eu. Mas diz-me primeiro porque queres imagens.\"",
+            "broken": "\"Desde ontem à noite que os monitores estão sem sinal. Alguém desligou os cabos atrás do rack, e não fui eu. E continuo a precisar de ver uma prova antes de te deixar chegar perto deles.\"",
             "explain": "Contas-lhe tudo: o quinto nome no relatório, a pasta do grupo alterada às 23:47 a partir da sala de informática, e que precisas de ver quem lá estava. Ele cruza os braços. \"Imagens das câmaras não se dão a qualquer um. Mostra-me alguma coisa que prove o que dizes.\"",
             "rude": "\"Não me dês ordens.\" O segurança volta a olhar para os monitores apagados. \"Ou me mostras alguma coisa, ou vais à tua vida.\"",
             "rebuff": "Ele olha para aquilo sem se mexer. \"Isso não me diz nada sobre quem esteve na sala de informática. Traz-me outra coisa.\"",
@@ -166,7 +169,7 @@ TEXT = {
             "cctv_diary_title": "Câmaras de segurança",
             "cctv_proof": "Imagem das 23:47 da sala de informática: um vulto de capuz, sem cartão ao pescoço, ao computador 12 no momento em que a pasta do grupo foi alterada. Depois, alguém desligou os cabos das câmaras para esconder isto.",
             # the clue of the phone and of the start card (specs/camera-clue.md)
-            "clue_label": "Encontrar as imagens da câmara da sala de informática",
+            "clue_label": "Encontrar as imagens da câmara de vigilância junto do segurança",
             "clue_room": "Entrada (segurança)",
         },
         "leonor_follow": "Ela fecha o livro e levanta-se. \"Vou contigo à sala de informática. Se o computador 12 pedir um código, eu lembro-me de coisas desse dia.\"",
@@ -248,6 +251,7 @@ TEXT = {
         "map_no_3d": "The drawn map needs the 3D scenery.",
         "todo_title": "Clues to collect", "todo_progress": "clues done",
         "todo_hint": "Collect every clue before you walk into the auditorium.",
+        "todo_kindness_hint": "Kindness can take you further than you think.",
         "todo_done": "Done", "todo_open": "To do",
         "spots": {"papers": "Report pages", "notebook": "Notebook", "pizza_box": "Pizza box",
                   "pizza_slice": "Pizza slice", "napkin": "Napkin", "can": "Can", "mug": "Mug",
@@ -297,9 +301,10 @@ TEXT = {
         "clues": {
             # What to get, never where or with whom (specs/clues-without-answers.md).
             "usb_stick": "Find the group's USB stick",
-            "original_photo": "Get the group's original photo",
+            "original_photo": "Find the group's original photo",
             "files_viewed": "See the history of the group's files",
         },
+        "clue_leonor": "Talk to Leonor and ask for her help",   # a clue of the list only (specs/clue-order.md)
         # the reminder of the clues when the game starts (specs/night-and-clues.md)
         "clues_notice_title": "📱 Your clues",
         "clues_notice_intro": "They are on your phone, in the Clues app. Do them in this order:",
@@ -307,6 +312,7 @@ TEXT = {
         "clues_notice_ok": "Got it",
         "decision": "This decision is remembered and may change the ending.",
         "scene": "Location", "press_talk": "Press the K key to talk to {name}",
+        "tap_talk": "Talk to {name}", "tap_use": "Use {name}", "tap_look": "Look at: {name}", "tap_table": "Search the table for the USB stick",
         "render_loading": "Loading the scenery. You can already play using the buttons.",
         "render_ready": "3D scenery available", "network_error": "The action could not be confirmed. Check your connection and reopen the game with the same name to check progress.",
         "local_only": "To play, start server3d.py and open the local address it prints.",
@@ -363,7 +369,7 @@ TEXT = {
         "security": {
             "guard_name": "José",
             "hello": "The guard sits in front of a wall of monitors, all of them dark. \"Good evening. If you came for the cameras, you are wasting your time: they do not turn on.\"",
-            "broken": "\"The monitors have had no signal since last night. Somebody unplugged the cables behind the rack, and it was not me. But first tell me why you want footage.\"",
+            "broken": "\"The monitors have had no signal since last night. Somebody unplugged the cables behind the rack, and it was not me. And I still need to see a proof before I let you near them.\"",
             "explain": "You tell him everything: the fifth name on the report, the group folder changed at 23:47 from the computer lab, and that you need to see who was there. He folds his arms. \"Camera footage is not given to just anyone. Show me something that proves what you say.\"",
             "rude": "\"Do not give me orders.\" The guard goes back to looking at the dark monitors. \"Either you show me something, or you go on your way.\"",
             "rebuff": "He looks at it without moving. \"That tells me nothing about who was in the computer lab. Bring me something else.\"",
@@ -393,7 +399,7 @@ TEXT = {
             "cctv_diary_title": "Security cameras",
             "cctv_proof": "Picture from 23:47 in the computer lab: a hooded figure, with no badge around the neck, at computer 12 at the moment the group folder was changed. Afterwards, somebody unplugged the cameras' cables to hide this.",
             # the clue of the phone and of the start card (specs/camera-clue.md)
-            "clue_label": "Find the footage of the computer lab's camera",
+            "clue_label": "Find the surveillance camera footage with the security guard",
             "clue_room": "Entrance (security)",
         },
         "leonor_follow": "She closes her book and stands up. \"I am coming with you to the computer lab. If computer 12 asks for a code, I remember things about that day.\"",
