@@ -95,7 +95,7 @@ def test_talking_needs_a_game_and_is_closed_after_an_ending():
     with pytest.raises(ValueError):
         call("talk", npc="rita", node="start")           # no saved game yet
     play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help", "go_study_room",
-         "go_computer_lab", "view_files", "go_study_room", "go_auditorium", "present_evidence")
+         "go_computer_lab", "view_files", "save_backup", "go_study_room", "go_auditorium", "present_evidence")
     with pytest.raises(ValueError):
         call("talk", npc="duarte", node="start")
 
@@ -165,28 +165,22 @@ def test_the_clock_wraps_past_midnight():
     assert result["clock"] == "00:55"
 
 
-def test_chat_flags_reach_the_diary_without_saying_which_are_fake():
-    result = play("open_drawer", "go_computer_lab", "view_files", "open_chat", "flag_1", "flag_2")
-    chat_title = STORIES["en"]["scenes"]["group_chat"]["title"]
-    chat_notes = [n for n in result["notebook"] if n["title"].startswith(chat_title)]
-    assert [n["title"][-1] for n in chat_notes] == ["1", "2"]
-    assert "fake" not in " ".join(n["text"] for n in chat_notes).lower()
-    assert result["room"] == "computer_lab" and result["clock"] == "23:45"
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the group chat is gone; the backup takes its place.
+def test_the_backup_reaches_the_diary():
+    result = play("open_drawer", "go_computer_lab", "view_files", "save_backup")
+    lab = STORIES["en"]["scenes"]["computer_lab"]
+    assert {"title": lab["title"], "text": lab["actions"]["save_backup"]["result_text"]} in result["notebook"]
+    assert result["room"] == "computer_lab" and result["clock"] == "23:35"
 
 
-def test_walking_from_the_chat_to_another_room_follows_the_story_paths():
-    play("open_drawer", "go_computer_lab", "view_files", "open_chat")
+def test_walking_from_the_lab_to_another_room_follows_the_story_paths():
+    play("open_drawer", "go_computer_lab", "view_files", "save_backup")
     result = call("enter", room="study_room")
     assert result["accepted"] and result["scene"] == "study_room"
 
 
-def test_entering_the_lab_from_the_chat_changes_nothing():
-    play("open_drawer", "go_computer_lab", "view_files", "open_chat")
-    assert call("enter", room="computer_lab")["scene"] == "group_chat"
-
-
-def test_walking_to_the_auditorium_from_the_chat_is_still_gated_by_the_clues():
-    play("open_drawer", "go_computer_lab", "view_files", "open_chat")
+def test_walking_to_the_auditorium_from_the_lab_is_still_gated_by_the_clues():
+    play("open_drawer", "go_computer_lab", "view_files", "save_backup")
     result = call("enter", room="auditorium")
     # The walk stops at the first refusal, as for every other room: it got as far as the study room.
     assert not result["accepted"] and result["scene"] == "study_room"
@@ -243,19 +237,20 @@ def test_computer_lab_actions_unlock_in_order_and_the_chat_comes_after_the_files
     assert set(lab) == {"view_files"} and not lab["view_files"]["allowed"]
     assert offered("tomas", "c") == {}
     play("open_drawer", "go_computer_lab", "view_files", player="d")
-    assert "open_chat" in offered("computer12", "d")
+    assert "save_backup" in offered("computer12", "d")   # Changed by specs/computer-lab-backup.md ("Reviewed tests that change").
 
 
 def test_the_professor_offers_the_final_presentation():
     play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help",
-         "go_study_room", "go_computer_lab", "view_files", "go_study_room", "go_auditorium", player="e")
+         "go_study_room", "go_computer_lab", "view_files", "save_backup", "go_study_room", "go_auditorium", player="e")
     assert list(offered("professor", "e")) == ["present_evidence"]
 
 
-def test_the_snapshot_says_who_offers_each_action_and_the_chat_flags_have_nobody():
-    state = play("open_drawer", "go_computer_lab", "view_files", "open_chat", player="f")
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the backup is saved at computer 12; travel has nobody.
+def test_the_snapshot_says_who_offers_each_action():
+    state = play("open_drawer", "go_computer_lab", "view_files", player="f")
     by_id = {a["id"]: a for a in state["actions"]}
-    assert by_id["flag_1"]["person"] is None and by_id["go_computer_lab"]["person"] is None
+    assert by_id["save_backup"]["person"] == "computer12" and by_id["go_study_room"]["person"] is None
     assert {a["id"]: a["person"] for a in play(player="g")["actions"]}["open_drawer"] == "rita"
 
 
@@ -268,28 +263,21 @@ def test_computer_12_is_an_object_that_is_used_not_a_person_that_is_talked_to():
     assert reply["name"] == "Computer 12" and [o["next"] for o in reply["options"]] == [None]
 
 
-def test_the_chat_screen_shows_the_five_messages_and_which_are_flagged_without_saying_which_are_fake():
-    state = play("open_drawer", "go_computer_lab", "view_files", "open_chat", "flag_2", player="i")
-    chat = state["chat"]
-    assert [m["n"] for m in chat["messages"]] == [1, 2, 3, 4, 5]
-    assert [m["flagged"] for m in chat["messages"]] == [False, True, False, False, False]
-    assert all(m["text"].strip() and m["action"] == f"flag_{m['n']}" for m in chat["messages"])
-    assert "fake" not in " ".join(m["text"] for m in chat["messages"]).lower().replace("flag the messages you think are fake", "")
-    assert chat["intro"] == STORIES["en"]["scenes"]["group_chat"]["texts"][0]["text"]
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): there is no chat screen any more.
+def test_the_snapshot_has_no_chat_any_more():
+    state = play("open_drawer", "go_computer_lab", "view_files", player="k")
+    assert "chat" not in state and "flagged" not in state
+    assert all(a["kind"] in ("travel", "investigate") for a in state["actions"])
 
 
-def test_the_chat_screen_exists_only_in_the_chat_and_its_buttons_are_not_ordinary_actions():
-    assert play(player="j")["chat"] is None
-    state = play("open_drawer", "go_computer_lab", "view_files", "open_chat", player="k")
-    kinds = {a["id"]: a["kind"] for a in state["actions"]}
-    assert all(kinds[f"flag_{n}"] == "chat" for n in range(1, 6)) and kinds["go_computer_lab"] == "travel"
-
-
-def test_the_page_has_the_chat_screen_and_the_computer_hint():
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the chat screen is gone; the computer hint stays.
+def test_the_page_has_the_computer_hint_and_no_chat_screen():
     page3d = importlib.import_module("page3d")
     page = page3d.build_page(playable=True, inline=True)
-    for needle in ('id="chat-card"', 'id="chat-messages"', "showChat", "press_use", 'id: "computer12"'):
+    for needle in ("press_use", 'id: "computer12"'):
         assert needle in page
+    for needle in ('id="chat-card"', 'id="chat-messages"', "showChat"):
+        assert needle not in page
 
 
 # ---------- messages from the unknown number, the collection of endings, the share card, the music ----------
@@ -297,16 +285,9 @@ def test_the_page_has_the_chat_screen_and_the_computer_hint():
 def test_the_unknown_number_has_one_message_for_each_clue_in_both_languages():
     text = importlib.import_module("campus_text").TEXT
     assert len(text["pt"]["notices"]) == len(text["en"]["notices"]) == len(campus.CLUES)
-    assert text["pt"]["notice_chat"].strip() and text["en"]["notice_chat"].strip()
     for language in text:
         assert all(m.strip() for m in text[language]["notices"])
         assert len(set(text[language]["notices"])) == len(text[language]["notices"])
-
-
-def test_the_snapshot_counts_the_flagged_chat_messages():
-    assert play(player="fl1")["flagged"] == 0
-    state = play("open_drawer", "go_computer_lab", "view_files", "open_chat", "flag_2", "flag_5", player="fl2")
-    assert state["flagged"] == 2
 
 
 def test_the_page_knows_every_ending_for_the_collection_in_both_languages():

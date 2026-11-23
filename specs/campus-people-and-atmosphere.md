@@ -1,5 +1,7 @@
 # Campus 3D: people, dialogues, clock, diary, chat, sounds and light
 
+> **Update (specs/computer-lab-backup.md):** the group chat, its flags, the message cards and "The fifth element" are gone. Computer 12 saves a backup of the original conversations; Leonor's choice decides the three story endings; Duarte catches a player at computer 12 before the backup.
+
 Extends specs/playable-campus-3d.md and specs/campus-3d-streamlit.md. No change to `logic.py`, `story.py`, `db.py`, `game.py`, `app.py` or any reviewed test.
 
 ## Why

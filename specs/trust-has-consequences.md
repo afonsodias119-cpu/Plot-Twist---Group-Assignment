@@ -1,5 +1,7 @@
 # Trust has consequences: people you were rude to answer less, warn the others, or lie
 
+> **Update (specs/computer-lab-backup.md):** the lies of a hostile Tomás and Leonor are now contradicted by the backup of the original conversations (and Rita's `chat` line), not by an arrival line in the chat. Leonor is no longer cracked with a card.
+
 Extends specs/harder-campus.md (the six rude answers cost 5 minutes), specs/campus-people-and-atmosphere.md (trust 0-3 on each line), specs/cleaner-interface.md (no hearts), specs/continuous-conversations.md, specs/evidence-and-hearing.md and specs/night-schedule.md. No change to `story.py`, `logic.py`, `game.py`, `app.py`, `db.py` or any reviewed test. `talk` still writes nothing. Texts in design-notes/texts-ideas.md, part A.
 
 ## Why

@@ -135,7 +135,8 @@ def walk(room, player=PLAYER, language="en"):
 def investigate(player=PLAYER, language="en"):
     """A new game played up to the computer lab with every clue, as in tests/test_night_schedule.py."""
     return play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help",
-                "go_study_room", "go_computer_lab", "view_files", language=language, player=player)
+                "go_study_room", "go_computer_lab", "view_files", "save_backup",   # specs/computer-lab-backup.md
+                language=language, player=player)
 
 
 def to_the_auditorium(player=PLAYER, language="en"):
@@ -304,9 +305,11 @@ def test_finds_lists_only_the_saved_rooms_things_and_no_text():
     assert start["finds"] == []   # the study room has its table, not things to look at
     for room in ("print_shop", "library", "computer_lab"):
         assert walk(room)["finds"] == expected(room), room
-    lab = play("open_drawer", "go_computer_lab", "view_files", "open_chat", player="chat")
-    assert lab["scene"] == "group_chat"
-    assert lab["finds"] == expected("computer_lab")   # the group chat is played in the lab
+    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): there is no group chat; the
+    # lab keeps its things after the files and the backup.
+    lab = play("open_drawer", "go_computer_lab", "view_files", "save_backup", player="chat")
+    assert lab["scene"] == "computer_lab"
+    assert lab["finds"] == expected("computer_lab")
     assert to_the_auditorium("hall")["finds"] == expected("auditorium")
     for result in (start, lab):
         everything = json.dumps(result, ensure_ascii=False)

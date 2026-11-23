@@ -14,8 +14,8 @@ What the player holds comes from two places:
 The notes are read through read_night, which keeps only what it understands, so a damaged row can
 neither raise an error nor help the player.
 
-The case of the night (specs/culprit-of-the-night.md) is played with the story's own actions: the
-functions of that section only renumber the chat and tell the texts of the case on the way out.
+The case of the night (specs/case-of-the-day.md) is only the classic one now (specs/computer-lab-backup.md);
+retell still tells each reply with the friends' names on the way out.
 """
 
 import re
@@ -25,7 +25,7 @@ import db
 import game
 import logic
 from campus_case import CASE_TEXT, CONFRONT, EVIDENCE, FACTS, HEARING
-# The cases of the day (specs/case-of-the-day.md and specs/culprit-of-the-night.md): server only.
+# The cases of the day (specs/case-of-the-day.md): server only.
 from campus_case import CASES
 # The cost of a card is in the night's cost table (specs/night-schedule.md, point 2): the server adds
 # it to the campus minute.
@@ -40,7 +40,8 @@ from campus_text import TEXT
 from story import STORIES
 
 # The ten cards, in the order the hand shows them (point 4): the ones the save gives, then the facts.
-CARDS = list(EVIDENCE) + list(FACTS.values())
+# specs/computer-lab-backup.md: the facts of FACTS are no longer cards; the hand is the proofs only.
+CARDS = list(EVIDENCE)
 FINAL_ROOM = "auditorium"
 # The doubts are never counted above three (point 10).
 MAX_DOUBTS = 3
@@ -177,39 +178,9 @@ def write_night(player, night):
     db.save_night(player, int(minute), notes)
 
 
-# ---------- the case of the night (specs/culprit-of-the-night.md) ----------
-# The story is always played with its own messages 1 to 5 (2, 4 and 5 are the fake ones). A case only
-# shows them in another order and tells some texts differently, on the way out. The page only ever
-# sees shown numbers: these functions turn one kind of number into the other (point 3).
-
-# The cards of the flagged chat messages.
-MESSAGE_CARDS = [f"msg_{n}" for n in range(1, 6)]
-
-
-def story_number(shown, night):
-    """The story's message number of the message shown at place `shown` tonight."""
-    return case_of(night)["order"][shown - 1]
-
-
-def shown_number(message, night):
-    """The place where the story's message `message` is shown tonight."""
-    return case_of(night)["order"].index(message) + 1
-
-
-def story_card(card, night):
-    """A card the page sent (msg_<shown>) as the story's card (msg_<message>). Other cards, and
-    anything that is not a card, come back as they are: the usual checks refuse them later."""
-    if card not in MESSAGE_CARDS:
-        return card
-    return f"msg_{story_number(int(card[len('msg_'):]), night)}"
-
-
-def shown_card(card, night):
-    """A story's card as the page sees it: msg_<message> becomes msg_<shown>."""
-    if card not in MESSAGE_CARDS:
-        return card
-    return f"msg_{shown_number(int(card[len('msg_'):]), night)}"
-
+# ---------- the case of the night (specs/case-of-the-day.md) ----------
+# Only the classic case is left (specs/computer-lab-backup.md), so claims_of and retell change nothing
+# but the friends' names; they stay so a case could be added again without touching their callers.
 
 def claims_of(night):
     """Duarte's three claims tonight (point 5): HEARING itself in the classic case; in the other
@@ -293,30 +264,19 @@ def moods(night):
 # ---------- the cards ----------
 
 def held(state, night):
-    """The ids of the cards the player holds now, in the order of CARDS."""
-    cards = [card for card, condition in EVIDENCE.items() if logic._condition_met(condition, state)]
-    return cards + [fact for person, fact in FACTS.items() if person in night["cracked"]]
-
-
-def chat_message(language, n):
-    """The story's own text of chat message n (the first text of the chat is its introduction)."""
-    texts = STORIES[language]["scenes"]["group_chat"]["texts"]
-    return [entry["text"] for entry in texts if entry["when"] == {}][n]
+    """The ids of the cards the player holds now, in the order of CARDS (the facts of a cracked
+    person are not cards any more: specs/computer-lab-backup.md)."""
+    return [card for card, condition in EVIDENCE.items() if logic._condition_met(condition, state)]
 
 
 def card_label(card, language):
-    """What a card says. A flagged chat message is shown with the story's own text, not a copy."""
-    if card.startswith("msg_"):
-        return "🚩 " + chat_message(language, int(card[len("msg_"):]))
+    """What a card says."""
     return CASE_TEXT[language]["labels"][card]
 
 
 def hand(state, night, language):
-    """The cards for the snapshot: [{"id", "label"}], only the ones held now. A flagged message is
-    msg_<shown> and the messages are listed in the order they are shown (specs/culprit-of-the-night.md,
-    point 3): CARDS has msg_1 to msg_5 in order, so filtering it keeps that order."""
-    shown = [shown_card(card, night) for card in held(state, night)]
-    return [{"id": card, "label": card_label(story_card(card, night), language)} for card in CARDS if card in shown]
+    """The cards for the snapshot: [{"id", "label"}], only the ones held now, in the order of CARDS."""
+    return [{"id": card, "label": card_label(card, language)} for card in held(state, night)]
 
 
 # ---------- confronting ----------
@@ -406,18 +366,15 @@ def verdict_of(state, answers, caught=False, claims=HEARING):
     count = doubts(answers, caught, claims)
     if count >= MAX_DOUBTS:
         return "stolen_credits", "three_help" if state["flags"]["colleague_choice"] == "help" else "three"
-    if count == 2 and story_ending == "full_case":
-        return "impostor", "two"
-    if story_ending == "stolen_credits" and answers[-1] == "tomas_word":
-        # Not a cap: it only keeps the hearing and the text of "Stolen credit" from contradicting each other.
-        return story_ending, "no_originals"
+    if count == 2 and story_ending == "full_case":   # "The impostor" now means Leonor was accused (specs/computer-lab-backup.md)
+        return "stolen_credits", "two"
     return story_ending, ""
 
 
 def perfect_night(state, night):
     """True when tonight could give the true ending (specs/earlier-nights.md, point 8): the story's
     `full_case`, a hearing of three answers with no doubt (a catch is a doubt) and the words of
-    Tomás and Rita both won tonight. The four endings of earlier nights are checked by the caller."""
+    Tomás and Rita both won tonight. The story endings of earlier nights are checked by the caller."""
     answers = night["hearing"]
     return (state["ending"] == "full_case" and answers is not None and len(answers) == len(HEARING)
             and doubts(answers, bool(night["caught"]), claims_of(night)) == 0
@@ -454,7 +411,7 @@ def hearing(player, state, night, language, answer):
         game.play(player, "present_evidence", language)
         state = game.load(player)
         night["verdict"], _line = verdict_of(state, night["hearing"], bool(night["caught"]), claims_of(night))
-        # The true ending: the four story endings seen on earlier nights (tonight's row is not written
+        # The true ending: every story ending seen on earlier nights (tonight's row is not written
         # yet) and a perfect night. The save keeps the story's full_case (point 8).
         if seen_all(player) and perfect_night(state, night):
             night["verdict"] = TRUE_ENDING
@@ -470,7 +427,7 @@ def entry(who, text, language):
 
 def right_line(claim, answer, language, night):
     """The professor's line for a card that breaks the claim: the case file's own, or, for a pair
-    only tonight's case has, the line of that case (specs/culprit-of-the-night.md, point 5)."""
+    only tonight's case has, the line of that case (specs/case-of-the-day.md)."""
     lines = CASE_TEXT[language]["right"][claim["id"]]
     if answer in lines:
         return lines[answer]

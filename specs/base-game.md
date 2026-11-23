@@ -1,5 +1,7 @@
 # Base game — "O quinto elemento"
 
+> **Update (specs/computer-lab-backup.md):** the group chat, its flags, the message cards and "The fifth element" are gone. Computer 12 saves a backup of the original conversations; Leonor's choice decides the three story endings; Duarte catches a player at computer 12 before the backup.
+
 **Blocked by:** pull request 3 (branch `story-map`) merged into `main` and the story approved by the team. The story is in `docs/historia.md` (Portuguese texts, ids, conditions and effects) and `docs/story-en.md` (English texts); the brief is in `docs/plot-twist-brd.md` (PT01–PT05, R1–R4, A1–A6).
 
 This spec covers the whole base game, so it is longer than a course example. It may be built as three pull requests, in the order of the checklist: rules, saving, screens. If so, each one has its own branch (`base-game-rules`, `base-game-saving`, `base-game-screens`), adds only the tests of its own part before its code, and is green before it is merged. The `db` fixture and the `import db` and `import game` lines arrive with the saving part. Adding tests to a reviewed file is allowed; changing reviewed tests is not.

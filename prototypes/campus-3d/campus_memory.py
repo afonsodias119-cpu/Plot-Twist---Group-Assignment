@@ -14,7 +14,7 @@ from campus_case import NIGHT_TEXT, TRUE_ENDING
 from campus_text import TEXT
 from story import STORIES
 
-# The story's four endings, in the order of its list: the order of `seen` (point 3).
+# The story's endings, in the order of its list: the order of `seen` (point 3).
 STORY_ENDINGS = [ending["id"] for ending in STORIES["en"]["endings"]]
 # The row of a night that reached 22:45 with no ending (point 2): it counts, and it opens nothing.
 TIME_UP = "time_up"
@@ -51,7 +51,7 @@ def seen(player):
 
 
 def seen_all(player):
-    """True when this name has seen the four story endings: the gate of the true ending is open."""
+    """True when this name has seen every story ending: the gate of the true ending is open."""
     return len(seen(player)) == len(STORY_ENDINGS)
 
 

@@ -102,6 +102,10 @@ Branch `demo-ready`:
 - **Testes no GitHub** (`specs/tests-on-github.md`): `.github/workflows/tests.yml` corre o pytest e as verificações do JavaScript em cada push e pull request; o README mostra o selo "Tests" da `main`.
 - **README:** um diagrama de um clique, da página à base de dados e de volta.
 
+### O backup das conversas, sem chat nem quinto elemento — Maria (23/11/2026)
+
+Alteração preparada em `computer-lab-backup` (nos dois jogos: mexe no `story.py`): depois de abrir os ficheiros, o computador 12 oferece "Guardar o backup das conversas originais", e o auditório passa a pedir os ficheiros e o backup. O chat do grupo e as mensagens para marcar deixam de existir, e o final secreto "O quinto elemento" também. Os três finais passam a depender da escolha da Leonor: ajuda → Caso encerrado; acusada → O impostor (texto novo); sem escolha → Créditos roubados. No 3D, o Tomás cede com o histórico dos ficheiros, o Duarte apanha quem está no computador 12 antes de guardar o backup, e o final verdadeiro abre depois dos três finais. Depois de juntar a main (#53 a #56), combinado com o Afonso: as provas para o professor passam a ser a pen, a fotografia e o backup (a câmara de segurança entra como quarta prova, feita pelo Afonso); os casos do culpado saem e o culpado é sempre o Duarte; os nomes dos amigos continuam. Mudam testes revistos de toda a equipa, com aprovação (lista na spec). Ver `specs/computer-lab-backup.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

@@ -1,5 +1,7 @@
 # More to find in the rooms: student life on the walls, and two red herrings
 
+> **Update (specs/computer-lab-backup.md):** there is no group chat scene; the lab keeps its things after the files and the backup.
+
 Extends specs/hidden-object-table.md (the table of the study room), specs/pen-and-code.md (the search and the code), specs/night-schedule.md (the server charges minutes) and specs/campus-people-and-atmosphere.md (walking up and pressing K). No change to `story.py`, `logic.py`, `game.py`, `app.py`, `db.py` or any reviewed test. Texts in design-notes/texts-ideas.md, part E.
 
 ## Why

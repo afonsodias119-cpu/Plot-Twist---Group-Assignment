@@ -70,10 +70,9 @@ def duarte_place(minute):
 # ---------- the case of the day (specs/case-of-the-day.md, point 1) ----------
 # The day is Lisbon's, so the case changes at midnight in Portugal whatever the host's own time zone is.
 LISBON = ZoneInfo("Europe/Lisbon")
-# The cases in the order the days walk through them (the ids of campus_case.CASES): 22 November 2026
-# gives "tomas", the 23rd "rita", the 24th "outsider" (specs/culprit-of-the-night.md, point 1). The
-# ids never leave the server: the page only ever sees the date.
-CASE_ORDER = ("outsider", "tomas", "rita")
+# The cases in the order the days walk through them (the ids of campus_case.CASES). Only the classic
+# case is left (specs/computer-lab-backup.md): every day plays it, and the page still shows the date.
+CASE_ORDER = ("outsider",)
 
 
 def case_day():

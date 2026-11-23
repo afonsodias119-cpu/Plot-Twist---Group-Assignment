@@ -31,15 +31,15 @@ ROOM_OF_PERSON = {
 }
 # Things that are used, not talked to (the panel says "Use", the screen says "press K to use").
 OBJECTS = {"computer12"}
-# The group chat is a scene of the story that has no room of its own: it happens in the computer lab.
-ROOM_OF_SCENE = {"group_chat": "computer_lab"}
+# A scene of the story with no room of its own would be listed here (the group chat was, until
+# specs/computer-lab-backup.md removed it). Every scene now has its own room.
+ROOM_OF_SCENE = {}
 
 
 # The story actions that are done by talking to a person: they appear as choices inside that conversation.
-# (The chat flags are done on the chat screen of computer 12, which the page draws over the picture.)
 ACTION_PERSON = {
     "open_drawer": "rita", "request_copy": "amelia", "ask_for_help": "leonor", "accuse": "leonor",
-    "view_files": "computer12", "open_chat": "computer12", "present_evidence": "professor",
+    "view_files": "computer12", "save_backup": "computer12", "present_evidence": "professor",
 }
 
 
@@ -94,7 +94,7 @@ PEOPLE = {
                        "note": "Rita doubts the fifth name too.", "options": [
                 _bye("Goodbye.")]},
             "chat": {"text": "\"Look at when the messages arrive. Some say three weeks ago, but my phone shows them as new, last night. That is not how old messages work.\"",
-                     "note": "Rita: an old message does not arrive as new. Compare the arrival times in the group chat.", "options": [
+                     "note": "Rita: an old message does not arrive as new. The messages about Duarte arrived last night.", "options": [
                 _bye("Goodbye.")]},
         }},
         "amelia": {"name": "Clerk", "nodes": {
@@ -164,7 +164,8 @@ PEOPLE = {
             "msg5": {"text": "\"'Duarte did the slides'? It is under my name, but I do not remember writing it. My phone buzzed with it last night, near midnight, as if it had been sent three weeks ago.\"", "trust": 3,
                      "note": "Tomás does not remember writing message 5; it reached his phone last night.", "options": [
                 _bye("Goodbye.")]},
-            # Tomás's claim line (point 7): broken only by `msg_5`, the flagged message with his name.
+            # Tomás's claim line (point 7): broken by `files`, the history that shows who made the slides
+            # (specs/computer-lab-backup.md: the flagged message 5 no longer exists).
             "slides": {"text": "Tomás keeps his eyes on the screen. \"The slides? I am finishing them. But the chat says Duarte did them, under my name. So maybe he did, and I only tidied up.\"", "trust": 2,
                        "note": "Tomás thinks Duarte may have made the slides, only because a chat message under his own name says so.", "options": [
                 _bye("Goodbye.")]},
@@ -175,7 +176,7 @@ PEOPLE = {
                 {"label": "Ask kindly what he is doing here", "next": "kind"}, _bye("Goodbye.")]},
             "photo": {"text": "Tomás stares at the photo. \"Four people... I never noticed.\" He swallows.", "trust": 2, "options": [
                 {"label": "Ask him to help you", "next": "help"}]},
-            "help": {"text": "\"All right. Check the group chat. Not everything in there is mine.\"", "trust": 3,
+            "help": {"text": "\"All right. Save the group's conversations before someone deletes them. Not everything on my phone is mine.\"", "trust": 3,
                      "note": "Tomás hints that some chat messages are not from the people they name.", "options": [
                 _bye("Goodbye.")]},
             "closed": {"text": "Tomás crosses his arms. \"We are done here.\"", "trust": 0, "options": [_bye("Leave.")]},
@@ -246,7 +247,7 @@ PEOPLE = {
                        "note": "A Rita também desconfia do quinto nome.", "options": [
                 _bye("Até já.")]},
             "chat": {"text": "\"Repara na hora a que as mensagens chegam. Algumas dizem há três semanas, mas no meu telemóvel aparecem como novas, de ontem à noite. Mensagens antigas não funcionam assim.\"",
-                     "note": "Rita: uma mensagem antiga não chega como nova. Compara as horas de chegada no chat do grupo.", "options": [
+                     "note": "Rita: uma mensagem antiga não chega como nova. As mensagens sobre o Duarte chegaram ontem à noite.", "options": [
                 _bye("Até já.")]},
         }},
         "amelia": {"name": "Funcionária", "nodes": {
@@ -319,7 +320,7 @@ PEOPLE = {
                 {"label": "Perguntar com calma o que está ali a fazer", "next": "kind"}, _bye("Até já.")]},
             "photo": {"text": "O Tomás fica a olhar para a fotografia. \"Quatro pessoas... nunca tinha reparado.\" Engole em seco.", "trust": 2, "options": [
                 {"label": "Pedir-lhe ajuda", "next": "help"}]},
-            "help": {"text": "\"Está bem. Vê o chat do grupo. Nem tudo o que lá está é meu.\"", "trust": 3,
+            "help": {"text": "\"Está bem. Guarda as conversas do grupo antes que alguém as apague. Nem tudo o que está no meu telemóvel é meu.\"", "trust": 3,
                      "note": "O Tomás sugere que algumas mensagens do chat não são de quem diz.", "options": [
                 _bye("Até já.")]},
             "closed": {"text": "O Tomás cruza os braços. \"Ficamos por aqui.\"", "trust": 0, "options": [_bye("Sair.")]},
@@ -414,8 +415,8 @@ WITHHELD = {
     },
 }
 
-# One lie each, hostile only (point 5). The player can check it: the arrival line of the chat message
-# with Tomás's name, and Rita's `chat` line, say otherwise. A lie is not a claim: a card shown on it
+# One lie each, hostile only (point 5). The player can check it: the backup of the original
+# conversations (specs/computer-lab-backup.md) and Rita's `chat` line say otherwise. A lie is not a claim: a card shown on it
 # gets the usual rebuff. Its note is what the player was told.
 LIES = {
     "en": {

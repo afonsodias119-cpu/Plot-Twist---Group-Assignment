@@ -1,5 +1,7 @@
 # Case of the day: everyone plays the same case on the same day, and the share card says which day
 
+> **Update (specs/computer-lab-backup.md):** only the classic case is left (`CASE_ORDER = ("outsider",)`): every day plays it, and the start screen and the share card still show the date.
+
 Extends specs/earlier-nights.md, specs/night-schedule.md, specs/campus-people-and-atmosphere.md (the share card) and specs/no-endings-on-start.md. Works together with specs/culprit-of-the-night.md: this spec picks the case from the date, that one says what each case changes. No change to `story.py`, `logic.py`, `game.py`, `app.py`, `db.py` or any reviewed test. The operation `open` keeps opening the classic case exactly as today.
 
 > **Update (merge with specs/calendar-code.md):** the cover photo, its date (17 October) and the code `1710` are the same in every case, so the snapshot's `day` no longer carries `photo_date` and the cases no longer have a `code` or a `photo_date` (points 1 and 5 below say so). The "Case of 22 November" label now sits in the top bar of the case file, beside the game's name that specs/creator-after-name.md put there in place of "Case #005" (point 6).

@@ -43,20 +43,10 @@ PLAYER = "detective"
 NO_NAMES = ["", "", ""]
 STORY_GROUP = ["Leonor", "Rita", "Tomás"]
 FRIENDS = ["Ana", "Bea", "João"]
-FOUR = ["fifth_element", "full_case", "impostor", "stolen_credits"]
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the chat, its messages and the cases of
+# specs/culprit-of-the-night.md are gone; three story endings, and the culprit is always Duarte.
+ENDINGS = ["full_case", "impostor", "stolen_credits"]
 STORY_NAME = re.compile(r"\b(Leonor|Rita|Tomás)\b")
-# The spec's table of the cases (specs/culprit-of-the-night.md, point 2), in shown numbers.
-FAKES = {"outsider": (2, 4, 5), "tomas": (1, 3, 5), "rita": (1, 2, 4)}
-LATE = {"outsider": 5, "tomas": 1, "rita": 4}
-# The chat of the classic case, places 1, 3 and 5 (tests/test_culprit_of_the_night.py, CHAT).
-CHAT = {
-    "en": ['Leonor, 3 weeks ago, 9:05 pm: "Can someone book the study room for Thursday?"',
-           'Rita, 2 weeks ago, 6:40 pm: "Photo for the cover is ready. Four of us, finally!"',
-           'Tomás, 3 weeks ago, 10:12 pm (arrived yesterday, 11:49 pm): "Duarte did the slides, obviously."'],
-    "pt": ['Leonor, há 3 semanas, 21h05: "Alguém pode reservar a sala de estudo para quinta-feira?"',
-           'Rita, há 2 semanas, 18h40: "A fotografia para a capa está pronta. Os quatro, finalmente!"',
-           'Tomás, há 3 semanas, 22h12 (chegou ontem às 23h49): "Os slides foram do Duarte, claro."'],
-}
 # Part D of design-notes/texts-ideas.md, word for word.
 GROUP_TEXTS = {
     "en": {"group_title": "Your group (optional)",
@@ -171,33 +161,31 @@ def enter(room):
     return {"operation": "enter", "room": room}
 
 
-def investigation(variant, flagged=True):
-    """Every clue of the night, with a word with each teammate on the way; the fake messages flagged."""
-    steps = [speak("rita", "start"), play("open_drawer"), play("go_print_shop"), play("request_copy"),
-             play("go_study_room"), play("go_library"), speak("leonor", "start"), play("ask_for_help"),
-             play("go_study_room"), play("go_computer_lab"), speak("tomas", "start"), play("view_files")]
-    if flagged:
-        steps += [play("open_chat")] + [play(f"flag_{n}") for n in FAKES[variant]] + [play("go_computer_lab")]
-    return steps
+def investigation(leonor="ask_for_help"):
+    """Every clue of the night, with a word with each teammate on the way, and the backup saved."""
+    return [speak("rita", "start"), play("open_drawer"), play("go_print_shop"), play("request_copy"),
+            play("go_study_room"), play("go_library"), speak("leonor", "start"), play(leonor),
+            play("go_study_room"), play("go_computer_lab"), speak("tomas", "start"), play("view_files"),
+            play("save_backup")]
 
 
 def impostor_night():
-    """The classic case with two doubts at the hearing: the story's full_case becomes impostor."""
-    return investigation("outsider") + [enter("auditorium"), answer("start"), answer("concede"),
-                                        answer("concede"), answer("leonor_messages")]
+    """Leonor accused: the story's impostor, with every claim answered (specs/computer-lab-backup.md)."""
+    return investigation("accuse") + [enter("auditorium"), answer("start"), answer("files"),
+                                      answer("original_photo"), answer("backup")]
 
 
 def stolen_night():
-    """No flags and three doubts after asking Leonor for help: stolen_credits, with the verdict that names her."""
-    return investigation("outsider", flagged=False) + [enter("auditorium"), answer("start"), answer("concede"),
-                                                       answer("concede"), answer("concede")]
+    """Three doubts after asking Leonor for help: stolen_credits, with the verdict that names her."""
+    return investigation() + [enter("auditorium"), answer("start"), answer("concede"),
+                              answer("concede"), answer("concede")]
 
 
-def perfect_night(variant):
+def perfect_night():
     """Both cracks and the three right answers (specs/earlier-nights.md, point 8)."""
-    return investigation(variant) + [show(f"msg_{LATE[variant]}", "tomas", "slides"), enter("study_room"),
-                                     show("original_photo", "rita", "five"), enter("auditorium"), answer("start"),
-                                     answer("files"), answer("original_photo"), answer("leonor_messages")]
+    return investigation() + [show("files", "tomas", "slides"), enter("study_room"),
+                              show("original_photo", "rita", "five"), enter("auditorium"), answer("start"),
+                              answer("files"), answer("original_photo"), answer("backup")]
 
 
 def twin(monkeypatch, tmp_path, label, variant, language, steps, names=FRIENDS, runs=()):
@@ -282,12 +270,10 @@ def test_the_names_reach_dialogue_chat_cards_hearing_and_endings(monkeypatch, tm
     for language in ("en", "pt"):
         nights = {"impostor": twin(monkeypatch, tmp_path, "impostor", "outsider", language, impostor_night()),
                   "stolen": twin(monkeypatch, tmp_path, "stolen", "outsider", language, stolen_night()),
-                  "tomas": twin(monkeypatch, tmp_path, "perfect", "tomas", language, perfect_night("tomas")),
-                  "rita": twin(monkeypatch, tmp_path, "perfect", "rita", language, perfect_night("rita")),
-                  "true": twin(monkeypatch, tmp_path, "true", "outsider", language, perfect_night("outsider"),
-                               runs=FOUR)}
-        endings = {"impostor": "impostor", "stolen": "stolen_credits", "tomas": "full_case", "rita": "full_case",
-                   "true": "night_over"}
+                  "perfect": twin(monkeypatch, tmp_path, "perfect", "outsider", language, perfect_night()),
+                  "true": twin(monkeypatch, tmp_path, "true", "outsider", language, perfect_night(),
+                               runs=ENDINGS)}
+        endings = {"impostor": "impostor", "stolen": "stolen_credits", "perfect": "full_case", "true": "night_over"}
         for night, (story, group) in nights.items():
             assert story[-1]["ending"]["id"] == group[-1]["ending"]["id"] == endings[night], (language, night)
             for number, (told, renamed) in enumerate(zip(story, group)):
@@ -302,16 +288,8 @@ def test_the_names_reach_dialogue_chat_cards_hearing_and_endings(monkeypatch, tm
         assert greeting["npc"] == "rita" and greeting["name"] == "Bea" and "Bea" in greeting["text"], language
         library = next(reply for reply in group if reply.get("scene") == "library")
         assert person(library, "leonor")["name"] == "Ana", language
-        # The chat: Ana and Bea where the story has Leonor and Rita, and João in the late message.
-        chat = next(reply["chat"] for reply in group if reply.get("chat"))
-        texts = [message["text"] for message in chat["messages"]]
-        assert [texts[0], texts[2], texts[4]] == [CHAT[language][0].replace("Leonor", "Ana"),
-                                                  CHAT[language][1].replace("Rita", "Bea"),
-                                                  CHAT[language][2].replace("Tomás", "João")], language
-        # A flagged card's label, and the clue list.
-        back = next(reply for reply in group if any(card["id"] == "msg_5" for card in reply.get("evidence", [])))
-        label = next(card["label"] for card in back["evidence"] if card["id"] == "msg_5")
-        assert label == "🚩 " + CHAT[language][2].replace("Tomás", "João"), language
+        # The clue list (specs/computer-lab-backup.md: there is no chat and no flagged card any more).
+        back = next(reply for reply in group if reply.get("clues"))
         clue = next(row["label"] for row in back["clues"] if row["id"] == "leonor")
         assert "Ana" in clue and "Leonor" not in clue, language
         # Duarte's third claim says João.
@@ -323,9 +301,7 @@ def test_the_names_reach_dialogue_chat_cards_hearing_and_endings(monkeypatch, tm
         stolen = nights["stolen"][1][-1]["ending"]
         assert stolen["id"] == "stolen_credits" and "Ana" in stolen["verdict"], language
         assert not STORY_NAME.search(stolen["text"] + stolen["verdict"]), language
-        # The case texts of the two teammate cases, and the true ending, with its voices unchanged.
-        assert "João" in nights["tomas"][1][-1]["ending"]["text"], language
-        assert "Bea" in nights["rita"][1][-1]["ending"]["text"], language
+        # The true ending, with its voices unchanged.
         true_story, true_group = nights["true"][0][-1]["ending"], nights["true"][1][-1]["ending"]
         assert all(name in true_group["text"] for name in FRIENDS), language
         assert true_group["voices"] == true_story["voices"], language
@@ -346,11 +322,9 @@ def test_names_never_chain(monkeypatch):
     for action in ("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library"):
         library = do(action, "swapped")
     assert person(library, "leonor")["name"] == "Bea"
-    for action in ("ask_for_help", "go_study_room", "go_computer_lab", "view_files"):
-        do(action, "swapped")
-    chat = do("open_chat", "swapped")["chat"]["messages"]
-    assert chat[0]["text"] == CHAT["en"][0].replace("Leonor", "Bea")   # no "Ana" where Leonor was
-    assert chat[2]["text"] == CHAT["en"][1].replace("Rita", "Ana")
+    # Leonor's own line (specs/computer-lab-backup.md: the chat that showed both names is gone).
+    leonor = talk("leonor", "start", "swapped")
+    assert leonor["name"] == "Bea" and "Ana" not in leonor["text"]
 
 
 def test_bad_names_fall_back_one_by_one():

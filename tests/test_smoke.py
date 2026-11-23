@@ -19,7 +19,8 @@ APP_FILE = str(Path(__file__).resolve().parent.parent / "app.py")
 STORY = STORIES["en"]
 UI = UI_TEXTS["en"]
 
-P_SHORT = ["open_drawer", "go_computer_lab", "view_files", "go_study_room", "go_auditorium", "present_evidence"]
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the backup is saved after the files.
+P_SHORT = ["open_drawer", "go_computer_lab", "view_files", "save_backup", "go_study_room", "go_auditorium", "present_evidence"]
 
 
 # ---------- helpers ----------

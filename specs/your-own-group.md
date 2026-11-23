@@ -1,5 +1,7 @@
 # Your own group in the story: three friends' names for the three teammates
 
+> **Update (specs/computer-lab-backup.md):** there is no chat and no flagged card any more; the names still reach every other text (dialogue, clues, hearing, endings).
+
 Extends specs/case-of-the-day.md (the names travel with `begin` and live in the night's notes), specs/culprit-of-the-night.md (the same `retell` swaps them in), specs/rules-and-character.md (the start screen) and specs/cleaner-interface.md (the case file's "Your group"). No change to `story.py`, `logic.py`, `game.py`, `app.py`, `db.py` or any reviewed test. Texts in design-notes/texts-ideas.md, part D.
 
 > **Update (merge with specs/creator-after-name.md and specs/calendar-code.md):** the start screen is now in steps, so the "Your group (optional)" box sits in step 3, "Your detective", under the creator (point 1). At computer 12 the group's memories and the names over them are the page's own texts, so the page renames them with the same rule as the server (point 5); the people who follow the player carry their 3D name tags, which already show the group (point 6).

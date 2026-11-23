@@ -1,5 +1,7 @@
 # História — O quinto elemento
 
+> **Update (specs/computer-lab-backup.md):** the group chat, its flags, the message cards and "The fifth element" are gone. Computer 12 saves a backup of the original conversations; Leonor's choice decides the three story endings; Duarte catches a player at computer 12 before the backup.
+
 Mapa completo da história do jogo: cenas, objetos, decisões e finais.
 **Estado: proposta, a rever pelo grupo.** Nada disto está ainda no código.
 

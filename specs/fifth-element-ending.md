@@ -1,5 +1,7 @@
 # The fifth element: a secret ending and a proper ending screen
 
+> **Removed by specs/computer-lab-backup.md:** the ending "The fifth element" no longer exists (its test file was deleted).
+
 Extends specs/spot-the-fake.md and specs/campus-people-and-atmosphere.md. No change to `logic.py`, `db.py`, `game.py` or `app.py`.
 
 ## Why

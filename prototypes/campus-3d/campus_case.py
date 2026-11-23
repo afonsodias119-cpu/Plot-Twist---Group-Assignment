@@ -11,27 +11,24 @@ The same keys exist in "en" and "pt"; only the texts differ.
 """
 
 # The cards the save can give, in the order the hand shows them, and the story condition that holds
-# each one (checked with logic._condition_met). The label of a flagged chat message is not here: it is
-# the story's own text of that message (campus_evidence.card_label).
+# each one (checked with logic._condition_met). The flagged chat messages were cards too, until
+# specs/computer-lab-backup.md removed the chat.
+# The proofs for the professor (specs/computer-lab-backup.md): the USB stick's history, the photo and
+# the backup of the conversations. The security camera is the fourth, added by specs/security-desk.md.
 EVIDENCE = {
     "original_photo": {"has": ["original_photo"]},
     "files": {"flags": {"files_viewed": True}},
-    "leonor_messages": {"flags": {"colleague_choice": "help"}},
-    "msg_1": {"flags": {"flagged_1": True}},
-    "msg_2": {"flags": {"flagged_2": True}},
-    "msg_3": {"flags": {"flagged_3": True}},
-    "msg_4": {"flags": {"flagged_4": True}},
-    "msg_5": {"flags": {"flagged_5": True}},
+    "backup": {"flags": {"backup_saved": True}},
 }
 
-# The facts won by cracking a person: held through the night's notes, not through the save.
+# The facts won by cracking a person: kept in the night's notes. They are no longer cards for the
+# hearing (specs/computer-lab-backup.md); the true ending still needs both (specs/earlier-nights.md).
 FACTS = {"tomas": "tomas_word", "rita": "rita_word"}
 
 # Who can be cracked: their claim line and the cards that break it (point 7).
 CONFRONT = {
-    "tomas": {"node": "slides", "breaks": ["msg_5"]},
+    "tomas": {"node": "slides", "breaks": ["files"]},   # the history shows who made the slides
     "rita": {"node": "five", "breaks": ["files", "original_photo"]},
-    "leonor": {"node": "sure", "breaks": ["tomas_word"]},
 }
 
 # Duarte's three claims at the hearing, in order (point 10). `accepts` are the cards that break the
@@ -39,33 +36,26 @@ CONFRONT = {
 # a line of its own; every other wrong card gets the general wrong line of that claim (its id).
 HEARING = [
     {"id": "name", "accepts": ["files"], "wrong": {}},
-    {"id": "photo", "accepts": ["original_photo", "rita_word"], "wrong": {"files": "photo_files"}},
-    {"id": "messages", "accepts": ["leonor_messages", "tomas_word"],
-     "wrong": {"msg_1": "messages_flag", "msg_2": "messages_flag", "msg_3": "messages_flag",
-               "msg_4": "messages_flag", "msg_5": "messages_flag"}},
+    {"id": "photo", "accepts": ["original_photo"], "wrong": {"files": "photo_files"}},
+    {"id": "messages", "accepts": ["backup"], "wrong": {}},   # specs/computer-lab-backup.md
 ]
 
 CASE_TEXT = {
     "en": {
-        # The labels of the cards (the flagged messages use the story's own text instead).
+        # The labels of the cards.
         "labels": {
             "original_photo": "The original photo, taped back together: four people",
             "files": "The file history: four authors in every backup",
-            "leonor_messages": "Leonor's screenshots: every message arrived last night",
-            "tomas_word": "Tomás's word: he never wrote that message and made the slides himself",
-            "rita_word": "Rita's word: she counted four people on the day of the photo",
+            "backup": "The backup of the original conversations: four people, not one message from Duarte",
         },
         # The right card on the claim line. `trust` is the person's trust after it (None: Rita has no trust level).
         "reveals": {
-            "tomas": {"text": "Tomás reads the line under his name, then the small grey line beneath it. \"Arrived yesterday, 11:49 pm. At 11:49 I was sitting right here, one computer away from the one in the hood. I did not type a word.\" His voice drops. \"I never sent that. And the slides... I made the slides. All eleven. I was here until two on Tuesday.\" He turns his chair to face the glass wall. \"He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door.\"",
+            "tomas": {"text": "Tomás reads the history of the slides: every version saved under his name, the last one on Tuesday at two in the morning. \"So the message says Duarte did them. The files say I did.\" His voice drops. \"I never sent that message. And the slides... I made the slides. All eleven. I was here until two on Tuesday.\" He turns his chair to face the glass wall. \"He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door.\"",
                       "note": "Tomás never wrote the message about the slides: he made them himself and will say so. He is watching the corridor for you.",
                       "trust": 3},
             "rita": {"text": "Rita looks from your proof to her screen and back. \"So the photo did change.\" She laughs once, without any joy. \"I counted four. I said it out loud. I even wrote it in the chat: four of us, finally. That one is mine, I remember typing it.\" She closes the laptop. \"Tell the professor I counted. I will say it to his face.\"",
                      "note": "Rita counted four people on the day of the photo. The chat message that says four of them is hers. She will tell the professor.",
                      "trust": None},
-            "leonor": {"text": "You tell her what Tomás said about the message with his name. Leonor stops with her thumb on the screen. \"He never wrote it?\" She scrolls back, slower this time. \"Then I do not know what I have been reading.\"",
-                       "note": "Leonor did not know that Tomás never wrote the message with his name. It shook her.",
-                       "trust": 3},
         },
         # Any other card, or any other line: one line per person. Duarte has one line for any card.
         "rebuffs": {
@@ -84,17 +74,14 @@ CASE_TEXT = {
         },
         "right": {
             "name": {"files": "\"Four authors in every backup, and a fifth name added last night at 11:47 pm. Go on.\""},
-            "photo": {"original_photo": "The professor holds the taped photo next to the cover. \"The print shop's own print, with its date stamp. Four people, before anyone added a fifth.\"",
-                      "rita_word": "\"A witness who counted. I will hear her tomorrow; tonight I believe her.\""},
-            "messages": {"leonor_messages": "\"Every one delivered on the same night, from a number nobody knew. A date can be typed. An arrival time cannot.\"",
-                         "tomas_word": "\"Then the person whose name is on it never sent it. That answers this one.\""},
+            "photo": {"original_photo": "The professor holds the taped photo next to the cover. \"The print shop's own print, with its date stamp. Four people, before anyone added a fifth.\""},
+            "messages": {"backup": "The professor scrolls through the backup. \"The group's own conversations, as they were before last night: four people, and not one message from him. A date can be typed. A backup of weeks cannot.\""},
         },
         "wrong": {
             "name": "\"That does not tell me who wrote a report.\" He makes a small mark on the list.",
             "photo": "\"That tells me nothing about who is in a photograph.\" He makes a mark on the list.",
             "messages": "\"That does not tell me who sent a message.\" He makes a mark on the list.",
             "photo_files": "\"The history says a photo was swapped. It does not show me the one that was there before.\"",
-            "messages_flag": "\"You flagged it. That is your opinion of it. Who will stand here and tell me they never wrote it?\"",
         },
         # Duarte's line when the player says nothing, on any claim.
         "concede": "The professor waits. Duarte smiles. \"Nothing?\"",
@@ -105,27 +92,21 @@ CASE_TEXT = {
             "three": "\"Three times tonight you gave me a reason to doubt you. I cannot cross out a name on a guess.\"",
             "three_help": "The professor closes the list before Leonor reaches the door. \"I have heard enough guesses for one night.\"",
             "two": "\"You are right about him, I think. But you made me doubt you twice tonight, and I write down only what I am sure of.\"",
-            "no_originals": "The professor looks at Duarte's phone for a long moment. \"One message is answered. He has a phone full of them, and nobody here kept the originals.\"",
         },
     },
     "pt": {
         "labels": {
             "original_photo": "A fotografia original, colada com fita-cola: quatro pessoas",
             "files": "O histórico dos ficheiros: quatro autores em todas as cópias",
-            "leonor_messages": "As capturas de ecrã da Leonor: chegaram todas ontem à noite",
-            "tomas_word": "A palavra do Tomás: nunca escreveu aquela mensagem e foi ele que fez os slides",
-            "rita_word": "A palavra da Rita: contou quatro pessoas no dia da fotografia",
+            "backup": "O backup das conversas originais: quatro pessoas, nem uma mensagem do Duarte",
         },
         "reveals": {
-            "tomas": {"text": "O Tomás lê a linha por baixo do nome dele e depois a linha cinzenta mais pequena. \"Chegou ontem às 23h49. Às 23h49 eu estava aqui sentado, no computador ao lado do rapaz de capuz. Não escrevi uma palavra.\" Baixa a voz. \"Eu nunca enviei isto. E os slides... fui eu que fiz os slides. Os onze. Fiquei aqui até às duas na terça-feira.\" Roda a cadeira para a parede de vidro. \"Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta.\"",
+            "tomas": {"text": "O Tomás lê o histórico dos slides: todas as versões guardadas com o nome dele, a última na terça-feira às duas da manhã. \"Então a mensagem diz que foi o Duarte. Os ficheiros dizem que fui eu.\" Baixa a voz. \"Eu nunca enviei aquela mensagem. E os slides... fui eu que fiz os slides. Os onze. Fiquei aqui até às duas na terça-feira.\" Roda a cadeira para a parede de vidro. \"Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta.\"",
                       "note": "O Tomás nunca escreveu a mensagem sobre os slides: foi ele que os fez e vai dizê-lo. Fica a vigiar o corredor por ti.",
                       "trust": 3},
             "rita": {"text": "A Rita olha da tua prova para o ecrã e outra vez para a prova. \"Então a fotografia mudou mesmo.\" Ri-se uma vez, sem alegria nenhuma. \"Eu contei quatro. Disse-o em voz alta. Até o escrevi no chat: os quatro, finalmente. Essa é minha, lembro-me de a escrever.\" Fecha o portátil. \"Diz ao professor que eu contei. Eu digo-lho na cara.\"",
                      "note": "A Rita contou quatro pessoas no dia da fotografia. A mensagem do chat que fala nos quatro é dela. Vai dizê-lo ao professor.",
                      "trust": None},
-            "leonor": {"text": "Contas-lhe o que o Tomás disse sobre a mensagem com o nome dele. A Leonor fica com o polegar parado no ecrã. \"Ele nunca a escreveu?\" Volta atrás na conversa, mais devagar. \"Então já não sei o que é que andei a ler.\"",
-                       "note": "A Leonor não sabia que o Tomás nunca escreveu a mensagem com o nome dele. Ficou abalada.",
-                       "trust": 3},
         },
         "rebuffs": {
             "tomas": "O Tomás olha de relance e volta ao ecrã. \"E o que é que isso tem a ver com o que eu acabei de dizer?\"",
@@ -142,17 +123,14 @@ CASE_TEXT = {
         },
         "right": {
             "name": {"files": "\"Quatro autores em todas as cópias, e um quinto nome acrescentado ontem às 23h47. Continue.\""},
-            "photo": {"original_photo": "O professor põe a fotografia colada ao lado da capa. \"A impressão da própria reprografia, com o carimbo da data. Quatro pessoas, antes de alguém acrescentar um quinto.\"",
-                      "rita_word": "\"Uma testemunha que contou. Ouço-a amanhã; esta noite, acredito nela.\""},
-            "messages": {"leonor_messages": "\"Todas entregues na mesma noite, de um número que ninguém conhecia. Uma data escreve-se. A hora de chegada, não.\"",
-                         "tomas_word": "\"Então quem a assina nunca a enviou. Essa fica respondida.\""},
+            "photo": {"original_photo": "O professor põe a fotografia colada ao lado da capa. \"A impressão da própria reprografia, com o carimbo da data. Quatro pessoas, antes de alguém acrescentar um quinto.\""},
+            "messages": {"backup": "O professor percorre o backup. \"As conversas do próprio grupo, tal como estavam antes de ontem à noite: quatro pessoas, e nem uma mensagem dele. Uma data escreve-se. Um backup de semanas, não.\""},
         },
         "wrong": {
             "name": "\"Isso não me diz quem escreveu um relatório.\" Faz um pequeno sinal na lista.",
             "photo": "\"Isso não me diz nada sobre quem está numa fotografia.\" Faz um sinal na lista.",
             "messages": "\"Isso não me diz quem enviou uma mensagem.\" Faz um sinal na lista.",
             "photo_files": "\"O histórico diz que uma fotografia foi trocada. Não me mostra a que lá estava antes.\"",
-            "messages_flag": "\"Marcou-a. Essa é a sua opinião sobre ela. Quem me vem aqui dizer que nunca a escreveu?\"",
         },
         "concede": "O professor espera. O Duarte sorri. \"Nada?\"",
         "caught": "\"Antes de começarmos: o senhor Sequeira diz-me que você esteve esta noite a ler as mensagens do grupo às escondidas.\" O professor faz um sinal ao lado do teu nome.",
@@ -160,7 +138,6 @@ CASE_TEXT = {
             "three": "\"Três vezes esta noite me deu razões para duvidar de si. Não risco um nome por um palpite.\"",
             "three_help": "O professor fecha a lista antes de a Leonor chegar à porta. \"Já ouvi palpites que cheguem por uma noite.\"",
             "two": "\"Acho que tem razão sobre ele. Mas fez-me duvidar duas vezes esta noite, e eu só escrevo aquilo de que tenho a certeza.\"",
-            "no_originals": "O professor fica muito tempo a olhar para o telemóvel do Duarte. \"Uma mensagem está respondida. Ele tem um telemóvel cheio delas, e ninguém aqui guardou as originais.\"",
         },
     },
 }
@@ -174,7 +151,7 @@ CASE_TEXT = {
 TRUE_ENDING = "night_over"
 
 # The unknown number on earlier nights (point 4): the message as a night starts, the dare that takes
-# its place once the four story endings were seen, and the round warning from night 3 on. Then the
+# its place once every story ending was seen, and the round warning from night 3 on. Then the
 # true ending (point 8): its `voices` say who speaks each of the four spoken quotes of `text`, in order.
 NIGHT_TEXT = {
     "en": {
@@ -183,7 +160,7 @@ NIGHT_TEXT = {
                      "You again. Same coat, same scarf.",
                      "I have stopped counting the nights. You have not.",
                      "Look at the photo on your case file. Then tell me which of us is the fifth."],
-        "dare": "Four endings, and still here. You will never get all three of them to stand with you. Not in thirty minutes.",
+        "dare": "Three endings, and still here. You will never get all three of them to stand with you. Not in thirty minutes.",
         "round": "Close the computer. He is walking.",
         "ending": {
             "title": "22:46", "stamp": "THE NIGHT IS OVER", "emoji": "🌅",
@@ -196,7 +173,7 @@ NIGHT_TEXT = {
                      "Outra vez tu. O mesmo casaco, o mesmo cachecol.",
                      "Eu já deixei de contar as noites. Tu não.",
                      "Olha para a fotografia do teu caso. Depois diz-me qual de nós é o quinto."],
-        "dare": "Quatro finais, e continuas aqui. Nunca vais conseguir que os três fiquem do teu lado. Não em trinta minutos.",
+        "dare": "Três finais, e continuas aqui. Nunca vais conseguir que os três fiquem do teu lado. Não em trinta minutos.",
         "round": "Fecha o computador. Ele vem aí.",
         "ending": {
             "title": "22:46", "stamp": "A NOITE ACABOU", "emoji": "🌅",
@@ -207,351 +184,13 @@ NIGHT_TEXT = {
 }
 
 
-# ---------- the cases (specs/case-of-the-day.md and specs/culprit-of-the-night.md) ----------
-# The date picks one of these cases (campus_clock.case_of_day); a saved game keeps its own. Server
-# only, like everything above: the ids and the texts never reach the page.
-# - `order`: the chat as shown. order[shown - 1] is the story's message number shown at that place.
+# ---------- the cases (specs/case-of-the-day.md) ----------
+# The date picks one of these cases (campus_clock.case_of_day); a saved game keeps its own. Server only.
 # - `accepts`: more cards that break a claim of the hearing, by claim id; `right`: the professor's
 #   line for each of those new pairs.
 # - `texts`: {exact classic text: what this case says instead}, in each language (campus_evidence.retell).
-# "outsider" is the classic case, exactly as before: nothing is added and no text is swapped.
-# The cover photo, its date (Saturday 17 October) and the code of computer 12 are the same in every
-# case (specs/calendar-code.md): no case swaps a dated line, and no case text touches the group's
-# memories at computer 12, so what Tomás, Rita and Leonor remember of that day is true in every case.
+# Only the classic case is left (specs/computer-lab-backup.md): the culprit is always Duarte. The cases
+# "tomas" and "rita" of specs/culprit-of-the-night.md changed the fake chat messages, and the chat is gone.
 CASES = {
-    "outsider": {"order": [1, 2, 3, 4, 5],
-                 "accepts": {}, "right": {"en": {}, "pt": {}}, "texts": {"en": {}, "pt": {}}},
-    # Tomás let Duarte in (design-notes/texts-ideas.md, B1): he never made his slides, and Duarte, who
-    # repeats the course, promised to make them if his name went on the report. Tomás lies about
-    # computer 12 and the slides; the file history names his account.
-    "tomas": {
-        "order": [5, 1, 2, 3, 4],
-        "accepts": {"name": ["files", "tomas_word"]},
-        # The professor's line when the confession answers the claim "name" (point 5).
-        "right": {"en": {"name": {"tomas_word": "\"The person who put the name there has told me so himself. So much for 'since the first draft'.\""}},
-                  "pt": {"name": {"tomas_word": "\"Quem pôs lá o nome já mo disse ele próprio. Lá se vai o 'desde o primeiro rascunho'.\""}}},
-        "texts": {
-            "en": {
-                # the chat (story.py, group_chat): messages 1 to 4 (B1.1 to B1.4); message 5 does not change
-                "Leonor, 3 weeks ago, 9:05 pm: \"Can someone book the study room for Thursday?\"":
-                    "Rita, 3 weeks ago, 9:05 pm: \"Can someone book the study room for Thursday?\"",
-                "Unknown number, 3 weeks ago, 9:07 pm: \"Booked it. I wrote the conclusion too, like always.\"":
-                    "Duarte, 3 weeks ago, 9:07 pm: \"Booked it. I wrote the conclusion too, like always.\"",
-                "Rita, 2 weeks ago, 6:40 pm: \"Photo for the cover is ready. Four of us, finally!\"":
-                    "Leonor, 2 weeks ago, 6:40 pm: \"Photo for the cover is ready. Four of us, finally!\"",
-                "Duarte, 3 weeks ago, 10:10 pm: \"Can't wait for the five of us to present.\"":
-                    "Unknown number, 3 weeks ago, 10:10 pm: \"Can't wait for the five of us to present.\"",
-                # the file history names the account (B1.5, B1.6)
-                "You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer: someone added \"Duarte\" to the report and swapped the photo. You recover the original version of the work.":
-                    "You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer, and the folder says from which account: Tomás's. \"Duarte\" was added to the report and the photo was swapped. You recover the original version of the work.",
-                "You have compared the files: four authors in every copy on the USB stick, and a change in the shared folder yesterday at 11:47 pm.":
-                    "You have compared the files: four authors in every copy on the USB stick, and a change in the shared folder yesterday at 11:47 pm, made from Tomás's account.",
-                # the card labels (B1.7, B1.8)
-                "The file history: four authors in every backup":
-                    "The file history: four authors in every backup, and the fifth name added from Tomás's account",
-                "Tomás's word: he never wrote that message and made the slides himself":
-                    "Tomás's confession: he added Duarte last night and wrote the message himself",
-                # Rita, `pen`: Tomás's alibi falls here (B1.9), and he went out hooded (specs/security-desk.md)
-                "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza, but with this mess, it could be anywhere.\"":
-                    "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza. Tomás went outside for some air before half past eleven, with his hood up, and he never came back.\"",
-                "Rita cannot find the USB stick. The group ate pizza here last night.":
-                    "Rita cannot find the USB stick. The group ate pizza here last night; Tomás went outside with his hood up before half past eleven and never came back.",
-                # Tomás lies: `who` (the account and Rita's half past eleven say otherwise), `msg5` (the arrival line) and `slides` (B1.10 to B1.13)
-                "\"Only a hood. Like the one Duarte wears. But nobody ever saw him arrive.\"":
-                    "\"Only a hood. Like the one Duarte wears.\" He keeps his eyes on his screen. \"I was at computer 11 all night. I never went near computer 12.\"",
-                "Tomás saw someone in a hood at computer 12 near midnight.":
-                    "Tomás says he saw someone in a hood at computer 12 near midnight, and that he never went near it himself.",
-                "\"'Duarte did the slides'? It is under my name, but I do not remember writing it. My phone buzzed with it last night, near midnight, as if it had been sent three weeks ago.\"":
-                    "\"'Duarte did the slides'? I wrote that weeks ago. It is just true.\" He does not look at you.",
-                "Tomás does not remember writing message 5; it reached his phone last night.":
-                    "Tomás says he wrote the message with his name weeks ago.",
-                "Ask about message 5, the one with his name":
-                    "Ask about message 1, the one with his name",
-                "Tomás keeps his eyes on the screen. \"The slides? I am finishing them. But the chat says Duarte did them, under my name. So maybe he did, and I only tidied up.\"":
-                    "Tomás keeps his eyes on the screen. \"The slides? Duarte made them. I said so in the chat, three weeks ago.\"",
-                "Tomás thinks Duarte may have made the slides, only because a chat message under his own name says so.":
-                    "Tomás says Duarte made the slides, and that he wrote so in the chat three weeks ago.",
-                # the reveals: Tomás confesses and still stands in the lab door; Leonor is shaken; Rita is a witness (B1.14 to B1.16)
-                "Tomás reads the line under his name, then the small grey line beneath it. \"Arrived yesterday, 11:49 pm. At 11:49 I was sitting right here, one computer away from the one in the hood. I did not type a word.\" His voice drops. \"I never sent that. And the slides... I made the slides. All eleven. I was here until two on Tuesday.\" He turns his chair to face the glass wall. \"He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door.\"":
-                    "Tomás reads the small grey line under his message. \"Arrived yesterday, 11:49 pm.\" He closes his eyes. \"I wrote it last night. And I put his name on the cover at 11:47, from computer 12. I never made the slides. Duarte said he would make them if his name went on the report.\" He turns his chair to face the glass wall. \"He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door. I owe you that.\"",
-                "Tomás never wrote the message about the slides: he made them himself and will say so. He is watching the corridor for you.":
-                    "Tomás confessed: he added Duarte last night, from computer 12, and wrote the message himself. He is watching the corridor for you.",
-                "You tell her what Tomás said about the message with his name. Leonor stops with her thumb on the screen. \"He never wrote it?\" She scrolls back, slower this time. \"Then I do not know what I have been reading.\"":
-                    "You tell her what Tomás told you. Leonor stops with her thumb on the screen. \"Tomás did this?\" She scrolls back, slower this time. \"Then I do not know what I have been reading.\"",
-                "Leonor did not know that Tomás never wrote the message with his name. It shook her.":
-                    "Leonor did not know that Tomás added Duarte. It shook her.",
-                "Rita looks from your proof to her screen and back. \"So the photo did change.\" She laughs once, without any joy. \"I counted four. I said it out loud. I even wrote it in the chat: four of us, finally. That one is mine, I remember typing it.\" She closes the laptop. \"Tell the professor I counted. I will say it to his face.\"":
-                    "Rita looks from your proof to her screen and back. \"So the photo did change.\" She laughs once, without any joy. \"I counted four. I said it out loud, on the day, to all of you.\" She closes the laptop. \"Tell the professor I counted. I will say it to his face.\"",
-                "Rita counted four people on the day of the photo. The chat message that says four of them is hers. She will tell the professor.":
-                    "Rita counted four people on the day of the photo. She will tell the professor.",
-                # Leonor's own message is the one about the photo; Duarte names Tomás (B1.17, B1.18)
-                "\"The one asking to book the study room. I wrote that at this table, three weeks ago.\" Leonor scrolls with one finger. \"The ones from the number I did not know all arrived within minutes of each other, last night.\"":
-                    "\"The one about the cover photo. I wrote that the evening we took it.\" Leonor scrolls with one finger. \"The ones from the number I did not know all arrived within minutes of each other, last night.\"",
-                "Leonor wrote the chat message about booking the study room herself.":
-                    "Leonor wrote the chat message about the cover photo herself.",
-                "\"The slides, of course. Ask anyone.\" He hesitates for a second.":
-                    "\"The slides, of course. Ask Tomás, he will tell you.\" He hesitates for a second.",
-                # Leonor's messages and the professor's line on them: a teammate sent fakes too, so no
-                # "number nobody knew", like the endings below
-                "\"Look. All from a number I did not know. Some are dated weeks ago, but they arrived last night.\"":
-                    "\"Look. Not all from strangers: some are under names I know. Some are dated weeks ago, but they all arrived last night.\"",
-                "Leonor received Duarte's messages last night, from an unknown number.":
-                    "Leonor received the fake messages last night; some are under names she knows.",
-                "\"Every one delivered on the same night, from a number nobody knew. A date can be typed. An arrival time cannot.\"":
-                    "\"Every one delivered on the same night, within minutes of each other. A date can be typed. An arrival time cannot.\"",
-                # the professor, when Tomás's confession answers the messages (B1.23)
-                "\"Then the person whose name is on it never sent it. That answers this one.\"":
-                    "\"Its author tells me he wrote it last night. A message written yesterday proves nothing about three weeks ago.\"",
-                # the endings (B1.25 to B1.27); `fifth_element` keeps its text in every case
-                "You show the history on the USB stick and the three messages you flagged: one from a number outside the group, one that counts five of you when there were four, and one that arrived last night, two minutes after the shared folder was changed. Leonor walks in with the original messages, and they match. The professor crosses the fifth name off the list and asks Duarte to explain. He has no answer. Tomorrow, the four of you present, with the case closed.":
-                    "You show the history on the USB stick and the three messages you flagged: one from Duarte himself, weeks before anyone had heard of him; one from a number nobody knew, counting five of you; and one under Tomás's name that arrived last night, two minutes after his own account changed the shared folder. Leonor walks in with the original messages, and they match. Before the professor can ask, Tomás stands up and tells the room what he did: the name, the photo and the message, all for slides he never made. The professor crosses the fifth name off the list. Tomorrow, the four of you present, and Tomás presents the slides he finishes tonight.",
-                "You show the history on the USB stick: four authors until last night. Leonor walks in and hands over the messages she kept: they were all sent on the same night, from a new number, with fake dates. The professor crosses the fifth name off the list. Duarte leaves the auditorium without a word. Tomorrow, the four of you present.":
-                    "You show the history on the USB stick: four authors until last night, and the last change made from Tomás's account. Leonor walks in and hands over the messages she kept: they were all sent on the same night, with fake dates. The professor crosses the fifth name off the list. Duarte leaves the auditorium without a word, and Tomás does not look at any of you. Tomorrow, the four of you present.",
-                "You show the history on the USB stick: the original work is recovered and had four authors until last night. But Duarte raises his phone: \"I have messages from everyone proving I took part.\" Without the original messages, you cannot prove they are fake. The professor sighs: \"Without proof that the messages are fake, the name stays.\" Tomorrow, the five of you present.":
-                    "You show the history on the USB stick: the original work had four authors until last night. But Duarte raises his phone: \"I have messages from everyone proving I took part.\" Tomás nods along, a little too fast. Without the original messages, you cannot prove they are fake. The professor sighs: \"Without proof that the messages are fake, the name stays.\" Tomorrow, the five of you present.",
-                # one sentence of the true ending: Rita stays last, right before her quote (B1.28)
-                "Leonor comes in with her phone, Tomás with his slides, Rita counting under her breath.":
-                    "Tomás comes in first, with the slides he finally finished tonight, and does not look at you; then Leonor with her phone, and Rita counting under her breath.",
-            },
-            "pt": {
-                # the chat (story.py, group_chat): messages 1 to 4 (B1.1 to B1.4); message 5 does not change
-                "Leonor, há 3 semanas, 21h05: \"Alguém pode reservar a sala de estudo para quinta-feira?\"":
-                    "Rita, há 3 semanas, 21h05: \"Alguém pode reservar a sala de estudo para quinta-feira?\"",
-                "Número desconhecido, há 3 semanas, 21h07: \"Já reservei. Também escrevi a conclusão, como sempre.\"":
-                    "Duarte, há 3 semanas, 21h07: \"Já reservei. Também escrevi a conclusão, como sempre.\"",
-                "Rita, há 2 semanas, 18h40: \"A fotografia para a capa está pronta. Os quatro, finalmente!\"":
-                    "Leonor, há 2 semanas, 18h40: \"A fotografia para a capa está pronta. Os quatro, finalmente!\"",
-                "Duarte, há 3 semanas, 22h10: \"Mal posso esperar para apresentarmos os cinco.\"":
-                    "Número desconhecido, há 3 semanas, 22h10: \"Mal posso esperar para apresentarmos os cinco.\"",
-                # the file history names the account (B1.5, B1.6)
-                "Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador: alguém acrescentou \"Duarte\" ao relatório e trocou a fotografia. Recuperas a versão original do trabalho.":
-                    "Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador, e a pasta diz de que conta: a do Tomás. Foi acrescentado \"Duarte\" ao relatório e trocada a fotografia. Recuperas a versão original do trabalho.",
-                "Já comparaste os ficheiros: quatro autores em todas as cópias da pen, e uma alteração na pasta partilhada ontem às 23h47.":
-                    "Já comparaste os ficheiros: quatro autores em todas as cópias da pen, e uma alteração na pasta partilhada ontem às 23h47, feita a partir da conta do Tomás.",
-                # the card labels (B1.7, B1.8)
-                "O histórico dos ficheiros: quatro autores em todas as cópias":
-                    "O histórico dos ficheiros: quatro autores em todas as cópias, e o quinto nome acrescentado a partir da conta do Tomás",
-                "A palavra do Tomás: nunca escreveu aquela mensagem e foi ele que fez os slides":
-                    "A confissão do Tomás: acrescentou o Duarte ontem à noite e escreveu ele próprio a mensagem",
-                # Rita, `pen`: Tomás's alibi falls here (B1.9), and he went out hooded (specs/security-desk.md)
-                "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado.\"":
-                    "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza. O Tomás foi lá para fora apanhar ar antes das onze e meia, de capuz posto, e nunca mais voltou.\"",
-                "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite.":
-                    "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite; o Tomás foi lá para fora de capuz posto antes das onze e meia e nunca mais voltou.",
-                # Tomás lies: `who` (the account and Rita's half past eleven say otherwise), `msg5` (the arrival line) and `slides` (B1.10 to B1.13)
-                "\"Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar.\"":
-                    "\"Só vi um capuz. Como o que o Duarte usa.\" Não tira os olhos do ecrã. \"Estive no computador 11 a noite toda. Nunca me aproximei do 12.\"",
-                "O Tomás viu alguém de capuz no computador 12 perto da meia-noite.":
-                    "O Tomás diz que viu alguém de capuz no computador 12 perto da meia-noite e que ele próprio nunca se aproximou.",
-                "\"'Os slides foram do Duarte'? Está com o meu nome, mas não me lembro de a ter escrito. O meu telemóvel apitou com ela ontem à noite, perto da meia-noite, como se tivesse sido enviada há três semanas.\"":
-                    "\"'Os slides foram do Duarte'? Escrevi isso há semanas. É verdade e pronto.\" Não olha para ti.",
-                "O Tomás não se lembra de ter escrito a mensagem 5; chegou-lhe ao telemóvel ontem à noite.":
-                    "O Tomás diz que escreveu a mensagem com o nome dele há semanas.",
-                "Perguntar pela mensagem 5, a que tem o nome dele":
-                    "Perguntar pela mensagem 1, a que tem o nome dele",
-                "O Tomás não tira os olhos do ecrã. \"Os slides? Estou a acabá-los. Mas o chat diz que foram do Duarte, com o meu nome. Se calhar foram mesmo, e eu só arrumei.\"":
-                    "O Tomás não tira os olhos do ecrã. \"Os slides? Foi o Duarte que os fez. Eu disse-o no chat, há três semanas.\"",
-                "O Tomás acha que os slides podem ter sido do Duarte, só porque uma mensagem do chat com o nome dele o diz.":
-                    "O Tomás diz que foi o Duarte que fez os slides e que o escreveu no chat há três semanas.",
-                # the reveals: Tomás confesses and still stands in the lab door; Leonor is shaken; Rita is a witness (B1.14 to B1.16)
-                "O Tomás lê a linha por baixo do nome dele e depois a linha cinzenta mais pequena. \"Chegou ontem às 23h49. Às 23h49 eu estava aqui sentado, no computador ao lado do rapaz de capuz. Não escrevi uma palavra.\" Baixa a voz. \"Eu nunca enviei isto. E os slides... fui eu que fiz os slides. Os onze. Fiquei aqui até às duas na terça-feira.\" Roda a cadeira para a parede de vidro. \"Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta.\"":
-                    "O Tomás lê a linha cinzenta mais pequena por baixo da mensagem. \"Chegou ontem às 23h49.\" Fecha os olhos. \"Escrevi-a ontem à noite. E pus o nome dele na capa às 23h47, no computador 12. Nunca fiz os slides. O Duarte disse que os fazia se o nome dele fosse para o relatório.\" Roda a cadeira para a parede de vidro. \"Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta. Devo-te isso.\"",
-                "O Tomás nunca escreveu a mensagem sobre os slides: foi ele que os fez e vai dizê-lo. Fica a vigiar o corredor por ti.":
-                    "O Tomás confessou: acrescentou o Duarte ontem à noite, no computador 12, e escreveu ele próprio a mensagem. Fica a vigiar o corredor por ti.",
-                "Contas-lhe o que o Tomás disse sobre a mensagem com o nome dele. A Leonor fica com o polegar parado no ecrã. \"Ele nunca a escreveu?\" Volta atrás na conversa, mais devagar. \"Então já não sei o que é que andei a ler.\"":
-                    "Contas-lhe o que o Tomás te disse. A Leonor fica com o polegar parado no ecrã. \"Foi o Tomás?\" Volta atrás na conversa, mais devagar. \"Então já não sei o que é que andei a ler.\"",
-                "A Leonor não sabia que o Tomás nunca escreveu a mensagem com o nome dele. Ficou abalada.":
-                    "A Leonor não sabia que tinha sido o Tomás a acrescentar o Duarte. Ficou abalada.",
-                "A Rita olha da tua prova para o ecrã e outra vez para a prova. \"Então a fotografia mudou mesmo.\" Ri-se uma vez, sem alegria nenhuma. \"Eu contei quatro. Disse-o em voz alta. Até o escrevi no chat: os quatro, finalmente. Essa é minha, lembro-me de a escrever.\" Fecha o portátil. \"Diz ao professor que eu contei. Eu digo-lho na cara.\"":
-                    "A Rita olha da tua prova para o ecrã e outra vez para a prova. \"Então a fotografia mudou mesmo.\" Ri-se uma vez, sem alegria nenhuma. \"Eu contei quatro. Disse-o em voz alta, nesse dia, a todos vocês.\" Fecha o portátil. \"Diz ao professor que eu contei. Eu digo-lho na cara.\"",
-                "A Rita contou quatro pessoas no dia da fotografia. A mensagem do chat que fala nos quatro é dela. Vai dizê-lo ao professor.":
-                    "A Rita contou quatro pessoas no dia da fotografia. Vai dizê-lo ao professor.",
-                # Leonor's own message is the one about the photo; Duarte names Tomás (B1.17, B1.18)
-                "\"A que pede para reservar a sala de estudo. Escrevi-a nesta mesa, há três semanas.\" A Leonor percorre o ecrã com um dedo. \"As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite.\"":
-                    "\"A da fotografia da capa. Escrevi-a na noite em que a tirámos.\" A Leonor percorre o ecrã com um dedo. \"As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite.\"",
-                "A Leonor escreveu ela própria a mensagem do chat sobre reservar a sala de estudo.":
-                    "A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.",
-                "\"Os slides, claro. Pergunta a qualquer um.\" Hesita por um segundo.":
-                    "\"Os slides, claro. Pergunta ao Tomás, ele diz-te.\" Hesita por um segundo.",
-                # Leonor's messages and the professor's line on them: a teammate sent fakes too, so no
-                # "number nobody knew", like the endings below
-                "\"Olha. Todas de um número que eu não conhecia. Algumas têm data de há semanas, mas chegaram ontem à noite.\"":
-                    "\"Olha. Nem todas de desconhecidos: algumas têm nomes que eu conheço. Algumas têm data de há semanas, mas chegaram todas ontem à noite.\"",
-                "A Leonor recebeu as mensagens do Duarte ontem à noite, de um número desconhecido.":
-                    "A Leonor recebeu as mensagens falsas ontem à noite; algumas têm nomes que ela conhece.",
-                "\"Todas entregues na mesma noite, de um número que ninguém conhecia. Uma data escreve-se. A hora de chegada, não.\"":
-                    "\"Todas entregues na mesma noite, com minutos de diferença. Uma data escreve-se. A hora de chegada, não.\"",
-                # the professor, when Tomás's confession answers the messages (B1.23)
-                "\"Então quem a assina nunca a enviou. Essa fica respondida.\"":
-                    "\"O autor diz-me que a escreveu ontem à noite. Uma mensagem escrita ontem não prova nada sobre há três semanas.\"",
-                # the endings (B1.25 to B1.27); `fifth_element` keeps its text in every case
-                "Mostras o histórico da pen e as três mensagens que marcaste: uma de um número fora do grupo, uma que fala em cinco quando eram quatro, e uma que chegou ontem à noite, dois minutos depois de a pasta partilhada ser alterada. A Leonor entra com as mensagens originais, e batem certo. O professor risca o quinto nome da lista e pede ao Duarte que se explique. Ele não tem resposta. Amanhã apresentam os quatro, com o caso encerrado.":
-                    "Mostras o histórico da pen e as três mensagens que marcaste: uma do próprio Duarte, semanas antes de alguém ter ouvido falar dele; uma de um número que ninguém conhecia, a contar cinco; e uma com o nome do Tomás que chegou ontem à noite, dois minutos depois de a conta dele ter alterado a pasta partilhada. A Leonor entra com as mensagens originais, e batem certo. Antes de o professor perguntar, o Tomás levanta-se e conta o que fez: o nome, a fotografia e a mensagem, tudo por uns slides que nunca fez. O professor risca o quinto nome da lista. Amanhã apresentam os quatro, e o Tomás apresenta os slides que acaba esta noite.",
-                "Mostras o histórico da pen: quatro autores até ontem à noite. A Leonor entra e entrega as mensagens que guardou: foram todas enviadas na mesma noite, de um número novo, com datas falsas. O professor risca o quinto nome da lista. O Duarte sai do auditório sem dizer nada. Amanhã apresentam os quatro.":
-                    "Mostras o histórico da pen: quatro autores até ontem à noite, e a última alteração feita a partir da conta do Tomás. A Leonor entra e entrega as mensagens que guardou: foram todas enviadas na mesma noite, com datas falsas. O professor risca o quinto nome da lista. O Duarte sai do auditório sem dizer nada, e o Tomás não olha para nenhum de vocês. Amanhã apresentam os quatro.",
-                "Mostras o histórico da pen: o trabalho original está recuperado e tinha quatro autores até ontem à noite. Mas o Duarte levanta o telemóvel: \"Tenho mensagens de todos a provar que participei.\" Sem as mensagens originais, não consegues provar que são falsas. O professor suspira: \"Sem provas de que as mensagens são falsas, o nome fica.\" Amanhã apresentam os cinco.":
-                    "Mostras o histórico da pen: o trabalho original tinha quatro autores até ontem à noite. Mas o Duarte levanta o telemóvel: \"Tenho mensagens de todos a provar que participei.\" O Tomás acena que sim, depressa demais. Sem as mensagens originais, não consegues provar que são falsas. O professor suspira: \"Sem provas de que as mensagens são falsas, o nome fica.\" Amanhã apresentam os cinco.",
-                # one sentence of the true ending: Rita stays last, right before her quote (B1.28)
-                "A Leonor entra com o telemóvel, o Tomás com os slides, a Rita a contar baixinho.":
-                    "O Tomás entra primeiro, com os slides que finalmente acabou esta noite, sem olhar para ti; depois a Leonor com o telemóvel, e a Rita a contar baixinho.",
-            },
-        },
-    },
-    # Rita let Duarte in (design-notes/texts-ideas.md, B2): he needed a group with a good grade and
-    # she said yes without asking anyone. She says she went home early; the file history names her account.
-    "rita": {
-        "order": [2, 4, 3, 5, 1],
-        "accepts": {"name": ["files", "rita_word"]},
-        # The professor's line when the confession answers the claim "name" (point 5).
-        "right": {"en": {"name": {"rita_word": "\"The person who put the name there has told me so herself. Go on.\""}},
-                  "pt": {"name": {"rita_word": "\"Quem pôs lá o nome já mo disse ela própria. Continue.\""}}},
-        "texts": {
-            "en": {
-                # the chat (story.py, group_chat): messages 1 and 3 (B2.1, B2.3); messages 2, 4 and 5 do not change
-                "Leonor, 3 weeks ago, 9:05 pm: \"Can someone book the study room for Thursday?\"":
-                    "Tomás, 3 weeks ago, 9:05 pm: \"Can someone book the study room for Thursday?\"",
-                "Rita, 2 weeks ago, 6:40 pm: \"Photo for the cover is ready. Four of us, finally!\"":
-                    "Leonor, 2 weeks ago, 6:40 pm: \"Photo for the cover is ready. Four of us, finally!\"",
-                # the file history names the account (B2.5, B2.6)
-                "You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer: someone added \"Duarte\" to the report and swapped the photo. You recover the original version of the work.":
-                    "You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer, and the folder says from which account: Rita's. \"Duarte\" was added to the report and the photo was swapped. You recover the original version of the work.",
-                "You have compared the files: four authors in every copy on the USB stick, and a change in the shared folder yesterday at 11:47 pm.":
-                    "You have compared the files: four authors in every copy on the USB stick, and a change in the shared folder yesterday at 11:47 pm, made from Rita's account.",
-                # the card labels (B2.7, B2.8)
-                "The file history: four authors in every backup":
-                    "The file history: four authors in every backup, and the fifth name added from Rita's account",
-                "Rita's word: she counted four people on the day of the photo":
-                    "Rita's confession: she added Duarte and swapped the photo last night",
-                # Rita lies: `pen` (Tomás saw her, and the pizza receipt says four), `duarte`, `warned` (B2.9 to B2.11)
-                "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza, but with this mess, it could be anywhere.\"":
-                    "\"The USB stick? No idea.\" She looks at the table, then away. \"I went home early last night. The others stayed here eating pizza.\"",
-                "Rita cannot find the USB stick. The group ate pizza here last night.":
-                    "Rita says she went home early last night, while the others ate pizza here, and does not know where the USB stick is.",
-                "\"Duarte... honestly, I cannot picture him. Every time I try, I only see the name on the cover.\"":
-                    "\"Duarte? He is... fine. He did his part.\" She goes back to her laptop a little too quickly.",
-                "Rita goes quiet. \"If that is true, somebody wanted us to doubt ourselves.\"":
-                    "Rita goes very still. \"Last night? I was at home last night.\"",
-                "Rita doubts the fifth name too.":
-                    "Rita says she was at home last night.",
-                # Tomás tells the truth, and it is the second sign (B2.12 to B2.15): the hooded figure of the
-                # security desk's recordings, seen closer (specs/security-desk.md)
-                "\"Only a hood. Like the one Duarte wears. But nobody ever saw him arrive.\"":
-                    "\"Someone came in with the hood up. Long hair under it, and a pink sleeve on the mouse. I thought it was Rita, but she told us she was going home early.\"",
-                "Tomás saw someone in a hood at computer 12 near midnight.":
-                    "Tomás saw someone come in with the hood up and sit at computer 12 near midnight: long hair under the hood, a pink sleeve. He thought it was Rita.",
-                "Ask about message 5, the one with his name":
-                    "Ask about message 4, the one with his name",
-                "Tomás does not remember writing message 5; it reached his phone last night.":
-                    "Tomás does not remember writing message 4; it reached his phone last night.",
-                "Tomás reads the line under his name, then the small grey line beneath it. \"Arrived yesterday, 11:49 pm. At 11:49 I was sitting right here, one computer away from the one in the hood. I did not type a word.\" His voice drops. \"I never sent that. And the slides... I made the slides. All eleven. I was here until two on Tuesday.\" He turns his chair to face the glass wall. \"He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door.\"":
-                    "Tomás reads the line under his name, then the small grey line beneath it. \"Arrived yesterday, 11:49 pm. At 11:49 I was sitting right here, one computer away from whoever was at computer 12. I did not type a word.\" His voice drops. \"I never sent that. And the slides... I made the slides. All eleven. I was here until two on Tuesday.\" He turns his chair to face the glass wall. \"He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door.\"",
-                # Rita confesses (B2.16)
-                "Rita looks from your proof to her screen and back. \"So the photo did change.\" She laughs once, without any joy. \"I counted four. I said it out loud. I even wrote it in the chat: four of us, finally. That one is mine, I remember typing it.\" She closes the laptop. \"Tell the professor I counted. I will say it to his face.\"":
-                    "Rita looks from your proof to her screen and back, and the smile goes. \"I put him there.\" She says it very quietly. \"Last night, at computer 12. He needed a group with a good grade, and I said yes before I asked any of you.\" She closes the laptop. \"Tell the professor. I will say it to his face.\"",
-                "Rita counted four people on the day of the photo. The chat message that says four of them is hers. She will tell the professor.":
-                    "Rita confessed: she added Duarte and swapped the photo last night, from computer 12. She will tell the professor.",
-                # Leonor's own message is the one about the photo; Duarte names Rita (B2.17, B2.18)
-                "\"The one asking to book the study room. I wrote that at this table, three weeks ago.\" Leonor scrolls with one finger. \"The ones from the number I did not know all arrived within minutes of each other, last night.\"":
-                    "\"The one about the cover photo. I wrote that the evening we took it.\" Leonor scrolls with one finger. \"The ones from the number I did not know all arrived within minutes of each other, last night.\"",
-                "Leonor wrote the chat message about booking the study room herself.":
-                    "Leonor wrote the chat message about the cover photo herself.",
-                "\"The slides, of course. Ask anyone.\" He hesitates for a second.":
-                    "\"The slides, of course. Ask Rita, she knows.\" He hesitates for a second.",
-                # Leonor's messages and the professor's line on them: a teammate sent fakes too, so no
-                # "number nobody knew", like the endings below
-                "\"Look. All from a number I did not know. Some are dated weeks ago, but they arrived last night.\"":
-                    "\"Look. Not all from strangers: some are under names I know. Some are dated weeks ago, but they all arrived last night.\"",
-                "Leonor received Duarte's messages last night, from an unknown number.":
-                    "Leonor received the fake messages last night; some are under names she knows.",
-                "\"Every one delivered on the same night, from a number nobody knew. A date can be typed. An arrival time cannot.\"":
-                    "\"Every one delivered on the same night, within minutes of each other. A date can be typed. An arrival time cannot.\"",
-                # the professor, when Rita's confession answers the photo (B2.23)
-                "\"A witness who counted. I will hear her tomorrow; tonight I believe her.\"":
-                    "\"The one who swapped it tells me what was there before: four people. I will hear her tomorrow.\"",
-                # the endings (B2.25 to B2.27)
-                "You show the history on the USB stick and the three messages you flagged: one from a number outside the group, one that counts five of you when there were four, and one that arrived last night, two minutes after the shared folder was changed. Leonor walks in with the original messages, and they match. The professor crosses the fifth name off the list and asks Duarte to explain. He has no answer. Tomorrow, the four of you present, with the case closed.":
-                    "You show the history on the USB stick and the three messages you flagged: one from a number nobody knew; one from Duarte, counting five of you when there were four; and one under Tomás's name that arrived last night, two minutes after Rita's account changed the shared folder. Leonor walks in with the original messages, and they match. Rita does not wait to be asked: she tells the professor that she added the name and swapped the photo, because Duarte needed a group. The professor crosses the fifth name off the list. Tomorrow, the four of you present, and Rita has a lot to explain on the way there.",
-                "You show the history on the USB stick: four authors until last night. Leonor walks in and hands over the messages she kept: they were all sent on the same night, from a new number, with fake dates. The professor crosses the fifth name off the list. Duarte leaves the auditorium without a word. Tomorrow, the four of you present.":
-                    "You show the history on the USB stick: four authors until last night, and the last change made from Rita's account. Leonor walks in and hands over the messages she kept: they were all sent on the same night, with fake dates. The professor crosses the fifth name off the list. Duarte leaves the auditorium without a word, and Rita stares at the floor. Tomorrow, the four of you present.",
-                "You show the history on the USB stick: the original work is recovered and had four authors until last night. But Duarte raises his phone: \"I have messages from everyone proving I took part.\" Without the original messages, you cannot prove they are fake. The professor sighs: \"Without proof that the messages are fake, the name stays.\" Tomorrow, the five of you present.":
-                    "You show the history on the USB stick: the original work had four authors until last night. But Duarte raises his phone: \"I have messages from everyone proving I took part.\" Rita looks down at her hands. Without the original messages, you cannot prove they are fake. The professor sighs: \"Without proof that the messages are fake, the name stays.\" Tomorrow, the five of you present.",
-                # one sentence of the true ending: Rita stays last, right before her quote (B2.28)
-                "Leonor comes in with her phone, Tomás with his slides, Rita counting under her breath.":
-                    "Leonor comes in with her phone, Tomás with his slides, and Rita last of all, slowly, counting under her breath.",
-            },
-            "pt": {
-                # the chat (story.py, group_chat): messages 1 and 3 (B2.1, B2.3); messages 2, 4 and 5 do not change
-                "Leonor, há 3 semanas, 21h05: \"Alguém pode reservar a sala de estudo para quinta-feira?\"":
-                    "Tomás, há 3 semanas, 21h05: \"Alguém pode reservar a sala de estudo para quinta-feira?\"",
-                "Rita, há 2 semanas, 18h40: \"A fotografia para a capa está pronta. Os quatro, finalmente!\"":
-                    "Leonor, há 2 semanas, 18h40: \"A fotografia para a capa está pronta. Os quatro, finalmente!\"",
-                # the file history names the account (B2.5, B2.6)
-                "Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador: alguém acrescentou \"Duarte\" ao relatório e trocou a fotografia. Recuperas a versão original do trabalho.":
-                    "Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador, e a pasta diz de que conta: a da Rita. Foi acrescentado \"Duarte\" ao relatório e trocada a fotografia. Recuperas a versão original do trabalho.",
-                "Já comparaste os ficheiros: quatro autores em todas as cópias da pen, e uma alteração na pasta partilhada ontem às 23h47.":
-                    "Já comparaste os ficheiros: quatro autores em todas as cópias da pen, e uma alteração na pasta partilhada ontem às 23h47, feita a partir da conta da Rita.",
-                # the card labels (B2.7, B2.8)
-                "O histórico dos ficheiros: quatro autores em todas as cópias":
-                    "O histórico dos ficheiros: quatro autores em todas as cópias, e o quinto nome acrescentado a partir da conta da Rita",
-                "A palavra da Rita: contou quatro pessoas no dia da fotografia":
-                    "A confissão da Rita: acrescentou o Duarte e trocou a fotografia ontem à noite",
-                # Rita lies: `pen` (Tomás saw her, and the pizza receipt says four), `duarte`, `warned` (B2.9 to B2.11)
-                "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado.\"":
-                    "\"A pen? Não faço ideia.\" Olha para a mesa e depois desvia o olhar. \"Ontem fui cedo para casa. Os outros ficaram aqui a comer pizza.\"",
-                "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite.":
-                    "A Rita diz que ontem foi cedo para casa, enquanto os outros comiam pizza aqui, e que não sabe onde está a pen.",
-                "\"O Duarte... sinceramente, não o consigo imaginar. Sempre que tento, só vejo o nome na capa.\"":
-                    "\"O Duarte? É... simpático. Fez a parte dele.\" Volta para o portátil um bocadinho depressa demais.",
-                "A Rita fica calada. \"Se for verdade, alguém quis que duvidássemos de nós próprios.\"":
-                    "A Rita fica muito quieta. \"Ontem à noite? Ontem à noite eu estava em casa.\"",
-                "A Rita também desconfia do quinto nome.":
-                    "A Rita diz que ontem à noite estava em casa.",
-                # Tomás tells the truth, and it is the second sign (B2.12 to B2.15): the hooded figure of the
-                # security desk's recordings, seen closer (specs/security-desk.md)
-                "\"Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar.\"":
-                    "\"Entrou alguém de capuz posto. Cabelo comprido por baixo e uma manga cor-de-rosa no rato. Pensei que era a Rita, mas ela tinha dito que ia cedo para casa.\"",
-                "O Tomás viu alguém de capuz no computador 12 perto da meia-noite.":
-                    "O Tomás viu alguém entrar de capuz posto e sentar-se no computador 12 perto da meia-noite: cabelo comprido por baixo do capuz, uma manga cor-de-rosa. Pensou que era a Rita.",
-                "Perguntar pela mensagem 5, a que tem o nome dele":
-                    "Perguntar pela mensagem 4, a que tem o nome dele",
-                "O Tomás não se lembra de ter escrito a mensagem 5; chegou-lhe ao telemóvel ontem à noite.":
-                    "O Tomás não se lembra de ter escrito a mensagem 4; chegou-lhe ao telemóvel ontem à noite.",
-                "O Tomás lê a linha por baixo do nome dele e depois a linha cinzenta mais pequena. \"Chegou ontem às 23h49. Às 23h49 eu estava aqui sentado, no computador ao lado do rapaz de capuz. Não escrevi uma palavra.\" Baixa a voz. \"Eu nunca enviei isto. E os slides... fui eu que fiz os slides. Os onze. Fiquei aqui até às duas na terça-feira.\" Roda a cadeira para a parede de vidro. \"Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta.\"":
-                    "O Tomás lê a linha por baixo do nome dele e depois a linha cinzenta mais pequena. \"Chegou ontem às 23h49. Às 23h49 eu estava aqui sentado, no computador ao lado de quem estava no computador 12. Não escrevi uma palavra.\" Baixa a voz. \"Eu nunca enviei isto. E os slides... fui eu que fiz os slides. Os onze. Fiquei aqui até às duas na terça-feira.\" Roda a cadeira para a parede de vidro. \"Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta.\"",
-                # Rita confesses (B2.16)
-                "A Rita olha da tua prova para o ecrã e outra vez para a prova. \"Então a fotografia mudou mesmo.\" Ri-se uma vez, sem alegria nenhuma. \"Eu contei quatro. Disse-o em voz alta. Até o escrevi no chat: os quatro, finalmente. Essa é minha, lembro-me de a escrever.\" Fecha o portátil. \"Diz ao professor que eu contei. Eu digo-lho na cara.\"":
-                    "A Rita olha da tua prova para o ecrã e outra vez para a prova, e o sorriso desaparece. \"Fui eu que o pus lá.\" Di-lo muito baixinho. \"Ontem à noite, no computador 12. Ele precisava de um grupo com boa nota, e eu disse que sim antes de perguntar a algum de vocês.\" Fecha o portátil. \"Diz ao professor. Eu digo-lho na cara.\"",
-                "A Rita contou quatro pessoas no dia da fotografia. A mensagem do chat que fala nos quatro é dela. Vai dizê-lo ao professor.":
-                    "A Rita confessou: acrescentou o Duarte e trocou a fotografia ontem à noite, no computador 12. Vai dizê-lo ao professor.",
-                # Leonor's own message is the one about the photo; Duarte names Rita (B2.17, B2.18)
-                "\"A que pede para reservar a sala de estudo. Escrevi-a nesta mesa, há três semanas.\" A Leonor percorre o ecrã com um dedo. \"As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite.\"":
-                    "\"A da fotografia da capa. Escrevi-a na noite em que a tirámos.\" A Leonor percorre o ecrã com um dedo. \"As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite.\"",
-                "A Leonor escreveu ela própria a mensagem do chat sobre reservar a sala de estudo.":
-                    "A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.",
-                "\"Os slides, claro. Pergunta a qualquer um.\" Hesita por um segundo.":
-                    "\"Os slides, claro. Pergunta à Rita, ela sabe.\" Hesita por um segundo.",
-                # Leonor's messages and the professor's line on them: a teammate sent fakes too, so no
-                # "number nobody knew", like the endings below
-                "\"Olha. Todas de um número que eu não conhecia. Algumas têm data de há semanas, mas chegaram ontem à noite.\"":
-                    "\"Olha. Nem todas de desconhecidos: algumas têm nomes que eu conheço. Algumas têm data de há semanas, mas chegaram todas ontem à noite.\"",
-                "A Leonor recebeu as mensagens do Duarte ontem à noite, de um número desconhecido.":
-                    "A Leonor recebeu as mensagens falsas ontem à noite; algumas têm nomes que ela conhece.",
-                "\"Todas entregues na mesma noite, de um número que ninguém conhecia. Uma data escreve-se. A hora de chegada, não.\"":
-                    "\"Todas entregues na mesma noite, com minutos de diferença. Uma data escreve-se. A hora de chegada, não.\"",
-                # the professor, when Rita's confession answers the photo (B2.23)
-                "\"Uma testemunha que contou. Ouço-a amanhã; esta noite, acredito nela.\"":
-                    "\"Quem a trocou diz-me o que lá estava antes: quatro pessoas. Ouço-a amanhã.\"",
-                # the endings (B2.25 to B2.27)
-                "Mostras o histórico da pen e as três mensagens que marcaste: uma de um número fora do grupo, uma que fala em cinco quando eram quatro, e uma que chegou ontem à noite, dois minutos depois de a pasta partilhada ser alterada. A Leonor entra com as mensagens originais, e batem certo. O professor risca o quinto nome da lista e pede ao Duarte que se explique. Ele não tem resposta. Amanhã apresentam os quatro, com o caso encerrado.":
-                    "Mostras o histórico da pen e as três mensagens que marcaste: uma de um número que ninguém conhecia; uma do Duarte, a contar cinco quando eram quatro; e uma com o nome do Tomás que chegou ontem à noite, dois minutos depois de a conta da Rita ter alterado a pasta partilhada. A Leonor entra com as mensagens originais, e batem certo. A Rita não espera que lhe perguntem: conta ao professor que acrescentou o nome e trocou a fotografia, porque o Duarte precisava de um grupo. O professor risca o quinto nome da lista. Amanhã apresentam os quatro, e a Rita tem muito que explicar pelo caminho.",
-                "Mostras o histórico da pen: quatro autores até ontem à noite. A Leonor entra e entrega as mensagens que guardou: foram todas enviadas na mesma noite, de um número novo, com datas falsas. O professor risca o quinto nome da lista. O Duarte sai do auditório sem dizer nada. Amanhã apresentam os quatro.":
-                    "Mostras o histórico da pen: quatro autores até ontem à noite, e a última alteração feita a partir da conta da Rita. A Leonor entra e entrega as mensagens que guardou: foram todas enviadas na mesma noite, com datas falsas. O professor risca o quinto nome da lista. O Duarte sai do auditório sem dizer nada, e a Rita fica a olhar para o chão. Amanhã apresentam os quatro.",
-                "Mostras o histórico da pen: o trabalho original está recuperado e tinha quatro autores até ontem à noite. Mas o Duarte levanta o telemóvel: \"Tenho mensagens de todos a provar que participei.\" Sem as mensagens originais, não consegues provar que são falsas. O professor suspira: \"Sem provas de que as mensagens são falsas, o nome fica.\" Amanhã apresentam os cinco.":
-                    "Mostras o histórico da pen: o trabalho original tinha quatro autores até ontem à noite. Mas o Duarte levanta o telemóvel: \"Tenho mensagens de todos a provar que participei.\" A Rita olha para as mãos. Sem as mensagens originais, não consegues provar que são falsas. O professor suspira: \"Sem provas de que as mensagens são falsas, o nome fica.\" Amanhã apresentam os cinco.",
-                # one sentence of the true ending: Rita stays last, right before her quote (B2.28)
-                "A Leonor entra com o telemóvel, o Tomás com os slides, a Rita a contar baixinho.":
-                    "A Leonor entra com o telemóvel, o Tomás com os slides e, por último, devagar, a Rita, a contar baixinho.",
-            },
-        },
-    },
+    "outsider": {"accepts": {}, "right": {"en": {}, "pt": {}}, "texts": {"en": {}, "pt": {}}},
 }

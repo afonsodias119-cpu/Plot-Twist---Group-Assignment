@@ -112,8 +112,6 @@ WARNED = {
 # A5: the "conversations" row of `howto_items`.
 HOWTO = {"en": "The people and the dialogues with choices and trust. Talking saves nothing; a rude answer is remembered for the rest of the night.",
          "pt": "As pessoas e os diálogos com escolhas e confiança. Falar não grava nada; uma resposta rude fica lembrada até ao fim da noite."}
-# The arrival line of the chat message with Tomás's name, in the story's own text.
-ARRIVAL = {"en": "(arrived yesterday, 11:49 pm)", "pt": "(chegou ontem às 23h49)"}
 
 
 # ---------- helpers: requests ----------
@@ -177,13 +175,12 @@ def show(card, npc, node, player=PLAYER, language="en"):
     return call("confront", language, player, npc=npc, node=node, evidence=card)
 
 
-def investigate(player=PLAYER, language="en", flagged=()):
+def investigate(player=PLAYER, language="en"):
     """A new game played up to the computer lab: the USB stick, the copy, Leonor helps, the old
-    files, and the chat messages in `flagged`. The player stands beside Tomás."""
+    files and the backup of the conversations (specs/computer-lab-backup.md: no chat any more).
+    The player stands beside Tomás."""
     steps = ["open_drawer", "go_print_shop", "request_copy", "go_study_room",
-             "go_library", "ask_for_help", "go_study_room", "go_computer_lab", "view_files"]
-    if flagged:
-        steps += ["open_chat"] + [f"flag_{n}" for n in flagged] + ["go_computer_lab"]
+             "go_library", "ask_for_help", "go_study_room", "go_computer_lab", "view_files", "save_backup"]
     call(language=language, player=player)
     for action in steps:
         do(action, player, language)
@@ -360,7 +357,7 @@ def test_wary_withholds_hints():
                 assert short["options"] == plain["options"], (person, node)
 
 
-def test_hostile_tomas_lies_about_his_message_and_the_chat_says_otherwise():
+def test_hostile_tomas_lies_about_his_message_and_the_backup_says_otherwise():
     for language in ("en", "pt"):
         player = f"lied to {language}"
         investigate(player, language)
@@ -371,12 +368,10 @@ def test_hostile_tomas_lies_about_his_message_and_the_chat_says_otherwise():
         assert lie["text"] == LIES[language]["tomas"]["msg5"]["text"], language
         assert lie["note"] == LIES[language]["tomas"]["msg5"]["note"], language
         assert lie["options"] == [people.offered(o) for o in story_line("tomas", "msg5", language)["options"]]
-        # The chat message with his name still shows when it arrived.
-        chat = do("open_chat", player, language)["chat"]
-        fifth = next(message for message in chat["messages"] if message["n"] == 5)
-        assert ARRIVAL[language] in fifth["text"], language
-        assert fifth["text"] == evidence.chat_message(language, 5)
-        do("go_computer_lab", player, language)
+        # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the backup of the original
+        # conversations, in the diary, shows the group before last night: the message was not there.
+        backup = STORIES[language]["scenes"]["computer_lab"]["actions"]["save_backup"]["result_text"]
+        assert backup in [entry["text"] for entry in call(language=language, player=player)["notebook"]], language
         # And Rita says an old message does not arrive as new.
         walk("study_room", player, language)
         rita = talk("rita", "chat", player, language)
@@ -425,16 +420,16 @@ def test_the_warning_reaches_the_next_person_only():
 
 
 def test_cracking_forgives():
-    investigate(flagged=(5,))
+    investigate()
     make("tomas", "hostile")
     assert talk("tomas", "msg5")["text"] == LIES["en"]["tomas"]["msg5"]["text"]
     assert talk("tomas", "start")["text"] == COLD["en"]["tomas"]["start"]
     # A card on the lie is not a confrontation: the usual rebuff.
-    assert show("msg_5", "tomas", "msg5")["confront"]["cracked"] is False
+    assert show("files", "tomas", "msg5")["confront"]["cracked"] is False
     walk("library")
     assert talk("leonor", "start")["text"] == WARNED["en"]["leonor"]
     walk("computer_lab")
-    assert show("msg_5", "tomas", "slides")["confront"]["cracked"] is True
+    assert show("files", "tomas", "slides")["confront"]["cracked"] is True   # specs/computer-lab-backup.md
     for node in ("start", "kind", "password", "who", "msg5"):
         reply = talk("tomas", node)
         assert (reply["text"], reply["note"]) == (story_line("tomas", node)["text"],
@@ -445,19 +440,8 @@ def test_cracking_forgives():
     walk("library")
     assert talk("leonor", "start")["text"] == story_line("leonor", "start")["text"]
 
-    # Leonor too: hostile, she warns Rita; cracked with Tomás's word, she stops.
-    make("leonor", "hostile")
-    assert talk("leonor", "messages")["text"] == LIES["en"]["leonor"]["messages"]["text"]
-    walk("study_room")
-    assert talk("rita", "start")["text"] == WARNED["en"]["rita"]
-    walk("library")
-    assert show("tomas_word", "leonor", "sure")["confront"]["cracked"] is True
-    reply = talk("leonor", "messages")
-    assert (reply["text"], reply["note"]) == (story_line("leonor", "messages")["text"], story_line("leonor", "messages")["note"])
-    assert talk("leonor", "start")["text"] == story_line("leonor", "start")["text"]
-    walk("study_room")
-    assert talk("rita", "start")["text"] == story_line("rita", "start")["text"]
-
+    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): Leonor is no longer cracked with a card,
+    # so only Tomás's half of this test remains.
 
 def test_claims_actions_and_the_code_rule_never_change_with_temper():
     investigate("calm")
@@ -530,7 +514,7 @@ def test_a_damaged_rude_note_counts_as_calm():
 
 
 def test_no_reply_ever_carries_the_temper():
-    investigate(flagged=(5,))
+    investigate()
     replies = []
     for person in ("tomas", "leonor", "duarte"):
         make(person, "hostile")
@@ -540,7 +524,7 @@ def test_no_reply_ever_carries_the_temper():
     walk("study_room")
     replies += [talk("rita", "start"), call()]
     walk("computer_lab")
-    replies.append(show("msg_5", "tomas", "msg5"))
+    replies.append(show("files", "tomas", "msg5"))
     for reply in replies:
         assert not keys_of(reply) & {"rude", "mood", "moods", "temper"}, reply.get("node")
         text = json.dumps(reply, ensure_ascii=False)

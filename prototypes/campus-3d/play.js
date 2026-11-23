@@ -11,7 +11,7 @@
   };
   const ui = () => data[window.lang || "pt"].play_ui;
   // One emoji for each ending (the collection and the share card). It is defined here because the first screen uses it at start-up.
-  const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸", fifth_element: "👁️" };
+  const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸" };
   document.body.classList.add("playable");
 
   const nameBox = make("div", undefined, "name-box");
@@ -331,9 +331,6 @@
     <section id="guard-card" class="talk-card guard-card" role="dialog" aria-labelledby="guard-name" aria-live="polite" hidden>
       <header><h3 id="guard-name"></h3><button id="guard-close" class="secondary"></button></header>
       <p id="guard-text"></p><div id="guard-options"></div></section>
-    <section id="chat-card" class="chat-card" role="dialog" aria-labelledby="chat-title" hidden>
-      <header><h3 id="chat-title"></h3><button id="chat-close" class="secondary"></button></header>
-      <p id="chat-intro" class="muted"></p><ol id="chat-messages"></ol></section>
     <section id="ending-card" class="ending-card" role="dialog" aria-labelledby="ending-title" hidden>
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
       <p id="ending-collection" class="collection"></p>
@@ -668,7 +665,6 @@
       $("scene-paragraphs").hidden = outside;
     }
     shell.querySelectorAll(".actions.investigate button").forEach(b => { b.disabled = outside || Boolean(window.campusBusy); });
-    shell.querySelectorAll("#chat-messages li.flagged button").forEach(b => { b.disabled = true; });   // a flag cannot be undone
   }
   window.addEventListener("campus-inside", applyInside);
 
@@ -843,7 +839,6 @@
       ? state.message || (state.night ? state.night.notice : "") || null : null;   // an empty text is nothing to draw
     showNotice(state);
     showEnding(state.ending);
-    showChat(state.chat);
     checkNotices(state);
     syncSecurity();
     sound.setTension(state.ending ? 0 : tensionOf(state));
@@ -860,7 +855,7 @@
   function soundCues(before, state, operation) {
     if (!before || before.player !== state.player || state.ending || ["open", "begin", "restart"].includes(operation)) return;
     if (!before.night || !state.night) return;
-    const room = state.room;   // the 3D room of the saved scene: the group chat is in the computer lab
+    const room = state.room;   // the 3D room of the saved scene
     // Duarte walks to the lab door before a round, and back after it: only heard inside the lab (point 1).
     if (room === "computer_lab" && before.night.duarte !== state.night.duarte) sound.footsteps(state.night.duarte === "lab_door");
     const left = person => state.night.gone.includes(person) && !before.night.gone.includes(person);
@@ -873,38 +868,9 @@
     }
   }
 
-  // ---------- computer 12: the group chat is read and flagged on a screen over the picture ----------
-  function showChat(chat) {
-    const card = $("chat-card"), t = ui();
-    const wasOpen = !card.hidden;
-    $("hud-bottom").classList.toggle("chatting", Boolean(chat));
-    if (!chat) {
-      card.hidden = true;
-      if (wasOpen && !talking && !phone.open && !dialog.open) window.playing = true;
-      return;
-    }
-    window.playing = false;   // the character stands at the computer
-    $("chat-title").textContent = t.chat_title;
-    $("chat-close").textContent = t.chat_close;
-    $("chat-intro").textContent = chat.intro;
-    $("chat-messages").replaceChildren(...chat.messages.map(message => {
-      const row = make("li", undefined, message.flagged ? "flagged" : "");
-      const button = make("button", message.flagged ? t.chat_flagged : t.chat_flag, message.flagged ? "secondary" : "");
-      button.disabled = message.flagged;
-      button.dataset.action = message.action;
-      button.addEventListener("click", () => send("play", { action: message.action }));
-      row.append(make("p", message.text), button);
-      return row;
-    }));
-    card.hidden = false;
-    if (!wasOpen) $("chat-messages").querySelector("button:not(:disabled)")?.focus({ preventScroll: true });
-  }
-  $("chat-close").addEventListener("click", () => send("play", { action: "go_computer_lab" }));
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("chat-card").hidden && !dialog.open) $("chat-close").click(); });
-
   // ---------- the ending: a screen over the picture, with a stamp and confetti ----------
   const CONFETTI = { full_case: ["#e8b45c", "#f4e3b0", "#7fd6a0"], impostor: ["#7fd6a0", "#e8b45c", "#cfe8d8"],
-                     fifth_element: ["#b79cff", "#ffffff", "#6a4cff"], stolen_credits: ["#ff8c7a", "#9aa4ad"],
+                     stolen_credits: ["#ff8c7a", "#9aa4ad"],
                      extra: ["#ffb38a", "#ffe2a8", "#f2d089"] };
   function showEnding(ending) {
     const card = $("ending-card"), t = ui();
@@ -1149,7 +1115,7 @@
     addBubble(action.label, "me");
     showTyping();
     if (!await send("play", { action: action.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
-    if (!talking || current.scene !== scene) return;   // the scene changed (for example the chat opened): the conversation is over
+    if (!talking || current.scene !== scene) return;   // the scene changed: the conversation is over
     // The person is no longer here (Leonor after `accuse`, or gone by the schedule): send() has already
     // ended the conversation with the reply's message, so the start menu is not asked for again.
     if (!current.people.some(person => person.id === line.npc)) return;
@@ -1245,7 +1211,8 @@
         return;
       }
       if (!talking || current.scene !== scene) return;
-      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [], options: [] });
+      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", options: [],
+                 actions: current.actions.filter(action => action.person === line.npc) });   // what is left: the backup (specs/computer-lab-backup.md)
     });
     $("talk-options").replaceChildren(form);
     $("talk-options").hidden = false;
@@ -1535,7 +1502,7 @@
   }
   function shareText(ending) {
     const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
-    const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("") + (current?.flagged ? "🟨" : "⬛");
+    const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("");
     // The day of the case, never the case itself: no name, no code (specs/case-of-the-day.md, point 8).
     const day = current?.day?.label ? [`📅 ${current.day.label}`] : [];
     return [`${t.share_title} 🕵️`, ...day, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
@@ -1719,8 +1686,8 @@
     smsTimer = setTimeout(() => { banner.hidden = true; }, 9000);
   }
   $("sms").addEventListener("click", () => { $("sms").hidden = true; openPhone("msgs"); });
-  // One message for each clue found (the first three build up, the fourth says what the player found),
-  // and one when the first chat message is flagged. Only the newest pops up; all of them stay in the phone.
+  // One message for each clue found (the first three build up, the fourth says what the player found).
+  // Only the newest pops up; all of them stay in the phone.
   let restarting = false;   // true while a confirmed "New game" is on its way (set by the restart button)
   function checkNotices(state) {
     if (state.ending) { $("sms").hidden = true; return; }
@@ -1735,7 +1702,6 @@
       if (!store.sent.includes(whisper.id)) due.push([whisper.id, whisper.text]);
     }
     for (let i = 1; i <= Math.min(done, t.notices.length); i++) if (!store.sent.includes(`c${i}`)) due.push([`c${i}`, t.notices[i - 1]]);
-    if (state.flagged > 0 && !store.sent.includes("chat")) due.push(["chat", t.notice_chat]);
     // The unknown number also keeps the time: the warnings and the rounds the server says are due now,
     // each id only once (specs/night-schedule.md, point 7).
     for (const message of (state.night && state.night.messages) || []) {
@@ -1815,7 +1781,7 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && !$("menu-list").hidden) { setMenu(false); $("menu-toggle").focus(); }
   });
-  howto.addEventListener("close", () => { window.playing = !talking && $("chat-card").hidden && !phone.open; });
+  howto.addEventListener("close", () => { window.playing = !talking && !phone.open; });
 
   // ---------- the joystick (phones) ----------
   const stickBase = $("stick-base"), stickKnob = $("stick-knob");
@@ -1887,7 +1853,7 @@
   $("qr-open").addEventListener("click", openQr);
   qrIntroButton.addEventListener("click", openQr);
   $("qr-close").addEventListener("click", () => qrDialog.close());
-  qrDialog.addEventListener("close", () => { if (current) window.playing = !talking && $("chat-card").hidden && !phone.open; });
+  qrDialog.addEventListener("close", () => { if (current) window.playing = !talking && !phone.open; });
 
   // ---------- the detective card: a picture to keep, with the detective, the name, the ending and the time ----------
   const cardDialog = make("dialog", undefined, "card-dialog"); cardDialog.id = "card-dialog";
@@ -1895,7 +1861,7 @@
   cardDialog.innerHTML = '<h2 id="card-title"></h2><img id="card-image" alt=""><p id="card-hint" class="muted"></p>' +
     '<div class="dialog-actions"><a id="card-download" class="button-link"></a><button id="card-close" class="secondary"></button></div>';
   document.body.append(cardDialog);
-  const CARD_COLORS = { full_case: "#e8b45c", impostor: "#7fd6a0", stolen_credits: "#ff8c7a", fifth_element: "#b79cff" };
+  const CARD_COLORS = { full_case: "#e8b45c", impostor: "#7fd6a0", stolen_credits: "#ff8c7a" };
   function loadImage(src) {
     return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = src; });
   }
