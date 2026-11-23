@@ -238,8 +238,8 @@ PEOPLE = {
                 {"label": "Say there are only four of you", "next": "evidence"}]},
             # One line of thought (specs/professor-line-of-thought.md): how many → five → only four → proof →
             # the hearing button, which the page shows only on `proof`.
-            "evidence": {"text": "\"Then I need evidence, not a feeling: who did the work, who is in the photo, who wrote in the group.\"",
-                         "note": "The professor wants proof of who did the work, who is in the photo and who wrote in the group.", "options": [
+            "evidence": {"text": "\"Then I need evidence, not a feeling: who did the work, who is in the photo, who wrote in the group, and who was in the building last night.\"",
+                         "note": "The professor wants proof of who did the work, who is in the photo, who wrote in the group and who was in the building last night.", "options": [
                 {"label": "Say you will bring proof", "next": "proof"}]},
             "proof": {"text": "\"Evidence is welcome. Present it when you are ready.\"", "options": [
                 _bye("Goodbye.")]},
@@ -425,8 +425,8 @@ PEOPLE = {
             ]},
             "list": {"text": "\"Cinco, segundo a capa. Há algum problema?\"", "options": [
                 {"label": "Dizer que vocês são só quatro", "next": "evidence"}]},
-            "evidence": {"text": "\"Então preciso de provas, não de uma sensação: quem fez o trabalho, quem está na fotografia, quem escreveu no grupo.\"",
-                         "note": "O professor quer provas de quem fez o trabalho, de quem está na fotografia e de quem escreveu no grupo.", "options": [
+            "evidence": {"text": "\"Então preciso de provas, não de uma sensação: quem fez o trabalho, quem está na fotografia, quem escreveu no grupo, e quem esteve no edifício ontem à noite.\"",
+                         "note": "O professor quer provas de quem fez o trabalho, de quem está na fotografia, de quem escreveu no grupo e de quem esteve no edifício ontem à noite.", "options": [
                 {"label": "Dizer que vais trazer provas", "next": "proof"}]},
             "proof": {"text": "\"Provas são bem-vindas. Apresente-as quando estiver pronto.\"", "options": [
                 _bye("Até já.")]},

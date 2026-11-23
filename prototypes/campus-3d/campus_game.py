@@ -24,6 +24,8 @@ from campus_clock import (COSTS, LEAVES, NIGHT_MINUTES, ROUNDS, SHUTTER, WARNING
 # case's data stays on the server: campus_evidence.case_of gives it, and the page sees only the date.
 from campus_clock import case_day, case_of_day
 from campus_evidence import CLASSIC
+# The security recording that is the fourth proof (specs/camera-proof.md): server only.
+from campus_case import CAMERAS, FOOTAGE
 # Every reply is told on its way out with the friends' names (specs/your-own-group.md). The culprit is
 # always Duarte now (specs/computer-lab-backup.md removed the cases of specs/culprit-of-the-night.md).
 from campus_evidence import retell
@@ -553,6 +555,36 @@ def find_thing(player, language, thing):
     return dict(clocked_snapshot(player, language, "", True, clock), examine=seen)
 
 
+def keep_footage(player, language, camera, minute):
+    """The player keeps a picture of last night's recordings as a proof (specs/camera-proof.md).
+
+    `camera` is one of the six cameras and `minute` a minute of last night (minutes after midnight,
+    22:00 to 23:59). The guard only lets a convinced player see the recordings, so the server asks for
+    what convinces him (the original photo or the old files, specs/security-desk.md). Only the picture
+    of computer 12 between 23:46 and 23:49 is the proof: then the note `footage` is written and the
+    card is in the hand. Anything else writes nothing. `footage` tells the page which. It costs nothing.
+    """
+    if not isinstance(camera, str) or camera not in CAMERAS:
+        raise ValueError("Unknown camera / Câmara desconhecida.")
+    if type(minute) is not int or not 22 * 60 <= minute <= 23 * 60 + 59:   # True is not a minute
+        raise ValueError("Invalid minute / Minuto inválido.")
+    if locked(player):   # nothing else during the hearing (specs/evidence-and-hearing.md, point 12)
+        return locked_reply(player, language, footage=False)
+    state = game.load(player)
+    language = db.load_language(player) or language
+    t = TEXT[language]["security"]
+    if state["ending"] != "none":
+        return dict(snapshot(player, language, STORIES[language]["messages"]["game_over"], accepted=False), footage=False)
+    if "original_photo" not in state["inventory"] and not state["flags"]["files_viewed"]:
+        return dict(snapshot(player, language, t["footage_unconvinced"], accepted=False), footage=False)
+    if camera != FOOTAGE["camera"] or not FOOTAGE["from"] <= minute <= FOOTAGE["to"]:
+        return dict(snapshot(player, language, t["footage_wrong"], accepted=False), footage=False)
+    night = read_night(player, state)
+    if not night["footage"]:
+        write_night(player, dict(night, footage=True))
+    return dict(snapshot(player, language, t["cctv_saved"], accepted=True), footage=True)
+
+
 def report_time(player, language, minute):
     """The page reports its own whole campus minute (specs/night-schedule.md, point 3).
 
@@ -589,7 +621,7 @@ def closed_reply(player, language, operation):
     if operation in ("talk", "rude", "confront"):
         raise ValueError(closed_text)
     extra = {"search": {"found": False}, "unlock": {"unlocked": False}, "assemble": {"assembled": False},
-             "hearing": {"heard": False}, "examine": {"examine": None}}
+             "hearing": {"heard": False}, "examine": {"examine": None}, "footage": {"footage": False}}
     return dict(snapshot(player, language, closed_text, accepted=False), **extra.get(operation, {}))
 
 
@@ -618,6 +650,8 @@ def run_command(payload):
         "time": {"operation", "player", "language", "minute"},
         # examining a thing of a room (specs/more-to-find.md, point 5)
         "examine": {"operation", "player", "language", "thing"},
+        # keeping a picture of the security recordings as a proof (specs/camera-proof.md)
+        "footage": {"operation", "player", "language", "camera", "minute"},
     }
     if not isinstance(operation, str) or operation not in allowed_fields:
         raise ValueError("Unknown operation / Operação desconhecida.")
@@ -709,6 +743,8 @@ def run_command(payload):
         return assemble_photo(player, language, payload["pieces"])
     if operation == "examine":
         return find_thing(player, language, payload["thing"])
+    if operation == "footage":
+        return keep_footage(player, language, payload["camera"], payload["minute"])
     if not isinstance(payload["action"], str):
         raise ValueError("Invalid action / Ação inválida.")
     if locked(player):

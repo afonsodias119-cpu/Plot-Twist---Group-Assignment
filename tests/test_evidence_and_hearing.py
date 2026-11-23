@@ -51,6 +51,11 @@ CARDS = ["original_photo", "files", "backup"]
 # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the proofs are the photo, the files and the backup;
 # the facts won by cracking a person stay in the night's notes and are never cards.
 FACT_CARDS = {"tomas_word", "rita_word"}
+# Changed by specs/camera-proof.md ("Reviewed tests that change"): the security recording is the fourth
+# proof, held through the night's notes (not the save), so it comes last in the hand.
+ALL_CARDS = CARDS + ["footage"]
+# The picture that is the proof: the computer lab's camera at 23:47 of last night.
+PROOF_PICTURE = {"camera": "computer_lab", "minute": 23 * 60 + 47}
 
 # The lines a check names, word for word as in the dialogue script (docs/guiao-conversas.md, section
 # "Provas, confrontos e audiência"). Every other expected text is read from the game's own tables.
@@ -187,6 +192,13 @@ def to_the_hearing(player=PLAYER, language="en", leonor="ask_for_help", tomas=Fa
     if leonor is None:
         assert call("time", language, player, minute=15)["accepted"]
     return walk("auditorium", player, language)
+
+
+def keep_footage(player=PLAYER, language="en"):
+    """Keep the picture of the recordings as a proof (the `footage` operation, specs/camera-proof.md)."""
+    reply = call("footage", language, player, **PROOF_PICTURE)
+    assert reply["accepted"] and reply["footage"] is True
+    return reply
 
 
 def answer(value, player=PLAYER, language="en"):
@@ -824,12 +836,13 @@ def test_an_answer_before_the_hearing_starts_is_refused_and_saves_nothing():
 
 def test_each_claim_accepts_only_its_own_cards():
     claims = case().HEARING
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): a fourth claim, broken by the recording.
     assert [(claim["id"], claim["accepts"]) for claim in claims] == [
-        ("name", ["files"]), ("photo", ["original_photo"]), ("messages", ["backup"])]   # specs/computer-lab-backup.md
+        ("name", ["files"]), ("photo", ["original_photo"]), ("messages", ["backup"]), ("here", ["footage"])]
     # The wrong cards that have a line of their own (spec, points 3 and 10). Every other wrong card
     # gets the general wrong line of its claim.
     own_lines = {"name": {}, "photo": {"files": LINES["en"]["history"]},
-                 "messages": {}}   # specs/computer-lab-backup.md: the flagged messages and their line are gone
+                 "messages": {}, "here": {}}   # specs/computer-lab-backup.md: the flagged messages and their line are gone
     for claim in claims:
         assert set(claim["wrong"]) == set(own_lines[claim["id"]]), claim["id"]
 
@@ -838,16 +851,17 @@ def test_each_claim_accepts_only_its_own_cards():
     # cards 0, 1 and 2 of CARDS, night 1 with cards 1, 2 and 3, and so on, going round the list. After
     # those nights every card has been shown against every claim.
     lines = {claim["id"]: {} for claim in claims}   # claim: {card: what the professor answers to it}
-    for night in range(len(CARDS)):
+    for night in range(len(ALL_CARDS)):
         player = f"hearing {night}"
         everything(player)
+        keep_footage(player)
         doubts = hear(player=player)["hearing"]["doubts"]
         assert doubts == 0
         for number, claim in enumerate(claims):
-            card = CARDS[(night + number) % len(CARDS)]
+            card = ALL_CARDS[(night + number) % len(ALL_CARDS)]
             result = answer(card, player)
             assert result["heard"] is True, (claim["id"], card)
-            doubts += 0 if card in claim["accepts"] else 1   # a card that does not break the claim is a doubt
+            doubts = min(doubts + (0 if card in claim["accepts"] else 1), 3)   # a card that does not break the claim is a doubt (never above three)
             assert result["hearing"]["doubts"] == doubts, (claim["id"], card)
             line = reply_to_the_last_answer(result["hearing"])
             assert line["who"] == "professor" and line["name"] == "Professor", (claim["id"], card)
@@ -855,9 +869,9 @@ def test_each_claim_accepts_only_its_own_cards():
 
     for claim in claims:
         said, own = lines[claim["id"]], own_lines[claim["id"]]
-        assert set(said) == set(CARDS), claim["id"]   # every card was tried on this claim
+        assert set(said) == set(ALL_CARDS), claim["id"]   # every card was tried on this claim
         assert all(said[card] == text for card, text in own.items()), claim["id"]
-        general = {said[card] for card in CARDS if card not in claim["accepts"] and card not in own}
+        general = {said[card] for card in ALL_CARDS if card not in claim["accepts"] and card not in own}
         assert len(general) == 1, claim["id"]   # one general wrong line for each claim
         right = [said[card] for card in claim["accepts"]]
         assert len(set(right)) == len(right), claim["id"]   # each card that breaks the claim has its own line
@@ -865,19 +879,20 @@ def test_each_claim_accepts_only_its_own_cards():
 
 
 def test_saying_nothing_is_always_a_doubt():
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): four claims; the doubts still stop at three.
     to_the_hearing()
     assert answer("start")["hearing"]["doubts"] == 0
-    for doubts in (1, 2, 3):
+    for number in (1, 2, 3, 4):
         result = answer("concede")
-        assert result["heard"] is True and result["hearing"]["doubts"] == doubts
+        assert result["heard"] is True and result["hearing"]["doubts"] == min(number, 3)
         # Each answer adds three entries to the log: the player's, the reply and the next claim
-        # (the third answer adds no claim). These are the first two of this answer.
-        first = 3 * (doubts - 1) + 1
+        # (the last answer adds no claim). These are the first two of this answer.
+        first = 3 * (number - 1) + 1
         mine, his = result["hearing"]["said"][first:first + 2]
         assert mine == {"who": "you", "name": "", "text": TEXT["en"]["hearing_concede"]}
         assert his == {"who": "duarte", "name": "Duarte", "text": LINES["en"]["nothing"]}
-    assert result["hearing"]["said"][-1] == his   # after the third answer the log ends with the reply
-    assert result["hearing"]["step"] == 3 and len(result["hearing"]["said"]) == 9
+    assert result["hearing"]["said"][-1] == his   # after the last answer the log ends with the reply
+    assert result["hearing"]["step"] == 4 and len(result["hearing"]["said"]) == 12
 
 
 def test_one_answer_per_claim_and_no_retry():
@@ -938,19 +953,24 @@ def test_nothing_else_can_be_done_during_the_hearing():
 # Changed by specs/three-proofs.md ("Reviewed tests that change"): every claim answered with its proof gives the
 # story's ending (Case closed when every proof is held, with or without Leonor's help); any claim left
 # without its proof gives Stolen credit with the professor's line `missing`.
-def test_three_answers_end_the_game_by_the_proofs():
+# Changed by specs/camera-proof.md ("Reviewed tests that change"): four answers, the fourth broken by the
+# recording; a night without the recording cannot answer it and ends in Stolen credit.
+def test_four_answers_end_the_game_by_the_proofs():
     cases = [
-        # (the story's ending, the ending shown, Leonor, the three answers, doubts, verdict line)
-        ("full_case", "full_case", "ask_for_help", ["files", "original_photo", "backup"], 0, ""),
-        ("full_case", "full_case", None, ["files", "original_photo", "backup"], 0, ""),
-        ("full_case", "stolen_credits", "ask_for_help", ["files", "concede", "backup"], 1, "missing"),
-        ("full_case", "stolen_credits", "ask_for_help", ["backup", "original_photo", "files"], 2, "missing"),
-        ("full_case", "stolen_credits", "ask_for_help", ["concede", "concede", "concede"], 3, "missing"),
+        # (the story's ending, the ending shown, Leonor, the recording kept, the four answers, doubts, verdict line)
+        ("full_case", "full_case", "ask_for_help", True, ["files", "original_photo", "backup", "footage"], 0, ""),
+        ("full_case", "full_case", None, True, ["files", "original_photo", "backup", "footage"], 0, ""),
+        ("full_case", "stolen_credits", "ask_for_help", False, ["files", "original_photo", "backup", "concede"], 1, "missing"),
+        ("full_case", "stolen_credits", "ask_for_help", True, ["files", "concede", "backup", "footage"], 1, "missing"),
+        ("full_case", "stolen_credits", "ask_for_help", True, ["backup", "original_photo", "files", "footage"], 2, "missing"),
+        ("full_case", "stolen_credits", "ask_for_help", True, ["concede", "concede", "concede", "concede"], 3, "missing"),
     ]
     for language in ("en", "pt"):
-        for number, (saved_id, shown_id, leonor, answers, doubts, line) in enumerate(cases):
+        for number, (saved_id, shown_id, leonor, footage, answers, doubts, line) in enumerate(cases):
             player = f"{language} case {number}"
             to_the_hearing(player, language, leonor)
+            if footage:
+                keep_footage(player, language)
             result = hear(*answers, player=player, language=language)
             assert result["hearing"]["doubts"] == doubts, player
             verdict = LINES[language][line] if line else ""
@@ -960,30 +980,34 @@ def test_three_answers_end_the_game_by_the_proofs():
 def test_a_catch_costs_time_but_not_the_ending():
     to_the_hearing()
     write_night_by_hand(PLAYER, '{"caught": [12]}')
-    result = hear("files", "original_photo", "backup")
+    keep_footage()   # specs/camera-proof.md: the fourth proof
+    result = hear("files", "original_photo", "backup", "footage")
     assert result["hearing"]["doubts"] == 1   # still shown as a doubt
     check_ending(result, PLAYER, "en", saved_id="full_case", shown_id="full_case", verdict="")
 
 
 def test_the_verdict_is_saved_and_a_reload_shows_it():
     to_the_hearing()
-    ended = hear("concede", "concede", "backup")   # two claims without proof: Stolen credit (specs/three-proofs.md)
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): four answers; three claims without proof.
+    ended = hear("concede", "concede", "backup", "files")   # claims without proof: Stolen credit (specs/three-proofs.md)
     assert ended["ending"]["verdict"] == LINES["en"]["missing"]
     notes = db.load_night(PLAYER)["notes"]
     # Changed by specs/computer-lab-backup.md: the capped ending is "Stolen credit" now.
-    assert notes["hearing"] == ["concede", "concede", "backup"] and notes["verdict"] == "stolen_credits"
+    assert notes["hearing"] == ["concede", "concede", "backup", "files"] and notes["verdict"] == "stolen_credits"
 
     reloaded = call()
     assert reloaded["ending"] == ended["ending"]
     assert reloaded["hearing"] == ended["hearing"]
-    assert reloaded["hearing"]["step"] == 3 and reloaded["hearing"]["doubts"] == 2
+    assert reloaded["hearing"]["step"] == 4 and reloaded["hearing"]["doubts"] == 3
     last = reloaded["hearing"]["said"][-1]
     assert last["who"] == "professor" and last == reply_to_the_last_answer(reloaded["hearing"])
 
 
-def test_the_hearing_cannot_be_answered_a_fourth_time():
+def test_the_hearing_cannot_be_answered_a_fifth_time():
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): four claims, so a fifth answer is the one refused.
     to_the_hearing()
-    ended = hear("files", "original_photo", "backup")
+    keep_footage()
+    ended = hear("files", "original_photo", "backup", "footage")
     assert ended["ending"]["id"] == "full_case"   # specs/computer-lab-backup.md: Leonor helps, so "Case closed"
     before = saved()
     for value in ("files", "concede"):

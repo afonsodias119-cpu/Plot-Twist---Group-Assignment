@@ -209,14 +209,19 @@ def finish(ending, player=PLAYER, language="en"):
 
     Changed by specs/three-proofs.md: the proofs choose the ending. Leonor always helps. For
     `full_case` the backup is saved and the three answers are right (no doubt); for `stolen_credits`
-    the backup is never saved, so the claim about the messages is conceded (one doubt).
+    the backup is never saved, so the claim about the messages is conceded.
     """
-    investigate(player, language, backup=ending == "full_case")
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): for `full_case` the recording is
+    # kept too and answers the fourth claim; for `stolen_credits` both are conceded (two doubts).
+    full = ending == "full_case"
+    investigate(player, language, backup=full)
+    if full:
+        assert call("footage", language, player, camera="computer_lab", minute=23 * 60 + 47)["footage"] is True
     walk("auditorium", player, language)
-    third = "backup" if ending == "full_case" else "concede"
-    result = hear("files", "original_photo", third, player=player, language=language)
+    last = ["backup", "footage"] if full else ["concede", "concede"]
+    result = hear("files", "original_photo", *last, player=player, language=language)
     assert result["ending"]["id"] == ending, ending
-    assert result["hearing"]["doubts"] == (0 if ending == "full_case" else 1), ending
+    assert result["hearing"]["doubts"] == (0 if full else 2), ending
     return result
 
 
@@ -384,7 +389,7 @@ def test_the_night_number_grows_only_after_the_restart():
 def test_the_shown_ending_is_the_one_remembered():
     investigate()   # the story's full_case
     walk("auditorium")
-    ended = hear("concede", "concede", "concede")
+    ended = hear("concede", "concede", "concede", "concede")   # specs/camera-proof.md: four claims
     assert ended["ending"]["id"] == "stolen_credits"   # three doubts cap it
     assert game.load(PLAYER)["ending"] == "full_case"
     assert runs() == ["stolen_credits"]

@@ -168,27 +168,32 @@ def investigation(backup=True):
     steps = [speak("rita", "start"), play("open_drawer"), play("go_print_shop"), play("request_copy"),
              play("go_study_room"), play("go_library"), speak("leonor", "start"), play("ask_for_help"),
              play("go_study_room"), play("go_computer_lab"), speak("tomas", "start"), play("view_files")]
-    return steps + [play("save_backup")] if backup else steps
+    return steps + [play("save_backup"), FOOTAGE] if backup else steps
+
+
+# Changed by specs/camera-proof.md ("Reviewed tests that change"): the picture of the recordings kept as
+# the fourth proof, in every investigation that saves the backup.
+FOOTAGE = {"operation": "footage", "camera": "computer_lab", "minute": 23 * 60 + 47}
 
 
 def no_backup_night():
     """The backup was never saved: Duarte's third claim has no proof, so Stolen credit.
     Changed by specs/three-proofs.md ("Reviewed tests that change"): it replaces the night where Leonor was accused."""
     return investigation(backup=False) + [enter("auditorium"), answer("start"), answer("files"),
-                                          answer("original_photo"), answer("concede")]
+                                          answer("original_photo"), answer("concede"), answer("concede")]
 
 
 def stolen_night():
     """Three doubts after asking Leonor for help: stolen_credits."""
     return investigation() + [enter("auditorium"), answer("start"), answer("concede"),
-                              answer("concede"), answer("concede")]
+                              answer("concede"), answer("concede"), answer("concede")]
 
 
 def perfect_night():
     """Both cracks and the three right answers (specs/earlier-nights.md, point 8)."""
     return investigation() + [show("files", "tomas", "slides"), enter("study_room"),
                               show("original_photo", "rita", "five"), enter("auditorium"), answer("start"),
-                              answer("files"), answer("original_photo"), answer("backup")]
+                              answer("files"), answer("original_photo"), answer("backup"), answer("footage")]
 
 
 def twin(monkeypatch, tmp_path, label, variant, language, steps, names=FRIENDS, runs=()):
@@ -294,8 +299,8 @@ def test_the_names_reach_dialogue_chat_cards_hearing_and_endings(monkeypatch, tm
         # The clue list. Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is no longer a row of it.
         back = next(reply for reply in group if reply.get("clues"))
         assert "leonor" not in [row["id"] for row in back["clues"]], language
-        # Duarte's third claim says João.
-        third = group[-2]["hearing"]["said"][-1]
+        # Duarte's third claim says João (specs/camera-proof.md: a fourth claim follows it, so it is the reply before).
+        third = group[-3]["hearing"]["said"][-1]
         assert third["who"] == "duarte" and "João" in third["text"] and "Tomás" not in third["text"], language
         # The endings and a verdict line. Changed by specs/three-proofs.md ("Reviewed tests that change"): the two endings and the
         # verdict `missing` name nobody of the group, so they only must not show a story name.

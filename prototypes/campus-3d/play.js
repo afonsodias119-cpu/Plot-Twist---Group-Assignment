@@ -694,7 +694,9 @@
     if (location.protocol === "file:") { introError.textContent = ui().local_only; return; }
     // Before a command the server hears the page's own minute (specs/night-schedule.md, point 4). The
     // command is for the person of the open card: it is not sent if the report shows that person gone.
-    if (!["open", "begin", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
+    // José, the guard, is never in the server's people and never leaves: a command sent while he talks (keeping the
+    // picture, specs/camera-proof.md) only reports the time.
+    if (!["open", "begin", "restart", "time"].includes(operation) && !await catchUp(talking === "guard" ? null : talking)) return false;
     setBusy(true);
     try {
       const result = await request({ operation, player: current?.player || name.value,
@@ -2191,8 +2193,13 @@
   $("cctv-slider").addEventListener("input", () => { cctvMinute = Number($("cctv-slider").value); drawCctvFrame(); });
   $("cctv-minus").addEventListener("click", () => { cctvMinute = Math.max(CCTV_FROM, cctvMinute - 1); $("cctv-slider").value = cctvMinute; drawCctvFrame(); });
   $("cctv-plus").addEventListener("click", () => { cctvMinute = Math.min(CCTV_TO, cctvMinute + 1); $("cctv-slider").value = cctvMinute; drawCctvFrame(); });
-  $("cctv-save").addEventListener("click", () => {
-    const t = ui().security, state = loadSecurity();
+  // Keeping the picture asks the server (specs/camera-proof.md): only there does it become the card
+  // "footage" for the professor. The camera and the minute shown are sent; the server says if it is the proof.
+  $("cctv-save").addEventListener("click", async () => {
+    const t = ui().security;
+    if (!await send("footage", { camera: cctvCamera, minute: cctvMinute })) return;
+    if (!current.footage) { toast(current.message); return; }
+    const state = loadSecurity();
     state.footage = true; saveSecurity(state); cctvSavedNow = true;
     saveDiary(t.cctv_diary_title, t.cctv_proof);   // the proof goes to the diary
     $("cctv-saved").textContent = t.cctv_saved; $("cctv-saved").hidden = false;

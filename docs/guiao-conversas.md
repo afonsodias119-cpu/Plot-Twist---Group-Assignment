@@ -8,7 +8,7 @@ Tudo o que as pessoas dizem no jogo 3D, em português e em inglês, tal como est
 
 1. **Conversas** (o que cada pessoa diz quando falas com ela): `prototypes/campus-3d/campus_people.py`, dentro de `PEOPLE`. Há um bloco `"en"` (inglês) e um bloco `"pt"` (português). Ao lado de cada fala deste guião está o número da linha.
 2. **Respostas às ações** (o que acontece quando escolhes ▶ abrir a gaveta, pedir a cópia, etc.): `story.py`, em `result_text` (quando resulta) e `blocked_text` (quando ainda não podes).
-3. **Provas, confrontos e audiência** (o que as pessoas respondem quando lhes mostras uma prova, e as três afirmações do Duarte): `prototypes/campus-3d/campus_case.py`. Só o servidor lê este ficheiro: nada do que lá está pode ir para `campus_text.py`.
+3. **Provas, confrontos e audiência** (o que as pessoas respondem quando lhes mostras uma prova, e as quatro afirmações do Duarte): `prototypes/campus-3d/campus_case.py`. Só o servidor lê este ficheiro: nada do que lá está pode ir para `campus_text.py`.
 4. **O que vai para o balão:** só o que está **entre aspas** (`\"...\"` no código) aparece no balão e é lido pela voz. O resto aparece como narração, em itálico, fora dos balões. Exemplo: `Rita looks up from her laptop. \"You don't look so good.\"`: "Rita looks up from her laptop." é narração, e "You don't look so good." vai para o balão.
 5. **Regras para não estragar nada** (os testes verificam-nas):
    - Muda só o texto entre as aspas de `"text"`, `"label"` e `"note"`. Não mudes os identificadores (`"start"`, `"photo"`, `"next": ...`, `"if": ...`, `"trust"`).
@@ -338,9 +338,9 @@ Onde está: **Auditório** (`auditorium`). Uma só linha de raciocínio (specs/p
   - "Dizer que vocês são só quatro" / "Say there are only four of you" → `evidence`
 
 ### `evidence`
-- 🇵🇹 "Então preciso de provas, não de uma sensação: quem fez o trabalho, quem está na fotografia, quem escreveu no grupo."
-- 🇬🇧 "Then I need evidence, not a feeling: who did the work, who is in the photo, who wrote in the group."
-- 📓 Diário: O professor quer provas de quem fez o trabalho, de quem está na fotografia e de quem escreveu no grupo. / The professor wants proof of who did the work, who is in the photo and who wrote in the group.
+- 🇵🇹 "Então preciso de provas, não de uma sensação: quem fez o trabalho, quem está na fotografia, quem escreveu no grupo, e quem esteve no edifício ontem à noite."
+- 🇬🇧 "Then I need evidence, not a feeling: who did the work, who is in the photo, who wrote in the group, and who was in the building last night."
+- 📓 Diário: O professor quer provas de quem fez o trabalho, de quem está na fotografia, de quem escreveu no grupo e de quem esteve no edifício ontem à noite. / The professor wants proof of who did the work, who is in the photo, who wrote in the group and who was in the building last night.
 - Respostas:
   - "Dizer que vais trazer provas" / "Say you will bring proof" → `proof`
 
@@ -359,7 +359,7 @@ Onde está: **Auditório** (`auditorium`). Uma só linha de raciocínio (specs/p
 
 ### Ações feitas nesta conversa (em `story.py`)
 - **▶ Apresentar as provas ao professor** / Present the evidence to the professor (`present_evidence`)
-  - No jogo 3D este botão abre a audiência (as três afirmações do Duarte, em `campus_case.py`); só depois da terceira resposta o jogo acaba. O servidor continua a aceitar a ação direta.
+  - No jogo 3D este botão abre a audiência (as quatro afirmações do Duarte, em `campus_case.py`); só depois da quarta resposta o jogo acaba. O servidor continua a aceitar a ação direta.
 
 ## Duarte
 Onde está: **Auditório** (`auditorium`).
@@ -517,6 +517,7 @@ Só o servidor lê este ficheiro. A página recebe uma carta quando a tens, e um
 | `original_photo` | tens o objeto `original_photo` (a fotografia triturada, reconstruída na reprografia) | A fotografia original, colada com fita-cola: quatro pessoas | The original photo, taped back together: four people |
 | `files` | `files_viewed` = `True` | O histórico dos ficheiros: quatro autores em todas as cópias | The file history: four authors in every backup |
 | `backup` | `backup_saved` = `True` (guardado no computador 12) | O backup das conversas originais: quatro pessoas, nem uma mensagem do Duarte | The backup of the original conversations: four people, not one message from Duarte |
+| `footage` | a imagem das 23:47 da câmara da sala de informática guardada na secretária do segurança (nota `footage` da noite, specs/camera-proof.md) | A gravação da câmara: uma figura de capuz no computador 12 às 23h47 | The security recording: a hooded figure at computer 12 at 23:47 |
 
 Ceder a Rita ou o Tomás já não dá uma carta: fica nas notas da noite (o Tomás fica a vigiar a porta). A Leonor já não cede com uma prova.
 
@@ -545,8 +546,8 @@ Ceder a Rita ou o Tomás já não dá uma carta: fica nas notas da noite (o Tom�
 - **Professor** 🇵🇹 O professor não lhe pega. "Assim não. Apresente as provas como deve ser, quando estiver pronto." / 🇬🇧 The professor does not take it. "Not like this. Present your evidence properly, when you are ready."
 - **Duarte (qualquer prova, em qualquer fala; 1 minuto)** 🇵🇹 O Duarte nem olha. "Guarda isso para o professor. Eu vou estar na primeira fila." / 🇬🇧 Duarte does not look at it. "Keep it for the professor. I will be sitting in the front row."
 
-### A audiência: as três afirmações do Duarte
-No cartão aparece a linha 🇵🇹 "O Duarte faz uma afirmação. Responde com a prova que mostra que é falsa, ou não digas nada." / 🇬🇧 "Duarte makes a claim. Answer with the proof that shows it is false, or say nothing." Uma resposta por afirmação, sem segunda tentativa. Uma prova que não a desfaz, ou "Não dizer nada", é uma dúvida. O Afonso vai juntar uma quarta afirmação, desfeita com as imagens da câmara (specs/security-desk.md, fase 2).
+### A audiência: as quatro afirmações do Duarte
+No cartão aparece a linha 🇵🇹 "O Duarte faz uma afirmação. Responde com a prova que mostra que é falsa, ou não digas nada." / 🇬🇧 "Duarte makes a claim. Answer with the proof that shows it is false, or say nothing." Uma resposta por afirmação, sem segunda tentativa. Uma prova que não a desfaz, ou "Não dizer nada", é uma dúvida. A quarta afirmação desfaz-se com a gravação da câmara (specs/camera-proof.md).
 
 **1. `name`** (fala o Duarte) — desfaz-se com `files`
 - 🇵🇹 O Duarte levanta-se sem pressa. "Professor, abra o relatório. O meu nome está na capa. Está lá desde o primeiro rascunho."
@@ -567,11 +568,17 @@ No cartão aparece a linha 🇵🇹 "O Duarte faz uma afirmação. Responde com 
 - Certa, `backup` (professor): 🇵🇹 O professor percorre o backup. "As conversas do próprio grupo, tal como estavam antes de ontem à noite: quatro pessoas, e nem uma mensagem dele. Uma data escreve-se. Um backup de semanas, não." / 🇬🇧 The professor scrolls through the backup. "The group's own conversations, as they were before last night: four people, and not one message from him. A date can be typed. A backup of weeks cannot."
 - Errada, qualquer outra (professor): 🇵🇹 "Isso não me diz quem enviou uma mensagem." Faz um sinal na lista. / 🇬🇧 "That does not tell me who sent a message." He makes a mark on the list.
 
+**4. `here`** (fala o Duarte) — desfaz-se com `footage`
+- 🇵🇹 O Duarte encosta-se e cruza os braços. "E quem mudou a pasta às 23h47? Eu não. Nem cá estive ontem à noite."
+- 🇬🇧 Duarte leans back and folds his arms. "And who changed the folder at 23:47? Not me. I was not even here last night."
+- Certa, `footage` (professor): 🇵🇹 O professor fica muito tempo a olhar para a imagem. "Computador 12, ontem às 23h47, o minuto em que o quinto nome foi acrescentado. Um capuz, um casaco comprido. E a câmara da entrada viu o mesmo casaco entrar às 23h38." Levanta os olhos. "Esteve cá, Duarte." / 🇬🇧 The professor looks at the picture for a long time. "Computer 12, last night at 23:47, the minute the fifth name was added. A hood, a long coat. And the entrance camera saw the same coat come in at 23:38." He looks up. "You were here, Duarte."
+- Errada, qualquer outra (professor): 🇵🇹 "Isso não me diz quem estava no edifício ontem à noite." Faz um sinal na lista. / 🇬🇧 "That does not tell me who was in the building last night." He makes a mark on the list.
+
 **"Não dizer nada"** / "Say nothing" (`concede`, em qualquer afirmação; fala o Duarte; é sempre uma dúvida)
 - 🇵🇹 O professor espera. O Duarte sorri. "Nada?"
 - 🇬🇧 The professor waits. Duarte smiles. "Nothing?"
 
-A resposta à terceira afirmação aparece no cartão do final, por cima do veredicto.
+A resposta à quarta afirmação aparece no cartão do final, por cima do veredicto.
 
 ### O veredicto do professor (por cima do texto do final)
 Basta uma afirmação sem prova certa (uma prova errada ou "Não dizer nada") para o final ser "Crédito roubado", com esta fala (specs/three-proofs.md). Com as três respostas certas não há veredicto.
@@ -581,11 +588,11 @@ Basta uma afirmação sem prova certa (uma prova errada ou "Não dizer nada") pa
 | `missing` | pelo menos uma afirmação sem a prova certa (mostra `stolen_credits`) | O professor olha para os sinais na lista. "Acho que tem razão sobre ele. Mas uma das afirmações dele ficou sem prova, e eu só escrevo aquilo de que tenho a certeza." | The professor looks at the marks on his list. "You are right about him, I think. But one of his claims has no proof against it, and I write down only what I am sure of." |
 
 ### Os finais (em `story.py`, nos dois jogos)
-Só há três maneiras de a noite acabar (specs/three-proofs.md): chegas ao professor com as três provas e respondes certo às três afirmações, ou falta-te alguma coisa, ou o tempo acaba às 22:45. O auditório está sempre aberto.
+Só há três maneiras de a noite acabar (specs/three-proofs.md): chegas ao professor com as provas e respondes certo às afirmações do Duarte (três provas no jogo simples; quatro no 3D, com a gravação da câmara), ou falta-te alguma coisa, ou o tempo acaba às 22:45. O auditório está sempre aberto.
 
 | id | quando | 🇵🇹 | 🇬🇧 |
 |---|---|---|---|
-| `full_case` — Caso encerrado | tens a fotografia original, viste os ficheiros e guardaste o backup (e, em 3D, as três respostas certas) | Pões as três provas na mesa do professor… O professor risca o quinto nome da lista. Amanhã apresentam os quatro, com o caso encerrado. | You put the three proofs on the professor's desk… The professor crosses the fifth name off the list. Tomorrow, the four of you present, with the case closed. |
+| `full_case` — Caso encerrado | tens a fotografia original, viste os ficheiros e guardaste o backup (e, em 3D, a gravação da câmara e as quatro respostas certas) | Pões as tuas provas na mesa do professor… O professor risca o quinto nome da lista. Amanhã apresentam os quatro, com o caso encerrado. | You put your proofs on the professor's desk… The professor crosses the fifth name off the list. Tomorrow, the four of you present, with the case closed. |
 | `stolen_credits` — Crédito roubado | falta uma prova (ou, em 3D, uma resposta errada) | Não tens todas as provas de que o professor precisa… "Não risco um nome por um palpite." Amanhã apresentam os cinco. | You do not have every proof the professor needs… "I cannot cross out a name on a hunch." Tomorrow, the five of you present. |
 
 O texto completo de cada final está em `story.py`. O final "O impostor" (acusar a Leonor) e o final verdadeiro ("22:46") já não existem.

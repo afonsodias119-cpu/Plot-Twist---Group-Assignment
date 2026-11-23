@@ -126,6 +126,10 @@ Alteração preparada no mesmo branch, `evidence-after-monitors` (nos dois jogos
 
 Alteração preparada no mesmo branch: a conversa com o professor segue uma ordem só (quantos elementos tem o grupo → "cinco" → "só somos quatro" → ele pede provas → "vou trazer provas" → "apresente-as quando estiver pronto"), e só no fim aparece o botão para apresentar as provas. Na audiência, uma linha explica o que fazer quando o Duarte fala: responder com a prova que mostra que a afirmação é falsa. Ver `specs/professor-line-of-thought.md`.
 
+### A câmara de segurança é a quarta prova — Maria (23/11/2026)
+
+Alteração preparada no mesmo branch: a fase 2 da secretária do segurança (o José, os cabos e as gravações, feitos pelo Afonso). Ao guardar a imagem das 23:47 da sala de informática, o servidor regista-a (pedido `footage`) e ela passa a ser uma prova na mão. O Duarte ganha uma quarta afirmação ("Nem cá estive ontem à noite"), que só a gravação desfaz: sem ela não há "Caso encerrado". A noite continua com 30 minutos; os limites dos testes de equilíbrio foram medidos de novo (uma noite cuidadosa cabe até ~37 s por clique). Muda um teste revisto do Afonso (`test_security_desk.py`) e outros da audiência e do horário; precisam de aprovação (lista na spec). Ver `specs/camera-proof.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

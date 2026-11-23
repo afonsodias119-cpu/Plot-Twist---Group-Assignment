@@ -264,8 +264,11 @@ def warnings_due(result, language):
 #   "photo"             the torn photo: the answer that asks for the copy, the pieces, one `assemble`
 #   "backup"            computer12 (its card is open after the code): do save_backup. Changed by
 #                       specs/computer-lab-backup.md ("Reviewed tests that change"): it replaces "chat 5 2 4"
+#   "camera"            the security desk (specs/camera-proof.md): the walk to José and his conversation up to
+#                       the card that convinces him (GUARD_COMMANDS, no request: his lines are the page's),
+#                       the hands on the cables and the minute bar (CAMERA_HANDS), then `footage`
 #   "show x"            card x shown on the line just heard (`confront`)
-#   "hearing a, b, c"   start and three answers ("-" is "Say nothing")
+#   "hearing a, b, c, d" start and four answers ("-" is "Say nothing"; specs/camera-proof.md)
 #   "wait until 22:25"  the player does nothing until that time
 #
 # `paced(seconds, route)` plays one route through campus.command. Each command takes `seconds` of real
@@ -281,6 +284,12 @@ QUICK_SECONDS = 5
 
 LAB = "> computer_lab; computer12: start; code; backup"
 END = "> auditorium; professor: start"
+# Changed by specs/camera-proof.md ("Reviewed tests that change"): the security desk. The walk to José,
+# "start", "Explain the situation", "Show evidence", the card, the button to the cables, "Plug in", the
+# button to the recordings and the computer lab's tab: nine commands that send no request. Then the
+# hands: two clicks for each of the five cables (2 seconds each) and the minute bar (5 seconds).
+GUARD_COMMANDS = 9
+CAMERA_HANDS = 5 * 2 * 2 + 5
 
 
 def clues(choice):
@@ -294,30 +303,32 @@ ROUTES = {
     # "fifth_element"; LAB saves the backup.
     # Changed by specs/three-proofs.md ("Reviewed tests that change"): the proofs decide the ending, so route 1
     # (it accused Leonor) now gets the code but never saves the backup: Stolen credit.
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): every route answers four claims, and
+    # the routes that close the case go to the security desk ("camera") after the lab.
     1: "; ".join([clues("ask_for_help"), "> computer_lab; computer12: start; code", END,
-                  "hearing files, original_photo, -"]),
-    2: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
+                  "hearing files, original_photo, -, -"]),
+    2: "; ".join([clues("ask_for_help"), LAB, "camera", END, "hearing files, original_photo, backup, footage"]),
     # Route 3 is route 2, the careful night that route 6 is compared with.
-    3: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
+    3: "; ".join([clues("ask_for_help"), LAB, "camera", END, "hearing files, original_photo, backup, footage"]),
     # Only the lab: the photo is lost at 22:25; the player waits until 22:30 all the same.
-    5: "; ".join(["search usb_stick", LAB, "wait until 22:30", END, "hearing files, -, -"]),
+    5: "; ".join(["search usb_stick", LAB, "wait until 22:30", END, "hearing files, -, -, -"]),
     # Route 6 is route 3 played by a player who waits at computer 12, the files open, until Duarte comes.
-    6: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
+    6: "; ".join([clues("ask_for_help"), LAB, "camera", END, "hearing files, original_photo, backup, footage"]),
     # With the photo, Leonor's card offers only the two decisions (specs/actions-when-they-make-sense.md).
     7: "; ".join(["rita: start, pen; search can; search usb_stick; > print_shop; amelia: start, order; "
                   "photo; > library; leonor: start; do ask_for_help; > computer_lab; "
-                  "tomas: start, kind, who, password; computer12: start; code; backup",
-                  END, "hearing files, original_photo, backup"]),
+                  "tomas: start, kind, who, password; computer12: start; code; backup", "camera",
+                  END, "hearing files, original_photo, backup, footage"]),
     9: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo; > study_room; "
                   "rita: start, photo, five; show original_photo; > library; leonor: start; do ask_for_help",
                   LAB, "tomas: start, kind, who, password, slides; show files",   # specs/two-answers.md: the order
-                  END, "hearing files, original_photo, backup"]),
+                  "camera", END, "hearing files, original_photo, backup, footage"]),
     11: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo",
                    LAB, "tomas: start, kind, who, password, slides; show files; "
                    "> library; leonor: start; do ask_for_help; leonor: soft, messages, mine, sure; "
-                   "> study_room; rita: start, photo, duarte, warned, chat, five; show files; "
+                   "> study_room; rita: start, photo, duarte, warned, chat, five; show files", "camera",
                    "> auditorium; duarte: start, part, slide; show files; professor: start, list, evidence, proof",
-                   "hearing files, original_photo, backup"]),
+                   "hearing files, original_photo, backup, footage"]),
 }
 
 # How each route treats a round while Tomás has not cracked (the rule under the routes in the spec):
@@ -329,9 +340,12 @@ ROUND_HABITS = {1: "knows", 2: "knows", 3: "knows", 5: "knows", 6: "linger", 7: 
 
 # The commands of "everything" that are not polite lines and cannot be skipped (spec, point 13).
 # One of them takes QUICK_SECONDS: opening the table.
+# Changed by specs/camera-proof.md ("Reviewed tests that change"): the security desk (its nine commands and
+# keeping the picture) and a fourth answer.
 OTHER_COMMANDS = {"open the table": 1, "search": 1, "doors (print shop, library, lab, back to Rita, auditorium)": 5,
                   "copy (the answer and the full frame)": 2, "decision": 1, "code": 1, "backup": 1,
-                  "cards (Tomás, Rita, Duarte)": 3, "hearing (start and three answers)": 4}
+                  "cards (Tomás, Rita, Duarte)": 3, "security desk (José, cables, recordings, the picture)": GUARD_COMMANDS + 1,
+                  "hearing (start and four answers)": 5}
 
 
 def photo_hands():
@@ -510,6 +524,13 @@ def play_step(run, step):
             raise ValueError(f"refused: {step}")
     elif step == "backup":
         backup(run)
+    elif step == "camera":   # specs/camera-proof.md
+        for _ in range(GUARD_COMMANDS):
+            think(run, run["pace"])
+        run["seconds"] += CAMERA_HANDS   # the hands on the cables and the minute bar
+        time_left_check(run)
+        reply = sent(send(run, "footage", camera="computer_lab", minute=23 * 60 + 47), step)
+        assert reply["footage"] is True
     elif step.startswith("show "):
         person, node = run["line"]
         sent(send(run, "confront", npc=person, node=node, evidence=step[len("show "):]), step)
@@ -634,8 +655,10 @@ def test_walking_talking_the_backup_and_the_hearing_cost_nothing():
     costs_nothing(walk("computer_lab"), 1.5)                  # a door: two moves of the story
     assert unlock()["night"]["minute"] == 2.5
     costs_nothing(do("save_backup"), 2.5)                     # the backup (specs/computer-lab-backup.md: it replaces the chat)
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): keeping the picture costs nothing, and the hearing has five commands.
+    costs_nothing(call("footage", camera="computer_lab", minute=23 * 60 + 47), 2.5)
     costs_nothing(walk("auditorium"), 2.5)
-    for value in ("start", "files", "original_photo", "backup"):   # the four hearing commands
+    for value in ("start", "files", "original_photo", "backup", "footage"):   # the five hearing commands
         costs_nothing(answer(value), 2.5)
     assert game.load(PLAYER)["ending"] != "none"
 
@@ -983,9 +1006,10 @@ def test_a_night_that_lost_the_print_shop_ends_in_stolen_credit():
     do("save_backup")  # specs/computer-lab-backup.md: the auditorium needs the backup too
     at(10)
     walk("auditorium")
-    # The photo claim and the messages claim cannot be answered: the player says nothing to both.
-    result = hear("files", "concede", "concede")
-    assert result["hearing"]["doubts"] == 2
+    # The photo claim, the messages claim and (specs/camera-proof.md) the claim about last night cannot be
+    # answered: the player says nothing to the three.
+    result = hear("files", "concede", "concede", "concede")
+    assert result["hearing"]["doubts"] == 3
     assert result["ending"]["id"] == "stolen_credits" and game.load(PLAYER)["ending"] == "stolen_credits"
 
 
@@ -1161,6 +1185,7 @@ def test_a_caught_player_who_fails_every_claim_still_has_three_doubts():
     assert answer("start")["hearing"]["doubts"] == 1
     assert answer("concede")["hearing"]["doubts"] == 2
     assert answer("concede")["hearing"]["doubts"] == 3
+    assert answer("concede")["hearing"]["doubts"] == 3   # specs/camera-proof.md: a fourth claim
     last = answer("concede")
     assert last["hearing"]["doubts"] == 3   # never counted above three
     assert last["ending"]["id"] == "stolen_credits"
@@ -1234,23 +1259,32 @@ def test_the_faculty_closes_at_2245():
 
 # ---------- The balance, over the real tables ----------
 
-def test_every_story_ending_has_a_route_at_15_30_45_and_60_seconds():
-    for seconds in (15, 30, 45, 60):
+def test_every_story_ending_has_a_route_at_15_30_and_45_seconds():
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): the night keeps its 30 minutes
+    # (decided by the team), so with the security desk "Case closed" fits up to 52 seconds a command and
+    # no longer at 60; "Stolen credit" is still reached at 60.
+    for seconds in (15, 30, 45):
         # Changed by specs/three-proofs.md ("Reviewed tests that change"): two story endings, chosen by the proofs.
         shown = {paced(seconds, route)["ending"] for route in (1, 2, 5)}
         assert {"stolen_credits", "full_case"} <= shown, seconds
+    assert paced(52, 2)["ending"] == "full_case" and paced(53, 2)["ending"] is None
+    assert paced(60, 1)["ending"] == "stolen_credits"
 
 
-def test_a_careful_first_night_fits_at_45_seconds_with_two_minutes_left():
-    for seconds in (43, 45, 47):
+def test_a_careful_first_night_fits_at_35_seconds_with_two_minutes_left():
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): the security desk makes the careful night
+    # longer and the night keeps its 30 minutes: it fits with two minutes left up to 37 seconds a command (was 47).
+    for seconds in (33, 35, 37):
         night = paced(seconds, 7)
         assert night["ending"] == "full_case", (seconds, night)
         assert clock_rules().NIGHT_MINUTES - night["minute"] >= 2, (seconds, night)
 
 
-def test_the_best_night_fits_at_45_seconds():
+def test_the_best_night_fits_at_35_seconds():
     # It fits at 45 seconds again because the copy costs half a minute (spec, point 13): 29.0 in the model.
-    night = paced(45, 9)
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): with the security desk it fits with a
+    # minute left up to 37 seconds a command; the check is made at 35.
+    night = paced(35, 9)
     assert night["ending"] == "full_case" and night["doubts"] == 0, night
     assert clock_rules().NIGHT_MINUTES - night["minute"] >= 1, night
 
@@ -1272,10 +1306,12 @@ def test_doing_everything_does_not_fit_at_30_seconds():
     # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): opening the chat, the five
     # flags and closing it (7 commands) became one backup, and Leonor is no longer shown a card: 19
     # commands instead of 26.
-    assert sum(OTHER_COMMANDS.values()) == 19
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): the security desk (10 commands) and a
+    # fourth answer: 30 commands.
+    assert sum(OTHER_COMMANDS.values()) == 30
     # Every command at half a minute, except opening the table (QUICK_SECONDS) and the hands on the
     # pieces of the photo.
-    real_minutes = ((commands - 1) * 30 + QUICK_SECONDS + photo_hands()) / 60
+    real_minutes = ((commands - 1) * 30 + QUICK_SECONDS + photo_hands() + CAMERA_HANDS) / 60
     # The smallest charges of such a night: the copy, the decision, the files, two right cards, Duarte's card.
     costs = rules.COSTS
     charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 2 * costs["card_right"]
@@ -1284,8 +1320,9 @@ def test_doing_everything_does_not_fit_at_30_seconds():
     # Route 11 (not every polite line) lost the same commands, Tomás's conversation is shorter and Rita is
     # no longer asked about the USB stick once it is found (specs/two-answers.md, specs/evidence-after-monitors.md):
     # it now fits up to 35 seconds a command and no longer at 36.
-    assert paced(35, 11)["ending"] == "full_case"
-    assert paced(36, 11)["ending"] is None
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): with the security desk, up to 27 and no longer at 28.
+    assert paced(27, 11)["ending"] == "full_case"
+    assert paced(28, 11)["ending"] is None
 
 
 # ---------- The texts, the page and the files ----------

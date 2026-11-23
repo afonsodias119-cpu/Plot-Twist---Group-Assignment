@@ -24,7 +24,7 @@ from datetime import date
 import db
 import game
 import logic
-from campus_case import CASE_TEXT, CONFRONT, EVIDENCE, FACTS, HEARING
+from campus_case import CASE_TEXT, CONFRONT, EVIDENCE, FACTS, HEARING, NIGHT_EVIDENCE
 # The cases of the day (specs/case-of-the-day.md): server only.
 from campus_case import CASES
 # The cost of a card is in the night's cost table (specs/night-schedule.md, point 2): the server adds
@@ -41,7 +41,7 @@ from story import STORIES
 
 # The ten cards, in the order the hand shows them (point 4): the ones the save gives, then the facts.
 # specs/computer-lab-backup.md: the facts of FACTS are no longer cards; the hand is the proofs only.
-CARDS = list(EVIDENCE)
+CARDS = list(EVIDENCE) + NIGHT_EVIDENCE   # the recording last (specs/camera-proof.md)
 FINAL_ROOM = "auditorium"
 # The doubts are never counted above three (point 10).
 MAX_DOUBTS = 3
@@ -144,7 +144,9 @@ def read_night(player, state):
     night = {"minute": clean_minute(saved), "cracked": cracked,
              "hearing": answers if valid_hearing(answers, state) else None, "verdict": "", "caught": caught,
              "run": notes.get("run") is True, "rude": clean_rude(notes.get("rude")),
-             "case": clean_case(notes.get("case")), "names": clean_names(notes.get("names"))}
+             "case": clean_case(notes.get("case")), "names": clean_names(notes.get("names")),
+             # The security recording was kept for the professor (specs/camera-proof.md): only exactly true.
+             "footage": notes.get("footage") is True}
     # The saved verdict is only a record of what was shown (point 10): the screen always works the
     # ending out again from the answers (shown_ending), so editing this note by hand changes nothing.
     if night["hearing"] is not None and state["ending"] != "none":
@@ -172,6 +174,8 @@ def write_night(player, night):
     # Only a group that is not the story's (specs/your-own-group.md, point 4): the `games` row never has it.
     if night.get("names") and night["names"] != DEFAULT_GROUP:
         notes["names"] = night["names"]
+    if night.get("footage") is True:   # only once the recording was kept (specs/camera-proof.md)
+        notes["footage"] = True
     db.save_night(player, int(minute), notes)
 
 
@@ -263,7 +267,8 @@ def moods(night):
 def held(state, night):
     """The ids of the cards the player holds now, in the order of CARDS (the facts of a cracked
     person are not cards any more: specs/computer-lab-backup.md)."""
-    return [card for card, condition in EVIDENCE.items() if logic._condition_met(condition, state)]
+    cards = [card for card, condition in EVIDENCE.items() if logic._condition_met(condition, state)]
+    return cards + (["footage"] if night.get("footage") is True else [])   # specs/camera-proof.md
 
 
 def card_label(card, language):

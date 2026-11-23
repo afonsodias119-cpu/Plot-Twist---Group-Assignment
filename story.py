@@ -170,7 +170,7 @@ STORY_EN = {
             "id": "full_case",
             "title": "Case closed",
             "when": {"has": ["original_photo"], "flags": {"files_viewed": True, "backup_saved": True}},
-            "text": "You put the three proofs on the professor's desk: the history on the USB stick, four authors until last night; the original photo from the print shop, four people; and the backup of the group's conversations, without a single message from Duarte. The professor looks from one to the other, then at Duarte. He has no answer. The professor crosses the fifth name off the list. Tomorrow, the four of you present, with the case closed.",
+            "text": "You put your proofs on the professor's desk: the history on the USB stick, four authors until last night; the original photo from the print shop, four people; and the backup of the group's conversations, without a single message from Duarte. The professor looks from one to the other, then at Duarte. He has no answer. The professor crosses the fifth name off the list. Tomorrow, the four of you present, with the case closed.",
         },
         {
             "id": "stolen_credits",
@@ -335,7 +335,7 @@ STORY_PT = {
             "id": "full_case",
             "title": "Caso encerrado",
             "when": {"has": ["original_photo"], "flags": {"files_viewed": True, "backup_saved": True}},
-            "text": "Pões as três provas na mesa do professor: o histórico da pen, quatro autores até ontem à noite; a fotografia original da reprografia, quatro pessoas; e o backup das conversas do grupo, sem uma única mensagem do Duarte. O professor olha de uma para a outra, e depois para o Duarte. Ele não tem resposta. O professor risca o quinto nome da lista. Amanhã, apresentam os quatro, com o caso encerrado.",
+            "text": "Pões as tuas provas na mesa do professor: o histórico da pen, quatro autores até ontem à noite; a fotografia original da reprografia, quatro pessoas; e o backup das conversas do grupo, sem uma única mensagem do Duarte. O professor olha de uma para a outra, e depois para o Duarte. Ele não tem resposta. O professor risca o quinto nome da lista. Amanhã, apresentam os quatro, com o caso encerrado.",
         },
         {
             "id": "stolen_credits",

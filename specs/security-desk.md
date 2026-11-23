@@ -1,5 +1,7 @@
 # The security desk: a guard, five cables and last night's recordings
 
+> **Update (specs/camera-proof.md):** phase 2 is done. Keeping the picture asks the server (`footage`), the recording is the card `footage`, and it breaks Duarte's fourth claim. It is needed to close the case.
+
 > **Update (specs/computer-lab-backup.md):** the cards for the professor are now `files`, `original_photo` and `backup` (Leonor's screenshots and the words of Tomás and Rita are no longer cards). Phase 2 adds the camera as the fourth proof, with a fourth claim of Duarte ("I was not even here last night").
 
 Extends specs/evidence-and-hearing.md, specs/harder-campus.md and specs/campus-people-and-atmosphere.md. **Phase 1: everything is on the screen.** No change to `story.py`, `logic.py`, `db.py`, `game.py`, `app.py`, the server (`campus_*.py` other than the texts) or any reviewed test, so it cannot clash with the work on the server side.
