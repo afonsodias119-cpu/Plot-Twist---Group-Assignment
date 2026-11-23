@@ -69,7 +69,15 @@ Alteração preparada em `hidden-object-table`: na sala de estudo só a mesa, ch
 
 ### A fotografia triturada — Maria (22/11/2026)
 
-Alteração preparada em `torn-photo` (depende de `hidden-object-table`): na reprografia, ao pedir a cópia, a funcionária descobre que alguém triturou a fotografia original. O jogador junta 9 pedaços rasgados numa moldura (arrastar para encaixar, tocar para rodar). Só o servidor sabe a solução (operação `assemble`); com a fotografia certa vê-se o grupo de quatro e o carimbo 14.11. Ver `specs/torn-photo.md`.
+Alteração preparada em `torn-photo` (depende de `hidden-object-table`): na reprografia, ao pedir a cópia, a funcionária descobre que alguém triturou a fotografia original. O jogador junta 9 pedaços rasgados numa moldura (arrastar para encaixar, tocar para rodar). Só o servidor sabe a solução (operação `assemble`); com a fotografia certa vê-se o grupo de quatro e o carimbo da data (agora 17.10). Ver `specs/torn-photo.md`.
+
+### Ecrã inicial em passos e painel que diz onde estás — Maria (22/11/2026)
+
+Alteração preparada em `start-screen-steps`, só no jogo 3D: a ficha do caso perde a legenda "PROVA 01" e o "Caso #005" (fica o nome do jogo) e pede só o nome; "Seguinte" abre um passo novo, "O teu detetive", com o personalizador; no primeiro jogo de cada nome aparece ainda um aviso ("A faculdade fecha às 22:45", 30 minutos) com a missão e o grupo. Fora da sala guardada, o painel lateral diz onde a personagem está (Corredor, Exterior ou a porta de outra sala). Ver `specs/creator-after-name.md`.
+
+### O código do computador 12 com a ajuda do grupo — Maria (22/11/2026)
+
+Alteração preparada em `computer-12-with-the-group` (depende de `start-screen-steps`): a funcionária já não diz a data da fotografia. A Rita (depois da pen) e a Leonor (depois de aceitar ajudar) seguem o jogador e esperam junto do computador 12. Aí o jogador pergunta ao grupo o que se lembram do dia da fotografia e cada um responde à vez (Tomás: estava sol; Rita: foi num sábado; Leonor: depois do teste de Finanças, a 15 de outubro). O telemóvel ganha as apps Meteorologia e Calendário de outubro, que transformam essas lembranças num só dia. A fotografia passa a ser de sábado, 17 de outubro (código `1710`). O código escreve-se no campo de 4 algarismos; cada código errado custa 2 minutos e, ao fim de 3, aparece a dica do carimbo da fotografia. O servidor só ganha o campo `followers` no estado. Mudam testes revistos, com aprovação da equipa: a fala da funcionária e, só na data, o código, o carimbo da fotografia, o papel da grade e a fala de memória da funcionária (lista na spec). Ver `specs/calendar-code.md`.
 
 ### Fase A — passos
 

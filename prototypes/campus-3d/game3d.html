@@ -84,7 +84,6 @@
   .target { position: absolute; left: 74%; top: 16%; width: 22%; height: 70%; border: 1.5px dashed #e5484d; border-radius: 8px; animation: pulse 1.6s infinite; }
   .target::after { content: "?"; position: absolute; top: -11px; right: -9px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
                    background: #e5484d; color: #fff; font-size: 12px; font-weight: 700; }
-  .evidence figcaption { margin-top: 8px; font-size: 11px; letter-spacing: .08em; color: rgba(242,238,227,.5); }
   .label { margin: 0 0 6px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: #E8A33D; }
   .file h2 { margin: 0 0 12px; font-family: "DM Serif Display", Georgia, serif; font-weight: 400; font-size: 32px; line-height: 1.1; }
   #premise { margin: 0; min-height: 8.2em; font-size: 15px; line-height: 1.65; color: rgba(242,238,227,.88); cursor: pointer; }
@@ -110,14 +109,6 @@
   #accept:focus, .lang:focus, .ghost:focus { outline: none; }
   #accept:focus-visible { outline: 2px solid #F2EEE3; outline-offset: 3px; }
   @keyframes ready { 50% { box-shadow: 0 0 0 7px rgba(232,163,61,0); } 0% { box-shadow: 0 0 0 0 rgba(232,163,61,.5); } }
-  /* the joystick of a touch screen (specs/phone-joystick.md): only for a finger, so a computer's page is unchanged.
-     It lies under every card (the conversation is z-index 11) and dragging on it never scrolls the page. */
-  @media (pointer: coarse) {
-    .stick { position: absolute; left: 16px; bottom: 16px; width: 104px; height: 104px; box-sizing: border-box; border-radius: 50%;
-             background: #0B1B2B80; border: 2px solid #E8A33D99; opacity: .8; z-index: 6; touch-action: none; user-select: none; -webkit-user-select: none; }
-    .stick-knob { position: absolute; left: 28px; top: 28px; width: 44px; height: 44px; border-radius: 50%; background: #E8A33Dcc;
-                  box-shadow: 0 4px 12px #0008; pointer-events: none; }
-  }
 </style>
 </head>
 <body>
@@ -148,7 +139,6 @@
         <div class="file-body">
           <figure class="evidence">
             <div class="photo"><img id="evidenceImg" alt=""><div class="target"></div></div>
-            <figcaption id="evidenceCaption"></figcaption>
           </figure>
           <div>
             <p class="label" id="caseLabel"></p>
@@ -198,7 +188,8 @@
       window.lang = lang;
       window.dispatchEvent(new Event("language"));   // the 3D world switches its signs too
       const t = DATA[lang].intro;
-      $("caseNo").textContent = t.case; $("stamp").textContent = t.stamp; $("evidenceCaption").textContent = t.evidence;
+      $("caseNo").textContent = t.title;   // the name of the game, not a case number (specs/creator-after-name.md)
+      $("stamp").textContent = t.stamp;
       $("caseLabel").textContent = t.case_label; $("caseTitle").textContent = t.title;
       $("missionLabel").textContent = t.mission_label; $("missionText").textContent = t.mission;
       // the four real members of the group, as small name chips (the first one is the player)
@@ -225,6 +216,7 @@
     });
     $("back").addEventListener("click", () => { clearTimeout(timer); go($("stepCase"), $("stepLang")); });
     $("accept").addEventListener("click", () => {
+      if (window.campusNext) { window.campusNext(); return; }   // the playable game: step 3, the detective (play.js)
       if (window.campusStart) { window.campusStart(); return; }
       $("intro").classList.add("gone");
       setTimeout(() => { $("intro").style.display = "none"; }, 1200);
@@ -1083,6 +1075,8 @@ function placeNpc(look, x, z, angle, name, y = 0, id = "") {
   n.userData.id = id;
   n.position.set(x, y, z); n.rotation.y = angle; scene.add(n);
   block(x, z, 0.6, 0.6);
+  n.userData.collider = colliders[colliders.length - 1];   // moved away while the person follows you
+  n.userData.home = { x, z, angle };
   n.userData.sign = label(name, x, y + 2.35, z, "small");
   n.userData.baseAngle = angle;
   npcs.push(n);
@@ -1128,57 +1122,6 @@ const keys = {};
 const KEYMAP = { ArrowUp: "up", KeyW: "up", ArrowDown: "down", KeyS: "down", ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right" };
 window.addEventListener("keydown", e => { if (KEYMAP[e.code] && window.playing && !window.campusBusy && !window.campusState?.ending && !e.target.closest("input, button, dialog, textarea")) { keys[KEYMAP[e.code]] = true; e.preventDefault(); } });
 window.addEventListener("keyup", e => { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; });
-// ---- the joystick of a touch screen (specs/phone-joystick.md) ----
-// Decided once, at load: a phone or a tablet whose main pointer is a finger. A laptop with a touch
-// screen keeps its mouse, and then nothing below is made.
-const TOUCH = window.matchMedia("(pointer: coarse)").matches;
-const STICK_RADIUS = 48;   // px: a finger this far from the centre of the circle is a full press
-// The stick sets the very same `keys` the keyboard sets, so the loop, the speed, the walls, the doors and
-// the footsteps are the keyboard's: eight directions, like two keys at once.
-function makeStick() {
-  const stick = document.createElement("div");
-  stick.id = "stick"; stick.className = "stick"; stick.hidden = true;
-  stick.innerHTML = '<div class="stick-knob"></div>';
-  wrap.append(stick);
-  const knob = stick.querySelector(".stick-knob");
-  let finger = null, x = 0, y = 0, repeat = null;   // the finger on the circle, and where it is (from -1 to 1)
-  function press() {   // the same rule as the keydown line: no walking while a card is open, the game is busy or ended
-    const free = window.playing && !window.campusBusy && !window.campusState?.ending;
-    const on = free && finger !== null && Math.hypot(x, y) >= 0.25;   // near the middle nothing is pressed
-    keys.left = on && x < -0.35; keys.right = on && x > 0.35;
-    keys.up = on && y < -0.35; keys.down = on && y > 0.35;
-  }
-  function follow(event) {
-    const box = stick.getBoundingClientRect();
-    x = (event.clientX - box.left - box.width / 2) / STICK_RADIUS;
-    y = (event.clientY - box.top - box.height / 2) / STICK_RADIUS;
-    const length = Math.hypot(x, y);
-    if (length > 1) { x /= length; y /= length; }   // kept at most 1: the edge of the circle
-    knob.style.transform = `translate(${x * STICK_RADIUS}px, ${y * STICK_RADIUS}px)`;
-    press();
-  }
-  function release() {   // the finger is lifted: all four keys up, the knob back in the middle
-    finger = null; x = 0; y = 0;
-    clearInterval(repeat);
-    keys.up = keys.down = keys.left = keys.right = false;
-    knob.style.transform = "";
-  }
-  stick.addEventListener("pointerdown", event => {
-    finger = event.pointerId;
-    try { stick.setPointerCapture(event.pointerId); } catch (error) { /* keep going without it */ }
-    follow(event);
-    // A finger that holds still sends no events: press again now and then, like a key held down repeats,
-    // so walking goes on after a door or a conversation lets the character move again.
-    clearInterval(repeat);
-    repeat = setInterval(press, 150);
-    event.preventDefault();
-  });
-  stick.addEventListener("pointermove", event => { if (event.pointerId === finger) follow(event); });
-  stick.addEventListener("pointerup", release);
-  stick.addEventListener("pointercancel", release);
-  window.addEventListener("start-game", () => { stick.hidden = false; });   // only once the game has started
-}
-if (TOUCH) makeStick();
 window.addEventListener("blur", () => { for (const k in keys) keys[k] = false; });
 window.addEventListener("start-game", () => { renderer.domElement.focus(); window.focus(); });
 if (window.playing) renderer.domElement.focus();
@@ -1196,7 +1139,6 @@ function applyLanguage() {   // called when the player picks a language on the f
   const clerk = npcs.find(n => n.userData.id === "amelia");
   if (clerk) clerk.userData.sign.element.textContent = CLERK_LABEL[LANG];
   document.getElementById("help").textContent = DATA[LANG].ui.help;
-  if (TOUCH) document.getElementById("help").textContent = DATA[LANG].ui.help_touch;   // no arrows or WASD on a phone
   currentRoom = "refresh";   // force the room card to be drawn again in the new language
 }
 window.addEventListener("language", applyLanguage);
@@ -1240,8 +1182,10 @@ function updateInside() {
   if (!state) return;
   const room = roomAt(player.position.x, player.position.z);
   const inside = Boolean(room && room.id === state.room);
-  if (inside !== window.campusInside) {
+  const here = room ? room.id : null;   // a room id, "outside" on the plaza, or null in the corridor
+  if (inside !== window.campusInside || here !== window.campusHere) {
     window.campusInside = inside;
+    window.campusHere = here;   // the side panel names this place while outside the room (specs/creator-after-name.md)
     window.dispatchEvent(new Event("campus-inside"));
   }
 }
@@ -1336,6 +1280,69 @@ function showGroup(state) {
   });
 }
 
+// ---- the people who come with you (specs/calendar-code.md) ----
+// Rita (once the USB stick is found) and Leonor (once she helps) walk along the path the character took,
+// a few steps behind, so they never cut through a wall. Once the saved room is the computer lab (or the files
+// were seen) they wait beside computer 12, where they help with the date. This is only a picture: the server
+// decides who follows (`followers` in the snapshot), and nothing about it is saved.
+const trail = [];   // the character's recent positions, the newest last
+const TRAIL_STEP = 0.3, TRAIL_GAP = 5;   // a point every 30 cm; each follower is 5 points (1.5 m) behind the one before
+const LAB_SPOTS = { rita: { x: -0.55, z: 9.9 }, leonor: { x: -1.25, z: 11.0 } };   // beside desk 6, facing computer 12
+const PARKED = { minX: 999, maxX: 999, minZ: 999, maxZ: 999 };
+function followerList() {
+  const f = window.campusState?.followers;
+  return f && !window.campusState.ending ? f : { ids: [], at_lab: false };
+}
+function moveCollider(n, x, z) {   // the follower's small box goes with it, or away while it walks
+  const c = n.userData.collider;
+  if (!c) return;
+  if (x === null) { Object.assign(c, PARKED); return; }
+  Object.assign(c, { minX: x - 0.3, maxX: x + 0.3, minZ: z - 0.3, maxZ: z + 0.3 });
+}
+function updateFollowers(dt, t) {
+  const last = trail[trail.length - 1];
+  if (!last || Math.hypot(player.position.x - last.x, player.position.z - last.z) > TRAIL_STEP) {
+    trail.push({ x: player.position.x, z: player.position.z });
+    if (trail.length > 60) trail.shift();
+  }
+  const { ids, at_lab } = followerList();
+  for (const id of ["rita", "leonor"]) {
+    const n = npcs.find(m => m.userData.id === id);
+    if (!n) continue;
+    const order = ids.indexOf(id), home = n.userData.home;
+    let target, walking = false;
+    if (order < 0) {   // not following: in its own place
+      target = home;
+      if (Math.hypot(n.position.x - home.x, n.position.z - home.z) > 0.01) { n.position.set(home.x, 0, home.z); n.userData.baseAngle = home.angle; moveCollider(n, home.x, home.z); }
+    } else if (at_lab) {   // waiting beside computer 12
+      target = LAB_SPOTS[id];
+      const lab = ROOMS.find(r => r.id === "computer_lab");
+      const inLab = n.position.x > lab.minX && n.position.x < lab.maxX && n.position.z > lab.minZ && n.position.z < lab.maxZ;
+      if (!inLab) n.position.set(target.x, 0, target.z);   // came in by a button: just there
+      n.userData.baseAngle = Math.atan2(USABLE[0].x - target.x, USABLE[0].z - target.z);
+      moveCollider(n, target.x, target.z);
+    } else {   // a few steps behind, on the character's own path
+      const point = trail[Math.max(0, trail.length - 1 - TRAIL_GAP * (order + 1))];
+      target = point;
+      if (Math.hypot(n.position.x - player.position.x, n.position.z - player.position.z) > 9) {   // the character jumped (a button, a reload)
+        trail.length = 0; trail.push({ x: player.position.x, z: player.position.z });
+        n.position.set(player.position.x - 0.8 * (order + 1), 0, player.position.z + 0.6);
+      }
+      moveCollider(n, null);
+    }
+    const ddx = target.x - n.position.x, ddz = target.z - n.position.z, d = Math.hypot(ddx, ddz);
+    if (d > 0.05) {
+      const step = Math.min(d, SPEED * 1.05 * dt);
+      n.position.x += ddx / d * step; n.position.z += ddz / d * step;
+      walking = d > 0.2;
+      if (walking) n.userData.baseAngle = Math.atan2(ddx, ddz);
+    }
+    n.userData.walking = walking;
+    n.userData.walk = (n.userData.walk || 0) + (walking ? dt * 9 : 0);
+    n.userData.sign.position.set(n.position.x, 2.35, n.position.z);
+  }
+}
+
 // Position the character after an accepted server response: outside for a new game, otherwise in the saved room.
 let savedScene = null, placedOutside = false;   // placedOutside: the character was already put outside for this game
 function syncCampus() {
@@ -1424,6 +1431,24 @@ window.campusPreview = {
   },
 };
 
+// A picture of the detective for the detective card: rendered once in a small scene, returned as a data URL.
+window.campusPortrait = (r, width, height) => {
+  const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setSize(width, height, false);
+  const small = new THREE.Scene();
+  small.add(new THREE.HemisphereLight(0xffffff, 0x556677, 1.6));
+  const key = new THREE.DirectionalLight(0xfff1dd, 2.4); key.position.set(2.5, 4, 5); small.add(key);
+  const rim = new THREE.DirectionalLight(0x9db8ff, 1.2); rim.position.set(-3, 2, -3); small.add(rim);
+  const camera = new THREE.PerspectiveCamera(26, width / height, 0.1, 30);
+  camera.position.set(0, 1.0, 6.4); camera.lookAt(0, 0.95, 0);
+  const model = makePerson(playerLook(r)); model.rotation.y = 0.45; small.add(model);
+  renderer.render(small, camera);
+  const url = canvas.toDataURL("image/png");
+  renderer.dispose(); renderer.forceContextLoss();
+  return url;
+};
+
 window.campus3dReady = true;
 window.dispatchEvent(new Event("campus-renderer-ready"));
 
@@ -1442,6 +1467,8 @@ function loop() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   let dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
   let dz = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
+  const stick = window.campusStick;   // the on-screen joystick of phones: x to the right, z downwards, from -1 to 1
+  if (stick && (Math.abs(stick.x) > 0.01 || Math.abs(stick.z) > 0.01)) { dx = stick.x; dz = stick.z; }
   if (window.campusState && (!window.playing || window.campusBusy || window.campusState.ending)) { dx = 0; dz = 0; }
   const moving = dx !== 0 || dz !== 0;
   window.campusMoving = moving;
@@ -1471,11 +1498,12 @@ function loop() {
   ring.position.set(player.position.x, 0.012, player.position.z);
   ring.material.opacity = 0.4 + Math.sin(t * 3) * 0.15;
 
+  updateFollowers(dt, t);   // Rita and Leonor, when they come with you
   // the others turn towards you when you come close
   for (const [i, n] of npcs.entries()) {
-    animatePerson(n, t + i, 0, 0);
+    animatePerson(n, t + i, n.userData.walking ? 1 : 0, n.userData.walk || 0);
     const ddx = player.position.x - n.position.x, ddz = player.position.z - n.position.z;
-    const want = Math.hypot(ddx, ddz) < 4.5 ? Math.atan2(ddx, ddz) : n.userData.baseAngle;
+    const want = !n.userData.walking && Math.hypot(ddx, ddz) < 4.5 ? Math.atan2(ddx, ddz) : n.userData.baseAngle;
     n.rotation.y += Math.atan2(Math.sin(want - n.rotation.y), Math.cos(want - n.rotation.y)) * Math.min(1, dt * 3);
   }
 

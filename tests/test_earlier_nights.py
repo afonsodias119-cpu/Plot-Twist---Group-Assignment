@@ -70,7 +70,7 @@ MEMORY = {
     "professor": (4, "again", {"en": "Ask if he has heard this case before", "pt": "Perguntar se já ouviu este caso"}),
 }
 # The clerk's new line `again` (A2).
-CLERK_AGAIN = ('The clerk stops with her hand on the printer. "The fourteenth of November. Yes. How do you...?" '
+CLERK_AGAIN = ('The clerk stops with her hand on the printer. "The seventeenth of October. Yes. How do you...?" '
                'She looks at the clock. "I have been closing in ten minutes for a very long time." '
                'She frowns at the counter. "Odd. I do not remember you leaving."')
 

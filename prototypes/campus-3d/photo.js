@@ -26,8 +26,7 @@
       `${hair}<circle cx="-9" cy="118" r="2.6" fill="#2a1d14"/><circle cx="9" cy="118" r="2.6" fill="#2a1d14"/>` +
       `<path d="M-8 130 Q 0 137 8 130" fill="none" stroke="#7a3b2a" stroke-width="2.5" stroke-linecap="round"/>${extra}</g>`;
   }
-  // `date`: the stamp of tonight's case (specs/culprit-of-the-night.md, point 4); the classic one by default.
-  function art(date = "14.11.2026") {
+  function art() {
     const sea = `<rect x="0" y="0" width="${PW}" height="150" fill="url(#sky)"/><rect x="0" y="150" width="${PW}" height="70" fill="#3f7fa8"/>` +
       [...Array(7)].map((_, i) => `<path d="M${i * 80 + 10} ${168 + (i % 3) * 14} q 14 -6 28 0" fill="none" stroke="#ffffff66" stroke-width="2"/>`).join("") +
       `<rect x="0" y="220" width="${PW}" height="${PH - 220}" fill="#d9c8a8"/>` +
@@ -42,7 +41,7 @@
                     extra: `<rect x="-24" y="152" width="48" height="12" rx="6" fill="#8a2f2f"/><rect x="8" y="160" width="10" height="34" rx="4" fill="#8a2f2f"/>` }) +
       person(445, { top: "#2251a8", legs: "#6b7178", hair: `<path d="M-27 112 Q -28 88 0 88 Q 28 88 27 112 L 24 100 L -24 100 Z" fill="#1d1d1d"/>`,
                     extra: `<circle cx="-9" cy="118" r="8" fill="none" stroke="#1d1d1d" stroke-width="2.5"/><circle cx="9" cy="118" r="8" fill="none" stroke="#1d1d1d" stroke-width="2.5"/><path d="M-1 118 L 1 118" stroke="#1d1d1d" stroke-width="2.5"/>` });
-    const stamp = `<text x="${PW - 18}" y="${PH - 16}" text-anchor="end" font-family="'Courier New', monospace" font-weight="700" font-size="24" fill="#ff8a1f" stroke="#ff8a1f55" stroke-width="3" paint-order="stroke">${date}</text>`;
+    const stamp = `<text x="${PW - 18}" y="${PH - 16}" text-anchor="end" font-family="'Courier New', monospace" font-weight="700" font-size="24" fill="#ff8a1f" stroke="#ff8a1f55" stroke-width="3" paint-order="stroke">17.10.2026</text>`;
     return `<g id="photo-art">${sea}${people}${stamp}<rect x="3" y="3" width="${PW - 6}" height="${PH - 6}" fill="none" stroke="#f6f3ec" stroke-width="7"/></g>`;
   }
 
@@ -66,7 +65,7 @@
     return points.map(([x, y]) => `${(x - x0).toFixed(1)},${(y - y0).toFixed(1)}`).join(" ");
   }
 
-  function drawing(date) {
+  function drawing() {
     const clips = Object.entries(PIECES).map(([id, [row, col]]) =>
       `<clipPath id="piece-${id}"><polygon points="${outline(row, col)}"/></clipPath>`).join("");
     const cells = [...Array(9)].map((_, i) =>
@@ -76,7 +75,7 @@
       `<polygon points="${outline(row, col)}" fill="none" stroke="#f6f3ec" stroke-width="2"/></g>`).join("");
     return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img"><defs>` +
       `<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fb9df"/><stop offset="1" stop-color="#f1d9b8"/></linearGradient>` +
-      `${art(date)}${clips}</defs><rect width="${W}" height="${H}" fill="#6b4b33"/>` +
+      `${art()}${clips}</defs><rect width="${W}" height="${H}" fill="#6b4b33"/>` +
       `<rect class="photo-frame" x="${FX - 10}" y="${FY - 10}" width="${PW + 20}" height="${PH + 20}" rx="6" fill="#20160f" stroke="#e8b45c" stroke-width="2"/>` +
       `${cells}<g class="photo-pieces">${pieces}</g></svg>`;
   }
@@ -173,8 +172,7 @@
     card.querySelector("#photo-title").textContent = opts.title;
     card.querySelector("#photo-hint").textContent = opts.hint;
     card.querySelector("#photo-close").textContent = opts.close;
-    // Without a stamp (a classic game), art() keeps drawing 14.11.2026.
-    card.querySelector(".table-view").innerHTML = drawing(opts.stamp || undefined);
+    card.querySelector(".table-view").innerHTML = drawing();
     if (!placed.size) START.forEach(([id, x, y, rot]) => placed.set(id, { x, y, rot, cell: null }));
     placed.forEach((_, id) => show(id));
     card.hidden = false;

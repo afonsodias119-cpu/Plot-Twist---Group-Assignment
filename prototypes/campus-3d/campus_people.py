@@ -43,6 +43,21 @@ ACTION_PERSON = {
 }
 
 
+# Who walks with the player once their clue is solved, and waits at computer 12 to help with the date
+# (specs/calendar-code.md): Rita once the USB stick is found, Leonor once she agreed to help.
+FOLLOWERS = ("rita", "leonor")
+
+
+def followers(state):
+    """The people who follow the player, from the saved game only (nothing new is saved)."""
+    found = []
+    if "usb_stick" in state["inventory"]:
+        found.append("rita")
+    if state["flags"]["colleague_choice"] == "help":
+        found.append("leonor")
+    return found
+
+
 def room_of_scene(scene):
     """The 3D room where a story scene takes place."""
     return ROOM_OF_SCENE.get(scene, scene)
@@ -88,12 +103,12 @@ PEOPLE = {
                 {"label": "Say the date before she does", "next": "again", "night": 2},
                 _bye("Goodbye."),
             ]},
-            "order": {"text": "\"On 14 November, you took the photo and had it printed the same day. I remember there were four people in it, and I think the original order file is still saved.\"",
-                      "note": "The cover photo was taken and printed on 14 November. The print shop still has the original order file.", "options": [
+            "order": {"text": "\"The cover photo? You took it and had it printed here the same day. I remember there were four people in it, and I think the original order file is still saved.\"",
+                      "note": "The cover photo was printed at the print shop the day it was taken. The print shop still has the original order file.", "options": [
                 _bye("Goodbye.")]},
             # Reached only by her memory answer, from night 2 (specs/earlier-nights.md, point 5).
-            "again": {"text": "The clerk stops with her hand on the printer. \"The fourteenth of November. Yes. How do you...?\" She looks at the clock. \"I have been closing in ten minutes for a very long time.\" She frowns at the counter. \"Odd. I do not remember you leaving.\"",
-                      "note": "The clerk agreed with the date before you finished saying it: the cover photo was printed on 14 November.", "options": [
+            "again": {"text": "The clerk stops with her hand on the printer. \"The seventeenth of October. Yes. How do you...?\" She looks at the clock. \"I have been closing in ten minutes for a very long time.\" She frowns at the counter. \"Odd. I do not remember you leaving.\"",
+                      "note": "The clerk agreed with the date before you finished saying it: the cover photo was printed on 17 October.", "options": [
                 _bye("Goodbye.")]},
         }},
         "leonor": {"name": "Leonor", "nodes": {
@@ -140,7 +155,7 @@ PEOPLE = {
                 {"label": "Ask for the password of computer 12", "next": "password"},
                 {"label": "Ask about message 5, the one with his name", "next": "msg5", "if": {"flags": {"files_viewed": True}}},
                 {"label": "Ask who made the slides", "next": "slides", "if": {"flags": {"files_viewed": True}}}]},
-            "password": {"text": "\"The password of computer 12? It is the group's: the day and the month we took the cover photo. Four digits. I can never remember the date.\"", "trust": 3,
+            "password": {"text": "\"The password of computer 12? It is the group's: the day and the month we took the cover photo. Four digits. I can never remember the date, but between all of us we can work it out.\"", "trust": 3,
                          "note": "Tomás: the password of computer 12 is the day and month the cover photo was taken (4 digits).", "options": [_bye("Goodbye.")]},
             "who": {"text": "\"Only a hood. Like the one Duarte wears. But nobody ever saw him arrive.\"", "trust": 3,
                     "note": "Tomás saw someone in a hood at computer 12 near midnight.", "options": [
@@ -240,11 +255,11 @@ PEOPLE = {
                 {"label": "Dizer a data antes dela", "next": "again", "night": 2},
                 _bye("Até já."),
             ]},
-            "order": {"text": "\"A 14 de novembro, tiraram a fotografia e mandaram-na imprimir no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado.\"",
-                      "note": "A fotografia da capa foi tirada e impressa a 14 de novembro. A reprografia ainda tem o ficheiro original do pedido.", "options": [
+            "order": {"text": "\"A fotografia da capa? Tiraram-na e mandaram-na imprimir aqui no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado.\"",
+                      "note": "A fotografia da capa foi impressa na reprografia no dia em que foi tirada. A reprografia ainda tem o ficheiro original do pedido.", "options": [
                 _bye("Até já.")]},
-            "again": {"text": "A funcionária fica com a mão parada na impressora. \"Catorze de novembro. Sim. Como é que tu...?\" Olha para o relógio. \"Há muito tempo que estou a fechar daqui a dez minutos.\" Franze a testa para o balcão. \"Estranho. Não me lembro de te ver sair.\"",
-                      "note": "A funcionária confirmou a data antes de acabares de a dizer: a fotografia da capa foi impressa a 14 de novembro.", "options": [
+            "again": {"text": "A funcionária fica com a mão parada na impressora. \"Dezassete de outubro. Sim. Como é que tu...?\" Olha para o relógio. \"Há muito tempo que estou a fechar daqui a dez minutos.\" Franze a testa para o balcão. \"Estranho. Não me lembro de te ver sair.\"",
+                      "note": "A funcionária confirmou a data antes de acabares de a dizer: a fotografia da capa foi impressa a 17 de outubro.", "options": [
                 _bye("Até já.")]},
         }},
         "leonor": {"name": "Leonor", "nodes": {
@@ -286,7 +301,7 @@ PEOPLE = {
                 {"label": "Perguntar a password do computador 12", "next": "password"},
                 {"label": "Perguntar pela mensagem 5, a que tem o nome dele", "next": "msg5", "if": {"flags": {"files_viewed": True}}},
                 {"label": "Perguntar quem fez os slides", "next": "slides", "if": {"flags": {"files_viewed": True}}}]},
-            "password": {"text": "\"A password do computador? É o dia e o mês em que tirámos a fotografia da capa. São só 4 números mas nunca me lembro da data.\"", "trust": 3,
+            "password": {"text": "\"A password do computador? É o dia e o mês em que tirámos a fotografia da capa. São só 4 números, mas nunca me lembro da data. Entre todos havemos de lá chegar.\"", "trust": 3,
                          "note": "Tomás: a password do computador 12 é o dia e o mês em que foi tirada a fotografia da capa (4 algarismos).", "options": [_bye("Até já.")]},
             "who": {"text": "\"Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar.\"", "trust": 3,
                     "note": "O Tomás viu alguém de capuz no computador 12 perto da meia-noite.", "options": [

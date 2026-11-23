@@ -5,7 +5,7 @@ from datetime import date
 import db
 import game
 import logic
-from campus_people import ACTION_PERSON, ROOM_OF_PERSON, is_rude, people_in_room, room_of_scene, talk, temper
+from campus_people import ACTION_PERSON, ROOM_OF_PERSON, followers, is_rude, people_in_room, room_of_scene, talk, temper
 # The friends' names of the start screen, cleaned on the server (specs/your-own-group.md, point 3).
 from campus_people import clean_group
 from campus_text import TEXT
@@ -458,6 +458,9 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         "people": people_in_room(state["scene"], state, language, gone),
         # The things to examine in that room: only their ids and names, never their texts (specs/more-to-find.md, point 6).
         "finds": find_rows(state, language),
+        # Who walks with the player, and whether they already wait at computer 12 (specs/calendar-code.md).
+        "followers": {"ids": followers(state),
+                      "at_lab": state["flags"]["files_viewed"] or room_of_scene(state["scene"]) == "computer_lab"},
         "clock": clock_text(state),   # the old time from progress, kept for the reviewed tests; not shown
         # The campus minute and the schedule (specs/night-schedule.md, point 10).
         "night": night_view(state, night, language, charged, memory["night"]),

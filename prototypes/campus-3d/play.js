@@ -13,9 +13,6 @@
   // One emoji for each ending (the collection and the share card). It is defined here because the first screen uses it at start-up.
   const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸", fifth_element: "👁️" };
   document.body.classList.add("playable");
-  // A touch screen (a phone or a tablet whose main pointer is a finger): the same test as game3d.html, which
-  // then draws the joystick. Here it only changes the words that name keys (specs/phone-joystick.md, point 5).
-  const TOUCH = window.matchMedia("(pointer: coarse)").matches;
 
   const nameBox = make("div", undefined, "name-box");
   const nameLabel = make("label"); nameLabel.htmlFor = "detective-name";
@@ -65,6 +62,45 @@
       if (who) localStorage.setItem(lookKey(who), JSON.stringify(look));
     } catch (error) { /* no storage */ }
   }
+
+  // ---------- where the game is played: a phone shows a joystick, a computer does not ----------
+  // It is chosen on the first screen (the phone is the pre-selected answer on a touch screen) and can be changed in the menu.
+  const DEVICE_KEY = "plot-twist-device";
+  let deviceMode = "computer";
+  try {
+    const saved = localStorage.getItem(DEVICE_KEY);
+    deviceMode = saved === "phone" || saved === "computer" ? saved : (window.matchMedia && matchMedia("(pointer: coarse)").matches ? "phone" : "computer");
+  } catch (error) { /* no storage */ }
+  const deviceBox = make("section", undefined, "device"); deviceBox.setAttribute("aria-labelledby", "device-title");
+  const deviceTitle = make("h3"); deviceTitle.id = "device-title";
+  const deviceRow = make("div", undefined, "device-row");
+  const deviceButtons = {};
+  for (const mode of ["computer", "phone"]) {
+    const button = make("button", undefined, "choice"); button.type = "button";
+    button.addEventListener("click", () => setDevice(mode, true));
+    deviceButtons[mode] = button; deviceRow.append(button);
+  }
+  const deviceHint = make("p", undefined, "muted");
+  const qrIntroButton = make("button", undefined, "choice qr-intro"); qrIntroButton.type = "button";
+  deviceBox.append(deviceTitle, deviceRow, deviceHint, qrIntroButton);
+  function paintDevice() {
+    const t = ui();
+    deviceTitle.textContent = t.device_title;
+    deviceButtons.computer.textContent = t.device_computer; deviceButtons.phone.textContent = t.device_phone;
+    for (const mode of ["computer", "phone"]) deviceButtons[mode].setAttribute("aria-pressed", String(deviceMode === mode));
+    deviceHint.textContent = deviceMode === "phone" ? t.device_hint_phone : t.device_hint_computer;
+    qrIntroButton.textContent = t.qr_open;
+  }
+  function setDevice(mode, remember) {
+    deviceMode = mode;
+    document.body.classList.toggle("device-phone", mode === "phone");
+    if (remember) { try { localStorage.setItem(DEVICE_KEY, mode); } catch (error) { /* no storage */ } }
+    window.campusStick = { x: 0, z: 0 };
+    paintDevice();
+    if (typeof updateLabels === "function" && $("joystick-toggle")) updateLabels();
+  }
+  document.body.classList.toggle("device-phone", deviceMode === "phone");
+  nameBox.append(deviceBox);
 
   const creator = make("section", undefined, "creator"); creator.setAttribute("aria-labelledby", "creator-title");
   const creatorTitle = make("h3"); creatorTitle.id = "creator-title";
@@ -158,8 +194,53 @@
     }, 250);
   });
   window.addEventListener("campus-renderer-ready", showPreview);
-  nameBox.append(creator);
   paintCreator();
+
+  // ---------- step 3 of the first screen: the detective, after the name (specs/creator-after-name.md) ----------
+  // Step 2 (the case file) asks for the name; its button opens this step, and only this step starts the game.
+  const stepLook = make("section", undefined, "step"); stepLook.id = "stepLook";
+  stepLook.innerHTML = `<div class="file"><div class="file-top"><span class="rec"></span><span id="look-case"></span></div>
+    <div class="look-body"></div>
+    <div class="file-foot"><button class="ghost" id="look-back"></button><p id="look-error" class="error" role="alert"></p><button id="look-start"></button></div></div>`;
+  stepLook.querySelector(".look-body").append(creator);
+  $("stepCase").after(stepLook);
+  const lookError = stepLook.querySelector("#look-error");
+  // ---------- step 4: the warning before the game (the faculty closes at 22:45), the mission and the group ----------
+  // The mission box of the case file moves here, so the case file only tells the story and asks for the name.
+  const stepBrief = make("section", undefined, "step"); stepBrief.id = "stepBrief";
+  stepBrief.innerHTML = `<div class="file"><div class="file-top"><span class="rec"></span><span id="brief-case"></span><span class="clock">22:15</span></div>
+    <div class="brief-body"><div class="brief-warning" role="note"><p class="stamp">⏳ 22:45</p><p id="brief-label" class="label"></p>
+      <h2 id="brief-title"></h2><p id="brief-text"></p></div></div>
+    <div class="file-foot"><button class="ghost" id="brief-back"></button><p id="brief-error" class="error" role="alert"></p><button id="brief-start"></button></div></div>`;
+  stepBrief.querySelector(".brief-body").append($("mission"));
+  stepLook.after(stepBrief);
+  const briefError = stepBrief.querySelector("#brief-error");
+  // Before the game starts, a message goes under the step on screen: the name, the detective or the warning.
+  const introBox = () => (stepBrief.classList.contains("on") ? briefError : stepLook.classList.contains("on") ? lookError : startError);
+  function goStep(from, to) {   // the same fade as the other steps of the first screen
+    from.classList.add("leaving");
+    setTimeout(() => {
+      from.classList.remove("on", "leaving"); to.classList.add("on");
+      const button = { stepLook: "look-start", stepBrief: "brief-start" }[to.id];
+      if (button) $(button).focus({ preventScroll: true });
+    }, 420);
+  }
+  window.campusNext = () => {
+    if (!name.value.trim()) { startError.textContent = ui().name_needed; name.focus(); return; }
+    startError.textContent = ""; lookError.textContent = "";
+    goStep($("stepCase"), stepLook);
+  };
+  $("look-back").addEventListener("click", () => goStep(stepLook, $("stepCase")));
+  // The warning is only for a first game: a name that already started a game in this browser skips it.
+  const briefKey = who => `plot-twist-briefed:${String(who).trim().toLowerCase()}`;
+  const briefSeen = who => { try { return localStorage.getItem(briefKey(who)) === "yes"; } catch (error) { return false; } };
+  $("look-start").addEventListener("click", () => {
+    lookError.textContent = ""; briefError.textContent = "";
+    if (briefSeen(name.value)) window.campusStart();
+    else goStep(stepLook, stepBrief);
+  });
+  $("brief-back").addEventListener("click", () => goStep(stepBrief, stepLook));
+  $("brief-start").addEventListener("click", () => window.campusStart());
 
   // ---------- your own group: three friends' names in the teammates' places (specs/your-own-group.md) ----------
   // Under the creator, in a closed <details>, so a first player still sees only the name field, its hint and
@@ -176,7 +257,8 @@
     return { caption, input };
   });
   groupBox.append(groupTitle, groupHint, ...groupFields.map(field => field.caption.parentNode));
-  nameBox.append(groupBox);
+  // In the "Your detective" step, under the creator (specs/your-own-group.md, point 1; specs/creator-after-name.md).
+  stepLook.querySelector(".look-body").append(groupBox);
   // Whatever is read from the browser is checked, as cleanLook does: a damaged note gives three empty fields.
   function cleanGroup(raw) {
     if (!Array.isArray(raw) || raw.length !== 3) return ["", "", ""];
@@ -217,7 +299,7 @@
     return state.message === t.continued ? t.group_kept : t.group_reset;
   }
 
-  $("mission").after(nameBox);
+  $("premise").after(nameBox);   // the mission box went to step 4 (specs/creator-after-name.md)
   // Which night of this name it is, under the name box (specs/earlier-nights.md, point 6). Empty on night 1,
   // so a first player sees only the name field and its hint. It never counts endings. drawNight fills it.
   const nightLine = make("p", "", "night-line");
@@ -229,7 +311,7 @@
       <div class="bar-tools"><span id="clock" class="clock"></span><span id="save-status" role="status"></span>
         <div class="tool-row"><button id="phone-open" class="secondary"></button>
           <div class="tool-menu"><button id="menu-toggle" class="secondary" aria-expanded="false" aria-controls="menu-list"></button>
-            <div id="menu-list" class="menu-list" hidden><button id="howto-open" class="secondary"></button><button id="torch-toggle" class="secondary"></button><button id="sound-toggle" class="secondary"></button></div></div></div></div></header>
+            <div id="menu-list" class="menu-list" hidden><button id="howto-open" class="secondary"></button><button id="torch-toggle" class="secondary"></button><button id="sound-toggle" class="secondary"></button><button id="joystick-toggle" class="secondary"></button><button id="qr-open" class="secondary"></button></div></div></div></div></header>
     <section class="scene-panel" aria-labelledby="scene-heading">
       <div class="scene-top"><span id="scene-label" class="label"></span><span id="player-label" class="muted"></span></div>
       <h2 id="scene-heading" tabindex="-1"></h2><p id="feedback" role="status"></p>
@@ -240,6 +322,7 @@
     </section>
     <div id="toast" role="status" aria-live="polite" hidden></div>
     <button id="sms" class="sms" hidden><span id="sms-from" class="sms-from"></span><span id="sms-text"></span></button>
+    <div id="joystick" class="joystick" aria-hidden="true"><div id="stick-base" class="stick-base"><div id="stick-knob" class="stick-knob"></div></div></div>
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
     <section id="chat-card" class="chat-card" role="dialog" aria-labelledby="chat-title" hidden>
       <header><h3 id="chat-title"></h3><button id="chat-close" class="secondary"></button></header>
@@ -248,7 +331,7 @@
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
       <p id="ending-collection" class="collection"></p>
       <div class="share"><pre id="share-text"></pre><button id="share-copy" class="secondary"></button></div>
-      <div class="ending-actions"><button id="ending-again"></button><button id="ending-hide" class="secondary"></button></div></section>
+      <div class="ending-actions"><button id="ending-again"></button><button id="ending-card-btn" class="secondary"></button><button id="ending-hide" class="secondary"></button></div></section>
     <section id="timeup-card" class="ending-card timeup-card" role="alertdialog" aria-labelledby="timeup-title" hidden>
       <p class="stamp">⏳ 22:45</p><h2 id="timeup-title"></h2><div id="timeup-text"></div>
       <div class="ending-actions"><button id="timeup-again"></button></div></section>
@@ -507,7 +590,16 @@
     document.documentElement.lang = window.lang || "pt";
     nameLabel.textContent = t.name_label;
     nameHint.textContent = t.continue_hint;
-    $("accept").textContent = t.start;
+    $("accept").textContent = t.next_step;
+    $("look-case").textContent = data[window.lang || "pt"].intro.title;   // the name of the game
+    $("look-back").textContent = t.look_back;
+    $("look-start").textContent = t.next_step;
+    $("brief-case").textContent = data[window.lang || "pt"].intro.title;
+    $("brief-label").textContent = t.brief_label;
+    $("brief-title").textContent = t.brief_title;
+    $("brief-text").textContent = t.brief_text;
+    $("brief-back").textContent = t.brief_back;
+    $("brief-start").textContent = t.start;
     $("case-eyebrow").textContent = t.case;
     // In the game, the day of the case before " · NOVA SBE" (specs/case-of-the-day.md, point 7).
     if (current?.day?.label) $("case-eyebrow").textContent = t.case.replace(" · NOVA SBE", ` · ${current.day.label} · NOVA SBE`);
@@ -518,7 +610,6 @@
     $("notebook-hint").textContent = t.notebook_hint;
     $("restart").textContent = t.new_game;
     $("controls").textContent = t.controls;
-    if (TOUCH) $("controls").textContent = t.controls_touch;   // the circle, not the arrows (specs/phone-joystick.md)
     $("outside-hint").textContent = t.outside_hint;
     // The top bar has words, not emojis: the phone, and a menu with the other tools.
     $("phone-open").textContent = t.phone;
@@ -533,13 +624,17 @@
     $("torch-toggle").setAttribute("aria-pressed", String(torchOn));
     $("sound-toggle").textContent = t.sound_on;
     $("sound-toggle").setAttribute("aria-pressed", String(!sound.isMuted()));
+    $("joystick-toggle").textContent = t.joystick;
+    $("joystick-toggle").setAttribute("aria-pressed", String(deviceMode === "phone"));
+    $("qr-open").textContent = t.qr_open;
+    paintDevice();
     $("restart-question").textContent = t.confirm_question;
     $("cancel-restart").textContent = t.confirm_cancel;
     $("confirm-restart").textContent = t.confirm_yes;
     updateNear();
     $("renderer-status").textContent = window.campus3dReady ? t.render_ready : t.render_loading;
   }
-  window.addEventListener("language", () => { queueMicrotask(updateLabels); startError.textContent = ""; });
+  window.addEventListener("language", () => { queueMicrotask(updateLabels); startError.textContent = ""; lookError.textContent = ""; briefError.textContent = ""; });
   window.addEventListener("campus-renderer-ready", updateLabels);
   function fallback() {
     if (window.campus3dReady) return;
@@ -557,6 +652,14 @@
   function applyInside() {
     const outside = window.campusInside === false && !current?.ending;
     $("outside-hint").hidden = !outside;
+    // Outside the saved room the panel names the place where the character stands (the corridor, the
+    // entrance, another room's door) and hides the room's description (specs/creator-after-name.md).
+    if (current && !current.ending) {
+      const t = ui(), here = window.campusHere, scenes = data[window.lang || "pt"].scenes;
+      const place = here === "outside" ? t.map_outside : here && scenes[here] ? scenes[here].title : t.map_corridor;
+      $("scene-heading").textContent = outside ? place : current.title;
+      $("scene-paragraphs").hidden = outside;
+    }
     shell.querySelectorAll(".actions.investigate button").forEach(b => { b.disabled = outside || Boolean(window.campusBusy); });
     shell.querySelectorAll("#chat-messages li.flagged button").forEach(b => { b.disabled = true; });   // a flag cannot be undone
   }
@@ -567,6 +670,8 @@
     shell.querySelectorAll("button").forEach(b => b.disabled = busy);
     $("accept").disabled = busy;
     $("back").disabled = busy;
+    $("look-start").disabled = busy; $("look-back").disabled = busy;
+    $("brief-start").disabled = busy; $("brief-back").disabled = busy;
     dialog.querySelectorAll("button").forEach(b => b.disabled = busy);
     applyInside();
     $("save-status").textContent = busy ? ui().saving : (uncertain ? "" : ui().saved);
@@ -585,7 +690,8 @@
 
   async function send(operation, extra = {}) {
     if (window.campusBusy) return;
-    if (location.protocol === "file:") { startError.textContent = ui().local_only; return; }
+    const introError = introBox();   // where a message goes before the game starts
+    if (location.protocol === "file:") { introError.textContent = ui().local_only; return; }
     // Before a command the server hears the page's own minute (specs/night-schedule.md, point 4). The
     // command is for the person of the open card: it is not sent if the report shows that person gone.
     if (!["open", "begin", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
@@ -600,7 +706,7 @@
     } catch (error) {
       uncertain = true;
       const message = error.name === "Error" ? error.message : ui().network_error;
-      (current ? $("feedback") : startError).textContent = message;
+      (current ? $("feedback") : introError).textContent = message;
       if (current) { $("feedback").className = "error"; $("feedback").hidden = false; toast(message); }
       return false;
     } finally { setBusy(false); }
@@ -809,6 +915,7 @@
       }
       $("ending-again").textContent = t.play_again;
       $("ending-hide").textContent = t.see_scene;
+      $("ending-card-btn").textContent = t.card_open;
       rememberEnding(ending.id);
       speakEnding(ending, reply);
       $("ending-collection").textContent = collectionText();
@@ -967,6 +1074,14 @@
       });
       return button;
     });
+    // At computer 12, before the files: ask the people around what they remember of the day of the photo
+    // (specs/calendar-code.md). Asked once in each conversation.
+    if (line.npc === "computer12" && (line.actions || []).some(action => action.id === "view_files") && !asked.has("group_photo")) {
+      const button = make("button", t.group_ask, "answer");
+      button.dataset.group = "photo";
+      button.addEventListener("click", () => askGroup(button));
+      answers.unshift(button);
+    }
     // What can be done by talking to this person (ask for the copy, take the decision...): choices inside the conversation.
     // They look like any other answer and come after the questions (specs/actions-when-they-make-sense.md).
     const doing = make("div", undefined, "actions investigate talk-actions");
@@ -1038,8 +1153,49 @@
       toast(error.name === "Error" ? error.message : ui().network_error);
     } finally { setBusy(false); }
   }
-  // ---------- the code of computer 12 (specs/pen-and-code.md) ----------
-  // A small field for 4 digits replaces the answers. The server checks the code; a wrong one costs 1 minute.
+  // ---------- computer 12: the group remembers the day, the phone checks it (specs/calendar-code.md) ----------
+  // The code is the day and the month of the cover photo. Nobody says it: at computer 12 the player asks
+  // the people around what they remember. Tomás is in the lab; Rita and Leonor are there when they came
+  // along (the server's `followers`). Each remembers one thing; the Weather and Calendar apps of the phone
+  // turn those memories into one day. The code is typed in the usual 4-digit field and checked by the server.
+  const HELPER_NAMES = { tomas: "Tomás", rita: "Rita", leonor: "Leonor" };
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  function addHelper(who, text) {   // a line of the group: a speech bubble with the name of who says it
+    $("talk-log").querySelector(".typing")?.remove();
+    const bubble = make("div", undefined, "bubble them helper");
+    bubble.append(make("b", HELPER_NAMES[who], "helper-name"), make("p", text), make("time", campusTime()));
+    $("talk-log").append(bubble);
+    $("talk-log").scrollTop = $("talk-log").scrollHeight;
+  }
+  function helpersHere() {   // Tomás when he is in the room, and whoever came along
+    const helpers = [];
+    if (current.people.some(person => person.id === "tomas")) helpers.push("tomas");
+    for (const id of current.followers?.ids || []) if (HELPER_NAMES[id]) helpers.push(id);
+    return helpers;
+  }
+  // A live conversation: the question, then each person answers in turn, with the typing dots in between.
+  async function askGroup(button) {
+    const t = ui(), card = talking;
+    asked.add("group_photo");
+    button.remove();
+    addBubble(t.group_ask, "me");
+    const helpers = helpersHere();
+    if (canSpeak && !sound.isMuted()) { stopSpeaking(); say(helpers.map(who => [t.group_clues[who], who])); }
+    for (const who of helpers) {
+      showTyping();
+      await wait(1100);
+      if (talking !== card) return;   // the conversation was closed meanwhile
+      addHelper(who, t.group_clues[who]);
+      sound.talk();
+    }
+    if (helpers.length < 3) addSaid(t.group_alone);
+    addSaid(t.group_phone);
+  }
+  // The 4-digit field. A wrong code costs 2 minutes; after 3 wrong codes a line points to the date stamp
+  // on the original photo. The wrong codes are counted in this browser for this name and this night.
+  const wrongKey = () => `plot-twist-wrong-codes:${current?.player || ""}:${current?.memory?.night || 1}`;
+  function readWrong() { try { return Number(localStorage.getItem(wrongKey())) || 0; } catch (error) { return 0; } }
+  function saveWrong(n) { try { localStorage.setItem(wrongKey(), String(n)); } catch (error) { /* no storage */ } }
   function askCode(line) {
     const t = ui();
     const form = make("form", undefined, "code-form");
@@ -1047,7 +1203,7 @@
     Object.assign(input, { inputMode: "numeric", maxLength: 4, autocomplete: "off", placeholder: "• • • •" });
     input.setAttribute("aria-label", t.code_label);
     const unlock = make("button", t.code_unlock); unlock.type = "submit";
-    form.append(input, unlock);   // to give up, "End conversation" in the header
+    form.append(input, unlock, make("p", t.code_cost, "muted code-cost"));   // to give up, "End conversation" in the header
     form.addEventListener("submit", async event => {
       event.preventDefault();
       const code = input.value.trim();
@@ -1058,7 +1214,10 @@
       if (!await send("unlock", { code })) { $("talk-log").querySelector(".typing")?.remove(); return; }
       if (!current.unlocked) {   // wrong code: the computer stays locked, and it costs time
         addSaid(current.message);
-        penalize(1, t.time_penalty_code);
+        penalize(2, t.time_penalty_code);
+        const wrong = readWrong() + 1;
+        saveWrong(wrong);
+        if (wrong === 3) addSaid(t.code_hint);
         input.value = ""; input.focus();
         return;
       }
@@ -1295,11 +1454,11 @@
     $("near-hint").hidden = !(person || thing) || Boolean(talking);
     if (!person && !thing) return;
     const t = ui();
-    // On a touch screen the note is the button for K: it says what a tap does, with no key drawn (specs/phone-joystick.md, point 4).
-    const sentence = thing ? (TOUCH ? t.tap_look : t.press_look).replace("{name}", thing.name)
-      : person.object ? (TOUCH ? t.tap_use : t.press_use).replace("{name}", person.name.toLowerCase())
-      : (TOUCH ? t.tap_talk : t.press_talk).replace("{name}", person.name);
-    if (TOUCH) { $("near-hint").replaceChildren(document.createTextNode(sentence)); return; }
+    // A thing says "look" (specs/more-to-find.md, point 7). On a phone the note is tapped instead of K
+    // (specs/touch-card-qr.md): the click below does the same as K, for a thing and for a person.
+    const sentence = thing ? t.press_look.replace("{name}", thing.name)
+      : person.object ? t.press_use.replace("{name}", person.name.toLowerCase())
+      : t.press_talk.replace("{name}", person.name);
     const key = make("kbd", "K");
     $("near-hint").replaceChildren(key, document.createTextNode(" " + sentence));
   }
@@ -1613,8 +1772,6 @@
       return item;
     };
     $("howto-list").replaceChildren(...t.rules_items.map(entry));
-    // On a touch screen one more line under the points says how to walk and talk with a finger (specs/phone-joystick.md).
-    if (TOUCH) $("howto-list").append(make("li", t.rules_touch, "rules-touch"));
     $("howto-dev-list").replaceChildren(...t.howto_items.map(entry));
     window.playing = false;
     howto.showModal();
@@ -1636,6 +1793,141 @@
     if (e.key === "Escape" && !$("menu-list").hidden) { setMenu(false); $("menu-toggle").focus(); }
   });
   howto.addEventListener("close", () => { window.playing = !talking && $("chat-card").hidden && !phone.open; });
+
+  // ---------- the joystick (phones) ----------
+  const stickBase = $("stick-base"), stickKnob = $("stick-knob");
+  let stickPointer = null;
+  function stickMove(event) {
+    const box = stickBase.getBoundingClientRect(), radius = box.width / 2;
+    let dx = (event.clientX - (box.left + radius)) / radius, dz = (event.clientY - (box.top + radius)) / radius;
+    const length = Math.hypot(dx, dz);
+    if (length > 1) { dx /= length; dz /= length; }
+    stickKnob.style.transform = `translate(${dx * radius * 0.5}px, ${dz * radius * 0.5}px)`;
+    window.campusStick = length < 0.18 ? { x: 0, z: 0 } : { x: dx, z: dz };   // a small dead zone in the middle
+  }
+  function stickEnd(event) {
+    if (event.pointerId !== stickPointer) return;
+    stickPointer = null;
+    stickKnob.style.transform = "";
+    window.campusStick = { x: 0, z: 0 };
+  }
+  stickBase.addEventListener("pointerdown", event => {
+    stickPointer = event.pointerId;
+    try { stickBase.setPointerCapture(event.pointerId); } catch (error) { /* the pointer is not active (a test) */ }
+    stickMove(event);
+    event.preventDefault();
+  });
+  stickBase.addEventListener("pointermove", event => { if (event.pointerId === stickPointer) stickMove(event); });
+  stickBase.addEventListener("pointerup", stickEnd);
+  stickBase.addEventListener("pointercancel", stickEnd);
+  $("joystick-toggle").addEventListener("click", () => setDevice(deviceMode === "phone" ? "computer" : "phone", true));
+
+  // ---------- the QR code of the game, for the class to open it on their phones ----------
+  const qrDialog = make("dialog", undefined, "qr-dialog"); qrDialog.id = "qr-dialog";
+  qrDialog.setAttribute("aria-labelledby", "qr-title");
+  qrDialog.innerHTML = '<h2 id="qr-title"></h2><p id="qr-intro" class="muted"></p><canvas id="qr-canvas" width="300" height="300"></canvas>' +
+    '<p id="qr-failed" class="muted" hidden></p><p><a id="qr-link" target="_blank" rel="noopener noreferrer"></a></p>' +
+    '<div class="dialog-actions"><button id="qr-close"></button></div>';
+  document.body.append(qrDialog);
+  // The code is drawn by a small library from the same CDN as the other scripts; if it cannot be loaded, the address is shown.
+  const QR_LIBRARY = "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";
+  function loadQrLibrary() {
+    return new Promise((resolve, reject) => {
+      if (window.qrcode) { resolve(); return; }
+      const script = document.createElement("script");
+      script.src = QR_LIBRARY; script.onload = resolve; script.onerror = reject;
+      document.head.append(script);
+    });
+  }
+  function drawQr(url) {
+    const canvas = $("qr-canvas"), context = canvas.getContext("2d");
+    const qr = window.qrcode(0, "M"); qr.addData(url); qr.make();
+    const count = qr.getModuleCount(), cell = Math.floor(canvas.width / (count + 8)), offset = Math.floor((canvas.width - cell * count) / 2);
+    context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height);   // the code needs a light margin around it
+    context.fillStyle = "#000";
+    for (let row = 0; row < count; row++) for (let col = 0; col < count; col++) if (qr.isDark(row, col)) context.fillRect(offset + col * cell, offset + row * cell, cell, cell);
+  }
+  async function openQr() {
+    if (qrDialog.open) return;
+    const t = ui();
+    $("qr-title").textContent = t.qr_title; $("qr-intro").textContent = t.qr_intro; $("qr-close").textContent = t.qr_close;
+    $("qr-link").textContent = t.app_url; $("qr-link").href = t.app_url;
+    $("qr-failed").textContent = t.qr_failed; $("qr-failed").hidden = true; $("qr-canvas").hidden = false;
+    if (current) window.playing = false;
+    qrDialog.showModal();
+    try { await loadQrLibrary(); drawQr(t.app_url); }
+    catch (error) { $("qr-canvas").hidden = true; $("qr-failed").hidden = false; }
+  }
+  $("qr-open").addEventListener("click", openQr);
+  qrIntroButton.addEventListener("click", openQr);
+  $("qr-close").addEventListener("click", () => qrDialog.close());
+  qrDialog.addEventListener("close", () => { if (current) window.playing = !talking && $("chat-card").hidden && !phone.open; });
+
+  // ---------- the detective card: a picture to keep, with the detective, the name, the ending and the time ----------
+  const cardDialog = make("dialog", undefined, "card-dialog"); cardDialog.id = "card-dialog";
+  cardDialog.setAttribute("aria-labelledby", "card-title");
+  cardDialog.innerHTML = '<h2 id="card-title"></h2><img id="card-image" alt=""><p id="card-hint" class="muted"></p>' +
+    '<div class="dialog-actions"><a id="card-download" class="button-link"></a><button id="card-close" class="secondary"></button></div>';
+  document.body.append(cardDialog);
+  const CARD_COLORS = { full_case: "#e8b45c", impostor: "#7fd6a0", stolen_credits: "#ff8c7a", fifth_element: "#b79cff" };
+  function loadImage(src) {
+    return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = src; });
+  }
+  function roundedRect(context, x, y, w, h, r) {
+    context.beginPath();
+    context.moveTo(x + r, y); context.arcTo(x + w, y, x + w, y + h, r); context.arcTo(x + w, y + h, x, y + h, r);
+    context.arcTo(x, y + h, x, y, r); context.arcTo(x, y, x + w, y, r); context.closePath();
+  }
+  async function drawCard(ending) {
+    const t = ui(), W = 720, H = 1040, accent = CARD_COLORS[ending.id] || "#e8b45c";
+    const canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
+    const c = canvas.getContext("2d");
+    try { await document.fonts.load('54px "DM Serif Display"'); } catch (error) { /* the system serif is used */ }
+    const gradient = c.createLinearGradient(0, 0, 0, H); gradient.addColorStop(0, "#0a1826"); gradient.addColorStop(1, "#14344f");
+    c.fillStyle = gradient; roundedRect(c, 0, 0, W, H, 36); c.fill();
+    c.strokeStyle = accent; c.lineWidth = 6; roundedRect(c, 18, 18, W - 36, H - 36, 26); c.stroke();
+    c.textAlign = "center";
+    c.fillStyle = accent; c.font = '600 22px Inter, system-ui, sans-serif'; c.fillText(t.card_case, W / 2, 84);
+    c.fillStyle = "#f3eee1"; c.font = '400 46px "DM Serif Display", Georgia, serif'; c.fillText(t.title, W / 2, 140);
+    const glow = c.createRadialGradient(W / 2, 400, 20, W / 2, 400, 260); glow.addColorStop(0, accent + "55"); glow.addColorStop(1, "#0000");
+    c.fillStyle = glow; c.fillRect(0, 150, W, 520);
+    const owner = readLook(lookKey(current?.player || ""));
+    if (window.campusPortrait) {
+      try { c.drawImage(await loadImage(window.campusPortrait(resolvedLook(owner), 360, 540)), (W - 360) / 2, 160, 360, 540); } catch (error) { /* no picture */ }
+    }
+    c.fillStyle = "#f3eee1"; c.font = '400 64px "DM Serif Display", Georgia, serif';
+    c.fillText(current?.player || t.card_name, W / 2, 770);
+    c.save(); c.translate(W / 2, 835); c.rotate(-0.06);
+    c.font = '800 26px Inter, system-ui, sans-serif'; c.fillStyle = accent; c.strokeStyle = accent; c.lineWidth = 4;
+    const stamp = (t.stamps || {})[ending.id] || ending.title, width = c.measureText(stamp).width + 44;
+    roundedRect(c, -width / 2, -32, width, 52, 8); c.stroke(); c.fillText(stamp, 0, 4); c.restore();
+    const clues = current?.clues || [], done = clues.filter(x => x.done).length;
+    c.fillStyle = "#e9e4d6"; c.font = '500 24px Inter, system-ui, sans-serif';
+    c.fillText(ending.title, W / 2, 905);
+    c.fillStyle = "#b7bdc5"; c.font = '500 21px Inter, system-ui, sans-serif';
+    c.fillText(`${done}/${clues.length} ${t.card_clues}  ·  ${t.card_time}: ${minutesSeconds(msLeft())}`, W / 2, 945);
+    c.fillText(collectionText().replace(/\s{2,}/g, "  "), W / 2, 980);
+    c.fillStyle = accent; c.font = '600 18px Inter, system-ui, sans-serif'; c.fillText(t.app_url.replace(/^https?:\/\//, "").replace(/\/$/, ""), W / 2, 1012);
+    return canvas;
+  }
+  let cardUrl = null;
+  async function openCard() {
+    const ending = current?.ending;
+    if (!ending || cardDialog.open) return;
+    const t = ui();
+    $("card-title").textContent = t.card_title; $("card-hint").textContent = t.card_hint; $("card-close").textContent = t.card_close;
+    $("card-download").textContent = t.card_download;
+    const canvas = await drawCard(ending);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (cardUrl) URL.revokeObjectURL(cardUrl);
+    cardUrl = URL.createObjectURL(blob);
+    $("card-image").src = cardUrl; $("card-image").alt = `${t.card_title}: ${current.player}, ${ending.title}`;
+    $("card-download").href = cardUrl;
+    $("card-download").download = `plot-twist-${String(current.player).toLowerCase().replace(/[^a-z0-9]+/g, "-") || "detetive"}.png`;
+    cardDialog.showModal();
+  }
+  $("ending-card-btn").addEventListener("click", openCard);
+  $("card-close").addEventListener("click", () => cardDialog.close());
 
   // ---------- the phone: a map, the to-do list of clues and the diary ----------
   const phone = make("dialog", undefined, "phone-dialog"); phone.id = "phone";
@@ -1754,19 +2046,63 @@
     }
   }
 
+  // ---------- the Weather and Calendar apps: October 2026, the month of the photo (specs/calendar-code.md) ----------
+  // Only facts about the month, no answer: the group's memories at computer 12 say which facts matter.
+  // October is over (tonight is in November), so the whole month is there.
+  const MONTH = 9;   // October, as JavaScript counts months (January is 0)
+  const WEATHER = { 1: "sun", 2: "cloud", 3: "sun", 4: "rain", 5: "cloud", 6: "sun", 7: "rain", 8: "rain", 9: "cloud", 10: "sun", 11: "cloud",
+                    12: "sun", 13: "rain", 14: "cloud", 15: "rain", 16: "cloud", 17: "sun", 18: "sun", 19: "rain", 20: "cloud", 21: "sun",
+                    22: "rain", 23: "cloud", 24: "rain", 25: "cloud", 26: "sun", 27: "rain", 28: "cloud", 29: "sun", 30: "rain", 31: "cloud" };
+  const WEATHER_ICON = { sun: "☀️", cloud: "☁️", rain: "🌧️" };
+  const WEATHER_TEMP = { sun: 19, cloud: 16, rain: 14 };
+  function drawWeather(screen, t) {
+    screen.append(make("p", t.weather_place, "muted weather-place"));
+    const list = make("ol", undefined, "weather-list");
+    for (const [day, kind] of Object.entries(WEATHER)) {
+      const weekday = t.calendar_weekdays[(new Date(2026, MONTH, Number(day)).getDay() + 6) % 7];
+      const row = make("li", undefined, `weather-day ${kind}`);
+      row.append(make("span", `${weekday} ${day}`, "weather-date"), make("span", WEATHER_ICON[kind], "weather-icon"),
+                 make("span", t.weather_kinds[kind], "weather-kind"), make("span", `${WEATHER_TEMP[kind] + (Number(day) % 3)}°`, "weather-temp"));
+      row.setAttribute("aria-label", `${weekday} ${day}: ${t.weather_kinds[kind]}`);
+      list.append(row);
+    }
+    screen.append(list);
+  }
+  function drawCalendar(screen, t) {
+    const grid = make("div", undefined, "phone-calendar");
+    for (const day of t.calendar_weekdays) grid.append(make("span", day, "calendar-weekday"));
+    const offset = (new Date(2026, MONTH, 1).getDay() + 6) % 7;   // October 2026 starts on a Thursday (Monday is the first column)
+    for (let i = 0; i < offset; i++) grid.append(make("span", "", "calendar-empty"));
+    for (let day = 1; day <= 31; day++) {
+      const cell = make("span", String(day), "calendar-day");
+      if (t.calendar_events[day]) cell.classList.add("has-event");
+      grid.append(cell);
+    }
+    const events = make("ul", undefined, "calendar-events");
+    for (const [day, text] of Object.entries(t.calendar_events)) {
+      const weekday = t.calendar_weekdays[(new Date(2026, MONTH, Number(day)).getDay() + 6) % 7];
+      const item = make("li");
+      item.append(make("b", `${weekday} ${day}`), make("span", text));
+      events.append(item);
+    }
+    screen.append(grid, events);
+  }
+
   function showPhone(view) {
     const t = ui(), screen = $("phone-screen");
     $("phone-back").hidden = view === "home";
     $("phone-back").textContent = `‹ ${t.phone_home}`;
     $("phone-close").setAttribute("aria-label", t.phone_close);
-    $("phone-title").textContent = view === "map" ? t.map_title : view === "todo" ? t.todo_title : view === "diary" ? t.diary_title : view === "msgs" ? t.msgs_title : t.phone;
+    $("phone-title").textContent = { map: t.map_title, todo: t.todo_title, diary: t.diary_title, msgs: t.msgs_title,
+                                     weather: t.weather_title, calendar: t.calendar_title }[view] || t.phone;
     screen.replaceChildren();
     if (view === "home") {
       const { done, total } = clueCount();
       const grid = make("div", undefined, "app-grid");
       for (const [id, icon, label, badge] of [["map", "📍", t.app_map, ""], ["todo", "✅", t.app_todo, `${done}/${total}`],
                                               ["diary", "📔", t.app_diary, String((current?.notebook || []).length + loadDiary().length)],
-                                              ["msgs", "💬", t.app_msgs, unreadMsgs() ? String(unreadMsgs()) : ""]]) {
+                                              ["msgs", "💬", t.app_msgs, unreadMsgs() ? String(unreadMsgs()) : ""],
+                                              ["weather", "🌦️", t.app_weather, ""], ["calendar", "📅", t.app_calendar, ""]]) {
         const app = make("button", undefined, "app-icon");
         app.dataset.app = id;
         app.append(make("span", icon, "app-glyph"), make("span", label, "app-name"));
@@ -1778,6 +2114,8 @@
     } else if (view === "map") drawMap(screen, t);
     else if (view === "diary") drawDiary(screen, t);
     else if (view === "msgs") drawMsgs(screen, t);
+    else if (view === "weather") drawWeather(screen, t);
+    else if (view === "calendar") drawCalendar(screen, t);
     else drawTodo(screen, t);
     (view === "home" ? screen.querySelector("button") : $("phone-back")).focus();
   }
@@ -1899,7 +2237,9 @@
     const note = groupNote(current);   // a name could not be used, or a continued game kept its group (point 8)
     if (note) toast(note);
     try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
+    try { localStorage.setItem(briefKey(current.player), "yes"); localStorage.setItem(briefKey(name.value), "yes"); } catch (error) { /* no storage */ }
     saveLook(current.player); saveLook(name.value);
+    if (deviceMode === "phone") setPanelHidden(true);
     if (window.campusPreview) window.campusPreview.stop();
     if (window.campusSetLook) window.campusSetLook(resolvedLook(look));
     $("intro").classList.add("gone");
@@ -1912,7 +2252,7 @@
   // The 3D scene calls this when the character walks through a door into another room.
   window.campusEnter = room => send("enter", { room });
   name.addEventListener("keydown", e => {
-    if (e.key === "Enter" && $("accept").classList.contains("ready")) window.campusStart();
+    if (e.key === "Enter" && $("accept").classList.contains("ready")) window.campusNext();
   });
   $("restart").addEventListener("click", () => {
     window.playing = false;

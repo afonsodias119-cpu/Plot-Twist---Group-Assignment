@@ -1,5 +1,7 @@
 # The hidden USB stick and the code of computer 12
 
+> **Update (specs/calendar-code.md):** the cover photo is now dated Saturday 17 October, so the code of computer 12 is `1710`, the photo's stamp says 17.10 and the slip on the shutter says 17 October. The clerk's `order` line no longer says the date.
+
 Extends specs/harder-campus.md and specs/campus-people-and-atmosphere.md. Option A of the team discussion: everything happens in the 3D game. No change to `story.py`, `logic.py`, `db.py`, `game.py`, `app.py` or any reviewed test; the plain game (`app.py`) plays as before.
 
 ## Why

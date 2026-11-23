@@ -1,5 +1,7 @@
 # A campus that does not wait: a clock the server knows, two people who leave, and Duarte's rounds
 
+> **Update (specs/calendar-code.md):** the cover photo is now dated Saturday 17 October, so the code of computer 12 is `1710`, the photo's stamp says 17.10 and the slip on the shutter says 17 October. The clerk's `order` line no longer says the date.
+
 Extends specs/harder-campus.md, specs/evidence-and-hearing.md, specs/pen-and-code.md, specs/campus-people-and-atmosphere.md and specs/continuous-conversations.md. It reverses one line of specs/harder-campus.md ("Making the server know the time" was out of scope): from now on the server knows the campus minute. No change to `story.py`, `logic.py`, `db.py`, `game.py`, `app.py` or any reviewed test; the table `nights` already exists. The countdown stays 30 minutes, starts at 22:15 and still pauses while the game is closed.
 
 ## Why
