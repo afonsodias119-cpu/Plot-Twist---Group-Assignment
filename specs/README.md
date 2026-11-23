@@ -115,6 +115,7 @@ Read in this order: evidence-and-hearing → three-proofs → camera-proof → s
 |---|---|---|
 | [harder-campus](harder-campus.md) | 30 minutes before the faculty closes | night-schedule |
 | [night-schedule](night-schedule.md) | The server's clock, who leaves, Duarte's rounds | night-and-clues, three-proofs |
+| [earlier-nights](earlier-nights.md) | The game remembers earlier nights: the night number, the unknown number's messages, the changing cover photo | three-proofs (no true ending), night-and-clues |
 
 ## Archive
 
