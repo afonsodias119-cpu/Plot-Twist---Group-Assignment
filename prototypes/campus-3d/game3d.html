@@ -833,6 +833,31 @@ function bench(x, z) {
   block(x, z, 1.8, 0.45);
 }
 bench(-4.4, -2.45); bench(4.4, -2.45); bench(0, 2.45);
+// ---- the security desk by the main entrance (specs/security-desk.md): a desk, a wall of monitors and the guard ----
+rbox(2.5, 0.05, 0.7, -11.3, 0.74, -1.45, mat(0x3b4048, { roughness: 0.5 }));
+rbox(0.06, 0.74, 0.62, -12.5, 0, -1.45, metal); rbox(0.06, 0.74, 0.62, -10.1, 0, -1.45, metal);
+block(-11.3, -1.45, 2.5, 0.7);
+rbox(2.9, 1.2, 0.14, -11.3, 1.0, -2.8, blackPlastic, { radius: 0.03 });   // the rack the monitors hang on
+const deskScreens = [];
+const deskOffTexture = textPanel(256, 160, (g, w, h) => {
+  g.fillStyle = "#05080b"; g.fillRect(0, 0, w, h);
+  g.fillStyle = "#1c2a33"; g.font = "bold 16px monospace"; g.textAlign = "center"; g.fillText("NO SIGNAL", w / 2, h / 2 + 5);
+});
+const deskOnTexture = (n) => textPanel(256, 160, (g, w, h) => {
+  g.fillStyle = "#0b1a12"; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 700; i++) { g.fillStyle = `rgba(120,255,170,${Math.random() * 0.22})`; g.fillRect(Math.random() * w, Math.random() * h, 3, 1); }
+  g.fillStyle = "#59ff9c"; g.font = "bold 14px monospace"; g.fillText(`CAM ${n}`, 12, 22); g.fillText("● REC", w - 70, 22);
+  g.strokeStyle = "#59ff9c55"; g.strokeRect(8, 30, w - 16, h - 42);
+});
+const deskOnTextures = [deskOnTexture(1), deskOnTexture(2), deskOnTexture(3)];
+for (const [i, x] of [-12.2, -11.3, -10.4].entries()) {
+  const screenMesh = add(new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5),
+    mat(0x000000, { emissive: 0xffffff, emissiveMap: deskOffTexture, emissiveIntensity: 0.35 })), x, 1.05, -2.71);
+  screenMesh.userData = { index: i, on: false, offAt: 0 };
+  deskScreens.push(screenMesh);
+}
+lamp(0x9ad0ff, 3, -11.3, 2.6, -1.8, 6);
+
 const notices = textPanel(256, 160, (g, w, h) => {
   g.fillStyle = "#8a6a45"; g.fillRect(0, 0, w, h);
   const cols = ["#fff7a8", "#ffd0d0", "#d0f0ff", "#ffffff"];
@@ -1072,6 +1097,7 @@ placeNpc({ topColor: 0x3b6a8c, pants: 0x5a4a3a, hair: 0x8a8a8a, glasses: true, s
 placeNpc({ topColor: 0x6a7a3a, hair: 0x2a1a0a, skin: 0xd9a27e }, -6.5, 7.6, Math.PI, "Tomás", 0, "tomas");                                  // computer lab
 
 lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stage";   // the stage light
+placeNpc({ topColor: 0x1f3a5f, pants: 0x1a2230, hair: 0x9a9a9a, skin: 0xd9a27e, shirt: 0xf2f0e8, tie: 0x111111 }, -11.3, -2.15, 0, "Anselmo", 0, "guard");   // the security guard
 const USABLE = [{ id: "computer12", x: -1.8, z: 9.0 }];   // see the computer lab: desk 6, right-hand screen
 let player = makePerson({ topColor: 0xb3895a, long: true, hat: 0x3a2a1e, scarf: 0x8a1f24 });
 scene.add(player);
@@ -1394,6 +1420,22 @@ window.campusPreview = {
 };
 
 // A picture of the detective for the detective card: rendered once in a small scene, returned as a data URL.
+// A picture of any figure of the game, from the front (turn 0) or the back (turn PI): used by the security recordings.
+window.campusFigure = (options, width, height, turn) => {
+  const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setSize(width, height, false);
+  const small = new THREE.Scene();
+  small.add(new THREE.HemisphereLight(0xffffff, 0x556677, 1.8));
+  const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(2, 4, 5); small.add(key);
+  const camera = new THREE.PerspectiveCamera(26, width / height, 0.1, 30);
+  camera.position.set(0, 1.0, 6.4); camera.lookAt(0, 0.95, 0);
+  const model = makePerson(options); model.rotation.y = turn || 0; small.add(model);
+  renderer.render(small, camera);
+  const url = canvas.toDataURL("image/png");
+  renderer.dispose(); renderer.forceContextLoss();
+  return url;
+};
 window.campusPortrait = (r, width, height) => {
   const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -1478,6 +1520,12 @@ function loop() {
       const d = Math.hypot(player.position.x - n.position.x, player.position.z - n.position.z);
       if (d < nearDistance) { nearDistance = d; near = n.userData.id; }
     }
+    // the security guard stands in the corridor, which belongs to every room: he is always there
+    const guardFigure = npcs.find(n => n.userData.id === "guard");
+    if (guardFigure) {
+      const gd = Math.hypot(player.position.x - guardFigure.position.x, player.position.z - guardFigure.position.z);
+      if (gd < nearDistance) { nearDistance = gd; near = "guard"; }
+    }
     // things that are used: computer 12 is the right-hand screen of the sixth desk of the lab
     for (const o of USABLE) {
       if (!here.some(p => p.id === o.id)) continue;
@@ -1514,6 +1562,13 @@ function loop() {
   if (frameCount++ % 4 === 0) seaGeo.computeVertexNormals();   // the slow part: only every fourth frame
   foam.material.opacity = 0.12 + Math.sin(t * 1.6) * 0.08; foam.position.z = -15.1 + Math.sin(t * 1.6) * 0.25;
 
+  // the wall of monitors by the entrance: dark until the cables are plugged in, then they light up one by one
+  for (const m of deskScreens) {
+    const wantOn = window.campusDeskPower === true;
+    if (wantOn && !m.userData.on) { if (!m.userData.offAt) m.userData.offAt = t + 0.6 * (m.userData.index + 1); if (t >= m.userData.offAt) { m.userData.on = true; m.material.emissiveMap = deskOnTextures[m.userData.index]; m.material.needsUpdate = true; } }
+    if (!wantOn && m.userData.on) { m.userData.on = false; m.userData.offAt = 0; m.material.emissiveMap = deskOffTexture; m.material.needsUpdate = true; }
+    m.material.emissiveIntensity = m.userData.on ? 1.3 + Math.sin(t * 9 + m.userData.index) * 0.05 : 0.35;
+  }
   // screens flicker a little, dust drifts
   for (const [i, s] of screens.entries()) s.material.emissiveIntensity = s.userData.base * (1 + Math.sin(t * 9 + i * 3) * 0.03);
   dust.rotation.y = t * 0.01; dust.position.y = Math.sin(t * 0.3) * 0.1;
