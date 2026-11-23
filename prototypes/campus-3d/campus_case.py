@@ -209,21 +209,23 @@ NIGHT_TEXT = {
 
 # ---------- the cases (specs/case-of-the-day.md and specs/culprit-of-the-night.md) ----------
 # The date picks one of these cases (campus_clock.case_of_day); a saved game keeps its own. Server
-# only, like everything above: the ids, the codes and the texts never reach the page.
+# only, like everything above: the ids and the texts never reach the page.
 # - `order`: the chat as shown. order[shown - 1] is the story's message number shown at that place.
-# - `code`: the code of computer 12; `photo_date`: the date stamp of the torn photo.
 # - `accepts`: more cards that break a claim of the hearing, by claim id; `right`: the professor's
 #   line for each of those new pairs.
 # - `texts`: {exact classic text: what this case says instead}, in each language (campus_evidence.retell).
 # "outsider" is the classic case, exactly as before: nothing is added and no text is swapped.
+# The cover photo, its date (Saturday 17 October) and the code of computer 12 are the same in every
+# case (specs/calendar-code.md): no case swaps a dated line, and no case text touches the group's
+# memories at computer 12, so what Tomás, Rita and Leonor remember of that day is true in every case.
 CASES = {
-    "outsider": {"order": [1, 2, 3, 4, 5], "code": "1411", "photo_date": "14.11.2026",
+    "outsider": {"order": [1, 2, 3, 4, 5],
                  "accepts": {}, "right": {"en": {}, "pt": {}}, "texts": {"en": {}, "pt": {}}},
     # Tomás let Duarte in (design-notes/texts-ideas.md, B1): he never made his slides, and Duarte, who
     # repeats the course, promised to make them if his name went on the report. Tomás lies about
     # computer 12 and the slides; the file history names his account.
     "tomas": {
-        "order": [5, 1, 2, 3, 4], "code": "1011", "photo_date": "10.11.2026",
+        "order": [5, 1, 2, 3, 4],
         "accepts": {"name": ["files", "tomas_word"]},
         # The professor's line when the confession answers the claim "name" (point 5).
         "right": {"en": {"name": {"tomas_word": "\"The person who put the name there has told me so himself. So much for 'since the first draft'.\""}},
@@ -289,19 +291,6 @@ CASES = {
                     "Leonor wrote the chat message about the cover photo herself.",
                 "\"The slides, of course. Ask anyone.\" He hesitates for a second.":
                     "\"The slides, of course. Ask Tomás, he will tell you.\" He hesitates for a second.",
-                # the date of the photo is 10 November: the clerk, the slip on the shutter, the taped photo (B1.19 to B1.22)
-                "\"On 14 November, you took the photo and had it printed the same day. I remember there were four people in it, and I think the original order file is still saved.\"":
-                    "\"On 10 November, you took the photo and had it printed the same day. I remember there were four people in it, and I think the original order file is still saved.\"",
-                "The cover photo was taken and printed on 14 November. The print shop still has the original order file.":
-                    "The cover photo was taken and printed on 10 November. The print shop still has the original order file.",
-                "The clerk stops with her hand on the printer. \"The fourteenth of November. Yes. How do you...?\" She looks at the clock. \"I have been closing in ten minutes for a very long time.\" She frowns at the counter. \"Odd. I do not remember you leaving.\"":
-                    "The clerk stops with her hand on the printer. \"The tenth of November. Yes. How do you...?\" She looks at the clock. \"I have been closing in ten minutes for a very long time.\" She frowns at the counter. \"Odd. I do not remember you leaving.\"",
-                "The clerk agreed with the date before you finished saying it: the cover photo was printed on 14 November.":
-                    "The clerk agreed with the date before you finished saying it: the cover photo was printed on 10 November.",
-                "The shutter is down and the counter is dark. The clerk went home at 22:25. A slip is taped to the shutter: cover photo, order of 14 November, collect tomorrow.":
-                    "The shutter is down and the counter is dark. The clerk went home at 22:25. A slip is taped to the shutter: cover photo, order of 10 November, collect tomorrow.",
-                "The last piece fits. In the original photo there are four of you, and in the corner the date stamp says 14.11. The clerk tapes the pieces together and hands you the photo.":
-                    "The last piece fits. In the original photo there are four of you, and in the corner the date stamp says 10.11. The clerk tapes the pieces together and hands you the photo.",
                 # the professor, when Tomás's confession answers the messages (B1.23)
                 "\"Then the person whose name is on it never sent it. That answers this one.\"":
                     "\"Its author tells me he wrote it last night. A message written yesterday proves nothing about three weeks ago.\"",
@@ -376,19 +365,6 @@ CASES = {
                     "A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.",
                 "\"Os slides, claro. Pergunta a qualquer um.\" Hesita por um segundo.":
                     "\"Os slides, claro. Pergunta ao Tomás, ele diz-te.\" Hesita por um segundo.",
-                # the date of the photo is 10 November: the clerk, the slip on the shutter, the taped photo (B1.19 to B1.22)
-                "\"A 14 de novembro, tiraram a fotografia e mandaram-na imprimir no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado.\"":
-                    "\"A 10 de novembro, tiraram a fotografia e mandaram-na imprimir no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado.\"",
-                "A fotografia da capa foi tirada e impressa a 14 de novembro. A reprografia ainda tem o ficheiro original do pedido.":
-                    "A fotografia da capa foi tirada e impressa a 10 de novembro. A reprografia ainda tem o ficheiro original do pedido.",
-                "A funcionária fica com a mão parada na impressora. \"Catorze de novembro. Sim. Como é que tu...?\" Olha para o relógio. \"Há muito tempo que estou a fechar daqui a dez minutos.\" Franze a testa para o balcão. \"Estranho. Não me lembro de te ver sair.\"":
-                    "A funcionária fica com a mão parada na impressora. \"Dez de novembro. Sim. Como é que tu...?\" Olha para o relógio. \"Há muito tempo que estou a fechar daqui a dez minutos.\" Franze a testa para o balcão. \"Estranho. Não me lembro de te ver sair.\"",
-                "A funcionária confirmou a data antes de acabares de a dizer: a fotografia da capa foi impressa a 14 de novembro.":
-                    "A funcionária confirmou a data antes de acabares de a dizer: a fotografia da capa foi impressa a 10 de novembro.",
-                "A grade está descida e o balcão às escuras. A funcionária foi para casa às 22:25. Há um papel colado na grade: fotografia da capa, pedido de 14 de novembro, levantar amanhã.":
-                    "A grade está descida e o balcão às escuras. A funcionária foi para casa às 22:25. Há um papel colado na grade: fotografia da capa, pedido de 10 de novembro, levantar amanhã.",
-                "O último pedaço encaixa. Na fotografia original estão quatro pessoas, e no canto o carimbo da data diz 14.11. A funcionária cola os pedaços com fita-cola e dá-te a fotografia.":
-                    "O último pedaço encaixa. Na fotografia original estão quatro pessoas, e no canto o carimbo da data diz 10.11. A funcionária cola os pedaços com fita-cola e dá-te a fotografia.",
                 # the professor, when Tomás's confession answers the messages (B1.23)
                 "\"Então quem a assina nunca a enviou. Essa fica respondida.\"":
                     "\"O autor diz-me que a escreveu ontem à noite. Uma mensagem escrita ontem não prova nada sobre há três semanas.\"",
@@ -408,7 +384,7 @@ CASES = {
     # Rita let Duarte in (design-notes/texts-ideas.md, B2): he needed a group with a good grade and
     # she said yes without asking anyone. She says she went home early; the file history names her account.
     "rita": {
-        "order": [2, 4, 3, 5, 1], "code": "1311", "photo_date": "13.11.2026",
+        "order": [2, 4, 3, 5, 1],
         "accepts": {"name": ["files", "rita_word"]},
         # The professor's line when the confession answers the claim "name" (point 5).
         "right": {"en": {"name": {"rita_word": "\"The person who put the name there has told me so herself. Go on.\""}},
@@ -464,19 +440,6 @@ CASES = {
                     "Leonor wrote the chat message about the cover photo herself.",
                 "\"The slides, of course. Ask anyone.\" He hesitates for a second.":
                     "\"The slides, of course. Ask Rita, she knows.\" He hesitates for a second.",
-                # the date of the photo is 13 November (B2.19 to B2.22)
-                "\"On 14 November, you took the photo and had it printed the same day. I remember there were four people in it, and I think the original order file is still saved.\"":
-                    "\"On 13 November, you took the photo and had it printed the same day. I remember there were four people in it, and I think the original order file is still saved.\"",
-                "The cover photo was taken and printed on 14 November. The print shop still has the original order file.":
-                    "The cover photo was taken and printed on 13 November. The print shop still has the original order file.",
-                "The clerk stops with her hand on the printer. \"The fourteenth of November. Yes. How do you...?\" She looks at the clock. \"I have been closing in ten minutes for a very long time.\" She frowns at the counter. \"Odd. I do not remember you leaving.\"":
-                    "The clerk stops with her hand on the printer. \"The thirteenth of November. Yes. How do you...?\" She looks at the clock. \"I have been closing in ten minutes for a very long time.\" She frowns at the counter. \"Odd. I do not remember you leaving.\"",
-                "The clerk agreed with the date before you finished saying it: the cover photo was printed on 14 November.":
-                    "The clerk agreed with the date before you finished saying it: the cover photo was printed on 13 November.",
-                "The shutter is down and the counter is dark. The clerk went home at 22:25. A slip is taped to the shutter: cover photo, order of 14 November, collect tomorrow.":
-                    "The shutter is down and the counter is dark. The clerk went home at 22:25. A slip is taped to the shutter: cover photo, order of 13 November, collect tomorrow.",
-                "The last piece fits. In the original photo there are four of you, and in the corner the date stamp says 14.11. The clerk tapes the pieces together and hands you the photo.":
-                    "The last piece fits. In the original photo there are four of you, and in the corner the date stamp says 13.11. The clerk tapes the pieces together and hands you the photo.",
                 # the professor, when Rita's confession answers the photo (B2.23)
                 "\"A witness who counted. I will hear her tomorrow; tonight I believe her.\"":
                     "\"The one who swapped it tells me what was there before: four people. I will hear her tomorrow.\"",
@@ -541,19 +504,6 @@ CASES = {
                     "A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.",
                 "\"Os slides, claro. Pergunta a qualquer um.\" Hesita por um segundo.":
                     "\"Os slides, claro. Pergunta à Rita, ela sabe.\" Hesita por um segundo.",
-                # the date of the photo is 13 November (B2.19 to B2.22)
-                "\"A 14 de novembro, tiraram a fotografia e mandaram-na imprimir no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado.\"":
-                    "\"A 13 de novembro, tiraram a fotografia e mandaram-na imprimir no mesmo dia. Eram quatro pessoas, ainda me lembro, e acho que o ficheiro original do pedido ainda está guardado.\"",
-                "A fotografia da capa foi tirada e impressa a 14 de novembro. A reprografia ainda tem o ficheiro original do pedido.":
-                    "A fotografia da capa foi tirada e impressa a 13 de novembro. A reprografia ainda tem o ficheiro original do pedido.",
-                "A funcionária fica com a mão parada na impressora. \"Catorze de novembro. Sim. Como é que tu...?\" Olha para o relógio. \"Há muito tempo que estou a fechar daqui a dez minutos.\" Franze a testa para o balcão. \"Estranho. Não me lembro de te ver sair.\"":
-                    "A funcionária fica com a mão parada na impressora. \"Treze de novembro. Sim. Como é que tu...?\" Olha para o relógio. \"Há muito tempo que estou a fechar daqui a dez minutos.\" Franze a testa para o balcão. \"Estranho. Não me lembro de te ver sair.\"",
-                "A funcionária confirmou a data antes de acabares de a dizer: a fotografia da capa foi impressa a 14 de novembro.":
-                    "A funcionária confirmou a data antes de acabares de a dizer: a fotografia da capa foi impressa a 13 de novembro.",
-                "A grade está descida e o balcão às escuras. A funcionária foi para casa às 22:25. Há um papel colado na grade: fotografia da capa, pedido de 14 de novembro, levantar amanhã.":
-                    "A grade está descida e o balcão às escuras. A funcionária foi para casa às 22:25. Há um papel colado na grade: fotografia da capa, pedido de 13 de novembro, levantar amanhã.",
-                "O último pedaço encaixa. Na fotografia original estão quatro pessoas, e no canto o carimbo da data diz 14.11. A funcionária cola os pedaços com fita-cola e dá-te a fotografia.":
-                    "O último pedaço encaixa. Na fotografia original estão quatro pessoas, e no canto o carimbo da data diz 13.11. A funcionária cola os pedaços com fita-cola e dá-te a fotografia.",
                 # the professor, when Rita's confession answers the photo (B2.23)
                 "\"Uma testemunha que contou. Ouço-a amanhã; esta noite, acredito nela.\"":
                     "\"Quem a trocou diz-me o que lá estava antes: quatro pessoas. Ouço-a amanhã.\"",

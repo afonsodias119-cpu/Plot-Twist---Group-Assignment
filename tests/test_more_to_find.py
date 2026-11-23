@@ -233,9 +233,10 @@ def test_the_order_book_costs_two_minutes_and_reads_differently_with_the_photo()
 
 
 def test_computer_7s_code_is_never_a_code():
+    # Every case has the one code of computer 12, the date of the cover photo (specs/calendar-code.md).
     case_module = importlib.import_module("campus_case")
-    codes = {search.PC12_CODE} | {case["code"] for case in getattr(case_module, "CASES", {}).values()}
-    assert "2311" not in codes
+    assert all("code" not in case for case in case_module.CASES.values())
+    assert search.PC12_CODE == "1710" and search.PC12_CODE != "2311"
     play("open_drawer", "go_computer_lab")
     seen(peek("computer7"), "computer7", "en")   # before the files: the sticky note, and free
     before = saved()
@@ -320,7 +321,8 @@ def test_the_red_herrings_name_no_code_date_or_person():
         for thing in HERRINGS:
             entry = search.FIND_TEXT[language][thing]
             for key in ("text", "later"):
-                for word in ("1411", "14", "Duarte", "Leonor", "Rita", "Tomás"):
+                # the code and the day of the photo (17 October, specs/calendar-code.md), the old ones, and no person
+                for word in (search.PC12_CODE, "17", "October", "outubro", "1411", "14", "Duarte", "Leonor", "Rita", "Tomás"):
                     assert word not in entry[key], (language, thing, key, word)
 
 

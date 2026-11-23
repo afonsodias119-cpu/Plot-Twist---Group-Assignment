@@ -50,7 +50,7 @@ MONTHS = {"en": ["January", "February", "March", "April", "May", "June", "July",
           "pt": ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro",
                  "outubro", "novembro", "dezembro"]}
 LABEL = {"en": "Case of 22 November", "pt": "Caso de 22 de novembro"}
-EMPTY_DAY = {"date": "", "label": "", "photo_date": ""}
+EMPTY_DAY = {"date": "", "label": ""}
 
 
 # ---------- helpers ----------
@@ -260,18 +260,15 @@ def test_a_damaged_case_note_counts_as_the_classic_case(monkeypatch):
 def test_the_day_never_names_the_case(monkeypatch):
     on(monkeypatch, DAY)
     variant = clock().case_of_day(DAY)
-    case = cases()[variant]
     result = begin()
-    assert set(result["day"]) == {"date", "label", "photo_date"}
+    assert set(result["day"]) == {"date", "label"}
     shown = json.dumps(result["day"])
-    assert variant not in shown and case["code"] not in shown
-    assert result["day"]["photo_date"] == ""   # the study room
-    in_shop = do("go_print_shop")
-    assert in_shop["day"]["photo_date"] == case["photo_date"]   # the print shop, before the photo is held
-    held = do("request_copy")
-    assert held["day"]["photo_date"] == ""
-    assert do("go_study_room")["day"]["photo_date"] == ""
-    # A classic game never gets a stamp, not even in the print shop.
+    code = importlib.import_module("campus_search").PC12_CODE
+    assert variant not in shown and code not in shown
+    # Every case has the same photo (specs/calendar-code.md): the day is the same in every room.
+    assert do("go_print_shop")["day"] == result["day"]
+    assert do("request_copy")["day"] == result["day"]
+    assert do("go_study_room")["day"] == result["day"]
     call("open", player="classic")
     assert do("go_print_shop", player="classic")["day"] == EMPTY_DAY
 

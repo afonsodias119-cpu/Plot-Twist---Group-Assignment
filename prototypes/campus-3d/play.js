@@ -1239,8 +1239,6 @@
     addSaid(t.photo_intro);
     window.campusPhoto.open({
       title: t.photo_title, hint: t.photo_hint, close: t.photo_close,
-      // The date stamp of tonight's case, sent only here in the print shop (specs/culprit-of-the-night.md, point 4).
-      stamp: current.day ? current.day.photo_date : "",
       submit: async pieces => {
         const scene = current.scene;
         if (!await send("assemble", { pieces })) return;

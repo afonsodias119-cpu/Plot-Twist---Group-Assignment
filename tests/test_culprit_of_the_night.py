@@ -13,8 +13,10 @@ How to read this file:
   the USB stick, the copy, the decision about Leonor, the old files (2.5 charged minutes) and the
   chat messages in `flagged`. `perfect(...)` adds both cracks and the three right answers.
 - The texts a check names are copied word for word from design-notes/texts-ideas.md, part B. The
-  spec names `CASES` and its keys (`order`, `code`, `photo_date`, `accepts`, `right`, `texts`), so the
-  checks on the texts themselves read that table; the other tests only use the commands.
+  spec names `CASES` and its keys (`order`, `accepts`, `right`, `texts`), so the checks on the texts
+  themselves read that table; the other tests only use the commands.
+- The cover photo, its date (Saturday 17 October) and the code `1710` are the same in every case
+  (specs/calendar-code.md): the group remembers that day at computer 12, and no case changes it.
 - "the classic sources" are the tables the spec lists in point 6: story.py, campus_people.PEOPLE,
   campus_case.CASE_TEXT, campus_clock.SHUTTER, campus_search.PHOTO_TEXT and campus_case.NIGHT_TEXT.
 - "saves nothing" means the database file has the same bytes before and after (`saved()`).
@@ -52,8 +54,10 @@ SOLUTION = [[piece, 0] for piece in search.PHOTO_SOLUTION]
 # The spec's table (point 2), in shown numbers.
 FAKES = {"outsider": (2, 4, 5), "tomas": (1, 3, 5), "rita": (1, 2, 4)}
 LATE = {"outsider": 5, "tomas": 1, "rita": 4}   # the message with Tomás's name that arrived last night
-CODES = {"outsider": "1411", "tomas": "1011", "rita": "1311"}
-STAMPS = {"outsider": "14.11.2026", "tomas": "10.11.2026", "rita": "13.11.2026"}
+# Codes that are wrong in every case: the old ones of specs/pen-and-code.md and of the first cases.
+OLD_CODES = ("1411", "1011", "1311")
+# The words of what the group remembers of the day of the photo: no case text may use them.
+DAY_WORDS = ("October", "outubro", "Saturday", "sábado", "Finance", "Finanças", "sun", "sunny", "sol", "15", "17")
 
 # The chat as shown, place 1 to 5 (B1.1 to B1.4, B2.1 and B2.3; the classic one is story.py's).
 CHAT = {
@@ -307,8 +311,8 @@ def test_the_classic_case_changes_nothing(monkeypatch, tmp_path):
         dict(operation="enter", room="computer_lab"),
         dict(operation="talk", npc="tomas", node="kind"),
         dict(operation="talk", npc="tomas", node="who"),
-        dict(operation="unlock", code="1311"),
         dict(operation="unlock", code="1411"),
+        dict(operation="unlock", code=search.PC12_CODE),
         dict(operation="play", action="open_chat"),
         dict(operation="play", action="flag_2"),
         dict(operation="play", action="flag_4"),
@@ -394,54 +398,64 @@ def test_the_page_sees_only_shown_numbers(monkeypatch):
         crack_tomas(variant, player)
 
 
-def test_each_case_has_its_code(monkeypatch):
+def test_every_case_has_the_one_code_of_the_photo(monkeypatch):
     for variant in VARIANTS:
         player = f"code {variant}"
         play_case(monkeypatch, variant, player)
         do("open_drawer", player)
         walk("computer_lab", player)
         before = saved()
-        for other in VARIANTS:
-            if other != variant:
-                wrong = call("unlock", player=player, code=CODES[other])
-                assert wrong["unlocked"] is False and wrong["accepted"] is False, (variant, other)
+        for wrong_code in OLD_CODES + ("2311",):   # the old codes, and the sticky note of computer 7
+            wrong = call("unlock", player=player, code=wrong_code)
+            assert wrong["unlocked"] is False and wrong["accepted"] is False, (variant, wrong_code)
         assert saved() == before
-        right = call("unlock", player=player, code=CODES[variant])
+        right = call("unlock", player=player, code=search.PC12_CODE)
         assert right["unlocked"] is True and right["accepted"] is True, variant
         assert game.load(player)["flags"]["files_viewed"] is True
-    # The classic game keeps 1411.
-    call("open", player="classic")
-    do("open_drawer", player="classic")
-    walk("computer_lab", player="classic")
-    assert call("unlock", player="classic", code="1411")["unlocked"] is True
+    assert search.PC12_CODE == "1710"
 
 
-def test_the_photo_stamp_follows_the_case_only_in_the_print_shop(monkeypatch):
+def test_every_case_has_the_same_photo_and_date(monkeypatch):
     for variant in VARIANTS:
-        player = f"stamp {variant}"
-        assert play_case(monkeypatch, variant, player)["day"]["photo_date"] == ""
-        shop = do("go_print_shop", player)
-        assert shop["day"]["photo_date"] == STAMPS[variant], variant
-        order = talk("amelia", "order", player)
-        day = {"outsider": "14 November", "tomas": "10 November", "rita": "13 November"}[variant]
-        assert f"On {day}," in order["text"] and day in order["note"], variant
-        taped = call("assemble", player=player, pieces=SOLUTION)
-        assert taped["assembled"] is True and f"the date stamp says {STAMPS[variant][:5]}." in taped["message"]
-        assert taped["day"]["photo_date"] == ""
-        # The slip on the shutter, once the clerk has gone (another game of the same case).
-        late = f"late {variant}"
-        play_case(monkeypatch, variant, late)
-        do("go_print_shop", late)
-        closed = call("time", player=late, minute=10)
-        assert f"order of {day}, collect tomorrow." in closed["night"]["notice"], variant
-        assert closed["day"]["photo_date"] == STAMPS[variant]   # the photo is not held: the stamp stays
-        assert do("go_study_room", late)["day"]["photo_date"] == ""
-    call("open", player="classic")
-    assert do("go_print_shop", player="classic")["day"]["photo_date"] == ""
+        for language in ("en", "pt"):
+            player = f"photo {variant} {language}"
+            begun = play_case(monkeypatch, variant, player, language)
+            classic = people.PEOPLE[language]["amelia"]["nodes"]["order"]
+            do("go_print_shop", player, language)
+            order = talk("amelia", "order", player, language)
+            assert (order["text"], order["note"]) == (classic["text"], classic["note"]), (variant, language)
+            taped = call("assemble", language, player, pieces=SOLUTION)
+            assert taped["assembled"] is True and taped["message"] == search.PHOTO_TEXT[language], (variant, language)
+            assert taped["day"] == begun["day"]   # no stamp of its own in the snapshot
+            # The slip on the shutter, once the clerk has gone (another game of the same case).
+            late = f"late {variant} {language}"
+            play_case(monkeypatch, variant, late, language)
+            do("go_print_shop", late, language)
+            closed = call("time", language, late, minute=10)
+            assert closed["night"]["notice"] == clock().SHUTTER[language], (variant, language)
     photo_js = (FOLDER / "photo.js").read_text(encoding="utf-8")
     play_js = (FOLDER / "play.js").read_text(encoding="utf-8")
-    assert "14.11.2026" in photo_js and "stamp" in photo_js and "opts.stamp" in photo_js
-    assert "day.photo_date" in play_js
+    assert "17.10.2026" in photo_js and "opts.stamp" not in photo_js
+    assert "photo_date" not in play_js
+
+
+def test_the_groups_memories_are_true_in_every_case():
+    # At computer 12 Tomás, Rita and Leonor remember the day of the photo (specs/calendar-code.md). Those
+    # lines are the page's own (campus_text.TEXT), never a key of a case; and no case text, swapped or new,
+    # speaks of that day, so a culprit's lie never touches what the group remembers.
+    cases = case_file().CASES
+    for language in ("en", "pt"):
+        memories = list(TEXT[language]["group_clues"].values())
+        rule = people.PEOPLE[language]["tomas"]["nodes"]["password"]
+        for variant in VARIANTS:
+            table = cases[variant]["texts"][language]
+            new_lines = [line for lines in cases[variant]["right"][language].values() for line in lines.values()]
+            for key in table:
+                assert not any(key in memory or memory in key for memory in memories), (variant, key)
+                assert key not in (rule["text"], rule["note"]), (variant, key)
+            for text in list(table) + list(table.values()) + new_lines:
+                for word in DAY_WORDS:
+                    assert not re.search(rf"(?<!\w){word}(?!\w)", text), (variant, language, word, text)
 
 
 def test_the_confession_breaks_the_name_claim(monkeypatch):
@@ -554,7 +568,7 @@ def test_each_case_names_the_account_and_the_liar_can_be_checked(monkeypatch):
             rita_line = talk("rita", "pen", player, language)   # the study room, before anything else
             do("open_drawer", player, language)
             walk("computer_lab", player, language)
-            files = call("unlock", language, player, code=CODES[variant])
+            files = call("unlock", language, player, code=search.PC12_CODE)
             assert files["unlocked"] is True
             assert ACCOUNT[variant][language] in files["message"], (variant, language)
             card = next(card for card in files["evidence"] if card["id"] == "files")
@@ -574,12 +588,11 @@ def test_campus_case_is_still_data_only():
     assert not re.search(r"^\s*def ", source, flags=re.MULTILINE)
     classic = case.CASES["outsider"]
     assert classic["order"] == [1, 2, 3, 4, 5]
-    assert classic["code"] == search.PC12_CODE == "1411"
-    assert classic["photo_date"] == "14.11.2026"
+    assert search.PC12_CODE == "1710"   # one code for every case (specs/calendar-code.md)
     assert classic["accepts"] == {} and classic["texts"] == {"en": {}, "pt": {}}
     assert set(case.CASES) == set(VARIANTS) and set(clock().CASE_ORDER) == set(VARIANTS)
     for variant in VARIANTS:
         assert sorted(case.CASES[variant]["order"]) == [1, 2, 3, 4, 5], variant
-        assert set(case.CASES[variant]) == {"order", "code", "photo_date", "accepts", "right", "texts"}, variant
+        assert set(case.CASES[variant]) == {"order", "accepts", "right", "texts"}, variant
     # The order of the days (specs/case-of-the-day.md, point 1).
     assert [clock().case_of_day(date(2026, 11, day)) for day in (22, 23, 24)] == ["tomas", "rita", "outsider"]

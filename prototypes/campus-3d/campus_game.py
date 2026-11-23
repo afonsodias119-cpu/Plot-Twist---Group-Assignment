@@ -23,7 +23,7 @@ from campus_clock import (COSTS, LEAVES, NIGHT_MINUTES, ROUNDS, SHUTTER, WARNING
 # The case of the day (specs/case-of-the-day.md): the date picks the case, the notes keep it. The
 # case's data stays on the server: campus_evidence.case_of gives it, and the page sees only the date.
 from campus_clock import case_day, case_of_day
-from campus_evidence import CLASSIC, case_of
+from campus_evidence import CLASSIC
 # A different culprit some nights (specs/culprit-of-the-night.md): the page only ever sees the chat as
 # shown, and every reply is told in tonight's case on its way out.
 from campus_evidence import retell, story_card, story_number
@@ -391,17 +391,14 @@ def day_label(day_text, language):
     return t["case_of_day"].format(d=day.day, month=t["months"][day.month - 1])
 
 
-def day_view(state, night, language):
-    """The snapshot's `day` (point 5): the date, its label and the stamp the torn photo must draw.
-    The stamp is sent only in the print shop while the photo is not held; a classic game sends
-    none (also an old save marked classic, with no date: it finishes as the classic case). It never
-    says the case's id, its code or its chat order."""
+def day_view(night, language):
+    """The snapshot's `day` (point 5): the date and its label. A classic game sends none (also an old
+    save marked classic, with no date: it finishes as the classic case). It never says the case's id
+    or its chat order."""
     case = night["case"]
     if case is None or not case["date"]:
-        return {"date": "", "label": "", "photo_date": ""}
-    in_shop = state["scene"] == "print_shop" and "original_photo" not in state["inventory"]
-    return {"date": case["date"], "label": day_label(case["date"], language),
-            "photo_date": case_of(night)["photo_date"] if in_shop else ""}
+        return {"date": "", "label": ""}
+    return {"date": case["date"], "label": day_label(case["date"], language)}
 
 
 def snapshot(player, language, message="", accepted=True, charged=0):
@@ -473,8 +470,8 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         "leonor_present": choice != "accused" and "leonor" not in gone,
         # True while the game is untouched: the 3D scene then starts the character outside.
         "fresh": state == story["start"],
-        # The day of the case: its date, "Case of 22 November", the photo's stamp (specs/case-of-the-day.md, point 5).
-        "day": day_view(state, night, language),
+        # The day of the case: its date and "Case of 22 November" (specs/case-of-the-day.md, point 5).
+        "day": day_view(night, language),
     }
 
 
@@ -556,10 +553,8 @@ def unlock_computer(player, language, code):
     if locked(player):
         return locked_reply(player, language, unlocked=False)
     language = db.load_language(player) or language
-    # Each case has its own date of the photo, so its own code (specs/culprit-of-the-night.md, point 4).
-    night = read_night(player, game.load(player))
-    right_code = case_of(night)["code"] if night["case"] else PC12_CODE
-    if code != right_code:
+    # Every case has the same photo and the same code (specs/culprit-of-the-night.md, point 4).
+    if code != PC12_CODE:
         return dict(snapshot(player, language, TEXT[language]["code_wrong"], accepted=False), unlocked=False)
     result, clock = play_and_charge(player, "view_files", language)   # 1 minute, the same as a direct view_files
     return dict(clocked_snapshot(player, language, result["message"], result["accepted"], clock), unlocked=True)
