@@ -174,7 +174,7 @@ TEXT = {
         "diary_people": "O que te disseram", "diary_empty": "Ainda não tens notas.",
         "clock": "Hora", "sound_on": "Som", "sound_off": "Som",
         # showing evidence and the hearing (specs/evidence-and-hearing.md); the answers are NOT here
-        "evidence_show": "📁 Mostrar uma prova",
+        "evidence_show": "📁 Mostrar uma prova", "evidence_title": "O que mostras?",
         "evidence_empty": "Ainda não tens nada para mostrar.", "evidence_back": "Não mostrar nada",
         "time_penalty_card": "−{n} minutos: isso não provou nada.",
         "time_penalty_duarte": "−{n} minuto: ele nem olhou.",
@@ -377,7 +377,7 @@ TEXT = {
         "diary_people": "What people told you", "diary_empty": "No notes yet.",
         "clock": "Time", "sound_on": "Sound", "sound_off": "Sound",
         # showing evidence and the hearing (specs/evidence-and-hearing.md); the answers are NOT here
-        "evidence_show": "📁 Show evidence",
+        "evidence_show": "📁 Show evidence", "evidence_title": "What do you show?",
         "evidence_empty": "You have nothing to show yet.", "evidence_back": "Put it away",
         "time_penalty_card": "−{n} minutes: that proved nothing.",
         "time_penalty_duarte": "−{n} minute: he did not even look.",
