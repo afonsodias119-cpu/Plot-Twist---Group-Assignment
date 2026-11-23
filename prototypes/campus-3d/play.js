@@ -1473,12 +1473,14 @@
     $("hud-bottom").classList.toggle("talking", Boolean(talking));
     const person = window.campusNear && (window.campusNear === "guard" ? { id: "guard", name: ui().security.guard_name } : current?.people.find(p => p.id === window.campusNear));
     const thing = nearThing();
-    $("near-hint").hidden = !(person || thing) || Boolean(talking);
-    if (!person && !thing) return;
+    const table = window.campusNear === "table";   // the study room's table, before the USB stick is found
+    $("near-hint").hidden = !(person || thing || table) || Boolean(talking);
+    if (!person && !thing && !table) return;
     const t = ui();
     // A thing says "look" (specs/more-to-find.md, point 7). On a phone the note is tapped instead of K
     // (specs/touch-card-qr.md): the click below does the same as K, for a thing and for a person.
-    const sentence = thing ? t.press_look.replace("{name}", thing.name)
+    const sentence = table ? t.press_table   // specs/table-hint-and-guard-check.md
+      : thing ? t.press_look.replace("{name}", thing.name)
       : person.object ? t.press_use.replace("{name}", person.name.toLowerCase())
       : t.press_talk.replace("{name}", person.name);
     const key = make("kbd", "K");
@@ -1489,6 +1491,7 @@
   function useNear() {
     const thing = nearThing();
     if (window.campusNear === "guard") talkStep("guard", "start");   // José talks in the ordinary card
+    else if (window.campusNear === "table") window.campusOpenTable();   // the close-up of the table
     else if (thing) lookAt(thing.id);
     else talkStep(window.campusNear, "start");
   }
@@ -1986,7 +1989,7 @@
   function guardMenu() {   // the answers on his start line, by what has been done so far
     const t = ui().security, state = loadSecurity();
     if (state.footage) return [{ label: t.opt_rewatch, next: "watch" }];
-    if (state.wired) return [{ label: t.opt_watch, next: "watch" }];
+    if (state.wired) return [{ label: t.opt_watch, next: "confirm" }];   // he checks what you want first (specs/table-hint-and-guard-check.md)
     if (state.convinced) return [{ label: t.opt_wire, next: "wire" }, { label: t.opt_who, next: "who" }];
     return [{ label: t.opt_explain, next: "explain" }, { label: t.opt_broken, next: "broken" }];
   }
@@ -2000,12 +2003,16 @@
     const t = ui().security;
     if (node === "start") { showLine(guardStart()); return; }
     if (node === "wire") { asked.delete("wire"); openWires(); return; }       // the cables can be tried again
-    if (node === "watch") { asked.delete("watch"); openCctv(); return; }
+    if (node === "watch") { asked.delete("watch"); asked.delete("confirm"); openCctv(); return; }   // asked again next time
     showTyping();
     setTimeout(() => {
       $("talk-log").querySelector(".typing")?.remove();
       if (talking !== "guard") return;
-      showLine(guardLine(node, t[node], node === "explain" ? [{ label: t.opt_rude, next: "rude", cost: 2 }] : []));   // demanding costs 2 minutes
+      // "explain": demanding costs 2 minutes. "confirm": he asks whether you want 23:47 in the computer lab,
+      // and only "Yes" opens the recordings (specs/table-hint-and-guard-check.md).
+      const options = node === "explain" ? [{ label: t.opt_rude, next: "rude", cost: 2 }]
+        : node === "confirm" ? [{ label: t.opt_yes, next: "watch" }] : [];
+      showLine(guardLine(node, t[node], options));
     }, 600);
   }
   // What he says after something was done: it brings back his menu, as it is now.

@@ -26,6 +26,7 @@ TEXT = {
                   "usb_stick": "Pen do grupo"},
         # things to look at in the rooms (specs/more-to-find.md); their texts are in campus_search.py, never here
         "look_title": "Ver", "examine_where": "Isso não está aqui.", "press_look": "Clica na tecla K para ver: {name}",
+        "press_table": "Clica na tecla K para procurar a pen na mesa",   # near the table (specs/table-hint-and-guard-check.md)
         "table_open": "Ver a mesa", "table_title": "A mesa da sala de estudo",
         "table_hint": "Encontra a pen do grupo.",
         "table_close": "Fechar",
@@ -148,7 +149,8 @@ TEXT = {
             "done": "\"Já tens a imagem. Leva-a ao professor.\"",
             "opt_explain": "Explicar a situação", "opt_broken": "Perguntar pelos monitores",
             "opt_rude": "Exigir as imagens", "opt_who": "Perguntar quem os desligou",
-            "opt_wire": "Ligar os cabos", "opt_watch": "Ver as gravações", "opt_rewatch": "Rever as gravações",
+            "opt_wire": "Ligar os cabos", "opt_watch": "Ver as gravações", "opt_yes": "Sim, isso mesmo",
+            "confirm": "\"Então queres ver quem esteve às 23:47 na sala de informática, certo?\"", "opt_rewatch": "Rever as gravações",
             "wires_title": "Ligar os cabos das câmaras",
             "wires_intro": "Alguém desligou os cabos. Liga cada cabo ao monitor que mostra essa sala: os monitores estão na posição das salas, como na planta do edifício.",
             "wires_plan": "Planta do edifício (a entrada fica à esquerda)", "wires_pick": "Escolhe um cabo e depois o monitor.",
@@ -253,6 +255,7 @@ TEXT = {
                   "usb_stick": "The group's USB stick"},
         # things to look at in the rooms (specs/more-to-find.md); their texts are in campus_search.py, never here
         "look_title": "Look at", "examine_where": "That is not here.", "press_look": "Press the K key to look: {name}",
+        "press_table": "Press the K key to search the table for the USB stick",   # near the table (specs/table-hint-and-guard-check.md)
         "table_open": "Look at the table", "table_title": "The study room table",
         "table_hint": "Find the group's USB stick.",
         "table_close": "Close",
@@ -370,7 +373,8 @@ TEXT = {
             "done": "\"You have the picture. Take it to the professor.\"",
             "opt_explain": "Explain the situation", "opt_broken": "Ask about the monitors",
             "opt_rude": "Demand the footage", "opt_who": "Ask who unplugged them",
-            "opt_wire": "Plug in the cables", "opt_watch": "Watch the recordings", "opt_rewatch": "Watch the recordings again",
+            "opt_wire": "Plug in the cables", "opt_watch": "Watch the recordings", "opt_yes": "Yes, exactly",
+            "confirm": "\"So you want to see who was in the computer lab at 23:47, right?\"", "opt_rewatch": "Watch the recordings again",
             "wires_title": "Plug in the cables of the cameras",
             "wires_intro": "Somebody unplugged the cables. Connect each cable to the monitor that shows that room: the monitors are placed like the rooms, as on the plan of the building.",
             "wires_plan": "Plan of the building (the entrance is on the left)", "wires_pick": "Choose a cable and then the monitor.",
