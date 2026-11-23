@@ -161,6 +161,62 @@
   nameBox.append(creator);
   paintCreator();
 
+  // ---------- your own group: three friends' names in the teammates' places (specs/your-own-group.md) ----------
+  // Under the creator, in a closed <details>, so a first player still sees only the name field, its hint and
+  // the creator (specs/no-endings-on-start.md). The server cleans the names again: it never trusts this browser.
+  const STORY_GROUP = ["Leonor", "Rita", "Tomás"];   // the order of the fields, as campus_people.DEFAULT_GROUP
+  const GROUP_KEY = "plot-twist-group";
+  const groupBox = make("details", undefined, "group-box");
+  const groupTitle = make("summary"), groupHint = make("p", undefined, "muted");
+  const groupFields = STORY_GROUP.map((storyName, i) => {
+    const label = make("label", undefined, "group-field"), caption = make("span");
+    const input = make("input"); input.id = `group-name-${i + 1}`; input.maxLength = 14;
+    input.placeholder = storyName; input.autocomplete = "off"; input.spellcheck = false;
+    label.append(caption, input);
+    return { caption, input };
+  });
+  groupBox.append(groupTitle, groupHint, ...groupFields.map(field => field.caption.parentNode));
+  nameBox.append(groupBox);
+  // Whatever is read from the browser is checked, as cleanLook does: a damaged note gives three empty fields.
+  function cleanGroup(raw) {
+    if (!Array.isArray(raw) || raw.length !== 3) return ["", "", ""];
+    return raw.map(value => (typeof value === "string" ? value.slice(0, 14) : ""));
+  }
+  try { cleanGroup(JSON.parse(localStorage.getItem(GROUP_KEY) || "null")).forEach((value, i) => { groupFields[i].input.value = value; }); } catch (error) { /* no storage */ }
+  const typedGroup = () => groupFields.map(field => field.input.value);
+  // A typed name as the server would write it: single spaces, the first letter upper-cased (point 3).
+  const tidyName = text => text.normalize("NFC").trim().replace(/\s+/g, " ").replace(/\p{L}/u, letter => letter.toUpperCase());
+  function paintGroup() {
+    const t = ui();
+    groupTitle.textContent = t.group_title;
+    groupHint.textContent = t.group_hint;
+    groupFields.forEach((field, i) => { field.caption.textContent = t.group_slots[i]; });
+  }
+  // The name chips of the case file (#groupList: "You" first, then the three teammates) show the names
+  // typed. Only the text changes, with textContent, so a name is never read as HTML.
+  function paintGroupChips() {
+    const chips = $("groupList") ? $("groupList").children : [];
+    groupFields.forEach((field, i) => {
+      if (chips[i + 1]) chips[i + 1].textContent = tidyName(field.input.value) || STORY_GROUP[i];
+    });
+  }
+  groupFields.forEach(field => field.input.addEventListener("input", () => {
+    paintGroupChips();
+    try { localStorage.setItem(GROUP_KEY, JSON.stringify(typedGroup())); } catch (error) { /* no storage */ }
+  }));
+  // game3d.html draws the chips again when the language is chosen: they are renamed after it (a microtask).
+  window.addEventListener("language", () => queueMicrotask(() => { paintGroup(); if (!current) paintGroupChips(); }));
+  paintGroup();
+  // The note of point 8, after `begin`: a field the server gave the story's name back, or a continued
+  // game that kept the group it started with. "" when the names are the ones typed.
+  function groupNote(state) {
+    if (!Array.isArray(state.group)) return "";
+    const t = ui(), typed = typedGroup().map(tidyName);
+    const differs = typed.some((value, i) => value && value.toLowerCase() !== String(state.group[i]).toLowerCase());
+    if (!differs) return "";
+    return state.message === t.continued ? t.group_kept : t.group_reset;
+  }
+
   $("mission").after(nameBox);
   // Which night of this name it is, under the name box (specs/earlier-nights.md, point 6). Empty on night 1,
   // so a first player sees only the name field and its hint. It never counts endings. drawNight fills it.
@@ -1741,8 +1797,7 @@
   $("phone-back").addEventListener("click", () => showPhone("home"));
   phone.addEventListener("cancel", e => { e.preventDefault(); closePhone(); });
 
-  // ---------- earlier nights: the fifth figure grows on the case-file photo (specs/earlier-nights.md, point 6) ----------
-  // The start screen is drawn before the server knows the player, so it uses a display copy kept in this
+  // ---------- earlier nights: the fifth figure grows on the case-file photo (specs/earlier-nights.md, point 6) ----------  // The start screen is drawn before the server knows the player, so it uses a display copy kept in this
   // browser: the night and `over` the server last reported. Only the picture reads it, never the rules.
   const NIGHT_KEY = "plot-twist-night";
   function loadNight() {
@@ -1839,8 +1894,10 @@
 
   window.campusStart = async () => {
     sound.start();
-    // `begin` is `open` plus the case of the day; the three names of specs/your-own-group.md are empty for now.
-    if (!await send("begin", { names: ["", "", ""] })) return;
+    // `begin` is `open` plus the case of the day and the three names typed (specs/your-own-group.md, point 2).
+    if (!await send("begin", { names: typedGroup() })) return;
+    const note = groupNote(current);   // a name could not be used, or a continued game kept its group (point 8)
+    if (note) toast(note);
     try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
     saveLook(current.player); saveLook(name.value);
     if (window.campusPreview) window.campusPreview.stop();

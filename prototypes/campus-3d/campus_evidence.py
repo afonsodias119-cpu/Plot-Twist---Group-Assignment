@@ -8,8 +8,9 @@ What the player holds comes from two places:
 - the night's notes (db.py, table `nights`): who was cracked tonight, the answers of the hearing,
   the campus minute, the rounds at which the player was caught (specs/night-schedule.md),
   whether tonight's row of `runs` is already written (`run`, specs/earlier-nights.md, point 2),
-  how many rude answers each person got (`rude`, specs/trust-has-consequences.md, point 3) and
-  which case is played tonight (`case`, specs/case-of-the-day.md, point 4).
+  how many rude answers each person got (`rude`, specs/trust-has-consequences.md, point 3),
+  which case is played tonight (`case`, specs/case-of-the-day.md, point 4) and the friends' names
+  that take the teammates' places (`names`, specs/your-own-group.md, point 4).
 The notes are read through read_night, which keeps only what it understands, so a damaged row can
 neither raise an error nor help the player.
 
@@ -17,6 +18,7 @@ The case of the night (specs/culprit-of-the-night.md) is played with the story's
 functions of that section only renumber the chat and tell the texts of the case on the way out.
 """
 
+import re
 from datetime import date
 
 import db
@@ -32,6 +34,8 @@ from campus_clock import COSTS, NIGHT_MINUTES, ROUNDS
 # and the row of tonight's ending.
 from campus_memory import TRUE_ENDING, record, seen_all, true_ending
 from campus_people import OBJECTS, PEOPLE, TEMPERS, talk
+# The friends' names of specs/your-own-group.md: kept in the notes, swapped in by retell.
+from campus_people import DEFAULT_GROUP, clean_group
 from campus_text import TEXT
 from story import STORIES
 
@@ -102,6 +106,15 @@ def clean_case(saved):
     return {"variant": variant, "date": day}
 
 
+def clean_names(saved):
+    """The note `names`, cleaned (specs/your-own-group.md, point 4): kept only when clean_group gives
+    it back unchanged, so a damaged note (not a list, not three texts, a clash, Duarte) counts as the
+    story's names and can neither raise an error nor rename anyone twice."""
+    if isinstance(saved, list) and clean_group(saved) == saved:
+        return list(saved)
+    return list(DEFAULT_GROUP)
+
+
 def case_of(night):
     """The case played tonight, as its data in CASES. A game with no `case` note (opened with `open`,
     or a damaged note) plays the classic case."""
@@ -110,15 +123,15 @@ def case_of(night):
 
 
 def read_night(player, state):
-    """The night's notes of this player, cleaned: {"minute", "cracked", "hearing", "verdict", "caught", "run", "rude", "case"}.
+    """The night's notes of this player, cleaned: {"minute", "cracked", "hearing", "verdict", "caught", "run", "rude", "case", "names"}.
 
     `cracked` keeps only people who have a confrontation; `hearing` is None when no hearing was
     started (or the saved one does not fit this game); `verdict` is kept only when the game has ended
     and the hearing could have produced it; `minute` is a whole number or a half from 0 to 30;
     `caught` keeps only the rounds of the schedule (specs/night-schedule.md, point 8); `run` is
     True only when the note is exactly true (specs/earlier-nights.md, point 2); `rude` is cleaned by
-    clean_rude; `case` by clean_case (None: the classic case). Cleaning happens in memory: nothing is
-    written here.
+    clean_rude; `case` by clean_case (None: the classic case); `names` by clean_names (the story's
+    names when there is no group). Cleaning happens in memory: nothing is written here.
     """
     saved = db.load_night(player)
     notes = saved["notes"]
@@ -130,7 +143,7 @@ def read_night(player, state):
     night = {"minute": clean_minute(saved), "cracked": cracked,
              "hearing": answers if valid_hearing(answers, state) else None, "verdict": "", "caught": caught,
              "run": notes.get("run") is True, "rude": clean_rude(notes.get("rude")),
-             "case": clean_case(notes.get("case"))}
+             "case": clean_case(notes.get("case")), "names": clean_names(notes.get("names"))}
     # The saved verdict is only a record of what was shown (point 10): the screen always works the
     # ending out again from the answers (shown_ending), so editing this note by hand changes nothing.
     if night["hearing"] is not None and state["ending"] != "none":
@@ -158,6 +171,9 @@ def write_night(player, night):
         notes["rude"] = night["rude"]
     if night.get("case"):   # only a game begun with `begin` has one (specs/case-of-the-day.md, point 4)
         notes["case"] = night["case"]
+    # Only a group that is not the story's (specs/your-own-group.md, point 4): the `games` row never has it.
+    if night.get("names") and night["names"] != DEFAULT_GROUP:
+        notes["names"] = night["names"]
     db.save_night(player, int(minute), notes)
 
 
@@ -224,11 +240,33 @@ def swapped(value, texts, keys):
 def retell(reply, night, language):
     """A reply as tonight's case tells it (point 6): each classic text the case changes is replaced
     by the case's own. A case text reaches the page exactly when its classic text would have, so
-    the secrets stay on the server. The classic case changes nothing. Reading writes nothing."""
+    the secrets stay on the server. The classic case changes nothing. Then, last, the friends' names
+    take the teammates' places (specs/your-own-group.md, point 5). Reading writes nothing."""
     texts = case_of(night)["texts"][language]
-    if not texts:
-        return reply
-    return swapped(reply, texts, sorted(texts, key=len, reverse=True))
+    if texts:
+        reply = swapped(reply, texts, sorted(texts, key=len, reverse=True))
+    return renamed(reply, dict(zip(DEFAULT_GROUP, night["names"])))
+
+
+# ---------- your own group (specs/your-own-group.md) ----------
+
+# The story's three names, as whole words. Capitalised, so the ids (leonor, rita, tomas) never match.
+GROUP_WORDS = re.compile(r"\b(Leonor|Rita|Tomás)\b")
+
+
+def renamed(value, names):
+    """`value` with every whole word Leonor, Rita and Tomás replaced by its name in `names`, in every
+    string inside it (point 5). One regular expression finds all three in a single pass and each
+    match is replaced once, so a name put in is never read again: with Leonor -> Rita and Rita -> Ana,
+    Leonor becomes Rita, never Ana. Dict keys (the ids) are never changed. With the story's names
+    every word is replaced by itself."""
+    if isinstance(value, str):
+        return GROUP_WORDS.sub(lambda match: names[match.group(1)], value)
+    if isinstance(value, dict):
+        return {key: renamed(inner, names) for key, inner in value.items()}
+    if isinstance(value, list):
+        return [renamed(inner, names) for inner in value]
+    return value
 
 
 # ---------- trust (specs/trust-has-consequences.md) ----------

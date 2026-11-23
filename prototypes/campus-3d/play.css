@@ -390,6 +390,14 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .text-mode .creator-preview { display: none; }
 .text-mode .creator { grid-template-columns: 1fr; }
 @media (max-width: 640px) { .creator { grid-template-columns: 1fr; justify-items: center; } .creator-controls { justify-self: stretch; } }
+/* the three friends' names (specs/your-own-group.md): closed under the creator, one field for each place */
+.group-box { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.group-box summary { cursor: pointer; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.group-box summary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.group-box[open] summary { margin-bottom: 6px; }
+.name-box .group-field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: center; font-size: 12px; color: var(--muted); }
+.name-box .group-field input { padding: 8px 10px; }
+@media (max-width: 640px) { .name-box .group-field { grid-template-columns: 1fr; gap: 4px; } }
 
 /* the day of the case on the case file, after the case number (specs/case-of-the-day.md, point 6) */
 .case-day { color: var(--gold); }

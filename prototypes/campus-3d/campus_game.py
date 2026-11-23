@@ -6,6 +6,8 @@ import db
 import game
 import logic
 from campus_people import ACTION_PERSON, ROOM_OF_PERSON, is_rude, people_in_room, room_of_scene, talk, temper
+# The friends' names of the start screen, cleaned on the server (specs/your-own-group.md, point 3).
+from campus_people import clean_group
 from campus_text import TEXT
 # Evidence cards, confrontations and the hearing (specs/evidence-and-hearing.md). The answers stay on
 # the server: campus_case.py is read only by campus_evidence.py and campus_memory.py.
@@ -362,18 +364,21 @@ def todays_case():
 
 def check_names(names):
     """`names` of `begin` must be a list of exactly three texts, each of them may be empty (point 2).
-    Until specs/your-own-group.md is built, they are only checked, never saved."""
+    A wrong shape is refused; a bad name inside is not: clean_group gives that field the story's
+    name (specs/your-own-group.md, point 3)."""
     if not isinstance(names, list) or len(names) != 3 or not all(isinstance(name, str) for name in names):
         raise ValueError("Invalid names / Nomes inválidos.")
 
 
-def mark_case(player, continued):
-    """After `begin` opened the game: a new game gets today's case; a continued game with no case
-    (a save from before this feature, or a game started with `open`) is marked as the classic case,
-    with no date; a continued game that has a case keeps it and nothing is written (point 2)."""
+def mark_case(player, continued, names):
+    """After `begin` opened the game: a new game gets today's case and the group cleaned from
+    `names` (specs/your-own-group.md, point 2); a continued game with no case (a save from before
+    this feature, or a game started with `open`) is marked as the classic case, with no date; a
+    continued game that has a case keeps it and nothing is written (point 2). A continued game
+    keeps its own group: the names sent now are not used."""
     night = read_night(player, game.load(player))
     if not continued:
-        write_night(player, dict(night, case=todays_case()))
+        write_night(player, dict(night, case=todays_case(), names=clean_group(names)))
     elif night["case"] is None:
         write_night(player, dict(night, case={"variant": CLASSIC, "date": ""}))
 
@@ -699,7 +704,7 @@ def run_command(payload):
             # A new game is a new night: notes left behind by an older game must not help it.
             db.delete_night(player)
         if operation == "begin":
-            mark_case(player, result["continued"])
+            mark_case(player, result["continued"], payload["names"])
         language = result["language"]
         message = UI_TEXTS[language]["continued" if result["continued"] else "started"]
         return snapshot(player, language, message)
@@ -710,11 +715,13 @@ def run_command(payload):
             raise ValueError(UI_TEXTS[language]["confirm_question"])
         # The kind of game is kept (specs/case-of-the-day.md, point 3): a game of the day starts
         # today's case, a classic game stays classic and writes no notes, exactly as before.
-        daily = read_night(player, game.load(player))["case"] is not None
+        old_night = read_night(player, game.load(player))
+        daily = old_night["case"] is not None
         game.restart(player)
         db.delete_night(player)   # a new night at 22:15: nobody is cracked, gone or caught, no hearing
-        if daily:
-            write_night(player, dict(read_night(player, game.load(player)), case=todays_case()))
+        if daily:   # the same group plays the new night (specs/your-own-group.md, point 2)
+            write_night(player, dict(read_night(player, game.load(player)), case=todays_case(),
+                                     names=old_night["names"]))
         return snapshot(player, language)
     if operation == "time":
         return report_time(player, language, payload["minute"])
@@ -802,6 +809,8 @@ def command(payload):
 
     retell runs once, on every reply, after the operation has run, so it reads the night's notes as
     they are now (specs/culprit-of-the-night.md, point 6). A request that raises is never told.
+    A snapshot (a reply with a `scene`) then gets `group`, the three names in the order of the
+    places, after retell so the names are never renamed (specs/your-own-group.md, points 4 and 5).
     """
     reply = run_command(payload)
     player = game.clean_name(payload["player"])   # valid: run_command has checked it
@@ -810,4 +819,8 @@ def command(payload):
         return reply
     language = db.load_language(player)
     language = language if language in LANGUAGES else payload["language"]
-    return retell(reply, read_night(player, state), language)
+    night = read_night(player, state)
+    told = retell(reply, night, language)
+    if "scene" in told:
+        told["group"] = list(night["names"])
+    return told

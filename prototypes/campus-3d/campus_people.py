@@ -19,6 +19,9 @@ night's notes, not in the saved game, and changes how Leonor, Tomás and Duarte 
 of the night: see `temper` (specs/trust-has-consequences.md).
 """
 
+import re
+import unicodedata
+
 import logic
 
 # Where each person stands (the id of the story scene) and when they are not there any more.
@@ -521,3 +524,42 @@ def temper(reply, moods, language):
     if node in WITHHELD[language].get(person, {}):
         return dict(reply, text=WITHHELD[language][person][node], note="")
     return reply
+
+
+# ---------- your own group (specs/your-own-group.md) ----------
+# Three friends' names can take the teammates' places. They are only names: the ids (leonor, rita,
+# tomas), the voices and the grammar of each place stay the story's (point 7).
+
+# The story's names of the three places, in the order of the three fields of the start screen.
+DEFAULT_GROUP = ["Leonor", "Rita", "Tomás"]
+# 1 to 14 characters: letters (accented ones too), spaces, apostrophes (' and the ’ of phone
+# keyboards) and hyphens. [^\W\d_] is "a letter": a word character that is not a digit or "_".
+FRIEND_NAME = re.compile(r"(?:[^\W\d_]|[ '’-]){1,14}")
+
+
+def clean_friend(text, story_name):
+    """One field of the start screen, cleaned (point 3): spaces trimmed and made single, the first
+    letter upper-cased ("ana" -> "Ana"). An empty or bad field gives the story's name of its place."""
+    if not isinstance(text, str):
+        return story_name
+    name = " ".join(unicodedata.normalize("NFC", text).split())   # NFC: "João" typed as J-o-a-~-o is one letter ã
+    if not FRIEND_NAME.fullmatch(name) or not any(letter.isalpha() for letter in name):
+        return story_name
+    first = next(place for place, letter in enumerate(name) if letter.isalpha())
+    return name[:first] + name[first].upper() + name[first + 1:]
+
+
+def clean_group(names):
+    """The group of a new game: three names in the order of DEFAULT_GROUP (point 3). Each field is
+    cleaned on its own; then, if two names are the same (ignoring case), one is Duarte, or one is the
+    story's name of another place ("Rita" in Leonor's place), all three are the story's again, so a
+    name can never stand for two people. It never raises: the fields are optional."""
+    if not isinstance(names, list) or len(names) != len(DEFAULT_GROUP):
+        return list(DEFAULT_GROUP)
+    group = [clean_friend(text, story_name) for text, story_name in zip(names, DEFAULT_GROUP)]
+    lower = [name.lower() for name in group]
+    another_place = any(name.lower() == other.lower() for place, name in enumerate(group)
+                        for other in DEFAULT_GROUP if other != DEFAULT_GROUP[place])
+    if len(set(lower)) < len(group) or "duarte" in lower or another_place:
+        return list(DEFAULT_GROUP)
+    return group

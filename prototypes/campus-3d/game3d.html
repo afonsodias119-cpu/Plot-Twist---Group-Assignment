@@ -1324,6 +1324,18 @@ function showSchedule(state) {
   duarte.userData.sign.position.set(spot.x, 2.35, spot.z);
 }
 
+// The name tags of the three teammates show tonight's group (specs/your-own-group.md, point 6): the
+// server sends `group` in the order Leonor, Rita, Tomás. Only the text changes (textContent, never HTML);
+// the people, their ids and their voices stay the same.
+const GROUP_IDS = ["leonor", "rita", "tomas"];
+function showGroup(state) {
+  if (!Array.isArray(state.group) || state.group.length !== GROUP_IDS.length) return;
+  GROUP_IDS.forEach((id, i) => {
+    const teammate = npcs.find(n => n.userData.id === id);
+    if (teammate && typeof state.group[i] === "string") teammate.userData.sign.element.textContent = state.group[i];
+  });
+}
+
 // Position the character after an accepted server response: outside for a new game, otherwise in the saved room.
 let savedScene = null, placedOutside = false;   // placedOutside: the character was already put outside for this game
 function syncCampus() {
@@ -1351,6 +1363,7 @@ function syncCampus() {
   npcs[1].visible = !["impostor", "fifth_element"].includes(state.ending?.id) && !state.ending?.stamp;
   npcs[1].userData.sign.visible = npcs[1].visible;
   showSchedule(state);
+  showGroup(state);
   where.textContent = state.title;
 }
 window.addEventListener("campus-state", syncCampus);
