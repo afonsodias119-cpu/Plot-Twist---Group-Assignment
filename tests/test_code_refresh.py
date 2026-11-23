@@ -85,11 +85,11 @@ def test_app_3d_recovers_from_stale_code(monkeypatch):
 
     # Pretend the code in memory is older than the files: the bug of 21 Nov 2026.
     monkeypatch.setitem(code_refresh.LOADED, "version", "an older version")
-    del page3d.EXTRA["en"]["group"]
+    del page3d.EXTRA["en"]["case_label"]
     with pytest.raises(KeyError):
-        page3d.EXTRA["en"]["group"]
+        page3d.EXTRA["en"]["case_label"]
 
     app.run()
     assert not app.exception
-    assert page3d.EXTRA["en"]["group"]
-    assert '"group"' in page3d.build_page(playable=True, inline=True)
+    assert page3d.EXTRA["en"]["case_label"]
+    assert '"case_label"' in page3d.build_page(playable=True, inline=True)

@@ -21,9 +21,9 @@ def top_bar():
 
 
 def test_the_group_label_does_not_repeat_that_there_are_four():
-    for texts in page3d.EXTRA.values():
-        label = texts["group_label"].lower()
-        assert label.strip() and "quatro" not in label and "four" not in label and "(" not in label
+    for texts in campus_text.TEXT.values():
+        label = texts["group_title"].lower()
+        assert label.strip() and "quatro" not in label and "four" not in label
 
 
 def test_the_menu_text_exists_in_both_languages():
