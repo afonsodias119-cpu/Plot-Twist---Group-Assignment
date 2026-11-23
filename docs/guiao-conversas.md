@@ -362,6 +362,7 @@ Onde está: **Auditório** (`auditorium`). Uma só linha de raciocínio (specs/p
   - No jogo 3D este botão abre a audiência (as quatro afirmações do Duarte, em `campus_case.py`); só depois da quarta resposta o jogo acaba. O servidor continua a aceitar a ação direta.
 
 ## Duarte
+> **O jogador já não fala com o Duarte** (specs/duarte-only-in-the-hearing.md): ele só fala na audiência, com as afirmações ao professor. As falas abaixo continuam no servidor, mas a página nunca as mostra.
 Onde está: **Auditório** (`auditorium`).
 
 ### `start` — confiança 3

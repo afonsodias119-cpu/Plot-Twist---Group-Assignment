@@ -130,6 +130,10 @@ Alteração preparada no mesmo branch: a conversa com o professor segue uma orde
 
 Alteração preparada no mesmo branch: a fase 2 da secretária do segurança (o José, os cabos e as gravações, feitos pelo Afonso). Ao guardar a imagem das 23:47 da sala de informática, o servidor regista-a (pedido `footage`) e ela passa a ser uma prova na mão. O Duarte ganha uma quarta afirmação ("Nem cá estive ontem à noite"), que só a gravação desfaz: sem ela não há "Caso encerrado". A noite continua com 30 minutos; os limites dos testes de equilíbrio foram medidos de novo (uma noite cuidadosa cabe até ~37 s por clique). Muda um teste revisto do Afonso (`test_security_desk.py`) e outros da audiência e do horário; precisam de aprovação (lista na spec). Ver `specs/camera-proof.md`.
 
+### Na audiência, "Mostrar uma prova"; o Duarte só fala na audiência — Maria (23/11/2026)
+
+Na audiência, cada afirmação do Duarte responde-se com "📁 Mostrar uma prova" (abre as provas que tens, ou diz que ainda não tens nenhuma) ou "Não dizer nada" (`specs/hearing-show-evidence.md`). O jogador já não fala com o Duarte: ele só aparece a fazer as afirmações ao professor. O K deixa de o escolher, e o corredor entre as cadeiras do auditório ficou mais largo para chegares ao professor (`specs/duarte-only-in-the-hearing.md`).
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

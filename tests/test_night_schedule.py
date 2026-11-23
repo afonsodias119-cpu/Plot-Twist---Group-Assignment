@@ -327,7 +327,8 @@ ROUTES = {
                    LAB, "tomas: start, kind, who, password, slides; show files; "
                    "> library; leonor: start; do ask_for_help; leonor: soft, messages, mine, sure; "
                    "> study_room; rita: start, photo, duarte, warned, chat, five; show files", "camera",
-                   "> auditorium; duarte: start, part, slide; show files; professor: start, list, evidence, proof",
+                   # Changed by specs/duarte-only-in-the-hearing.md ("Reviewed tests that change"): no conversation with Duarte.
+                   "> auditorium; professor: start, list, evidence, proof",
                    "hearing files, original_photo, backup, footage"]),
 }
 
@@ -344,7 +345,7 @@ ROUND_HABITS = {1: "knows", 2: "knows", 3: "knows", 5: "knows", 6: "linger", 7: 
 # keeping the picture) and a fourth answer.
 OTHER_COMMANDS = {"open the table": 1, "search": 1, "doors (print shop, library, lab, back to Rita, auditorium)": 5,
                   "copy (the answer and the full frame)": 2, "decision": 1, "code": 1, "backup": 1,
-                  "cards (Tomás, Rita, Duarte)": 3, "security desk (José, cables, recordings, the picture)": GUARD_COMMANDS + 1,
+                  "cards (Tomás, Rita)": 2, "security desk (José, cables, recordings, the picture)": GUARD_COMMANDS + 1,
                   "hearing (start and four answers)": 5}
 
 
@@ -1301,28 +1302,31 @@ def test_being_caught_costs_three_minutes_and_one_doubt_and_the_night_still_ends
 
 def test_doing_everything_does_not_fit_at_30_seconds():
     rules = clock_rules()
-    lines = sum(len(polite_lines(person)) for person in people.PEOPLE["en"])
+    # Changed by specs/duarte-only-in-the-hearing.md ("Reviewed tests that change"): Duarte is not talked to, so his lines
+    # and his card are not part of "everything".
+    lines = sum(len(polite_lines(person)) for person in people.PEOPLE["en"] if person != "duarte")
     commands = lines + sum(OTHER_COMMANDS.values())
     # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): opening the chat, the five
     # flags and closing it (7 commands) became one backup, and Leonor is no longer shown a card: 19
     # commands instead of 26.
     # Changed by specs/camera-proof.md ("Reviewed tests that change"): the security desk (10 commands) and a
     # fourth answer: 30 commands.
-    assert sum(OTHER_COMMANDS.values()) == 30
+    assert sum(OTHER_COMMANDS.values()) == 29   # specs/duarte-only-in-the-hearing.md: no card for Duarte
     # Every command at half a minute, except opening the table (QUICK_SECONDS) and the hands on the
     # pieces of the photo.
     real_minutes = ((commands - 1) * 30 + QUICK_SECONDS + photo_hands() + CAMERA_HANDS) / 60
     # The smallest charges of such a night: the copy, the decision, the files, two right cards, Duarte's card.
     costs = rules.COSTS
-    charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 2 * costs["card_right"]
-               + costs["card_duarte"])
+    charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 2 * costs["card_right"])
     assert real_minutes + charges > rules.NIGHT_MINUTES, (lines, commands, real_minutes, charges)
     # Route 11 (not every polite line) lost the same commands, Tomás's conversation is shorter and Rita is
     # no longer asked about the USB stick once it is found (specs/two-answers.md, specs/evidence-after-monitors.md):
     # it now fits up to 35 seconds a command and no longer at 36.
     # Changed by specs/camera-proof.md ("Reviewed tests that change"): with the security desk, up to 27 and no longer at 28.
-    assert paced(27, 11)["ending"] == "full_case"
-    assert paced(28, 11)["ending"] is None
+    # Changed by specs/duarte-only-in-the-hearing.md ("Reviewed tests that change"): no conversation with Duarte, up to 30
+    # and no longer at 31.
+    assert paced(30, 11)["ending"] == "full_case"
+    assert paced(31, 11)["ending"] is None
 
 
 # ---------- The texts, the page and the files ----------

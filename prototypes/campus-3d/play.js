@@ -688,6 +688,9 @@
     return result;
   }
 
+  // Duarte is never a conversation: the player hears him only in the hearing, making his claims to the
+  // professor (specs/duarte-only-in-the-hearing.md). He still stands in the auditorium and walks his rounds.
+  const NOT_TALKED_TO = ["duarte"];
   async function send(operation, extra = {}) {
     if (window.campusBusy) return;
     const introError = introBox();   // where a message goes before the game starts
@@ -751,6 +754,7 @@
         const group = make("section", undefined, "actions people");   // not "investigate": talking works from outside the room too
         group.append(make("h3", t.people));
         for (const person of state.people) {
+          if (NOT_TALKED_TO.includes(person.id)) continue;   // Duarte only speaks in the hearing (specs/duarte-only-in-the-hearing.md)
           const box = make("div", undefined, "action-row");
           const button = make("button", person.object ? `🖥️ ${t.use} ${person.name}` : `💬 ${t.talk_to} ${person.name}`);
           button.dataset.talk = person.id;
@@ -1459,7 +1463,7 @@
   // `rude` is true for an answer with a cost: the operation `rude` is a `talk` that the server remembers
   // for the rest of the night (specs/trust-has-consequences.md, point 9). Nothing new is drawn.
   async function talkStep(npc, node, rude = false) {
-    if (window.campusBusy || !current) return;
+    if (window.campusBusy || !current || npc === "duarte") return;   // Duarte only speaks in the hearing (specs/duarte-only-in-the-hearing.md)
     // During the hearing, the professor's card shows the hearing where it stopped (specs/evidence-and-hearing.md, point 9).
     // Anyone else cannot be talked to until the hearing ends: a note says so and the hearing card stays open.
     if (current.hearing && !current.ending) {

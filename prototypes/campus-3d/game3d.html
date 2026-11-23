@@ -983,12 +983,14 @@ block(1.6, 4.1, 1.2, 0.4);
 const seatFabric = mat(0x1f5662, { roughness: 0.85 });
 for (const z of [5.6, 7.0, 8.4]) {
   for (let x = 1.4; x <= 11.8; x += 0.75) {
-    if (Math.abs(x - 6.55) < 0.6) continue;   // aisle in the middle
+    // A wide aisle in the middle, to walk up to the professor (specs/duarte-only-in-the-hearing.md): three seats
+    // fewer in each row, and the blocks follow the seats that are left (x 1.09 to 5.46 and 7.84 to 11.46).
+    if (Math.abs(x - 6.55) < 0.9) continue;
     rbox(0.62, 0.12, 0.55, x, 0.38, z, seatFabric, { radius: 0.05 });
     rbox(0.62, 0.6, 0.1, x, 0.42, z - 0.27, seatFabric, { radius: 0.05 });
     rbox(0.05, 0.6, 0.5, x - 0.33, 0, z, blackPlastic);
   }
-  block(3.7, z - 0.05, 4.9, 0.7); block(9.4, z - 0.05, 4.9, 0.7);
+  block(3.275, z - 0.05, 4.37, 0.7); block(9.65, z - 0.05, 3.62, 0.7);
 }
 
 // ---- Corridor
@@ -1790,6 +1792,7 @@ function loop() {
   if (here && window.playing && !window.campusBusy && !window.campusState.ending) {
     for (const n of npcs) {
       if (!n.visible || !here.some(p => p.id === n.userData.id)) continue;
+      if (n.userData.id === "duarte") continue;   // he only speaks in the hearing (specs/duarte-only-in-the-hearing.md)
       const d = Math.hypot(player.position.x - n.position.x, player.position.z - n.position.z);
       if (d < nearDistance) { nearDistance = d; near = n.userData.id; }
     }
