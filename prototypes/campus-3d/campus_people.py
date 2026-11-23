@@ -70,19 +70,22 @@ def _bye(label):
 PEOPLE = {
     "en": {
         "rita": {"name": "Rita", "nodes": {
-            # Two answers on every line, a right one and a wrong one (specs/two-answers.md): the USB stick,
-            # the photo, her claim line, Duarte, then the chat. Every wrong answer upsets her; an apology
+            # Two answers on every line, a right one and a wrong one (specs/two-answers.md): the USB stick;
+            # once it is found, the photo, her claim line, Duarte, then the chat. Every wrong answer upsets her; an apology
             # brings the first question back. Rita has no trust level and no rude answer that costs time.
             "start": {"text": "Rita looks up from her laptop. \"You don't look so good. Did you sleep at all?\"", "options": [
-                {"label": "Ask where the USB stick is", "next": "pen"},
-                {"label": "Tell her she is the one who lost the USB stick", "next": "upset"},
+                # Before the USB stick is found, the stick; after it, the photo (specs/evidence-after-monitors.md).
+                {"label": "Ask where the USB stick is", "next": "pen", "if": {"lacks": ["usb_stick"]}},
+                {"label": "Tell her she is the one who lost the USB stick", "next": "upset", "if": {"lacks": ["usb_stick"]}},
+                {"label": "Ask about the group photo", "next": "photo", "if": {"has": ["usb_stick"]}},
+                {"label": "Tell her the USB stick was under her own pizza", "next": "upset", "if": {"has": ["usb_stick"]}},
                 # A memory answer (specs/earlier-nights.md, point 5): a shortcut to her claim line.,
                 {"label": "Tell her you remember her counting heads", "next": "five", "night": 3},
                 _bye("Goodbye."),
             ]},
-            "pen": {"text": "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza, but with this mess, it could be anywhere.\"", "note": "Rita cannot find the USB stick. The group ate pizza here last night.", "options": [
-                {"label": "Ask about the group photo", "next": "photo"},
-                {"label": "Tell her to look for it herself, it is her mess", "next": "upset"},
+            "pen": {"text": "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza, but with this mess, it could be anywhere on the table.\"", "note": "Rita cannot find the USB stick. It could be anywhere on the study room table. The group ate pizza here last night.", "options": [
+                # She says the table is a mess: the player goes to look for it (no question about the photo here).
+                _bye("Goodbye."),
             ]},
             "photo": {"text": "\"The photo? We took it after the last meeting, the four of us.\"", "note": "Rita remembers four people in the group photo.", "options": [
                 {"label": "Ask why the photo in the folder shows five", "next": "five"},
@@ -121,8 +124,11 @@ PEOPLE = {
                 {"label": "Say you are only being honest", "next": "closed"},
             ]},
             "sorry": {"text": "\"Fine. Go on, ask.\"", "options": [
-                {"label": "Ask where the USB stick is", "next": "pen"},
-                {"label": "Tell her she is the one who lost the USB stick", "next": "upset"},
+                # Before the USB stick is found, the stick; after it, the photo (specs/evidence-after-monitors.md).
+                {"label": "Ask where the USB stick is", "next": "pen", "if": {"lacks": ["usb_stick"]}},
+                {"label": "Tell her she is the one who lost the USB stick", "next": "upset", "if": {"lacks": ["usb_stick"]}},
+                {"label": "Ask about the group photo", "next": "photo", "if": {"has": ["usb_stick"]}},
+                {"label": "Tell her the USB stick was under her own pizza", "next": "upset", "if": {"has": ["usb_stick"]}},
             ]},
             "closed": {"text": "Rita puts her headphones on. She is not listening any more.", "options": [
                 _bye("Leave."),
@@ -263,19 +269,22 @@ PEOPLE = {
     },
     "pt": {
         "rita": {"name": "Rita", "nodes": {
-            # Two answers on every line, a right one and a wrong one (specs/two-answers.md): the USB stick,
-            # the photo, her claim line, Duarte, then the chat. Every wrong answer upsets her; an apology
+            # Two answers on every line, a right one and a wrong one (specs/two-answers.md): the USB stick;
+            # once it is found, the photo, her claim line, Duarte, then the chat. Every wrong answer upsets her; an apology
             # brings the first question back. Rita has no trust level and no rude answer that costs time.
             "start": {"text": "A Rita levanta os olhos do portátil. \"Estás com cara de quem não dormiu nada. Conseguiste descansar alguma coisa?\"", "options": [
-                {"label": "Perguntar onde está a pen", "next": "pen"},
-                {"label": "Dizer-lhe que foi ela que perdeu a pen", "next": "upset"},
+                # Before the USB stick is found, the stick; after it, the photo (specs/evidence-after-monitors.md).
+                {"label": "Perguntar onde está a pen", "next": "pen", "if": {"lacks": ["usb_stick"]}},
+                {"label": "Dizer-lhe que foi ela que perdeu a pen", "next": "upset", "if": {"lacks": ["usb_stick"]}},
+                {"label": "Perguntar pela fotografia do grupo", "next": "photo", "if": {"has": ["usb_stick"]}},
+                {"label": "Dizer-lhe que a pen estava debaixo da pizza dela", "next": "upset", "if": {"has": ["usb_stick"]}},
                 # A memory answer (specs/earlier-nights.md, point 5): a shortcut to her claim line.,
                 {"label": "Dizer-lhe que te lembras de ela contar as cabeças", "next": "five", "night": 3},
                 _bye("Até já."),
             ]},
-            "pen": {"text": "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado.\"", "note": "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite.", "options": [
-                {"label": "Perguntar pela fotografia do grupo", "next": "photo"},
-                {"label": "Dizer-lhe que procure ela, que a confusão é dela", "next": "upset"},
+            "pen": {"text": "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado da mesa.\"", "note": "Rita: não encontra a pen. Pode estar em qualquer lado da mesa da sala de estudo. O grupo comeu pizza aqui ontem à noite.", "options": [
+                # She says the table is a mess: the player goes to look for it (no question about the photo here).
+                _bye("Até já."),
             ]},
             "photo": {"text": "\"A fotografia? Tirámo-la depois da última reunião, nós os quatro.\"", "note": "A Rita lembra-se de quatro pessoas na fotografia do grupo.", "options": [
                 {"label": "Perguntar porque é que a fotografia da pasta mostra cinco", "next": "five"},
@@ -314,8 +323,11 @@ PEOPLE = {
                 {"label": "Dizer que só estás a ser sincero", "next": "closed"},
             ]},
             "sorry": {"text": "\"Está bem. Pergunta lá.\"", "options": [
-                {"label": "Perguntar onde está a pen", "next": "pen"},
-                {"label": "Dizer-lhe que foi ela que perdeu a pen", "next": "upset"},
+                # Before the USB stick is found, the stick; after it, the photo (specs/evidence-after-monitors.md).
+                {"label": "Perguntar onde está a pen", "next": "pen", "if": {"lacks": ["usb_stick"]}},
+                {"label": "Dizer-lhe que foi ela que perdeu a pen", "next": "upset", "if": {"lacks": ["usb_stick"]}},
+                {"label": "Perguntar pela fotografia do grupo", "next": "photo", "if": {"has": ["usb_stick"]}},
+                {"label": "Dizer-lhe que a pen estava debaixo da pizza dela", "next": "upset", "if": {"has": ["usb_stick"]}},
             ]},
             "closed": {"text": "A Rita põe os auscultadores. Já não te está a ouvir.", "options": [
                 _bye("Sair."),

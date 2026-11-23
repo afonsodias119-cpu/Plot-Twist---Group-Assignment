@@ -311,7 +311,7 @@ ROUTES = {
     11: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo",
                    LAB, "tomas: start, kind, who, password, slides; show files; "
                    "> library; leonor: start; do ask_for_help; leonor: soft, messages, mine, sure; "
-                   "> study_room; rita: start, photo, duarte, warned, pen, chat, five; show files; "
+                   "> study_room; rita: start, photo, duarte, warned, chat, five; show files; "
                    "> auditorium; duarte: start, part, slide; show files; professor: start, list, evidence, proof",
                    "hearing files, original_photo, backup"]),
 }
@@ -1283,10 +1283,11 @@ def test_doing_everything_does_not_fit_at_30_seconds():
     charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 2 * costs["card_right"]
                + costs["card_duarte"])
     assert real_minutes + charges > rules.NIGHT_MINUTES, (lines, commands, real_minutes, charges)
-    # Route 11 (not every polite line) lost the same commands, and Tomás's conversation is shorter
-    # (specs/two-answers.md): it now fits up to 34 seconds a command (26.8 minutes at 30) and no longer at 35.
-    assert paced(34, 11)["ending"] == "full_case"
-    assert paced(35, 11)["ending"] is None
+    # Route 11 (not every polite line) lost the same commands, Tomás's conversation is shorter and Rita is
+    # no longer asked about the USB stick once it is found (specs/two-answers.md, specs/evidence-after-monitors.md):
+    # it now fits up to 35 seconds a command and no longer at 36.
+    assert paced(35, 11)["ending"] == "full_case"
+    assert paced(36, 11)["ending"] is None
 
 
 # ---------- The texts, the page and the files ----------

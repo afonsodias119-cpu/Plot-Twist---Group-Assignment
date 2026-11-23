@@ -109,6 +109,10 @@ Alteração preparada em `computer-lab-backup` (nos dois jogos: mexe no `story.p
 ### Duas respostas nas conversas do Tomás e da Rita — Maria (23/11/2026)
 
 Alteração preparada em `two-answers`: o botão "Mostrar prova" sai das conversas da reprografia e da sala de informática (fica nas outras, incluindo o segurança). Cada fala do Tomás tem só duas respostas, uma certa e uma errada, pela ordem perguntar com calma → quem era → a password → (depois dos ficheiros) quem fez os slides; a resposta certa nos slides fá-lo ceder, como a prova fazia. A Rita passa a ter também só duas respostas em cada fala (a pen → a fotografia → "porque mostra cinco" → o Duarte → o nome acrescentado → as mensagens), e cede na fala "Então contei mal"; uma resposta errada deixa-a chateada e "Pedir desculpa" volta ao início. A pergunta sobre a mensagem 5 saiu, e com ela a mentira do Tomás hostil. Ver `specs/two-answers.md`.
+
+### "Mostrar prova" quando o segurança a pede, e a fotografia da Rita depois da pen — Maria (23/11/2026)
+
+Alteração preparada em `evidence-after-monitors`: com o segurança, "Mostrar uma prova" só aparece depois de "Explicar a situação", quando ele pede uma prova; com a Rita deixa de aparecer. Depois de a Rita dizer que a pen pode estar em qualquer lado da mesa, já não aparece a pergunta da fotografia: vais procurar a pen, e quando a tens a primeira pergunta à Rita passa a ser a fotografia do grupo. Ver `specs/evidence-after-monitors.md`.
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

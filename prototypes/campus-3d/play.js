@@ -1111,8 +1111,12 @@
     // "📁 Show evidence", in its own row between the log and the answers, on every line of a person
     // (not computer 12, not a closed line, not during the hearing: specs/evidence-and-hearing.md, point 5),
     // except in the print shop and the computer lab: there the right answer does it (specs/two-answers.md).
-    const NO_EVIDENCE = ["amelia", "tomas", "computer12"];
-    const showsEvidence = !NO_EVIDENCE.includes(line.npc) && line.node !== "closed" && !(current && current.hearing) && !leonorHelping;
+    // Not for the clerk, Tomás, computer 12 and Rita: there the right answer does it (specs/two-answers.md).
+    // José, the guard, is shown a proof only once he has asked for one: after "Explain the situation", where he
+    // says the footage is not given to just anyone (specs/evidence-after-monitors.md).
+    const NO_EVIDENCE = ["amelia", "tomas", "computer12", "rita"];
+    const guardWaits = line.npc === "guard" && line.node !== "explain" && !asked.has("explain");
+    const showsEvidence = !NO_EVIDENCE.includes(line.npc) && !guardWaits && line.node !== "closed" && !(current && current.hearing) && !leonorHelping;
     const evidenceButton = make("button", t.evidence_show, "secondary evidence-show");
     evidenceButton.addEventListener("click", () => askEvidence(line));
     const evidenceNow = showsEvidence && !(leonorDeciding && !asked.has("soft"));   // Leonor: only after the right answer
