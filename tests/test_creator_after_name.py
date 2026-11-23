@@ -60,8 +60,10 @@ def test_the_warning_says_when_the_faculty_closes_and_has_the_mission_and_the_gr
     assert "stepLook.after(stepBrief)" in PLAY
     for language in ("pt", "en"):
         text = campus_text.TEXT[language]
-        assert "22:45" in text["brief_title"]
-        assert "30" in text["brief_text"] and "22:15" in text["brief_text"]
+        # Changed by specs/night-and-clues.md ("Reviewed tests that change"): the night runs from 22:30 to
+        # 23:00. Was: "22:45" in the title and "22:15" in the text.
+        assert "23:00" in text["brief_title"]
+        assert "30" in text["brief_text"] and "22:30" in text["brief_text"]
 
 
 def test_the_warning_is_only_shown_before_a_first_game():

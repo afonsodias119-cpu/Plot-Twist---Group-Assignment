@@ -96,9 +96,11 @@ WHISPERS = {
 }
 
 # The true ending (B3), as the snapshot carries it once it is earned.
+# Changed by specs/night-and-clues.md ("Reviewed tests that change"): the night ends at 23:00, so the
+# true ending's title and its wall clock say 23:01. Was: 22:46.
 VOICES = ["rita", "duarte", "duarte", "professor"]
 TRUE_ENDING = {
-    "en": {"title": "22:46", "stamp": "THE NIGHT IS OVER", "emoji": "🌅", "voices": VOICES, "text": (
+    "en": {"title": "23:01", "stamp": "THE NIGHT IS OVER", "emoji": "🌅", "voices": VOICES, "text": (
         'You do not wait for Duarte to finish his sentences; you have heard them before. Three claims, three '
         'answers, each one on the table before he stops speaking, and the professor never once looks away from '
         'you. Then the door opens and nobody is alone any more. Leonor comes in with her phone, Tomás with his '
@@ -108,10 +110,10 @@ TRUE_ENDING = {
         'under it: only a hat, a scarf and a long coat, and they are yours. The professor crosses out the fifth '
         'name. When you look back at the front row the seat is empty; on it lies a phone with every message you '
         'ever received from the unknown number, written and never sent. Your own phone buzzes one last time. The '
-        'sender is no longer unknown: the name on the screen is your own. The clock on the wall reads 22:46. '
+        'sender is no longer unknown: the name on the screen is your own. The clock on the wall reads 23:01. '
         'Nobody has switched off the lights. "Tomorrow, the four of you present." In the photo on the cover '
         'there are four people, and you know every one of them.')},
-    "pt": {"title": "22:46", "stamp": "A NOITE ACABOU", "emoji": "🌅", "voices": VOICES, "text": (
+    "pt": {"title": "23:01", "stamp": "A NOITE ACABOU", "emoji": "🌅", "voices": VOICES, "text": (
         'Não esperas que o Duarte acabe as frases; já as ouviste antes. Três afirmações, três respostas, cada uma '
         'em cima da mesa antes de ele se calar, e o professor não tira os olhos de ti uma única vez. Depois a '
         'porta abre-se e já ninguém está sozinho. A Leonor entra com o telemóvel, o Tomás com os slides, a Rita '
@@ -121,7 +123,7 @@ TRUE_ENDING = {
         'um cachecol e um casaco comprido, e são os teus. O professor risca o quinto nome. Quando voltas a olhar '
         'para a primeira fila, a cadeira está vazia; em cima dela ficou um telemóvel com todas as mensagens que '
         'recebeste do número desconhecido, escritas e nunca enviadas. O teu telemóvel vibra uma última vez. O '
-        'remetente já não é desconhecido: o nome no ecrã é o teu. O relógio da parede marca 22:46. Ninguém apagou '
+        'remetente já não é desconhecido: o nome no ecrã é o teu. O relógio da parede marca 23:01. Ninguém apagou '
         'as luzes. «Amanhã apresentam os quatro.» Na fotografia da capa estão quatro pessoas, e tu conheces todas.')},
 }
 
@@ -778,7 +780,7 @@ def test_the_true_ending_says_who_speaks_each_line_in_both_languages():
 
 
 def test_the_secret_texts_are_never_in_the_page_nor_in_an_early_snapshot():
-    secrets = ["night_over", "22:46"]
+    secrets = ["night_over", "23:01"]   # was "22:46" (specs/night-and-clues.md)
     for language in ("en", "pt"):
         secrets += [TRUE_ENDING[language]["stamp"]] + list(WHISPERS[language].values())
         secrets += sentences(TRUE_ENDING[language]["text"])

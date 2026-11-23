@@ -361,7 +361,8 @@ def test_ids_are_never_renamed(monkeypatch, tmp_path):
             assert ids(renamed) == ids(told), (label, number)
         assert group[0]["player"] == PLAYER, label
         if label == "early":
-            assert group[-1]["night"]["gone"] == ["amelia", "leonor"]   # ids, never "Ana"
+            # Changed by specs/night-and-clues.md: the clerk no longer leaves. Was: ["amelia", "leonor"].
+            assert group[-1]["night"]["gone"] == ["leonor"]   # ids, never "Ana"
 
 
 def test_the_save_never_holds_the_names(monkeypatch, tmp_path):
