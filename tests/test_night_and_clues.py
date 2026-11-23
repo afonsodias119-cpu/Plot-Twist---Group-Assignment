@@ -51,8 +51,11 @@ def test_the_clues_are_in_the_order_they_are_done():
 
 
 def test_the_clues_card_opens_at_the_start_and_after_a_new_game():
+    # Changed by specs/combined-start-briefing.md ("Reviewed tests that change"): before a first game the clues are on the
+    # warning screen, so the card only opens after "New game". Was: the card at the start too (2 calls).
     assert 'id="clues-card"' in PLAY
-    assert PLAY.count("showCluesNotice();") == 2   # campusStart and the confirmed restart
+    assert PLAY.count("showCluesNotice();") == 1   # the confirmed restart
+    assert '<ol id="brief-clues-order" class="clues-order"></ol>' in PLAY   # the start: on the warning screen
     assert '$("clues-card").hidden;   // reading the clues is free' in PLAY
 
 
