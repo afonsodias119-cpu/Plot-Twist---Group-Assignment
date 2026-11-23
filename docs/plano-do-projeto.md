@@ -118,6 +118,10 @@ Alteração preparada em `evidence-after-monitors`: com o segurança, "Mostrar u
 
 Alteração preparada no mesmo branch, `evidence-after-monitors` (nos dois jogos: mexe no `story.py`). Só há três maneiras de a noite acabar: chegas ao professor com as três provas (a pen, a fotografia original e o backup) e respondes certo às três afirmações do Duarte → Caso encerrado; falta-te uma prova ou erras uma resposta → Crédito roubado (fala nova do professor, `missing`); ou o tempo acaba às 22:45. A ação "acusar a Leonor" e o final "O impostor" saem. A Leonor fica, porque ajuda no computador 12, mas deixa de ser uma pista do telemóvel. O auditório está sempre aberto (o mapa já não tem cadeado). O final verdadeiro ("22:46") e o desafio do número desconhecido também saem. Mudam testes revistos de toda a equipa; precisam de aprovação na revisão do PR (lista na spec). Ver `specs/three-proofs.md`.
 
+### O professor numa só linha de raciocínio — Maria (23/11/2026)
+
+Alteração preparada no mesmo branch: a conversa com o professor segue uma ordem só (quantos elementos tem o grupo → "cinco" → "só somos quatro" → ele pede provas → "vou trazer provas" → "apresente-as quando estiver pronto"), e só no fim aparece o botão para apresentar as provas. Na audiência, uma linha explica o que fazer quando o Duarte fala: responder com a prova que mostra que a afirmação é falsa. Ver `specs/professor-line-of-thought.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

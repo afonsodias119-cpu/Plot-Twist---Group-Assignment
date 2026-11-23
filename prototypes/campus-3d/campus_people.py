@@ -231,15 +231,16 @@ PEOPLE = {
         "professor": {"name": "Professor", "nodes": {
             "start": {"text": "The professor looks up from the list of groups. \"Is this about tomorrow's presentations?\"", "options": [
                 {"label": "Ask how many members your group has on the list", "next": "list"},
-                {"label": "Say you will bring proof", "next": "proof"},
                 {"label": "Ask if he has heard this case before", "next": "again", "night": 4},
                 _bye("Goodbye."),
             ]},
             "list": {"text": "\"Five, according to the cover. Is something wrong with that?\"", "options": [
                 {"label": "Say there are only four of you", "next": "evidence"}]},
-            "evidence": {"text": "\"Then I need evidence, not a feeling. Bring me the history of the project.\"",
-                         "note": "The professor wants the project history as evidence.", "options": [
-                _bye("Goodbye.")]},
+            # One line of thought (specs/professor-line-of-thought.md): how many → five → only four → proof →
+            # the hearing button, which the page shows only on `proof`.
+            "evidence": {"text": "\"Then I need evidence, not a feeling: who did the work, who is in the photo, who wrote in the group.\"",
+                         "note": "The professor wants proof of who did the work, who is in the photo and who wrote in the group.", "options": [
+                {"label": "Say you will bring proof", "next": "proof"}]},
             "proof": {"text": "\"Evidence is welcome. Present it when you are ready.\"", "options": [
                 _bye("Goodbye.")]},
             # Reached only by his memory answer, from night 4.
@@ -419,15 +420,14 @@ PEOPLE = {
         "professor": {"name": "Professor", "nodes": {
             "start": {"text": "O professor levanta os olhos da lista de grupos. \"É sobre as apresentações de amanhã?\"", "options": [
                 {"label": "Perguntar quantos elementos tem o teu grupo na lista", "next": "list"},
-                {"label": "Dizer que vais trazer provas", "next": "proof"},
                 {"label": "Perguntar se já ouviu este caso", "next": "again", "night": 4},
                 _bye("Até já."),
             ]},
             "list": {"text": "\"Cinco, segundo a capa. Há algum problema?\"", "options": [
                 {"label": "Dizer que vocês são só quatro", "next": "evidence"}]},
-            "evidence": {"text": "\"Então preciso de provas, não de uma sensação. Traga-me o histórico do projeto.\"",
-                         "note": "O professor quer o histórico do projeto como prova.", "options": [
-                _bye("Até já.")]},
+            "evidence": {"text": "\"Então preciso de provas, não de uma sensação: quem fez o trabalho, quem está na fotografia, quem escreveu no grupo.\"",
+                         "note": "O professor quer provas de quem fez o trabalho, de quem está na fotografia e de quem escreveu no grupo.", "options": [
+                {"label": "Dizer que vais trazer provas", "next": "proof"}]},
             "proof": {"text": "\"Provas são bem-vindas. Apresente-as quando estiver pronto.\"", "options": [
                 _bye("Até já.")]},
             "again": {"text": "O professor vira uma página da lista e volta a virá-la. \"Todos os anos me aparece um grupo com um nome a mais. Nunca é o mesmo grupo. É sempre o mesmo nome.\"", "options": [

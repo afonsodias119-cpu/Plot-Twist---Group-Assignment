@@ -321,33 +321,33 @@ Onde está: **Sala de informática** (`computer_lab`).
   - Se resultar 🇬🇧: Computer 12 still has the group's account open. You copy the whole history of the group's conversations onto the USB stick, as it was before last night: four people, and not one message from Duarte. Now the professor can see the original conversations.
 
 ## Professor
-Onde está: **Auditório** (`auditorium`).
+Onde está: **Auditório** (`auditorium`). Uma só linha de raciocínio (specs/professor-line-of-thought.md): quantos elementos → cinco → só quatro → trazer provas → apresentar as provas.
 
 ### `start`
-- 🇵🇹 O professor levanta os olhos da lista de grupos. "É sobre as apresentações de amanhã?"  *(linha 420)*
-- 🇬🇧 The professor looks up from the list of groups. "Is this about tomorrow's presentations?"  *(linha 232)*
+- 🇵🇹 O professor levanta os olhos da lista de grupos. "É sobre as apresentações de amanhã?"
+- 🇬🇧 The professor looks up from the list of groups. "Is this about tomorrow's presentations?"
 - Respostas:
   - "Perguntar quantos elementos tem o teu grupo na lista" / "Ask how many members your group has on the list" → `list`
-  - "Dizer que vais trazer provas" / "Say you will bring proof" → `proof`
   - ↺ "Perguntar se já ouviu este caso" / "Ask if he has heard this case before" → `again` *(a partir da noite 4)*
   - "Até já." / "Goodbye." → fim
 
 ### `list`
-- 🇵🇹 "Cinco, segundo a capa. Há algum problema?"  *(linha 426)*
-- 🇬🇧 "Five, according to the cover. Is something wrong with that?"  *(linha 238)*
+- 🇵🇹 "Cinco, segundo a capa. Há algum problema?"
+- 🇬🇧 "Five, according to the cover. Is something wrong with that?"
 - Respostas:
   - "Dizer que vocês são só quatro" / "Say there are only four of you" → `evidence`
 
 ### `evidence`
-- 🇵🇹 "Então preciso de provas, não de uma sensação. Traga-me o histórico do projeto."  *(linha 428)*
-- 🇬🇧 "Then I need evidence, not a feeling. Bring me the history of the project."  *(linha 240)*
-- 📓 Diário: O professor quer o histórico do projeto como prova. / The professor wants the project history as evidence.
+- 🇵🇹 "Então preciso de provas, não de uma sensação: quem fez o trabalho, quem está na fotografia, quem escreveu no grupo."
+- 🇬🇧 "Then I need evidence, not a feeling: who did the work, who is in the photo, who wrote in the group."
+- 📓 Diário: O professor quer provas de quem fez o trabalho, de quem está na fotografia e de quem escreveu no grupo. / The professor wants proof of who did the work, who is in the photo and who wrote in the group.
 - Respostas:
-  - "Até já." / "Goodbye." → fim
+  - "Dizer que vais trazer provas" / "Say you will bring proof" → `proof`
 
 ### `proof`
-- 🇵🇹 "Provas são bem-vindas. Apresente-as quando estiver pronto."  *(linha 431)*
-- 🇬🇧 "Evidence is welcome. Present it when you are ready."  *(linha 243)*
+- 🇵🇹 "Provas são bem-vindas. Apresente-as quando estiver pronto."
+- 🇬🇧 "Evidence is welcome. Present it when you are ready."
+- Só nesta fala aparece "▶ Apresentar as provas ao professor" (a audiência).
 - Respostas:
   - "Até já." / "Goodbye." → fim
 
@@ -546,7 +546,7 @@ Ceder a Rita ou o Tomás já não dá uma carta: fica nas notas da noite (o Tom�
 - **Duarte (qualquer prova, em qualquer fala; 1 minuto)** 🇵🇹 O Duarte nem olha. "Guarda isso para o professor. Eu vou estar na primeira fila." / 🇬🇧 Duarte does not look at it. "Keep it for the professor. I will be sitting in the front row."
 
 ### A audiência: as três afirmações do Duarte
-Uma resposta por afirmação, sem segunda tentativa. Uma prova que não a desfaz, ou "Não dizer nada", é uma dúvida. O Afonso vai juntar uma quarta afirmação, desfeita com as imagens da câmara (specs/security-desk.md, fase 2).
+No cartão aparece a linha 🇵🇹 "O Duarte faz uma afirmação. Responde com a prova que mostra que é falsa, ou não digas nada." / 🇬🇧 "Duarte makes a claim. Answer with the proof that shows it is false, or say nothing." Uma resposta por afirmação, sem segunda tentativa. Uma prova que não a desfaz, ou "Não dizer nada", é uma dúvida. O Afonso vai juntar uma quarta afirmação, desfeita com as imagens da câmara (specs/security-desk.md, fase 2).
 
 **1. `name`** (fala o Duarte) — desfaz-se com `files`
 - 🇵🇹 O Duarte levanta-se sem pressa. "Professor, abra o relatório. O meu nome está na capa. Está lá desde o primeiro rascunho."

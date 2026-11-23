@@ -194,6 +194,7 @@ TEXT = {
         "time_penalty_duarte": "−{n} minuto: ele nem olhou.",
         "hearing_hint": "Depois de começares, não podes sair do auditório.",
         "hearing_concede": "Não dizer nada", "hearing_step": "Afirmação {n} de 3",
+        "hearing_how": "O Duarte faz uma afirmação. Responde com a prova que mostra que é falsa, ou não digas nada.",
         "hearing_trust": "Confiança do professor em ti",
         "hearing_locked": "Não podes sair a meio do teu próprio caso.",
         # the night's clock (specs/night-schedule.md); the clerk's sentence is in campus_clock.py, never here
@@ -406,6 +407,7 @@ TEXT = {
         "time_penalty_duarte": "−{n} minute: he did not even look.",
         "hearing_hint": "Once you start, you cannot leave the auditorium.",
         "hearing_concede": "Say nothing", "hearing_step": "Claim {n} of 3",
+        "hearing_how": "Duarte makes a claim. Answer with the proof that shows it is false, or say nothing.",
         "hearing_trust": "The professor's trust in you",
         "hearing_locked": "You cannot walk out in the middle of your own case.",
         # the night's clock (specs/night-schedule.md); the clerk's sentence is in campus_clock.py, never here

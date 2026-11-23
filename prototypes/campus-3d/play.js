@@ -1101,7 +1101,9 @@
     // The professor's story button starts the hearing instead of ending the game at once (point 9).
     // It has the story's own label and looks like any other answer (specs/actions-when-they-make-sense.md);
     // a short line under it says the hearing cannot be left. The hearing is played in this same card (showHearing).
-    const present = (line.actions || []).find(action => action.id === "present_evidence");
+    // Only once he has said "Present it when you are ready" (`proof`), at the end of his one line of thought
+    // (specs/professor-line-of-thought.md).
+    const present = line.node === "proof" && (line.actions || []).find(action => action.id === "present_evidence");
     if (present) {
       const button = make("button", present.label, "answer");
       button.dataset.action = "hearing";
@@ -1371,6 +1373,8 @@
     // under the claim number. There are no hearts in conversations (specs/cleaner-interface.md).
     const trust = Math.max(0, 3 - hearing.doubts);
     const step = make("p", t.hearing_step.replace("{n}", hearing.step), "hearing-step");
+    // What to do when Duarte speaks: answer his claim with the proof that shows it is false (specs/professor-line-of-thought.md).
+    const how = make("p", t.hearing_how, "muted hearing-how");
     const doubt = make("p", `${t.hearing_trust}: ${trust}/3`, `hearing-trust trust-${trust}`);
     for (const entry of hearing.said) addHeard(entry);
     $("talk-log").scrollTop = $("talk-log").scrollHeight;
@@ -1383,7 +1387,7 @@
     });
     const silent = make("button", t.hearing_concede, "answer");
     silent.addEventListener("click", () => answerHearing("concede"));
-    $("talk-options").replaceChildren(step, doubt, ...answers, silent);
+    $("talk-options").replaceChildren(step, how, doubt, ...answers, silent);
     $("talk-options").hidden = false;
     $("talk-close").classList.remove("only-way");
     $("talk").hidden = false;
