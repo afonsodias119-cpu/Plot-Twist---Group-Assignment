@@ -24,12 +24,8 @@ STORY_EN = {
         "flags": {
             "colleague_choice": "none",
             "files_viewed": False,
-            # One flag per group chat message: True once the player flags it as fake.
-            "flagged_1": False,
-            "flagged_2": False,
-            "flagged_3": False,
-            "flagged_4": False,
-            "flagged_5": False,
+            # True once the backup of the original group conversations is saved (specs/computer-lab-backup.md).
+            "backup_saved": False,
         },
         "ending": "none",
     },
@@ -68,7 +64,7 @@ STORY_EN = {
                 "go_computer_lab": {"label": "Go to the computer lab", "go_to": "computer_lab"},
                 "go_auditorium": {
                     "label": "Go to the auditorium",
-                    "requires": {"flags": {"files_viewed": True}},
+                    "requires": {"flags": {"files_viewed": True, "backup_saved": True}},
                     "blocked_text": "You have no proof yet. The professor will not listen to you on a suspicion alone.",
                     "go_to": "auditorium",
                 },
@@ -143,6 +139,10 @@ STORY_EN = {
                     "when": {"flags": {"files_viewed": True}},
                     "text": "You have compared the files: four authors in every copy on the USB stick, and a change in the shared folder yesterday at 11:47 pm.",
                 },
+                {
+                    "when": {"flags": {"backup_saved": True}},
+                    "text": "The backup of the original group conversations is saved on the USB stick, next to the project history.",
+                },
             ],
             "actions": {
                 "view_files": {
@@ -153,65 +153,14 @@ STORY_EN = {
                     "sets": {"files_viewed": True},
                     "result_text": 'You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer: someone added "Duarte" to the report and swapped the photo. You recover the original version of the work.',
                 },
-                "open_chat": {
-                    "label": "Open the group chat on computer 12",
-                    "offered_if": {"flags": {"files_viewed": True}},
-                    "go_to": "group_chat",
+                # The original conversations, saved for the professor (specs/computer-lab-backup.md).
+                "save_backup": {
+                    "label": "Save a backup of the original conversations",
+                    "offered_if": {"flags": {"files_viewed": True, "backup_saved": False}},
+                    "sets": {"backup_saved": True},
+                    "result_text": "Computer 12 still has the group's account open. You copy the whole history of the group's conversations onto the USB stick, as it was before last night: four people, and not one message from Duarte. Now the professor can see the original conversations.",
                 },
                 "go_study_room": {"label": "Back to the study room", "go_to": "study_room"},
-            },
-        },
-        # The group chat puzzle (specs/spot-the-fake.md). Messages 2, 4 and 5 are fake; 1 and 3 are real.
-        "group_chat": {
-            "title": "Group chat",
-            "texts": [
-                {
-                    "when": {},
-                    "text": "Computer 12 still has the group chat open. Flag the messages you think are fake; a message that arrived late shows when it arrived.",
-                },
-                {"when": {}, "text": 'Leonor, 3 weeks ago, 9:05 pm: "Can someone book the study room for Thursday?"'},
-                {"when": {"flags": {"flagged_1": True}}, "text": "Flagged."},
-                {"when": {}, "text": 'Unknown number, 3 weeks ago, 9:07 pm: "Booked it. I wrote the conclusion too, like always."'},
-                {"when": {"flags": {"flagged_2": True}}, "text": "Flagged."},
-                {"when": {}, "text": 'Rita, 2 weeks ago, 6:40 pm: "Photo for the cover is ready. Four of us, finally!"'},
-                {"when": {"flags": {"flagged_3": True}}, "text": "Flagged."},
-                {"when": {}, "text": "Duarte, 3 weeks ago, 10:10 pm: \"Can't wait for the five of us to present.\""},
-                {"when": {"flags": {"flagged_4": True}}, "text": "Flagged."},
-                {"when": {}, "text": 'Tomás, 3 weeks ago, 10:12 pm (arrived yesterday, 11:49 pm): "Duarte did the slides, obviously."'},
-                {"when": {"flags": {"flagged_5": True}}, "text": "Flagged."},
-            ],
-            "actions": {
-                "flag_1": {
-                    "label": "Flag message 1",
-                    "offered_if": {"flags": {"flagged_1": False}},
-                    "sets": {"flagged_1": True},
-                    "result_text": "You flag message 1 for the professor.",
-                },
-                "flag_2": {
-                    "label": "Flag message 2",
-                    "offered_if": {"flags": {"flagged_2": False}},
-                    "sets": {"flagged_2": True},
-                    "result_text": "You flag message 2 for the professor.",
-                },
-                "flag_3": {
-                    "label": "Flag message 3",
-                    "offered_if": {"flags": {"flagged_3": False}},
-                    "sets": {"flagged_3": True},
-                    "result_text": "You flag message 3 for the professor.",
-                },
-                "flag_4": {
-                    "label": "Flag message 4",
-                    "offered_if": {"flags": {"flagged_4": False}},
-                    "sets": {"flagged_4": True},
-                    "result_text": "You flag message 4 for the professor.",
-                },
-                "flag_5": {
-                    "label": "Flag message 5",
-                    "offered_if": {"flags": {"flagged_5": False}},
-                    "sets": {"flagged_5": True},
-                    "result_text": "You flag message 5 for the professor.",
-                },
-                "go_computer_lab": {"label": "Back to the computer lab", "go_to": "computer_lab"},
             },
         },
         "auditorium": {
@@ -230,33 +179,24 @@ STORY_EN = {
     },
     "endings": [
         # The best ending comes first: the first ending whose "when" is true wins.
-        # The secret ending: the player flags every single message (see specs/fifth-element-ending.md).
-        {
-            "id": "fifth_element",
-            "title": "The fifth element",
-            "when": {"flags": {"flagged_1": True, "flagged_2": True, "flagged_3": True, "flagged_4": True, "flagged_5": True}},
-            "text": "You flag every single message. One by one, the professor reads them aloud, then looks up at the cover, at the list of groups, at the date of the presentation. \"If everything in this chat is fake,\" the professor says slowly, \"why would the fifth name be the only thing that is real?\" The lights of the auditorium begin to flicker. Duarte stands up, smiling for the first time without any effort. \"You were never meant to flag them all,\" he says. \"A group that trusts nothing needs someone to trust. I am the fifth element: the one who appears when four people stop believing each other.\" He steps into the spotlight, and the spotlight goes out. On the front-row seat where he was sitting lies the printed photo. Five silhouettes. In the fifth one, a hat, a scarf and a long coat: yours. The professor closes the folder. \"Tomorrow,\" the professor says, \"the five of you present.\"",
-        },
+        # Leonor's choice decides (specs/computer-lab-backup.md): help, accuse, or no choice at all.
         {
             "id": "full_case",
             "title": "Case closed",
-            "when": {"flags": {
-                "colleague_choice": "help",
-                "flagged_1": False, "flagged_2": True, "flagged_3": False, "flagged_4": True, "flagged_5": True,
-            }},
-            "text": "You show the history on the USB stick and the three messages you flagged: one from a number outside the group, one that counts five of you when there were four, and one that arrived last night, two minutes after the shared folder was changed. Leonor walks in with the original messages, and they match. The professor crosses the fifth name off the list and asks Duarte to explain. He has no answer. Tomorrow, the four of you present, with the case closed.",
+            "when": {"flags": {"colleague_choice": "help"}},
+            "text": "You show the history on the USB stick and the backup of the original conversations: four people, and not a single message from Duarte until last night. Leonor walks in with the messages she received from the unknown number, and their dates do not match the backup. The professor crosses the fifth name off the list and asks Duarte to explain. He has no answer. Tomorrow, the four of you present, with the case closed.",
         },
         {
             "id": "impostor",
             "title": "The impostor",
-            "when": {"flags": {"colleague_choice": "help"}},
-            "text": "You show the history on the USB stick: four authors until last night. Leonor walks in and hands over the messages she kept: they were all sent on the same night, from a new number, with fake dates. The professor crosses the fifth name off the list. Duarte leaves the auditorium without a word. Tomorrow, the four of you present.",
+            "when": {"flags": {"colleague_choice": "accused"}},
+            "text": "You show the history on the USB stick and the backup of the original conversations. The professor believes you and crosses the fifth name off the list. But Leonor is not in the auditorium: after you accused her, she deleted her messages and went home. Duarte picks up his bag and smiles at you on his way out. \"You did my job for me,\" he says. \"A group that accuses itself does not need an impostor.\" Tomorrow, three of you present.",
         },
         {
             "id": "stolen_credits",
             "title": "Stolen credit",
             "when": {},
-            "text": 'You show the history on the USB stick: the original work is recovered and had four authors until last night. But Duarte raises his phone: "I have messages from everyone proving I took part." Without the original messages, you cannot prove they are fake. The professor sighs: "Without proof that the messages are fake, the name stays." Tomorrow, the five of you present.',
+            "text": 'You show the history on the USB stick and the backup of the original conversations. But Duarte raises his phone: "I have messages from everyone proving I took part. And that backup came from the same computer someone used last night: anyone could have made it." Nobody from the group is there to back you up. The professor sighs: "Without a teammate to confirm it, the name stays." Tomorrow, the five of you present.',
         },
     ],
 }
@@ -269,12 +209,8 @@ STORY_PT = {
         "flags": {
             "colleague_choice": "none",
             "files_viewed": False,
-            # One flag per group chat message: True once the player flags it as fake.
-            "flagged_1": False,
-            "flagged_2": False,
-            "flagged_3": False,
-            "flagged_4": False,
-            "flagged_5": False,
+            # True once the backup of the original group conversations is saved (specs/computer-lab-backup.md).
+            "backup_saved": False,
         },
         "ending": "none",
     },
@@ -313,7 +249,7 @@ STORY_PT = {
                 "go_computer_lab": {"label": "Ir para a sala de informática", "go_to": "computer_lab"},
                 "go_auditorium": {
                     "label": "Ir para o auditório",
-                    "requires": {"flags": {"files_viewed": True}},
+                    "requires": {"flags": {"files_viewed": True, "backup_saved": True}},
                     "blocked_text": "Ainda não tens provas. O professor não te vai ouvir só com uma suspeita.",
                     "go_to": "auditorium",
                 },
@@ -388,6 +324,10 @@ STORY_PT = {
                     "when": {"flags": {"files_viewed": True}},
                     "text": "Já comparaste os ficheiros: quatro autores em todas as cópias da pen, e uma alteração na pasta partilhada ontem às 23h47.",
                 },
+                {
+                    "when": {"flags": {"backup_saved": True}},
+                    "text": "O backup das conversas originais do grupo está guardado na pen, ao lado do histórico do projeto.",
+                },
             ],
             "actions": {
                 "view_files": {
@@ -398,65 +338,14 @@ STORY_PT = {
                     "sets": {"files_viewed": True},
                     "result_text": 'Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador: alguém acrescentou "Duarte" ao relatório e trocou a fotografia. Recuperas a versão original do trabalho.',
                 },
-                "open_chat": {
-                    "label": "Abrir o chat do grupo no computador 12",
-                    "offered_if": {"flags": {"files_viewed": True}},
-                    "go_to": "group_chat",
+                # As conversas originais, guardadas para o professor (specs/computer-lab-backup.md).
+                "save_backup": {
+                    "label": "Guardar o backup das conversas originais",
+                    "offered_if": {"flags": {"files_viewed": True, "backup_saved": False}},
+                    "sets": {"backup_saved": True},
+                    "result_text": "O computador 12 ainda tem a conta do grupo aberta. Copias todo o histórico das conversas do grupo para a pen, tal como estava antes de ontem à noite: quatro pessoas, e nem uma mensagem do Duarte. Agora o professor pode ver as conversas originais.",
                 },
                 "go_study_room": {"label": "Voltar à sala de estudo", "go_to": "study_room"},
-            },
-        },
-        # O puzzle do chat do grupo (specs/spot-the-fake.md). As mensagens 2, 4 e 5 são falsas; a 1 e a 3 são verdadeiras.
-        "group_chat": {
-            "title": "Chat do grupo",
-            "texts": [
-                {
-                    "when": {},
-                    "text": "O computador 12 ainda tem o chat do grupo aberto. Marca as mensagens que achas falsas; uma mensagem que chegou mais tarde mostra quando chegou.",
-                },
-                {"when": {}, "text": 'Leonor, há 3 semanas, 21h05: "Alguém pode reservar a sala de estudo para quinta-feira?"'},
-                {"when": {"flags": {"flagged_1": True}}, "text": "Marcada."},
-                {"when": {}, "text": 'Número desconhecido, há 3 semanas, 21h07: "Já reservei. Também escrevi a conclusão, como sempre."'},
-                {"when": {"flags": {"flagged_2": True}}, "text": "Marcada."},
-                {"when": {}, "text": 'Rita, há 2 semanas, 18h40: "A fotografia para a capa está pronta. Os quatro, finalmente!"'},
-                {"when": {"flags": {"flagged_3": True}}, "text": "Marcada."},
-                {"when": {}, "text": 'Duarte, há 3 semanas, 22h10: "Mal posso esperar para apresentarmos os cinco."'},
-                {"when": {"flags": {"flagged_4": True}}, "text": "Marcada."},
-                {"when": {}, "text": 'Tomás, há 3 semanas, 22h12 (chegou ontem às 23h49): "Os slides foram do Duarte, claro."'},
-                {"when": {"flags": {"flagged_5": True}}, "text": "Marcada."},
-            ],
-            "actions": {
-                "flag_1": {
-                    "label": "Marcar a mensagem 1",
-                    "offered_if": {"flags": {"flagged_1": False}},
-                    "sets": {"flagged_1": True},
-                    "result_text": "Marcas a mensagem 1 para mostrar ao professor.",
-                },
-                "flag_2": {
-                    "label": "Marcar a mensagem 2",
-                    "offered_if": {"flags": {"flagged_2": False}},
-                    "sets": {"flagged_2": True},
-                    "result_text": "Marcas a mensagem 2 para mostrar ao professor.",
-                },
-                "flag_3": {
-                    "label": "Marcar a mensagem 3",
-                    "offered_if": {"flags": {"flagged_3": False}},
-                    "sets": {"flagged_3": True},
-                    "result_text": "Marcas a mensagem 3 para mostrar ao professor.",
-                },
-                "flag_4": {
-                    "label": "Marcar a mensagem 4",
-                    "offered_if": {"flags": {"flagged_4": False}},
-                    "sets": {"flagged_4": True},
-                    "result_text": "Marcas a mensagem 4 para mostrar ao professor.",
-                },
-                "flag_5": {
-                    "label": "Marcar a mensagem 5",
-                    "offered_if": {"flags": {"flagged_5": False}},
-                    "sets": {"flagged_5": True},
-                    "result_text": "Marcas a mensagem 5 para mostrar ao professor.",
-                },
-                "go_computer_lab": {"label": "Voltar à sala de informática", "go_to": "computer_lab"},
             },
         },
         "auditorium": {
@@ -475,33 +364,24 @@ STORY_PT = {
     },
     "endings": [
         # O melhor final vem primeiro: ganha o primeiro final cujo "when" é verdadeiro.
-        # The secret ending: the player flags every single message (see specs/fifth-element-ending.md).
-        {
-            "id": "fifth_element",
-            "title": "O quinto elemento",
-            "when": {"flags": {"flagged_1": True, "flagged_2": True, "flagged_3": True, "flagged_4": True, "flagged_5": True}},
-            "text": "Assinalas todas as mensagens, sem exceção. Uma a uma, o professor lê-as em voz alta e depois levanta os olhos para a capa, para a lista de grupos, para a data da apresentação. «Se tudo neste chat é falso», diz devagar, «porque seria o quinto nome a única coisa verdadeira?» As luzes do auditório começam a piscar. O Duarte levanta-se, a sorrir pela primeira vez sem esforço. «Nunca era para assinalares todas», diz. «Um grupo que não confia em nada precisa de alguém em quem confiar. Eu sou o quinto elemento: aquele que aparece quando quatro pessoas deixam de acreditar umas nas outras.» Entra no foco de luz e o foco apaga-se. Na cadeira da primeira fila onde ele estava, fica a fotografia impressa. Cinco silhuetas. Na quinta, um chapéu, um cachecol e um casaco comprido: os teus. O professor fecha a pasta. «Amanhã», diz, «apresentam os cinco.»",
-        },
+        # Decide a escolha da Leonor (specs/computer-lab-backup.md): ajudar, acusar, ou nenhuma escolha.
         {
             "id": "full_case",
             "title": "Caso encerrado",
-            "when": {"flags": {
-                "colleague_choice": "help",
-                "flagged_1": False, "flagged_2": True, "flagged_3": False, "flagged_4": True, "flagged_5": True,
-            }},
-            "text": "Mostras o histórico da pen e as três mensagens que marcaste: uma de um número fora do grupo, uma que fala em cinco quando eram quatro, e uma que chegou ontem à noite, dois minutos depois de a pasta partilhada ser alterada. A Leonor entra com as mensagens originais, e batem certo. O professor risca o quinto nome da lista e pede ao Duarte que se explique. Ele não tem resposta. Amanhã apresentam os quatro, com o caso encerrado.",
+            "when": {"flags": {"colleague_choice": "help"}},
+            "text": "Mostras o histórico da pen e o backup das conversas originais: quatro pessoas, e nem uma mensagem do Duarte até ontem à noite. A Leonor entra com as mensagens que recebeu do número desconhecido, e as datas não batem com o backup. O professor risca o quinto nome da lista e pede ao Duarte que explique. Ele não tem resposta. Amanhã, apresentam os quatro, com o caso encerrado.",
         },
         {
             "id": "impostor",
             "title": "O impostor",
-            "when": {"flags": {"colleague_choice": "help"}},
-            "text": "Mostras o histórico da pen: quatro autores até ontem à noite. A Leonor entra e entrega as mensagens que guardou: foram todas enviadas na mesma noite, de um número novo, com datas falsas. O professor risca o quinto nome da lista. O Duarte sai do auditório sem dizer nada. Amanhã apresentam os quatro.",
+            "when": {"flags": {"colleague_choice": "accused"}},
+            "text": "Mostras o histórico da pen e o backup das conversas originais. O professor acredita em ti e risca o quinto nome da lista. Mas a Leonor não está no auditório: depois de a acusares, apagou as mensagens e foi para casa. O Duarte pega na mochila e sorri-te à saída. «Fizeste o meu trabalho por mim», diz. «Um grupo que se acusa a si próprio não precisa de um impostor.» Amanhã, apresentam três.",
         },
         {
             "id": "stolen_credits",
             "title": "Créditos roubados",
             "when": {},
-            "text": 'Mostras o histórico da pen: o trabalho original está recuperado e tinha quatro autores até ontem à noite. Mas o Duarte levanta o telemóvel: "Tenho mensagens de todos a provar que participei." Sem as mensagens originais, não consegues provar que são falsas. O professor suspira: "Sem provas de que as mensagens são falsas, o nome fica." Amanhã apresentam os cinco.',
+            "text": 'Mostras o histórico da pen e o backup das conversas originais. Mas o Duarte levanta o telemóvel: "Tenho mensagens de todos a provar que participei. E esse backup saiu do mesmo computador que alguém usou ontem à noite: qualquer um o podia ter feito." Ninguém do grupo está lá para te apoiar. O professor suspira: "Sem um colega que o confirme, o nome fica." Amanhã, apresentam os cinco.',
         },
     ],
 }

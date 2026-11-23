@@ -1,5 +1,7 @@
 # Evidence and the hearing: show people what you found, and answer Duarte's three claims
 
+> **Update (specs/computer-lab-backup.md):** the group chat, its flags, the message cards and "The fifth element" are gone. Computer 12 saves a backup of the original conversations; Leonor's choice decides the three story endings; Duarte catches a player at computer 12 before the backup.
+
 Extends specs/campus-people-and-atmosphere.md, specs/chat-dialogues.md, specs/harder-campus.md, specs/pen-and-code.md and specs/continuous-conversations.md. No change to `story.py`, `logic.py`, `game.py`, `app.py` or any reviewed test: no new flag, action or ending, so every saved game stays valid and the plain game plays as before. `db.py` gains one table and three small functions. The existing operations keep their exact fields, and `talk` still writes nothing.
 
 ## Why

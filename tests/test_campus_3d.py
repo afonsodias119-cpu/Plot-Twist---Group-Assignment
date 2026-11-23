@@ -20,8 +20,8 @@ TEXT = importlib.import_module("campus_text").TEXT
 server3d = importlib.import_module("server3d")
 page3d = importlib.import_module("page3d")
 
-SHORT = ["open_drawer", "go_computer_lab", "view_files", "go_study_room", "go_auditorium", "present_evidence"]
-HELP = ["open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help", "go_study_room", "go_computer_lab", "view_files", "go_study_room", "go_auditorium", "present_evidence"]
+SHORT = ["open_drawer", "go_computer_lab", "view_files", "save_backup", "go_study_room", "go_auditorium", "present_evidence"]
+HELP = ["open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help", "go_study_room", "go_computer_lab", "view_files", "save_backup", "go_study_room", "go_auditorium", "present_evidence"]
 
 
 def call(operation="open", language="pt", player="test detective", **extra):
@@ -30,7 +30,8 @@ def call(operation="open", language="pt", player="test detective", **extra):
 
 @pytest.mark.parametrize("language", ["en", "pt"])
 # In the 3D version the auditorium needs every clue, so the short path (no photo, no Leonor) is not played here.
-@pytest.mark.parametrize("path,ending", [(HELP, "impostor"), (["accuse" if a == "ask_for_help" else a for a in HELP], "stolen_credits")])
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): Leonor's choice decides the ending.
+@pytest.mark.parametrize("path,ending", [(HELP, "full_case"), (["accuse" if a == "ask_for_help" else a for a in HELP], "impostor")])
 def test_both_endings_and_accusation_use_the_original_rules(language, path, ending):
     call(language=language)
     for action in path:
@@ -161,7 +162,7 @@ def test_the_story_rule_alone_is_not_enough_for_the_auditorium():
 def test_the_auditorium_opens_once_every_clue_is_done():
     """Pen, photo, old files and Leonor: then the same door opens, even coming from another room."""
     call()
-    for action in HELP[:9]:
+    for action in HELP[:10]:   # up to save_backup (specs/computer-lab-backup.md)
         call("play", action=action)
     result = call("enter", room="auditorium")
     assert result["accepted"] and result["scene"] == "auditorium"
@@ -170,7 +171,7 @@ def test_the_auditorium_opens_once_every_clue_is_done():
 def test_the_auditorium_button_needs_every_clue_too():
     """The on-screen travel button follows the same rule as walking in through the door."""
     call()
-    for action in SHORT[:4]:
+    for action in SHORT[:5]:   # up to the study room, after save_backup (specs/computer-lab-backup.md)
         call("play", action=action)
     before = saved_bytes()
     result = call("play", action="go_auditorium")
@@ -189,7 +190,7 @@ def test_the_clue_list_and_the_auditorium_button_follow_the_progress():
     button = next(a for a in start["actions"] if a["id"] == "go_auditorium")
     assert button["allowed"] is False and button["blocked_text"].startswith(TEXT["pt"]["auditorium_note"])
 
-    for action in HELP[:9]:
+    for action in HELP[:10]:   # up to save_backup (specs/computer-lab-backup.md)
         done = call("play", action=action)
     assert all(c["done"] for c in done["clues"])
     study = call("play", action="go_study_room")
@@ -228,7 +229,7 @@ def test_entering_after_an_ending_is_refused():
         call("play", action=action)
     before = saved_bytes()
     result = call("enter", room="library")
-    assert not result["accepted"] and result["ending"]["id"] == "impostor"
+    assert not result["accepted"] and result["ending"]["id"] == "full_case"   # Changed by specs/computer-lab-backup.md ("Reviewed tests that change").
     assert saved_bytes() == before
 
 
@@ -308,19 +309,18 @@ def test_http_commands_save_and_resume_after_server_restart(http_server):
 
 
 
-def test_the_group_chat_is_played_inside_the_computer_lab_in_3d():
-    """Changed on purpose (specs/campus-people-and-atmosphere.md): the chat now has a place in the 3D campus."""
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the group chat is gone; the
+# backup of the original conversations is saved at computer 12, in the computer lab.
+def test_the_backup_is_saved_inside_the_computer_lab_in_3d():
     call("open", language="en", player="chat tester")
     for action in SHORT[:3]:
         call("play", language="en", player="chat tester", action=action)
     call("play", language="en", player="chat tester", action="go_study_room")
     shown = call("play", language="en", player="chat tester", action="go_computer_lab")
     assert shown["scene"] == "computer_lab" and shown["room"] == "computer_lab"
-    assert "open_chat" in [a["id"] for a in shown["actions"]]
-    chat = call("play", language="en", player="chat tester", action="open_chat")
-    assert chat["accepted"] and chat["scene"] == "group_chat"
-    assert chat["room"] == "computer_lab"          # the character stays in the computer lab
-    assert {"flag_1", "flag_5", "go_computer_lab"} <= {a["id"] for a in chat["actions"]}
+    assert "save_backup" in [a["id"] for a in shown["actions"]]
+    saved = call("play", language="en", player="chat tester", action="save_backup")
+    assert saved["accepted"] and saved["scene"] == "computer_lab" and saved["room"] == "computer_lab"
 
 
 # ---------- 3D inside Streamlit (specs/campus-3d-streamlit.md) ----------

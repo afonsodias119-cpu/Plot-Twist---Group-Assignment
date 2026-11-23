@@ -19,10 +19,11 @@ from story import STORIES, UI_TEXTS
 
 STORY = STORIES["en"]
 
-P_SHORT = ["open_drawer", "go_computer_lab", "view_files", "go_study_room", "go_auditorium", "present_evidence"]
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the backup is saved after the files.
+P_SHORT = ["open_drawer", "go_computer_lab", "view_files", "save_backup", "go_study_room", "go_auditorium", "present_evidence"]
 P_HELP = [
     "open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help",
-    "go_study_room", "go_computer_lab", "view_files", "go_study_room", "go_auditorium", "present_evidence",
+    "go_study_room", "go_computer_lab", "view_files", "save_backup", "go_study_room", "go_auditorium", "present_evidence",
 ]
 P_ACCUSE = ["accuse" if action == "ask_for_help" else action for action in P_HELP]
 
@@ -92,6 +93,9 @@ def test_auditorium_is_blocked_until_files_are_viewed():
     assert result["message"] == expected
     result = assert_rejected(play_path(["open_drawer"]), "go_auditorium", "blocked")
     assert result["message"] == expected
+    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the files alone are not enough either.
+    result = assert_rejected(play_path(P_SHORT[:3] + ["go_study_room"]), "go_auditorium", "blocked")
+    assert result["message"] == expected
 
 
 def test_item_actions_are_blocked_without_their_item():
@@ -101,7 +105,7 @@ def test_item_actions_are_blocked_without_their_item():
     result = assert_rejected(with_photo_only, "view_files", "blocked")
     assert result["message"] == scene_actions("computer_lab")["view_files"]["blocked_text"]
 
-    with_stick_and_files = play_path(P_SHORT[:4] + ["go_library"])
+    with_stick_and_files = play_path(P_SHORT[:5] + ["go_library"])
     assert with_stick_and_files["inventory"] == ["usb_stick"]
     assert with_stick_and_files["flags"]["files_viewed"] is True
     for action_id in ["ask_for_help", "accuse"]:
@@ -111,7 +115,7 @@ def test_item_actions_are_blocked_without_their_item():
 
 def test_usb_stick_opens_the_files_then_the_auditorium_and_is_kept():
     """Brief A2: the key is usb_stick, its lock files_viewed, its route the auditorium."""
-    state = play_path(P_SHORT[:5])
+    state = play_path(P_SHORT[:6])
     assert state["scene"] == "auditorium"
     assert state["flags"]["files_viewed"] is True
     assert state["inventory"] == ["usb_stick"]
@@ -165,10 +169,11 @@ def test_unknown_action_ids_are_rejected():
 
 
 def test_three_paths_reach_their_endings():
-    """Asking for help ends in impostor; skipping Leonor or accusing her ends in stolen_credits."""
-    assert play_path(P_HELP)["ending"] == "impostor"
+    """Asking for help ends in full_case; accusing Leonor in impostor; skipping her in stolen_credits."""
+    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): Leonor's choice decides the ending.
+    assert play_path(P_HELP)["ending"] == "full_case"
     assert play_path(P_SHORT)["ending"] == "stolen_credits"
-    assert play_path(P_ACCUSE)["ending"] == "stolen_credits"
+    assert play_path(P_ACCUSE)["ending"] == "impostor"
 
 
 def test_every_action_is_rejected_after_an_ending():
@@ -201,7 +206,8 @@ def test_every_ending_is_reachable_from_a_new_game():
                     to_visit.append(result["state"])
     # Changed by specs/spot-the-fake.md ("Reviewed tests that change"): the group chat adds full_case.
     # Changed again by specs/fifth-element-ending.md ("Reviewed tests that change"): flagging every message adds fifth_element.
-    assert endings_found == {"impostor", "stolen_credits", "full_case", "fifth_element"}
+    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the chat and fifth_element are gone.
+    assert endings_found == {"impostor", "stolen_credits", "full_case"}
 
 
 def test_playing_never_changes_the_story():
@@ -305,9 +311,9 @@ def test_both_languages_have_the_same_structure():
 def test_paths_work_in_every_language():
     """The three paths reach the same endings in every language."""
     for story in STORIES.values():
-        assert play_path(P_HELP, story)["ending"] == "impostor"
+        assert play_path(P_HELP, story)["ending"] == "full_case"
         assert play_path(P_SHORT, story)["ending"] == "stolen_credits"
-        assert play_path(P_ACCUSE, story)["ending"] == "stolen_credits"
+        assert play_path(P_ACCUSE, story)["ending"] == "impostor"
 
 
 def conditions_of(story):
@@ -547,13 +553,14 @@ def test_play_without_a_save_uses_the_given_language():
 def test_resumed_game_offers_the_same_actions():
     """Brief A4: after a restart of the app the scene, items, decision and routes are all back."""
     game.open_game("ana", "en")
-    last = play_saved("ana", P_HELP[:9])
+    last = play_saved("ana", P_HELP[:10])   # up to save_backup (specs/computer-lab-backup.md)
     resumed = game.load("ana")
     assert resumed == last["state"]
     assert resumed["scene"] == "computer_lab"
     assert resumed["inventory"] == ["usb_stick", "original_photo"]
     assert resumed["flags"]["colleague_choice"] == "help"
     assert resumed["flags"]["files_viewed"] is True
+    assert resumed["flags"]["backup_saved"] is True
     assert logic.available_actions(STORY, resumed) == logic.available_actions(STORY, last["state"])
     play_saved("ana", ["go_study_room", "go_auditorium"])
 
@@ -583,7 +590,7 @@ def test_new_game_after_an_ending_reaches_the_other_ending():
     """After one ending, a restart lets the player reach the other one."""
     game.open_game("ana", "en")
     play_saved("ana", P_HELP)
-    assert game.load("ana")["ending"] == "impostor"
+    assert game.load("ana")["ending"] == "full_case"
     game.restart("ana")
     play_saved("ana", P_SHORT)
     assert game.load("ana")["ending"] == "stolen_credits"
@@ -627,70 +634,47 @@ def test_broken_save_counts_as_no_save():
         assert result["state"] == logic.new_game(STORY)
 
 
-# ---------- Group chat puzzle (specs/spot-the-fake.md) ----------
+# ---------- The backup of the original conversations (specs/computer-lab-backup.md) ----------
+# It replaces the group chat puzzle of specs/spot-the-fake.md ("Reviewed tests that change").
 
-P_FULL = P_HELP[:9] + [
-    "open_chat", "flag_2", "flag_4", "flag_5",
-    "go_computer_lab", "go_study_room", "go_auditorium", "present_evidence",
-]
-
-
-def test_chat_is_offered_only_after_the_files_are_viewed():
-    """The group chat appears in the computer lab only once the old files were viewed."""
-    before_files = play_path(["go_computer_lab"])
-    assert "open_chat" not in offered_ids(before_files)
+def test_the_backup_is_offered_only_after_the_files_are_viewed():
+    """Saving the backup appears in the computer lab only once the old files were viewed, and only once."""
+    assert "save_backup" not in offered_ids(play_path(["go_computer_lab"]))
     after_files = play_path(P_SHORT[:3])
-    assert "open_chat" in offered_ids(after_files)
-    assert play_path(["open_chat"], state=after_files)["scene"] == "group_chat"
+    assert "save_backup" in offered_ids(after_files)
+    saved = play_path(["save_backup"], state=after_files)
+    assert saved["flags"]["backup_saved"] is True and saved["scene"] == "computer_lab"
+    assert "save_backup" not in offered_ids(saved)
+    assert assert_rejected(saved, "save_backup", "not_offered")["message"] == STORY["messages"]["not_offered"]
 
 
-def test_a_message_is_flagged_once_and_remembered():
-    """A flag is remembered, cannot be given twice, and shows "Flagged." right after its message."""
-    state = play_path(P_SHORT[:3] + ["open_chat", "flag_2"])
-    assert state["flags"]["flagged_2"] is True
-    assert "flag_2" not in offered_ids(state)
-    result = assert_rejected(state, "flag_2", "not_offered")
-    assert result["message"] == STORY["messages"]["not_offered"]
-
-    texts = STORY["scenes"]["group_chat"]["texts"]
-    flagged_line = next(i for i, entry in enumerate(texts) if entry["when"] == {"flags": {"flagged_2": True}})
-    message_2 = texts[flagged_line - 1]["text"]
-    shown = logic.scene_text(STORY, state)
-    assert shown[shown.index(message_2) + 1] == texts[flagged_line]["text"]
-    assert shown.count(texts[flagged_line]["text"]) == 1
+def test_the_lab_text_remembers_the_backup():
+    """Once saved, the computer lab says the backup is on the USB stick."""
+    texts = STORY["scenes"]["computer_lab"]["texts"]
+    line = next(entry["text"] for entry in texts if entry["when"] == {"flags": {"backup_saved": True}})
+    assert line not in logic.scene_text(STORY, play_path(P_SHORT[:3]))
+    assert line in logic.scene_text(STORY, play_path(P_SHORT[:4]))
 
 
-def test_a_perfect_report_with_help_reaches_full_case():
-    """Flagging exactly the three fake messages, with Leonor's help, ends in full_case."""
-    assert play_path(P_FULL)["ending"] == "full_case"
-
-
-def test_flagging_a_real_message_loses_the_full_case():
-    """Flagging a real message as well ends in impostor instead."""
-    path = P_FULL[:10] + ["flag_1"] + P_FULL[10:]
-    assert play_path(path)["ending"] == "impostor"
-
-
-def test_missing_a_fake_message_loses_the_full_case():
-    """Leaving one fake message unflagged ends in impostor instead."""
-    path = [action for action in P_FULL if action != "flag_5"]
-    assert play_path(path)["ending"] == "impostor"
-
-
-def test_a_perfect_report_without_help_does_not_reach_full_case():
-    """The right flags without Leonor's help end in stolen_credits."""
-    path = ["accuse" if action == "ask_for_help" else action for action in P_FULL]
-    assert play_path(path)["ending"] == "stolen_credits"
-
-
-def test_the_chat_works_in_both_languages():
-    """The perfect report reaches full_case in every language."""
+def test_there_is_no_group_chat_any_more():
     for story in STORIES.values():
-        assert play_path(P_FULL, story)["ending"] == "full_case"
+        assert "group_chat" not in story["scenes"]
+        assert not any(flag.startswith("flagged_") for flag in story["start"]["flags"])
+        assert [ending["id"] for ending in story["endings"]] == ["full_case", "impostor", "stolen_credits"]
+
+
+def test_leonors_choice_decides_the_ending_in_both_languages():
+    for story in STORIES.values():
+        assert play_path(P_HELP, story)["ending"] == "full_case"
+        assert play_path(P_ACCUSE, story)["ending"] == "impostor"
+        assert play_path(P_SHORT, story)["ending"] == "stolen_credits"
 
 
 def test_a_save_without_the_new_flags_starts_again():
-    """A game saved before the chat existed (only two flags) no longer counts as a valid save."""
+    """A game saved before the backup existed (with the chat flags) no longer counts as a valid save."""
     old_save = logic.new_game(STORY)
     old_save["flags"] = {"colleague_choice": "none", "files_viewed": False}
     assert logic.is_valid_state(STORY, old_save) is False
+    chat_save = logic.new_game(STORY)
+    chat_save["flags"] = {"colleague_choice": "none", "files_viewed": False, **{f"flagged_{n}": False for n in range(1, 6)}}
+    assert logic.is_valid_state(STORY, chat_save) is False

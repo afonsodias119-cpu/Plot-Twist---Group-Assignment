@@ -1201,13 +1201,11 @@ function updateLights() {
   for (const item of lampList) item.d = Math.hypot(item.light.position.x - px, item.light.position.z - pz);
   lampList.sort((a, b) => a.d - b.d);
   const edge = lampList.length > LIGHT_BUDGET ? lampList[LIGHT_BUDGET].d : Infinity;
-  // in the secret ending the lights of the auditorium flicker
-  const flicker = window.campusState?.ending?.id === "fifth_element" ? 0.35 + 0.65 * Math.abs(Math.sin(performance.now() / 85)) : 1;
   lampList.forEach((item, i) => {
     const on = i < LIGHT_BUDGET;
     item.light.visible = on;
     const mood = item.zone === "aud" ? 1 + stage * 0.8 : item.zone === "corr" ? 1 - stage * 0.7 : item.zone === "stage" ? stage : 1;
-    item.light.intensity = on ? item.base * mood * flicker * Math.min(1, (edge - item.d) / 4) : 0;
+    item.light.intensity = on ? item.base * mood * Math.min(1, (edge - item.d) / 4) : 0;
   });
 }
 const lookAt = new THREE.Vector3(0, 0.8, -0.6);
@@ -1330,7 +1328,7 @@ function syncCampus() {
   npcs[0].visible = state.leonor_present;
   npcs[0].userData.sign.visible = state.leonor_present;
   // Duarte is gone in these endings, and in an ending that carries its own stamp (specs/earlier-nights.md, point 9).
-  npcs[1].visible = !["impostor", "fifth_element"].includes(state.ending?.id) && !state.ending?.stamp;
+  npcs[1].visible = state.ending?.id !== "impostor" && !state.ending?.stamp;   // in "The impostor" Duarte walks out
   npcs[1].userData.sign.visible = npcs[1].visible;
   showSchedule(state);
   where.textContent = state.title;

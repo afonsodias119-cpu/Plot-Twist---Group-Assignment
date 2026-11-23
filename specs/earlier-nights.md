@@ -1,5 +1,7 @@
 # Earlier nights: the game remembers, and one night can finally end
 
+> **Update (specs/computer-lab-backup.md):** the group chat, its flags, the message cards and "The fifth element" are gone. Computer 12 saves a backup of the original conversations; Leonor's choice decides the three story endings; Duarte catches a player at computer 12 before the backup.
+
 Extends specs/evidence-and-hearing.md, specs/night-schedule.md, specs/fifth-element-ending.md, specs/campus-people-and-atmosphere.md and specs/continuous-conversations.md. No change to `story.py`, `logic.py`, `game.py`, `app.py` or any reviewed test: the story keeps its four endings in the same order, and the plain game plays as before. `db.py` gains one table and two small functions.
 
 ## Why

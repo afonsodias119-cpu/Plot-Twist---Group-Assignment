@@ -118,16 +118,8 @@ def held(state, night):
     return cards + [fact for person, fact in FACTS.items() if person in night["cracked"]]
 
 
-def chat_message(language, n):
-    """The story's own text of chat message n (the first text of the chat is its introduction)."""
-    texts = STORIES[language]["scenes"]["group_chat"]["texts"]
-    return [entry["text"] for entry in texts if entry["when"] == {}][n]
-
-
 def card_label(card, language):
-    """What a card says. A flagged chat message is shown with the story's own text, not a copy."""
-    if card.startswith("msg_"):
-        return "🚩 " + chat_message(language, int(card[len("msg_"):]))
+    """What a card says."""
     return CASE_TEXT[language]["labels"][card]
 
 
@@ -223,8 +215,8 @@ def verdict_of(state, answers, caught=False):
     count = doubts(answers, caught)
     if count >= MAX_DOUBTS:
         return "stolen_credits", "three_help" if state["flags"]["colleague_choice"] == "help" else "three"
-    if count == 2 and story_ending == "full_case":
-        return "impostor", "two"
+    if count == 2 and story_ending == "full_case":   # "The impostor" now means Leonor was accused (specs/computer-lab-backup.md)
+        return "stolen_credits", "two"
     if story_ending == "stolen_credits" and answers[-1] == "tomas_word":
         # Not a cap: it only keeps the hearing and the text of "Stolen credit" from contradicting each other.
         return story_ending, "no_originals"
@@ -234,7 +226,7 @@ def verdict_of(state, answers, caught=False):
 def perfect_night(state, night):
     """True when tonight could give the true ending (specs/earlier-nights.md, point 8): the story's
     `full_case`, a hearing of three answers with no doubt (a catch is a doubt) and the words of
-    Tomás and Rita both won tonight. The four endings of earlier nights are checked by the caller."""
+    Tomás and Rita both won tonight. The story endings of earlier nights are checked by the caller."""
     answers = night["hearing"]
     return (state["ending"] == "full_case" and answers is not None and len(answers) == len(HEARING)
             and doubts(answers, bool(night["caught"])) == 0 and all(person in night["cracked"] for person in FACTS))
@@ -270,7 +262,7 @@ def hearing(player, state, night, language, answer):
         game.play(player, "present_evidence", language)
         state = game.load(player)
         night["verdict"], _line = verdict_of(state, night["hearing"], bool(night["caught"]))
-        # The true ending: the four story endings seen on earlier nights (tonight's row is not written
+        # The true ending: every story ending seen on earlier nights (tonight's row is not written
         # yet) and a perfect night. The save keeps the story's full_case (point 8).
         if seen_all(player) and perfect_night(state, night):
             night["verdict"] = TRUE_ENDING

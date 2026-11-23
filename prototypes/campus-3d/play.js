@@ -11,7 +11,7 @@
   };
   const ui = () => data[window.lang || "pt"].play_ui;
   // One emoji for each ending (the collection and the share card). It is defined here because the first screen uses it at start-up.
-  const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸", fifth_element: "👁️" };
+  const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸" };
   document.body.classList.add("playable");
 
   const nameBox = make("div", undefined, "name-box");
@@ -267,9 +267,6 @@
     <button id="sms" class="sms" hidden><span id="sms-from" class="sms-from"></span><span id="sms-text"></span></button>
     <div id="joystick" class="joystick" aria-hidden="true"><div id="stick-base" class="stick-base"><div id="stick-knob" class="stick-knob"></div></div></div>
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
-    <section id="chat-card" class="chat-card" role="dialog" aria-labelledby="chat-title" hidden>
-      <header><h3 id="chat-title"></h3><button id="chat-close" class="secondary"></button></header>
-      <p id="chat-intro" class="muted"></p><ol id="chat-messages"></ol></section>
     <section id="ending-card" class="ending-card" role="dialog" aria-labelledby="ending-title" hidden>
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
       <p id="ending-collection" class="collection"></p>
@@ -547,7 +544,6 @@
       $("scene-paragraphs").hidden = outside;
     }
     shell.querySelectorAll(".actions.investigate button").forEach(b => { b.disabled = outside || Boolean(window.campusBusy); });
-    shell.querySelectorAll("#chat-messages li.flagged button").forEach(b => { b.disabled = true; });   // a flag cannot be undone
   }
   window.addEventListener("campus-inside", applyInside);
 
@@ -699,7 +695,6 @@
       ? state.message || (state.night ? state.night.notice : "") || null : null;   // an empty text is nothing to draw
     showNotice(state);
     showEnding(state.ending);
-    showChat(state.chat);
     checkNotices(state);
     sound.setTension(state.ending ? 0 : tensionOf(state));
     if (roomChanged) {
@@ -708,38 +703,9 @@
     }
   }
 
-  // ---------- computer 12: the group chat is read and flagged on a screen over the picture ----------
-  function showChat(chat) {
-    const card = $("chat-card"), t = ui();
-    const wasOpen = !card.hidden;
-    $("hud-bottom").classList.toggle("chatting", Boolean(chat));
-    if (!chat) {
-      card.hidden = true;
-      if (wasOpen && !talking && !phone.open && !dialog.open) window.playing = true;
-      return;
-    }
-    window.playing = false;   // the character stands at the computer
-    $("chat-title").textContent = t.chat_title;
-    $("chat-close").textContent = t.chat_close;
-    $("chat-intro").textContent = chat.intro;
-    $("chat-messages").replaceChildren(...chat.messages.map(message => {
-      const row = make("li", undefined, message.flagged ? "flagged" : "");
-      const button = make("button", message.flagged ? t.chat_flagged : t.chat_flag, message.flagged ? "secondary" : "");
-      button.disabled = message.flagged;
-      button.dataset.action = message.action;
-      button.addEventListener("click", () => send("play", { action: message.action }));
-      row.append(make("p", message.text), button);
-      return row;
-    }));
-    card.hidden = false;
-    if (!wasOpen) $("chat-messages").querySelector("button:not(:disabled)")?.focus({ preventScroll: true });
-  }
-  $("chat-close").addEventListener("click", () => send("play", { action: "go_computer_lab" }));
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("chat-card").hidden && !dialog.open) $("chat-close").click(); });
-
   // ---------- the ending: a screen over the picture, with a stamp and confetti ----------
   const CONFETTI = { full_case: ["#e8b45c", "#f4e3b0", "#7fd6a0"], impostor: ["#7fd6a0", "#e8b45c", "#cfe8d8"],
-                     fifth_element: ["#b79cff", "#ffffff", "#6a4cff"], stolen_credits: ["#ff8c7a", "#9aa4ad"],
+                     stolen_credits: ["#ff8c7a", "#9aa4ad"],
                      extra: ["#ffb38a", "#ffe2a8", "#f2d089"] };
   function showEnding(ending) {
     const card = $("ending-card"), t = ui();
@@ -1073,7 +1039,8 @@
         return;
       }
       if (!talking || current.scene !== scene) return;
-      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [], options: [] });
+      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", options: [],
+                 actions: current.actions.filter(action => action.person === line.npc) });   // what is left: the backup (specs/computer-lab-backup.md)
     });
     $("talk-options").replaceChildren(form);
     $("talk-options").hidden = false;
@@ -1331,7 +1298,7 @@
   }
   function shareText(ending) {
     const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
-    const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("") + (current?.flagged ? "🟨" : "⬛");
+    const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("");
     return [`${t.share_title} 🕵️`, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
             `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
   }
@@ -1513,8 +1480,8 @@
     smsTimer = setTimeout(() => { banner.hidden = true; }, 9000);
   }
   $("sms").addEventListener("click", () => { $("sms").hidden = true; openPhone("msgs"); });
-  // One message for each clue found (the first three build up, the fourth says what the player found),
-  // and one when the first chat message is flagged. Only the newest pops up; all of them stay in the phone.
+  // One message for each clue found (the first three build up, the fourth says what the player found).
+  // Only the newest pops up; all of them stay in the phone.
   let restarting = false;   // true while a confirmed "New game" is on its way (set by the restart button)
   function checkNotices(state) {
     if (state.ending) { $("sms").hidden = true; return; }
@@ -1529,7 +1496,6 @@
       if (!store.sent.includes(whisper.id)) due.push([whisper.id, whisper.text]);
     }
     for (let i = 1; i <= Math.min(done, t.notices.length); i++) if (!store.sent.includes(`c${i}`)) due.push([`c${i}`, t.notices[i - 1]]);
-    if (state.flagged > 0 && !store.sent.includes("chat")) due.push(["chat", t.notice_chat]);
     // The unknown number also keeps the time: the warnings and the rounds the server says are due now,
     // each id only once (specs/night-schedule.md, point 7).
     for (const message of (state.night && state.night.messages) || []) {
@@ -1608,7 +1574,7 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && !$("menu-list").hidden) { setMenu(false); $("menu-toggle").focus(); }
   });
-  howto.addEventListener("close", () => { window.playing = !talking && $("chat-card").hidden && !phone.open; });
+  howto.addEventListener("close", () => { window.playing = !talking && !phone.open; });
 
   // ---------- the joystick (phones) ----------
   const stickBase = $("stick-base"), stickKnob = $("stick-knob");
@@ -1677,7 +1643,7 @@
   $("qr-open").addEventListener("click", openQr);
   qrIntroButton.addEventListener("click", openQr);
   $("qr-close").addEventListener("click", () => qrDialog.close());
-  qrDialog.addEventListener("close", () => { if (current) window.playing = !talking && $("chat-card").hidden && !phone.open; });
+  qrDialog.addEventListener("close", () => { if (current) window.playing = !talking && !phone.open; });
 
   // ---------- the detective card: a picture to keep, with the detective, the name, the ending and the time ----------
   const cardDialog = make("dialog", undefined, "card-dialog"); cardDialog.id = "card-dialog";
@@ -1685,7 +1651,7 @@
   cardDialog.innerHTML = '<h2 id="card-title"></h2><img id="card-image" alt=""><p id="card-hint" class="muted"></p>' +
     '<div class="dialog-actions"><a id="card-download" class="button-link"></a><button id="card-close" class="secondary"></button></div>';
   document.body.append(cardDialog);
-  const CARD_COLORS = { full_case: "#e8b45c", impostor: "#7fd6a0", stolen_credits: "#ff8c7a", fifth_element: "#b79cff" };
+  const CARD_COLORS = { full_case: "#e8b45c", impostor: "#7fd6a0", stolen_credits: "#ff8c7a" };
   function loadImage(src) {
     return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = src; });
   }

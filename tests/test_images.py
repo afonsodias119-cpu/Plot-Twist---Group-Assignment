@@ -88,7 +88,7 @@ def test_start_scene_and_ending_show_their_image(assets):
     click(at, "action_go_study_room")
     assert image_count(at) == 1
 
-    for action_id in ["open_drawer", "go_computer_lab", "view_files", "go_study_room", "go_auditorium", "present_evidence"]:
+    for action_id in ["open_drawer", "go_computer_lab", "view_files", "save_backup", "go_study_room", "go_auditorium", "present_evidence"]:   # specs/computer-lab-backup.md
         click(at, f"action_{action_id}")
     assert image_count(at) == 1  # the ending of this game: stolen_credits
 

@@ -45,17 +45,17 @@ TEXT = importlib.import_module("campus_text").TEXT
 PAGE = page3d.build_page(playable=True, inline=True)
 PLAYER = "detective"
 
-# The ten cards, in the order the hand shows them (spec, point 4).
-CARDS = ["original_photo", "files", "leonor_messages", "msg_1", "msg_2", "msg_3", "msg_4", "msg_5",
-         "tomas_word", "rita_word"]
+# The cards, in the order the hand shows them (spec, point 4).
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the five flagged messages are gone.
+CARDS = ["original_photo", "files", "leonor_messages", "tomas_word", "rita_word"]
 FACT_CARDS = {"tomas_word", "rita_word"}   # won by cracking a person, kept in the night's notes
 
 # The lines a check names, word for word as in the dialogue script (docs/guiao-conversas.md, section
 # "Provas, confrontos e audiência"). Every other expected text is read from the game's own tables.
 LINES = {
     "en": {
-        # Spec, point 7: what Tomás says when he reads the arrival line of message 5.
-        "tomas_reveal": "At 11:49 I was sitting right here, one computer away from the one in the hood. I did not type a word.",
+        # Spec, point 7: what Tomás says when he reads the history of the slides (specs/computer-lab-backup.md).
+        "tomas_reveal": '"So the message says Duarte did them. The files say I did."',
         # The rebuffs: one line for each person, for any other card or any other line.
         "tomas_rebuff": 'Tomás glances at it and back at his screen. "And what does that have to do with what I just said?"',
         "rita_rebuff": 'Rita looks at it, then back at her laptop. "And? I do not see what that changes."',
@@ -70,18 +70,15 @@ LINES = {
         "name_wrong": '"That does not tell me who wrote a report." He makes a small mark on the list.',
         # The professor, on the card `files` shown against the claim `photo`.
         "history": '"The history says a photo was swapped. It does not show me the one that was there before."',
-        # The professor, on a flagged message shown against the claim `messages`.
-        "opinion": '"You flagged it. That is your opinion of it. Who will stand here and tell me they never wrote it?"',
         # The verdict lines (spec, point 11), by their key.
         "three": '"Three times tonight you gave me a reason to doubt you. I cannot cross out a name on a guess."',
         "three_help": 'The professor closes the list before Leonor reaches the door. "I have heard enough guesses for one night."',
         "two": '"You are right about him, I think. But you made me doubt you twice tonight, and I write down only what I am sure of."',
-        "no_originals": "The professor looks at Duarte's phone for a long moment. \"One message is answered. He has a phone full of them, and nobody here kept the originals.\"",
+        "no_originals": "The professor looks at Duarte's phone for a long moment. \"One message is answered. He has a phone full of them, and nobody from your group is here to confirm your backup.\"",
     },
     "pt": {
-        "tomas_reveal": "Às 23h49 eu estava aqui sentado, no computador ao lado do rapaz de capuz. Não escrevi uma palavra.",
-        "opinion": '"Marcou-a. Essa é a sua opinião sobre ela. Quem me vem aqui dizer que nunca a escreveu?"',
-        "no_originals": 'O professor fica muito tempo a olhar para o telemóvel do Duarte. "Uma mensagem está respondida. Ele tem um telemóvel cheio delas, e ninguém aqui guardou as originais."',
+        "tomas_reveal": '"Então a mensagem diz que foi o Duarte. Os ficheiros dizem que fui eu."',
+        "no_originals": 'O professor fica muito tempo a olhar para o telemóvel do Duarte. "Uma mensagem está respondida. Ele tem um telemóvel cheio delas, e ninguém do teu grupo está aqui para confirmar o teu backup."',
     },
 }
 
@@ -121,17 +118,17 @@ def walk(room, player=PLAYER, language="en"):
 
 # ---------- helpers: the steps that give the cards ----------
 
-def investigate(player=PLAYER, language="en", leonor="ask_for_help", flagged=()):
+def investigate(player=PLAYER, language="en", leonor="ask_for_help"):
     """A new game played up to the computer lab: the USB stick, the original photo, the decision
-    about Leonor ("ask_for_help" or "accuse"), the old files, and the chat messages in `flagged`.
+    about Leonor ("ask_for_help" or "accuse"), the old files and the backup of the conversations.
 
-    The player then holds `original_photo`, `files`, `leonor_messages` (only when Leonor helps) and
-    one `msg_n` for every flagged message, and stands beside Tomás.
+    The player then holds `original_photo`, `files` and `leonor_messages` (only when Leonor helps),
+    and stands beside Tomás. Changed by specs/computer-lab-backup.md: no chat messages are flagged.
     """
     steps = ["open_drawer", "go_print_shop", "request_copy", "go_study_room",
-             "go_library", leonor, "go_study_room", "go_computer_lab", "view_files"]
-    if flagged:
-        steps += ["open_chat"] + [f"flag_{n}" for n in flagged] + ["go_computer_lab"]
+             "go_library", leonor, "go_study_room", "go_computer_lab", "view_files", "save_backup"]
+    if leonor is None:   # no decision: Leonor is never asked (to_the_hearing then lets her leave)
+        steps = ["open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_computer_lab", "view_files", "save_backup"]
     return play(*steps, language=language, player=player)
 
 
@@ -141,8 +138,8 @@ def show(card, npc, node, player=PLAYER, language="en"):
 
 
 def crack_tomas(player=PLAYER, language="en"):
-    """In the computer lab, with message 5 flagged: the right card on his claim line gives `tomas_word`."""
-    reply = show("msg_5", "tomas", "slides", player, language)
+    """In the computer lab: the file history on his claim line gives `tomas_word` (specs/computer-lab-backup.md)."""
+    reply = show("files", "tomas", "slides", player, language)
     assert reply["confront"]["cracked"] is True
     return reply
 
@@ -156,8 +153,8 @@ def crack_rita(player=PLAYER, language="en"):
 
 
 def everything(player=PLAYER, language="en"):
-    """A night that holds all ten cards and ends standing in the auditorium. No card is charged."""
-    investigate(player, language, flagged=(1, 2, 3, 4, 5))
+    """A night that holds every card and ends standing in the auditorium. No card is charged."""
+    investigate(player, language)
     crack_tomas(player, language)
     crack_rita(player, language)
     return walk("auditorium", player, language)
@@ -172,12 +169,6 @@ def label_of(result, card):
     return next(c["label"] for c in result["evidence"] if c["id"] == card)
 
 
-def chat_message(language, n):
-    """The story's own text of chat message n (the first text of that scene is the introduction)."""
-    texts = STORIES[language]["scenes"]["group_chat"]["texts"]
-    return [entry["text"] for entry in texts if entry["when"] == {}][n]
-
-
 def answers_of(reply):
     """The line ids a `talk` reply offers."""
     return [option["next"] for option in reply["options"]]
@@ -185,12 +176,17 @@ def answers_of(reply):
 
 # ---------- helpers: the hearing ----------
 
-def to_the_hearing(player=PLAYER, language="en", leonor="ask_for_help", flagged=(), tomas=False):
-    """A whole investigation and then into the auditorium. `tomas=True` cracks Tomás on the way
-    (message 5 must be among the flagged ones)."""
-    investigate(player, language, leonor, flagged)
+def to_the_hearing(player=PLAYER, language="en", leonor="ask_for_help", tomas=False):
+    """A whole investigation and then into the auditorium. `tomas=True` cracks Tomás on the way.
+
+    `leonor=None`: she is never asked, and the night is moved to 22:30, when she leaves undecided; her
+    clue is lost, the auditorium opens and the story's ending is "stolen_credits" (specs/computer-lab-backup.md:
+    accusing her now gives "impostor")."""
+    investigate(player, language, leonor)
     if tomas:
         crack_tomas(player, language)
+    if leonor is None:
+        assert call("time", language, player, minute=15)["accepted"]
     return walk("auditorium", player, language)
 
 
@@ -352,7 +348,7 @@ def test_a_damaged_notes_row_counts_as_empty_and_cannot_help():
     damaged = ["not json", "[]", '{"cracked": ["duarte", 7], "hearing": "x", "verdict": "full_case"}']
     for number, notes in enumerate(damaged):
         player = f"damaged {number}"
-        to_the_hearing(player)   # Leonor helps and nothing is flagged: the story's ending is "impostor"
+        to_the_hearing(player, leonor="accuse")   # Leonor is accused: the story's ending is "impostor" (specs/computer-lab-backup.md)
         write_night_by_hand(player, notes)
         before = saved()
         result = call(player=player)   # raises nothing
@@ -394,7 +390,7 @@ def test_a_damaged_notes_row_counts_as_empty_and_cannot_help():
 
 
 def test_a_restart_and_a_new_game_wipe_the_night():
-    investigate(flagged=(5,))
+    investigate()
     crack_tomas()
     assert night_row(PLAYER) is not None
 
@@ -410,7 +406,7 @@ def test_a_restart_and_a_new_game_wipe_the_night():
     restarted = call("restart", confirmed=True)
     assert restarted["evidence"] == []
     assert night_row(PLAYER) is None
-    assert "tomas_word" not in ids(investigate(flagged=(5,)))
+    assert "tomas_word" not in ids(investigate())
 
     # A row left behind for a name that has no saved game: `open` starts a new game and deletes it.
     write_night_by_hand("ghost", '{"cracked": ["tomas"]}')
@@ -439,19 +435,13 @@ def test_the_hand_lists_only_what_the_player_holds():
     expect_hand(call("play", action="go_computer_lab"), held)   # walking gives nothing
     held += ["files"]
     expect_hand(call("play", action="view_files"), held)
-    expect_hand(call("play", action="open_chat"), held)         # reading the chat gives nothing either
-    for n in (3, 1, 5, 2, 4):   # flagged out of order: the hand still lists them in the order of the spec
-        held += [f"msg_{n}"]
-        result = call("play", action=f"flag_{n}")
-        expect_hand(result, held)
-        label = label_of(result, f"msg_{n}")
-        assert label.startswith("🚩") and label.endswith(chat_message("en", n))
-    call("play", action="go_computer_lab")
+    # Changed by specs/computer-lab-backup.md: the backup is not a card, and there are no flagged messages.
+    expect_hand(call("play", action="save_backup"), held)
     held += ["tomas_word"]
     expect_hand(crack_tomas(), held)
     held += ["rita_word"]
     expect_hand(crack_rita(), held)
-    assert ids(call()) == CARDS   # all ten, and every card has a label
+    assert ids(call()) == CARDS   # all of them, and every card has a label
     assert all(card["label"].strip() for card in call()["evidence"])
     assert all(set(card) == {"id", "label"} for card in call()["evidence"])
 
@@ -460,17 +450,14 @@ def test_the_hand_lists_only_what_the_player_holds():
 
 
 def test_card_labels_follow_the_saved_language():
-    investigate(language="pt", flagged=(5,))
+    investigate(language="pt")
     reveal = crack_tomas(language="en")["confront"]   # the request says English; the game was saved in Portuguese
     assert LINES["pt"]["tomas_reveal"] in reveal["text"] and reveal["text"] in case_texts("pt")
     result = call("open", "en")
-    assert ids(result) == ["original_photo", "files", "leonor_messages", "msg_5", "tomas_word"]
+    assert ids(result) == ["original_photo", "files", "leonor_messages", "tomas_word"]
     portuguese, english = case_texts("pt"), case_texts("en")
     for card in result["evidence"]:
-        if card["id"] == "msg_5":
-            assert card["label"].endswith(chat_message("pt", 5))
-        else:
-            assert card["label"] in portuguese and card["label"] not in english, card["id"]
+        assert card["label"] in portuguese and card["label"] not in english, card["id"]
 
 
 def test_no_card_shows_a_clue_before_it_is_found():
@@ -486,9 +473,9 @@ def test_no_card_shows_a_clue_before_it_is_found():
 # ---------- Confronting ----------
 
 def test_the_right_card_on_the_claim_line_cracks_tomas_and_it_is_saved():
-    investigate(flagged=(5,))
+    investigate()
     state = game.load(PLAYER)
-    reply = show("msg_5", "tomas", "slides")
+    reply = show("files", "tomas", "slides")  # specs/computer-lab-backup.md: the file history breaks Tomás's claim now
     assert game.load(PLAYER) == state   # only the notes are written: the saved game is as it was
     assert db.load_night(PLAYER)["notes"]["cracked"] == ["tomas"]
     confront = reply["confront"]
@@ -525,7 +512,7 @@ def test_rita_cracks_with_the_file_history_or_with_the_original_photo():
 
 
 def test_leonor_doubts_only_when_shown_what_tomas_said():
-    investigate(flagged=(5,))
+    investigate()
     crack_tomas()
     walk("library")
     first = show("original_photo", "leonor", "sure")
@@ -541,7 +528,7 @@ def test_leonor_doubts_only_when_shown_what_tomas_said():
 
     # Cracked before she has decided: the chain is optional and her two decisions are still there.
     play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_computer_lab", "view_files",
-         "open_chat", "flag_5", "go_computer_lab", player="undecided")
+         player="undecided")
     crack_tomas(player="undecided")
     walk("library", player="undecided")
     reply = show("tomas_word", "leonor", "sure", player="undecided")
@@ -552,7 +539,7 @@ def test_leonor_doubts_only_when_shown_what_tomas_said():
 
 
 def test_a_broken_claim_is_not_offered_again():
-    investigate(flagged=(5,))
+    investigate()
     assert "slides" in answers_of(call("talk", npc="tomas", node="kind"))
     assert call("talk", npc="tomas", node="slides")["node"] == "slides"   # a valid `talk` first
     crack_tomas()                                                         # and a valid `confront`
@@ -568,7 +555,7 @@ def test_a_broken_claim_is_not_offered_again():
 
 def test_any_other_card_gets_the_rebuff_and_costs_two_minutes():
     investigate()
-    reply = show("files", "tomas", "slides")
+    reply = show("original_photo", "tomas", "slides")  # specs/computer-lab-backup.md: the file history breaks Tomás's claim now
     confront = reply["confront"]
     assert confront["cracked"] is False and confront["text"] == LINES["en"]["tomas_rebuff"]
     assert confront["trust"] is None and confront["note"] == "" and confront["minutes"] == 2
@@ -577,9 +564,9 @@ def test_any_other_card_gets_the_rebuff_and_costs_two_minutes():
 
 
 def test_the_right_card_on_another_line_does_not_crack():
-    investigate(flagged=(5,))
+    investigate()
     for node in ("start", "kind", "msg5"):   # three rebuffs: 6 minutes, the most one game may be charged here
-        confront = show("msg_5", "tomas", node)["confront"]
+        confront = show("files", "tomas", node)["confront"]
         assert confront["cracked"] is False and confront["minutes"] == 2, node
         assert confront["text"] == LINES["en"]["tomas_rebuff"], node
     assert "tomas_word" not in ids(call())
@@ -613,10 +600,10 @@ def test_the_clerk_and_the_professor_only_rebuff():
 
 
 def test_a_card_the_player_does_not_hold_is_rejected_and_saves_nothing():
-    investigate()   # nothing is flagged and Tomás is not cracked
-    assert show("files", "tomas", "slides")["confront"]["cracked"] is False   # a valid request first
+    investigate()   # Tomás is not cracked
+    assert show("original_photo", "tomas", "slides")["confront"]["cracked"] is False   # a valid request first
     before = saved()
-    for card in ("msg_5", "tomas_word"):
+    for card in ("rita_word", "tomas_word"):   # specs/computer-lab-backup.md: no flagged messages any more
         with pytest.raises(ValueError):
             show(card, "tomas", "slides")
     assert saved() == before
@@ -670,12 +657,12 @@ def test_confront_needs_the_person_in_the_saved_room_no_ending_and_exact_fields(
 
 
 def test_the_reply_never_says_which_card_is_right():
-    investigate(flagged=(5,))
-    reply = show("files", "tomas", "slides")   # a rebuff: the right card would have been msg_5
+    investigate()
+    reply = show("original_photo", "tomas", "slides")   # a rebuff: the right card would have been files
     confront = reply["confront"]
     assert set(confront) == {"npc", "name", "cracked", "text", "trust", "note", "minutes"}
     assert not any(value in CARDS for value in confront.values() if isinstance(value, str))
-    assert ids(reply) == ["original_photo", "files", "leonor_messages", "msg_5"]   # only what is held
+    assert ids(reply) == ["original_photo", "files", "leonor_messages"]   # only what is held
 
     # Of the whole case file, the reply may contain the rebuff it gives and the labels of the cards
     # held, and nothing else: no reveal, in either language.
@@ -721,7 +708,7 @@ def test_the_new_lines_have_the_same_shape_in_both_languages():
 
     # The names the spec fixes in the two new modules (point 3); the later specs build on them.
     assert case().FACTS == {"tomas": "tomas_word", "rita": "rita_word"}
-    assert case().CONFRONT == {"tomas": {"node": "slides", "breaks": ["msg_5"]},
+    assert case().CONFRONT == {"tomas": {"node": "slides", "breaks": ["files"]},   # specs/computer-lab-backup.md
                                "rita": {"node": "five", "breaks": ["files", "original_photo"]},
                                "leonor": {"node": "sure", "breaks": ["tomas_word"]}}
     assert set(case().EVIDENCE) == set(CARDS) - FACT_CARDS   # a fact is held through the notes, not through the save
@@ -846,14 +833,14 @@ def test_each_claim_accepts_only_its_own_cards():
     # The wrong cards that have a line of their own (spec, points 3 and 10). Every other wrong card
     # gets the general wrong line of its claim.
     own_lines = {"name": {}, "photo": {"files": LINES["en"]["history"]},
-                 "messages": {f"msg_{n}": LINES["en"]["opinion"] for n in range(1, 6)}}
+                 "messages": {}}   # specs/computer-lab-backup.md: the flagged messages and their line are gone
     for claim in claims:
         assert set(claim["wrong"]) == set(own_lines[claim["id"]]), claim["id"]
 
     # One answer per claim and no retry, so trying every card on every claim takes more than one
-    # game. Ten nights, each holding all ten cards: night 0 answers the three claims with cards 0, 1
-    # and 2 of CARDS, night 1 with cards 1, 2 and 3, and so on, going round the list. After the ten
-    # nights every card has been shown against every claim.
+    # game. One night for each card, each holding every card: night 0 answers the three claims with
+    # cards 0, 1 and 2 of CARDS, night 1 with cards 1, 2 and 3, and so on, going round the list. After
+    # those nights every card has been shown against every claim.
     lines = {claim["id"]: {} for claim in claims}   # claim: {card: what the professor answers to it}
     for night in range(len(CARDS)):
         player = f"hearing {night}"
@@ -879,16 +866,6 @@ def test_each_claim_accepts_only_its_own_cards():
         right = [said[card] for card in claim["accepts"]]
         assert len(set(right)) == len(right), claim["id"]   # each card that breaks the claim has its own line
         assert not general & set(right) and not general & set(own.values()), claim["id"]
-
-
-def test_a_flagged_message_alone_does_not_break_the_messages_claim():
-    for language in ("en", "pt"):
-        player = f"flagger {language}"
-        to_the_hearing(player, language, flagged=(5,))
-        hearing = hear("files", "original_photo", "msg_5", player=player, language=language)["hearing"]
-        assert hearing["doubts"] == 1, language
-        assert hearing["said"][-1]["who"] == "professor", language
-        assert hearing["said"][-1]["text"] == LINES[language]["opinion"], language
 
 
 def test_saying_nothing_is_always_a_doubt():
@@ -962,66 +939,67 @@ def test_nothing_else_can_be_done_during_the_hearing():
     assert restarted["scene"] == "study_room" and restarted["hearing"] is None and restarted["evidence"] == []
 
 
-def test_three_answers_end_the_game_with_the_story_ending_of_the_flags():
+def test_three_answers_end_the_game_with_the_story_ending_of_leonors_choice():
+    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): Leonor's choice decides the story's ending.
     cases = [
-        # (the story's ending, Leonor, flagged messages, Tomás cracked, the three answers, doubts, verdict line)
-        ("fifth_element", "ask_for_help", (1, 2, 3, 4, 5), False, ["files", "original_photo", "leonor_messages"], 0, ""),
-        ("full_case", "ask_for_help", (2, 4, 5), False, ["concede", "original_photo", "leonor_messages"], 1, ""),
-        ("impostor", "ask_for_help", (), False, ["files", "original_photo", "leonor_messages"], 0, ""),
+        # (the story's ending, Leonor, Tomás cracked, the three answers, doubts, verdict line)
+        ("full_case", "ask_for_help", False, ["files", "original_photo", "leonor_messages"], 0, ""),
+        ("full_case", "ask_for_help", False, ["concede", "original_photo", "leonor_messages"], 1, ""),
+        ("impostor", "accuse", False, ["files", "original_photo", "concede"], 1, ""),
         # Stolen credit with the `messages` claim not broken: the one doubt is there, and no line.
-        ("stolen_credits", "accuse", (), False, ["files", "original_photo", "concede"], 1, ""),
+        ("stolen_credits", None, False, ["files", "original_photo", "concede"], 1, ""),
         # Stolen credit although Tomás's word broke the `messages` claim: the professor says why.
-        ("stolen_credits", "accuse", (5,), True, ["files", "original_photo", "tomas_word"], 0, "no_originals"),
+        ("stolen_credits", None, True, ["files", "original_photo", "tomas_word"], 0, "no_originals"),
     ]
     for language in ("en", "pt"):
-        for number, (ending, leonor, flagged, tomas, answers, doubts, line) in enumerate(cases):
+        for number, (ending, leonor, tomas, answers, doubts, line) in enumerate(cases):
             player = f"{language} case {number}"
-            to_the_hearing(player, language, leonor, flagged, tomas)
+            to_the_hearing(player, language, leonor, tomas)
             result = hear(*answers, player=player, language=language)
             assert result["hearing"]["doubts"] == doubts, player
             verdict = LINES[language][line] if line else ""
             check_ending(result, player, language, saved_id=ending, shown_id=ending, verdict=verdict)
 
 
-def test_two_doubts_show_the_impostor_instead_of_case_closed():
-    to_the_hearing(flagged=(2, 4, 5))
+def test_two_doubts_show_stolen_credit_instead_of_case_closed():
+    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): "The impostor" now means Leonor was accused,
+    # so two doubts on a "Case closed" night show "Stolen credit" (the professor's line is the same).
+    to_the_hearing()
     result = hear("concede", "concede", "leonor_messages")
     assert result["hearing"]["doubts"] == 2
-    check_ending(result, PLAYER, "en", saved_id="full_case", shown_id="impostor", verdict=LINES["en"]["two"])
+    check_ending(result, PLAYER, "en", saved_id="full_case", shown_id="stolen_credits", verdict=LINES["en"]["two"])
 
 
 def test_two_doubts_leave_the_other_endings_alone():
     cases = [
-        # (the story's ending, Leonor, flagged messages, the three answers)
-        ("impostor", "ask_for_help", (), ["concede", "concede", "leonor_messages"]),
-        ("stolen_credits", "accuse", (), ["files", "concede", "concede"]),
-        ("fifth_element", "ask_for_help", (1, 2, 3, 4, 5), ["concede", "concede", "leonor_messages"]),
+        # (the story's ending, Leonor, the three answers)
+        ("impostor", "accuse", ["files", "concede", "concede"]),
+        ("stolen_credits", None, ["files", "concede", "concede"]),
     ]
-    for ending, leonor, flagged, answers in cases:
-        to_the_hearing(ending, "en", leonor, flagged)   # the player is named after the ending
+    for ending, leonor, answers in cases:
+        to_the_hearing(ending, "en", leonor)   # the player is named after the ending
         result = hear(*answers, player=ending)
         assert result["hearing"]["doubts"] == 2, ending
         check_ending(result, ending, "en", saved_id=ending, shown_id=ending, verdict="")
 
 
-def test_three_doubts_show_stolen_credit_whatever_the_flags():
+def test_three_doubts_show_stolen_credit_whatever_leonor_chose():
     cases = [
-        # (the story's ending, Leonor, flagged messages, the verdict line)
-        ("full_case", "ask_for_help", (2, 4, 5), "three_help"),
-        ("impostor", "ask_for_help", (), "three_help"),
-        ("fifth_element", "accuse", (1, 2, 3, 4, 5), "three"),
+        # (the story's ending, Leonor, the verdict line)
+        ("full_case", "ask_for_help", "three_help"),
+        ("impostor", "accuse", "three"),
         # The story's ending is already "Stolen credit": the three doubts still get their line.
-        ("stolen_credits", "accuse", (), "three"),
+        ("stolen_credits", None, "three"),
     ]
-    for ending, leonor, flagged, line in cases:
-        to_the_hearing(ending, "en", leonor, flagged)
+    for ending, leonor, line in cases:
+        to_the_hearing(ending, "en", leonor)
         result = hear("concede", "concede", "concede", player=ending)
         assert result["hearing"]["doubts"] == 3, ending
         check_ending(result, ending, "en", saved_id=ending, shown_id="stolen_credits", verdict=LINES["en"][line])
 
 
 def test_stolen_credit_after_a_broken_messages_claim_says_why():
-    to_the_hearing(leonor="accuse", flagged=(5,), tomas=True)
+    to_the_hearing(leonor=None, tomas=True)
     result = hear("concede", "original_photo", "tomas_word")
     assert result["hearing"]["doubts"] == 1
     assert result["hearing"]["said"][-1]["who"] == "professor"   # he accepted Tomás's word for this message
@@ -1030,11 +1008,12 @@ def test_stolen_credit_after_a_broken_messages_claim_says_why():
 
 
 def test_the_verdict_is_saved_and_a_reload_shows_it():
-    to_the_hearing(flagged=(2, 4, 5))
+    to_the_hearing()
     ended = hear("concede", "concede", "leonor_messages")   # two doubts on a full case: a capped ending
     assert ended["ending"]["verdict"] == LINES["en"]["two"]
     notes = db.load_night(PLAYER)["notes"]
-    assert notes["hearing"] == ["concede", "concede", "leonor_messages"] and notes["verdict"] == "impostor"
+    # Changed by specs/computer-lab-backup.md: the capped ending is "Stolen credit" now.
+    assert notes["hearing"] == ["concede", "concede", "leonor_messages"] and notes["verdict"] == "stolen_credits"
 
     reloaded = call()
     assert reloaded["ending"] == ended["ending"]
@@ -1047,7 +1026,7 @@ def test_the_verdict_is_saved_and_a_reload_shows_it():
 def test_the_hearing_cannot_be_answered_a_fourth_time():
     to_the_hearing()
     ended = hear("files", "original_photo", "leonor_messages")
-    assert ended["ending"]["id"] == "impostor"
+    assert ended["ending"]["id"] == "full_case"   # specs/computer-lab-backup.md: Leonor helps, so "Case closed"
     before = saved()
     for value in ("files", "concede"):
         refused = answer(value)
@@ -1087,7 +1066,7 @@ def test_a_card_not_held_or_unknown_is_rejected_at_the_hearing_and_saves_nothing
 
 
 def test_presenting_directly_still_gives_the_story_ending():
-    to_the_hearing(flagged=(2, 4, 5))
+    to_the_hearing()
     result = call("play", action="present_evidence")   # a hand-made request: no hearing was started
     assert result["accepted"]
     check_ending(result, PLAYER, "en", saved_id="full_case", shown_id="full_case", verdict="")

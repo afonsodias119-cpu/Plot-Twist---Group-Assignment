@@ -221,7 +221,7 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 /* the ending screen */
 .ending-card { --accent: #e8b45c; position: absolute; left: calc((100% - 470px) / 2); top: 50%; transform: translate(-50%, -50%); width: min(720px, calc(100% - 540px)); max-height: 82%; overflow-y: auto; padding: 34px 38px; border: 1px solid var(--accent); border-radius: 18px; background: #06111ff5; box-shadow: 0 0 80px color-mix(in srgb, var(--accent) 30%, transparent), 0 30px 80px #000c; pointer-events: auto; z-index: 14; animation: ending-rise .9s ease both; }
 .panel-hidden .ending-card { left: 50%; width: min(720px, calc(100% - 60px)); }
-.ending-impostor { --accent: #7fd6a0; } .ending-stolen_credits { --accent: #ff8c7a; } .ending-fifth_element { --accent: #b79cff; }
+.ending-impostor { --accent: #7fd6a0; } .ending-stolen_credits { --accent: #ff8c7a; }
 /* an ending that is not one of the story's four (specs/earlier-nights.md, point 9): the colour of dawn */
 .ending-extra { --accent: #ffb38a; background: linear-gradient(#06111ff5 55%, #2a1a1af5); }
 .ending-card h2 { font: 400 clamp(30px, 4vw, 46px)/1.1 "DM Serif Display", Georgia, serif; margin: 6px 0 16px; color: var(--ink); }
@@ -230,32 +230,17 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 .stamp { display: inline-block; margin: 0; padding: 6px 16px; border: 3px solid var(--accent); border-radius: 6px; color: var(--accent); font: 800 20px/1.2 Inter, system-ui, sans-serif; letter-spacing: .28em; transform: rotate(-5deg); animation: ending-stamp .55s .5s cubic-bezier(.2, 1.6, .4, 1) both; }
 .ending-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
 #investigation .ending-actions button:first-child { background: var(--accent); border-color: var(--accent); }
-.ending-fifth_element h2 { animation: ending-glitch 2.6s steps(1) infinite; text-shadow: 2px 0 #ff4d8d, -2px 0 #4dd2ff; }
 .confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 13; }
 .confetti span { position: absolute; top: -20px; left: var(--x); width: 9px; height: 16px; background: var(--c); opacity: .9; animation: ending-fall var(--dur) linear var(--delay) infinite; }
 @keyframes ending-rise { from { opacity: 0; transform: translate(-50%, -44%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @keyframes ending-stamp { from { opacity: 0; transform: rotate(-5deg) scale(2.6); } to { opacity: 1; transform: rotate(-5deg) scale(1); } }
 @keyframes ending-fall { from { transform: translateY(-20px) rotate(0); } to { transform: translateY(105vh) rotate(720deg); } }
-@keyframes ending-glitch { 0%, 92%, 100% { transform: none; } 93% { transform: translateX(-4px) skewX(8deg); } 95% { transform: translateX(5px); } 97% { transform: translateX(-2px) skewX(-6deg); } }
 @media (max-width: 900px) { .ending-card { left: calc((100% - 400px) / 2); width: calc(100% - 440px); } }
 @media (max-width: 650px) { .ending-card, .panel-hidden .ending-card { left: 50%; width: calc(100% - 24px); top: 15%; padding: 22px; } }
 /* while the ending screen is open, the names floating in the 3D scene step aside */
 body:has(#ending-card:not([hidden])) .sign { visibility: hidden; }
 
 /* the chat screen of computer 12 */
-.chat-card { position: absolute; left: calc((100% - 470px) / 2); top: 54%; transform: translate(-50%, -50%); width: min(760px, calc(100% - 540px)); max-height: 78%; overflow-y: auto; padding: 22px 26px; border: 1px solid #59ff9c88; border-radius: 14px; background: #04180df2; box-shadow: 0 0 60px #59ff9c22, 0 24px 70px #000b; pointer-events: auto; z-index: 12; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
-.panel-hidden .chat-card { left: 50%; width: min(760px, calc(100% - 60px)); }
-.chat-card header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.chat-card h3 { margin: 0 !important; color: #59ff9c !important; letter-spacing: .08em !important; font-size: 13px !important; text-transform: uppercase; }
-.chat-card #chat-intro { margin: 12px 0 14px; font-size: 13px; line-height: 1.55; color: #b9e8cb; font-family: Inter, system-ui, sans-serif; }
-.chat-card ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-.chat-card li { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 10px 12px; border: 1px solid #59ff9c33; border-radius: 8px; background: #082a18; }
-.chat-card li.flagged { border-color: #e8b45c88; background: #2a2208; }
-.chat-card li p { margin: 0; font-size: 14px !important; line-height: 1.5 !important; color: #d9f7e4; }
-.chat-card li button { white-space: nowrap; }
-.hud-bottom.chatting { display: none; }
-@media (max-width: 900px) { .chat-card { left: calc((100% - 400px) / 2); width: calc(100% - 440px); } }
-@media (max-width: 650px) { .chat-card, .panel-hidden .chat-card { left: 50%; width: calc(100% - 24px); top: 18%; transform: translate(-50%, 0); } .chat-card li { grid-template-columns: 1fr; } }
 
 /* the unknown number, the collection of endings and the share card */
 #investigation button.sms { position: absolute; right: calc(470px + 22px); top: 140px; width: min(340px, calc(100% - 560px)); display: grid; gap: 4px; padding: 12px 16px; text-align: left; border: 1px solid #ff8c7a99; border-radius: 14px; background: #1c0d0cf2; color: var(--ink); box-shadow: 0 14px 40px #000a; pointer-events: auto; z-index: 12; }
@@ -390,7 +375,7 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .device-phone .joystick { display: block; }
 .stick-base { position: relative; width: 100%; height: 100%; border-radius: 50%; background: #0a1826b3; border: 2px solid #e8b45c99; box-shadow: 0 8px 30px #0008; touch-action: none; pointer-events: auto; }
 .stick-knob { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: #e8b45ccc; box-shadow: 0 4px 14px #000a; pointer-events: none; }
-.text-mode .joystick, body:has(#talk:not([hidden])) .joystick, body:has(#chat-card:not([hidden])) .joystick, body:has(#ending-card:not([hidden])) .joystick, body:has(#timeup-card:not([hidden])) .joystick { display: none; }
+.text-mode .joystick, body:has(#talk:not([hidden])) .joystick, body:has(#ending-card:not([hidden])) .joystick, body:has(#timeup-card:not([hidden])) .joystick { display: none; }
 @media (max-width: 650px) {
   .device-phone:not(.panel-hidden) .joystick { display: none; }
   .device-phone #investigation button.panel-tab { display: grid; top: calc(30% - 46px); right: 0; transform: none; width: 44px; height: 46px; }
