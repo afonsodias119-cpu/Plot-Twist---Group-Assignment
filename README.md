@@ -53,7 +53,7 @@ The tests run on GitHub on every push and pull request (`.github/workflows/tests
 
 | Part | Where | What it does |
 |---|---|---|
-| Story | `story.py`, `prototypes/campus-3d/campus_case.py`, `campus_people.py` | Scenes, items, endings, dialogue and the three culprit cases, in English and Portuguese. Data only. |
+| Story | `story.py`, `prototypes/campus-3d/campus_case.py`, `campus_people.py` | Scenes, items, endings, dialogue and the case file (the evidence, the camera recording and the hearing), in English and Portuguese. Data only. |
 | Rules | `logic.py` | Moving between scenes, items, conditions, endings. No Streamlit and no database. |
 | One turn | `game.py` | Loads the save, asks `logic.py`, saves. Also checks names and the browser key of each name. |
 | Saving | `db.py` | The only file with SQL. |
@@ -81,7 +81,7 @@ browser that started each name). Every value goes in through `?` placeholders, n
 ### What the tests cover (`uv run pytest`)
 
 - The rules, the saves and every operation of the 3D server, accepted and refused: locked routes, items collected once,
-  resume after a restart, the four endings, invalid names, bad requests, the clock, the hearing, the culprit cases.
+  resume after a restart, the two endings, invalid names, bad requests, the clock, the security cameras, the hearing and its four proofs.
 - That secrets never reach the page, and that the page's JavaScript contains the lines each feature needs.
 - `tests/continuous-conversations.cjs` runs part of the page's JavaScript in Node.
 
