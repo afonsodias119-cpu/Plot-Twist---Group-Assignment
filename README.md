@@ -54,6 +54,7 @@ Stop the app with Ctrl+C. Local saves go to `data/` and are not committed.
 ├── prototypes/campus-3d/     the 3D game: server side (campus_*.py) and page (game3d.html, play.js…)
 │   └── README.md             what each of its files does
 ├── tests/                    588 tests, one file per feature
+│   └── README.md             which file tests which spec, and the kinds of checks
 ├── specs/                    one spec per feature, written before its code
 │   └── README.md             the specs grouped by topic, and which ones changed or replaced others
 ├── docs/                     the story, the dialogue script and the team plan (see the table below)
@@ -166,7 +167,7 @@ Every value goes into SQL through `?` placeholders, never pasted into the query.
 
 `uv run pytest` runs **588 tests**; all pass on `main`. GitHub runs them on every push and pull request
 (`.github/workflows/tests.yml`, the badge at the top), with a syntax check of the page's JavaScript and
-`tests/continuous-conversations.cjs`.
+`tests/continuous-conversations.cjs`. **[tests/README.md](tests/README.md)** says which file tests which spec, how to run one file, and the kinds of checks.
 
 **What they cover**
 - The rules and saving: locked actions, items collected once, continuing after a restart, both endings, the plain game's screens.
