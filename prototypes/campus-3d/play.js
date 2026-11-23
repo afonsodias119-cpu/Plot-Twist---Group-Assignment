@@ -2547,7 +2547,7 @@
     $("clues-title").textContent = t.clues_notice_title;
     $("clues-intro").textContent = t.clues_notice_intro;
     $("clues-order").replaceChildren(...phoneClues().map(clue => {
-      const row = make("li", `${clue.label} · ${clue.room}`);
+      const row = make("li", clue.label);   // what to get, not where: the player has to find it (specs/clues-without-answers.md)
       if (clue.done) row.classList.add("done");   // a continued game: what is done is crossed out
       return row;
     }));

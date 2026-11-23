@@ -64,9 +64,10 @@ TEXT = {
         "time_up_again": "Tentar outra vez",
         # in the order they have to be done (specs/night-and-clues.md); the room is shown beside each one
         "clues": {
-            "usb_stick": "Encontrar a pen do grupo na mesa",
-            "original_photo": "Reconstruir a fotografia original com a funcionária",
-            "files_viewed": "Abrir o computador 12 com a ajuda do grupo",
+            # What to get, never where or with whom (specs/clues-without-answers.md).
+            "usb_stick": "Encontrar a pen do grupo",
+            "original_photo": "Arranjar a fotografia original do grupo",
+            "files_viewed": "Ver o histórico dos ficheiros do grupo",
         },
         # the reminder of the clues when the game starts (specs/night-and-clues.md)
         "clues_notice_title": "📱 As tuas pistas",
@@ -166,7 +167,7 @@ TEXT = {
             "cctv_diary_title": "Câmaras de segurança",
             "cctv_proof": "Imagem das 23:47 da sala de informática: um vulto de capuz, sem cartão ao pescoço, ao computador 12 no momento em que a pasta do grupo foi alterada. Depois, alguém desligou os cabos das câmaras para esconder isto.",
             # the clue of the phone and of the start card (specs/camera-clue.md)
-            "clue_label": "Pedir ao segurança as imagens das 23:47 da sala de informática",
+            "clue_label": "Encontrar as imagens da câmara da sala de informática",
             "clue_room": "Entrada (segurança)",
         },
         "leonor_follow": "Ela fecha o livro e levanta-se. \"Vou contigo à sala de informática. Se o computador 12 pedir um código, eu lembro-me de coisas desse dia.\"",
@@ -292,9 +293,10 @@ TEXT = {
         "time_up_again": "Try again",
         # in the order they have to be done (specs/night-and-clues.md); the room is shown beside each one
         "clues": {
-            "usb_stick": "Find the group's USB stick on the table",
-            "original_photo": "Put the original photo back together with the clerk",
-            "files_viewed": "Unlock computer 12 with the group's help",
+            # What to get, never where or with whom (specs/clues-without-answers.md).
+            "usb_stick": "Find the group's USB stick",
+            "original_photo": "Get the group's original photo",
+            "files_viewed": "See the history of the group's files",
         },
         # the reminder of the clues when the game starts (specs/night-and-clues.md)
         "clues_notice_title": "📱 Your clues",
@@ -390,7 +392,7 @@ TEXT = {
             "cctv_diary_title": "Security cameras",
             "cctv_proof": "Picture from 23:47 in the computer lab: a hooded figure, with no badge around the neck, at computer 12 at the moment the group folder was changed. Afterwards, somebody unplugged the cameras' cables to hide this.",
             # the clue of the phone and of the start card (specs/camera-clue.md)
-            "clue_label": "Ask the guard for the 23:47 footage of the computer lab",
+            "clue_label": "Find the footage of the computer lab's camera",
             "clue_room": "Entrance (security)",
         },
         "leonor_follow": "She closes her book and stands up. \"I am coming with you to the computer lab. If computer 12 asks for a code, I remember things about that day.\"",
