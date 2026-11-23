@@ -21,9 +21,10 @@ def top_bar():
 
 
 def test_the_group_label_does_not_repeat_that_there_are_four():
+    # Changed by specs/combined-start-briefing.md ("Reviewed tests that change"): the group box is gone, so there is no
+    # label to repeat it. Was: the label had no "four", "quatro" or "(".
     for texts in page3d.EXTRA.values():
-        label = texts["group_label"].lower()
-        assert label.strip() and "quatro" not in label and "four" not in label and "(" not in label
+        assert "group_label" not in texts
 
 
 def test_the_menu_text_exists_in_both_languages():

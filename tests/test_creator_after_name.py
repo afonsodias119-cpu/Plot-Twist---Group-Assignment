@@ -56,7 +56,10 @@ def test_outside_the_room_the_panel_names_the_place_and_hides_the_description():
 
 
 def test_the_warning_says_when_the_faculty_closes_and_has_the_mission_and_the_group():
-    assert 'stepBrief.querySelector(".brief-body").append($("mission"))' in PLAY
+    # Changed by specs/combined-start-briefing.md ("Reviewed tests that change"): the warning shows the clues in order
+    # instead of the mission and the group. Was: the mission box moved into the warning.
+    assert 'append($("mission"))' not in PLAY
+    assert '<ol id="brief-clues-order" class="clues-order"></ol>' in PLAY
     assert "stepLook.after(stepBrief)" in PLAY
     for language in ("pt", "en"):
         text = campus_text.TEXT[language]
