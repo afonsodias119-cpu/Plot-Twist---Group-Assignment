@@ -43,9 +43,10 @@ PLAYER = "detective"
 
 # The room of each thing (point 2), and which ones are only flavour (point 4).
 ROOM = {"price_list": "print_shop", "order_book": "print_shop", "noticeboard": "library",
-        "returns_trolley": "library", "lab_whiteboard": "computer_lab", "computer7": "computer_lab",
-        "podium": "auditorium"}
-FLAVOUR = ("price_list", "noticeboard", "returns_trolley", "lab_whiteboard", "podium")
+        "returns_trolley": "library", "lab_whiteboard": "computer_lab", "computer7": "computer_lab"}
+# Changed by specs/professor-before-podium.md ("Reviewed tests that change"): the podium is gone, the
+# auditorium has nothing to look at. Was: "podium": "auditorium" in ROOM and "podium" in FLAVOUR.
+FLAVOUR = ("price_list", "noticeboard", "returns_trolley", "lab_whiteboard")
 HERRINGS = ("order_book", "computer7")
 
 # E1: the three new objects of the table, (label, "nothing" text).
@@ -70,9 +71,7 @@ FIND_TEXTS = {
         "lab_whiteboard": {"name": "Whiteboard", "text": "A perfect supply and demand graph, drawn with care. Underneath, in smaller letters: help."},
         "computer7": {"name": "Computer 7",
                       "text": "Computer 7 is locked too. A sticky note on its screen: pw 2311, presentation day!!",
-                      "later": "The sticky note on computer 7 again: 2311, the day of the presentation. Someone's own computer, someone's own password. It has nothing to do with computer 12."},
-        "podium": {"name": "Podium", "text": "A note taped to the podium: maximum 10 minutes per group. No exceptions. Yes, you."},
-    },
+                      "later": "The sticky note on computer 7 again: 2311, the day of the presentation. Someone's own computer, someone's own password. It has nothing to do with computer 12."},    },
     "pt": {
         "price_list": {"name": "Tabela de preços", "text": "Uma tabela de preços plastificada. Preto e branco, 5 cêntimos. Cores, 25 cêntimos. Encadernação de tese: pedir com jeitinho. Encadernação de tese depois da meia-noite: pedir com ainda mais jeitinho."},
         "order_book": {"name": "Livro de pedidos",
@@ -83,9 +82,7 @@ FIND_TEXTS = {
         "lab_whiteboard": {"name": "Quadro branco", "text": "Um gráfico de oferta e procura perfeito, desenhado com cuidado. Por baixo, em letra mais pequena: socorro."},
         "computer7": {"name": "Computador 7",
                       "text": "O computador 7 também está bloqueado. Um post-it no ecrã: pw 2311, dia da apresentação!!",
-                      "later": "Outra vez o post-it do computador 7: 2311, o dia da apresentação. O computador de alguém, a password de alguém. Não tem nada a ver com o computador 12."},
-        "podium": {"name": "Púlpito", "text": "Um papel colado no púlpito: máximo de 10 minutos por grupo. Sem exceções. Sim, tu."},
-    },
+                      "later": "Outra vez o post-it do computador 7: 2311, o dia da apresentação. O computador de alguém, a password de alguém. Não tem nada a ver com o computador 12."},    },
 }
 
 # E3: the interface texts of campus_text.py.
@@ -258,7 +255,7 @@ def test_look_needs_the_room_and_no_ending():
     walk("library")
     refused(peek("price_list"), TEXT["en"]["examine_where"])
     ended("over")
-    for thing in ("podium", "price_list"):
+    for thing in ("noticeboard", "price_list"):   # was "podium" (specs/professor-before-podium.md)
         before = saved()
         result = peek(thing, "over")
         refused(result, TEXT["en"]["examine_where"])
@@ -270,7 +267,7 @@ def test_look_is_locked_during_the_hearing_and_closed_at_2245():
     to_the_auditorium()
     assert call("hearing", answer="start")["accepted"]
     before = saved()
-    refused(peek("podium"), TEXT["en"]["hearing_locked"])
+    refused(peek("price_list"), TEXT["en"]["hearing_locked"])   # was "podium" (specs/professor-before-podium.md)
     assert saved() == before
     call(player="late")
     walk("print_shop", "late")
@@ -285,7 +282,7 @@ def test_look_rejects_unknown_things_and_extra_fields():
     call()
     walk("print_shop")
     seen(peek("price_list"), "price_list", "en")   # a valid examine first: the operation exists
-    for thing in ("knife", 7, ["podium"], None, "PRICE_LIST"):
+    for thing in ("knife", 7, ["price_list"], "podium", None, "PRICE_LIST"):   # "podium" is now unknown too
         before = saved()
         with pytest.raises(ValueError):
             peek(thing)
