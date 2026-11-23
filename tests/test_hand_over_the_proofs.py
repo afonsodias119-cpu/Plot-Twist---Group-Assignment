@@ -82,6 +82,24 @@ def test_a_bad_answer_still_raises():
         call("hearing", answer="everything")
 
 
-def test_the_page_hands_everything_over_and_shows_the_warning():
-    assert 'send("hearing", { answer: "all" })' in PLAY_JS
-    assert 'if (!current.heard && current.message) { addHeard({ who: "professor", name: "Professor", text: current.message }); return; }' in PLAY_JS
+def test_the_page_hands_the_selected_proofs_over_and_shows_the_warning():
+    # specs/select-the-proofs.md: the player ticks the proofs; the warning sends them back to his first line.
+    assert 'send("hearing", { answer: ids })' in PLAY_JS
+    assert 'if (!current.heard && current.message) { addHeard({ who: "professor", name: "Professor", text: current.message }); back(); }' in PLAY_JS
+
+
+# ---------- selecting the proofs (specs/select-the-proofs.md) ----------
+
+def test_the_selected_proofs_decide_and_one_left_out_is_missing():
+    night()
+    warned = call("hearing", answer=["files", "original_photo", "backup"])   # the recording is held but not handed over
+    assert not warned["accepted"] and warned["message"] == TEXT["en"]["hearing_short_one"]
+    ended = call("hearing", answer=["files", "original_photo", "backup", "footage"])
+    assert ended["ending"]["id"] == "full_case"
+
+
+def test_a_bad_selection_raises():
+    night(footage=False)
+    for bad in ([], ["files", "files"], ["knife"], [5], ["footage"]):   # the recording is not held
+        with pytest.raises(ValueError):
+            call("hearing", answer=bad)

@@ -1112,13 +1112,8 @@
     // Only once he has said "Present it when you are ready" (`proof`), at the end of his one line of thought
     // (specs/professor-line-of-thought.md).
     // On his first line, beside "Ask how many members…" (specs/hand-over-the-proofs.md).
-    const present = line.node === "start" && (line.actions || []).find(action => action.id === "present_evidence");
-    if (present) {
-      const button = make("button", present.label, "answer");
-      button.dataset.action = "hearing";
-      button.addEventListener("click", () => startHearing(present));
-      doing.append(button, make("p", t.hearing_hint, "muted"));
-    }
+    // The professor's own story button is gone: on his first line "Show evidence" opens the proofs to
+    // select and hand over (specs/select-the-proofs.md).
     // "📁 Show evidence", in its own row between the log and the answers, on every line of a person
     // (not computer 12, not a closed line, not during the hearing: specs/evidence-and-hearing.md, point 5),
     // except in the print shop and the computer lab: there the right answer does it (specs/two-answers.md).
@@ -1127,9 +1122,11 @@
     // says the footage is not given to just anyone (specs/evidence-after-monitors.md).
     const NO_EVIDENCE = ["amelia", "tomas", "computer12", "rita"];
     const guardWaits = line.npc === "guard" && line.node !== "explain" && !asked.has("explain");
-    const showsEvidence = !NO_EVIDENCE.includes(line.npc) && !guardWaits && line.node !== "closed" && !(current && current.hearing) && !leonorHelping;
+    // The professor: only on his first line, beside "Ask how many members…" (specs/select-the-proofs.md).
+    const professorWaits = line.npc === "professor" && line.node !== "start";
+    const showsEvidence = !NO_EVIDENCE.includes(line.npc) && !guardWaits && !professorWaits && line.node !== "closed" && !(current && current.hearing) && !leonorHelping;
     const evidenceButton = make("button", t.evidence_show, "secondary evidence-show");
-    evidenceButton.addEventListener("click", () => askEvidence(line));
+    evidenceButton.addEventListener("click", () => line.npc === "professor" ? handOver(line) : askEvidence(line));
     const evidenceNow = showsEvidence && !(leonorDeciding && !asked.has("soft"));   // Leonor: only after the right answer
     $("talk-evidence").replaceChildren(...(evidenceNow ? [evidenceButton] : []));
     $("talk-evidence").hidden = !evidenceNow;
@@ -1338,22 +1335,58 @@
     }
     endGoneTalk();   // a rebuff whose minutes reach a departure: the rebuff first, then the last line
   }
+  // ---------- handing the proofs to the professor (specs/select-the-proofs.md) ----------
+  // "Show evidence" on his first line lists the proofs held, each with a box to tick, and one button to hand
+  // the ticked ones over. A proof missing: he says how many and the night goes on. Every proof: the ending.
+  function handOver(line) {
+    const t = ui();
+    const kept = [...$("talk-options").children], wasHidden = $("talk-options").hidden;
+    const back = () => {
+      $("talk-options").replaceChildren(...kept);
+      $("talk-options").hidden = wasHidden;
+      $("talk-evidence").hidden = false;
+      applyInside();
+    };
+    const tray = make("div", undefined, "evidence-tray hand-over");
+    tray.append(make("p", t.hand_title, "evidence-title"));
+    const cards = current.evidence || [], chosen = new Set();
+    if (!cards.length) tray.append(make("p", t.evidence_empty, "muted"));
+    const give = make("button", t.hand_give, "answer hand-give");
+    give.disabled = true;
+    for (const card of cards) {
+      const box = make("button", `☐ 📁 ${card.label}`, "answer evidence-card");
+      box.setAttribute("aria-pressed", "false");
+      box.addEventListener("click", () => {
+        if (chosen.has(card.id)) chosen.delete(card.id); else chosen.add(card.id);
+        box.textContent = `${chosen.has(card.id) ? "☑" : "☐"} 📁 ${card.label}`;
+        box.setAttribute("aria-pressed", String(chosen.has(card.id)));
+        give.disabled = !chosen.size;
+      });
+      tray.append(box);
+    }
+    give.addEventListener("click", async () => {
+      if (!chosen.size || window.campusBusy) return;
+      const ids = cards.map(card => card.id).filter(id => chosen.has(id));   // in the order of the hand
+      addBubble(cards.filter(card => chosen.has(card.id)).map(card => `📁 ${card.label}`).join("\n"), "me");
+      showTyping();
+      if (!await send("hearing", { answer: ids })) { $("talk-log").querySelector(".typing")?.remove(); return; }
+      $("talk-log").querySelector(".typing")?.remove();
+      // A proof missing: his warning, and back to his first line (the night goes on).
+      if (!current.heard && current.message) { addHeard({ who: "professor", name: "Professor", text: current.message }); back(); }
+    });
+    if (cards.length) tray.append(give);
+    const away = make("button", t.evidence_back, "secondary evidence-back");
+    away.addEventListener("click", back);
+    tray.append(away);
+    $("talk-evidence").hidden = true;
+    $("talk-options").replaceChildren(tray);
+    $("talk-options").hidden = false;
+    tray.querySelector("button").focus({ preventScroll: true });
+  }
   // ---------- the hearing, inside the professor's conversation card (specs/evidence-and-hearing.md, points 9 to 11) ----------
   // It is not an ordinary conversation: no kept topics, no start menu. The server sends the whole log
   // (`hearing.said`), and this card is drawn again from it after every answer.
-  async function startHearing(action) {
-    if (window.campusBusy || !current) return;
-    addBubble(action.label, "me");
-    showTyping();
-    // Every proof held is handed over at once (specs/hand-over-the-proofs.md): the server answers each claim
-    // with the proof that breaks it, or with nothing, and the night ends. The ending card says what was missing.
-    if (!await send("hearing", { answer: "all" })) { $("talk-log").querySelector(".typing")?.remove(); return; }
-    $("talk-log").querySelector(".typing")?.remove();
-    // A proof missing: the professor says how many, and the conversation (and the night) go on
-    // (specs/missing-proof-is-a-warning.md).
-    if (!current.heard && current.message) { addHeard({ who: "professor", name: "Professor", text: current.message }); return; }
-    if (current.heard && current.hearing && !current.ending) showHearing(current.hearing);
-  }
+
   async function answerHearing(answer) {
     if (window.campusBusy || !current) return;
     showTyping();

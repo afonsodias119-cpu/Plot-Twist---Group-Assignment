@@ -1028,7 +1028,9 @@ def test_a_card_not_held_or_unknown_is_rejected_at_the_hearing_and_saves_nothing
     to_the_hearing()   # nothing flagged, nobody cracked
     assert answer("start")["hearing"]["step"] == 1   # a valid request first
     before = saved()
-    for bad in ("msg_5", "tomas_word", "knife", 7, ["files"]):
+    # Changed by specs/select-the-proofs.md ("Reviewed tests that change"): a list of held cards is now the
+    # selection handed to the professor, so the bad list is one with an unknown card. Was: ["files"].
+    for bad in ("msg_5", "tomas_word", "knife", 7, ["knife"]):
         with pytest.raises(ValueError):
             answer(bad)
     with pytest.raises(ValueError):   # an extra field
@@ -1109,7 +1111,8 @@ def test_the_page_has_the_tray_and_the_hearing_inside_the_conversation_card():
     play_js = (FOLDER / "play.js").read_text(encoding="utf-8")
     assert "evidence_show" in play_js and "hearing_concede" in play_js
     # The same for the other texts the page shows (points 5, 6 and 9), and for the two new operations it sends.
-    for key in ("evidence_back", "hearing_hint", "time_penalty_card", "time_penalty_duarte"):
+    # Changed by specs/select-the-proofs.md ("Reviewed tests that change"): no line under the professor's button, so no "hearing_hint".
+    for key in ("evidence_back", "time_penalty_card", "time_penalty_duarte"):
         assert key in play_js, key
     for operation in ("confront", "hearing"):
         assert f'"{operation}"' in play_js or f"'{operation}'" in play_js, operation
@@ -1125,8 +1128,9 @@ def test_the_page_has_the_tray_and_the_hearing_inside_the_conversation_card():
 
 
 def test_the_new_texts_exist_in_both_languages():
+    # Changed by specs/select-the-proofs.md ("Reviewed tests that change"): "hearing_hint" is gone.
     keys = ["evidence_show", "evidence_title", "evidence_empty", "evidence_back", "time_penalty_card",
-            "time_penalty_duarte", "hearing_hint", "hearing_concede", "hearing_step", "hearing_trust", "hearing_locked"]
+            "time_penalty_duarte", "hearing_concede", "hearing_step", "hearing_trust", "hearing_locked"]
     for language in ("en", "pt"):
         for key in keys:
             assert TEXT[language][key].strip(), (language, key)

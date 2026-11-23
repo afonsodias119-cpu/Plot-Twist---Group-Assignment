@@ -377,21 +377,27 @@ def hearing(player, state, night, language, answer):
     take a doubt back. After the third answer the story's own present_evidence is played, the
     night ends and its row is written with the ending shown (specs/earlier-nights.md, point 2).
     """
-    if not isinstance(answer, str) or not (answer in ("start", "concede", "all") or answer in CARDS):
+    # A list is the proofs the player selected and hands over at once (specs/select-the-proofs.md).
+    if isinstance(answer, list):
+        if not answer or len(set(answer)) != len(answer) or not all(isinstance(card, str) and card in CARDS for card in answer):
+            raise ValueError("Invalid answer / Resposta inválida.")
+        if any(card not in held(state, night) for card in answer):
+            raise ValueError("You do not have that / Não tens isso.")
+    elif not isinstance(answer, str) or not (answer in ("start", "concede", "all") or answer in CARDS):
         raise ValueError("Invalid answer / Resposta inválida.")
-    if answer in CARDS and answer not in held(state, night):
+    elif answer in CARDS and answer not in held(state, night):
         raise ValueError("You do not have that / Não tens isso.")
     messages = STORIES[language]["messages"]
     if state["ending"] != "none":
         return False, messages["game_over"], False
     if state["scene"] != FINAL_ROOM:
         return False, messages["not_here"], False
-    if answer == "all":
-        # The player hands over every proof they hold, at once (specs/hand-over-the-proofs.md): each claim
-        # still waiting is answered with a held card that breaks it. If a claim has none, the professor
-        # only says how many proofs are missing and nothing is saved: the night goes on
-        # (specs/missing-proof-is-a-warning.md).
-        have = held(state, night)
+    if answer == "all" or isinstance(answer, list):
+        # The player hands over proofs at once: every one held ("all", specs/hand-over-the-proofs.md) or the
+        # ones selected (a list, specs/select-the-proofs.md). Each claim still waiting is answered with a
+        # handed card that breaks it. If a claim has none, the professor only says how many proofs are
+        # missing and nothing is saved: the night goes on (specs/missing-proof-is-a-warning.md).
+        have = held(state, night) if answer == "all" else answer
         tonight = claims_of(night)
         done = night["hearing"] or []
         rest = [next((card for card in claim["accepts"] if card in have), None) for claim in tonight[len(done):]]

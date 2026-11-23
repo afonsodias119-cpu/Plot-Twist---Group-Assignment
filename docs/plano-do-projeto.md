@@ -150,6 +150,10 @@ O ecrã do final, o texto de partilha e o cartão deixam de mostrar "Finais desc
 
 Se apresentares as provas e faltar alguma, o professor diz só quantas faltam ("Falta-lhe uma das provas") e o jogo continua: podes ir buscá-la e voltar. Se a faculdade fechar às 23:00 antes, o Duarte fica com o crédito. Ver `specs/missing-proof-is-a-warning.md`.
 
+### O professor: "Mostrar uma prova" ou perguntar — Maria (23/11/2026)
+
+Na primeira fala do professor só há "📁 Mostrar uma prova" e "Perguntar quantos elementos tem o grupo". "Mostrar uma prova" deixa escolher as provas que tens e entregá-las; se faltar alguma, ele diz quantas e podes ir buscá-las. Saiu o botão "Apresentar as provas ao professor" e a frase "Entregas de uma vez…". Ver `specs/select-the-proofs.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

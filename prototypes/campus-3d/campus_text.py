@@ -204,7 +204,7 @@ TEXT = {
         "evidence_empty": "Ainda não tens nada para mostrar.", "evidence_back": "Não mostrar nada",
         "time_penalty_card": "−{n} minutos: isso não provou nada.",
         "time_penalty_duarte": "−{n} minuto: ele nem olhou.",
-        "hearing_hint": "Entregas de uma vez todas as provas que tens.",
+        "hand_title": "Que provas entregas ao professor?", "hand_give": "Entregar ao professor",
         # when a proof is missing, the professor says only how many (specs/missing-proof-is-a-warning.md)
         "hearing_short_one": "O professor folheia o que lhe entregas e abana a cabeça. \"Falta-lhe uma das provas. Volte quando a tiver.\"",
         "hearing_short_many": "O professor folheia o que lhe entregas e abana a cabeça. \"Faltam-lhe {n} provas. Volte quando as tiver.\"",
@@ -431,7 +431,7 @@ TEXT = {
         "evidence_empty": "You have nothing to show yet.", "evidence_back": "Put it away",
         "time_penalty_card": "−{n} minutes: that proved nothing.",
         "time_penalty_duarte": "−{n} minute: he did not even look.",
-        "hearing_hint": "You hand over every proof you have, at once.",
+        "hand_title": "Which proofs do you hand the professor?", "hand_give": "Hand them to the professor",
         # when a proof is missing, the professor says only how many (specs/missing-proof-is-a-warning.md)
         "hearing_short_one": "The professor leafs through what you hand him and shakes his head. \"One of the proofs is missing. Come back when you have it.\"",
         "hearing_short_many": "The professor leafs through what you hand him and shakes his head. \"{n} proofs are missing. Come back when you have them.\"",
