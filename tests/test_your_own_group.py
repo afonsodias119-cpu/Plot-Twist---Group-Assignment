@@ -44,7 +44,7 @@ NO_NAMES = ["", "", ""]
 STORY_GROUP = ["Leonor", "Rita", "Tomás"]
 FRIENDS = ["Ana", "Bea", "João"]
 # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the chat, its messages and the cases of
-# specs/culprit-of-the-night.md are gone; three story endings, and the culprit is always Duarte.
+# specs/archive/culprit-of-the-night.md are gone; three story endings, and the culprit is always Duarte.
 # Changed by specs/three-proofs.md ("Reviewed tests that change"): two story endings, chosen by the proofs, and no
 # true ending, so no night starts with every ending seen and the list ENDINGS is gone.
 STORY_NAME = re.compile(r"\b(Leonor|Rita|Tomás)\b")

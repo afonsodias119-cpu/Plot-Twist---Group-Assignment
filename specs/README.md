@@ -1,10 +1,28 @@
 # Specs
 
-One spec per feature, written before its tests and code: why, what, the reviewed tests it changes, and when it is done.
-A spec is never rewritten after its feature is merged: a later change gets its own spec, and the older one gets an
-**Update** note at the top. So to know how something works **today**, read the spec, then the later ones it points to.
+One spec per feature, written **before** its tests and code. Each one has the same parts:
+1. **Before writing the spec:** who uses it, when it happens, how it was before, the rule, and how it is after.
+2. **What:** the files that change.
+3. **Reviewed tests that change:** tests already approved by the team that this feature changes, and who approves them.
+4. **Done when:** the tests and the browser check that prove it is done.
 
-This index groups them by topic. "Later" lists the specs that changed it.
+A spec is not rewritten after its feature is merged: a later change gets its own spec, and the older one gets an
+**Update** note at the top. So the folder is also the history of our decisions.
+
+## Start here: the game of today in eight specs
+
+| # | Spec | What it explains |
+|---|---|---|
+| 1 | [base-game](base-game.md) | The rules every version shares: scenes, items, saving, restarting (the course brief's requirements) |
+| 2 | [campus-3d-streamlit](campus-3d-streamlit.md) | How the 3D game runs inside Streamlit (the published app) |
+| 3 | [name-belongs-to-browser](name-belongs-to-browser.md) | Access control: a name belongs to the browser that started it |
+| 4 | [night-schedule](night-schedule.md) and [night-and-clues](night-and-clues.md) | The clock of the night, who leaves, Duarte's rounds, what costs time |
+| 5 | [three-proofs](three-proofs.md) | Why the proofs decide the ending (and what was removed) |
+| 6 | [camera-proof](camera-proof.md) | The fourth proof: the security recording |
+| 7 | [select-the-proofs](select-the-proofs.md) and [missing-proof-is-a-warning](missing-proof-is-a-warning.md) | Handing the proofs to the professor, and what happens when one is missing |
+| 8 | [safe-dependencies](safe-dependencies.md) | Pinned dependencies with no known vulnerabilities |
+
+Every other spec below adds one feature to these. "Later" lists the specs that changed it.
 
 ## The base game and the project
 
@@ -97,14 +115,9 @@ Read in this order: evidence-and-hearing → three-proofs → camera-proof → s
 |---|---|---|
 | [harder-campus](harder-campus.md) | 30 minutes before the faculty closes | night-schedule |
 | [night-schedule](night-schedule.md) | The server's clock, who leaves, Duarte's rounds | night-and-clues, three-proofs |
-| [earlier-nights](earlier-nights.md) | The game remembers earlier nights | three-proofs (no true ending) |
+| [earlier-nights](earlier-nights.md) | The game remembers earlier nights: the night number, the unknown number's messages, the changing cover photo | three-proofs (no true ending), night-and-clues |
 
-## Removed features
+## Archive
 
-Kept as a record of decisions; the code they describe is gone.
-
-| Spec | What | Removed by |
-|---|---|---|
-| [spot-the-fake](spot-the-fake.md) | The group chat puzzle | computer-lab-backup |
-| [fifth-element-ending](fifth-element-ending.md) | The secret ending "The fifth element" | computer-lab-backup |
-| [culprit-of-the-night](culprit-of-the-night.md) | A different culprit some nights | computer-lab-backup |
+The specs of features that are no longer in the game are in [archive/](archive/README.md): the group chat puzzle, the
+secret ending "The fifth element" and a different culprit some nights. They are kept only as a record of decisions.

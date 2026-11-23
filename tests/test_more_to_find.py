@@ -10,7 +10,7 @@ How to read this file:
 - The new tables of campus_search.py (FINDS, FIND_MINUTES, FIND_LATER, FIND_TEXT) are read inside the
   tests, never when the file is loaded, so pytest can read this file before they exist.
 - The expected texts are copied word for word from design-notes/texts-ideas.md, part E.
-- `campus_case.CASES` comes with specs/case-of-the-day.md and specs/culprit-of-the-night.md. A game
+- `campus_case.CASES` comes with specs/case-of-the-day.md and specs/archive/culprit-of-the-night.md. A game
   cannot be put into a given case from here, and `unlock` compares the code with the case's own
   `code`; so "2311 is wrong in every case" is checked as: no case (and not PC12_CODE) has the code
   2311, and 2311 is refused at computer 12 in a game played now. Before CASES exists only

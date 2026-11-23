@@ -78,7 +78,7 @@ The plain game (`app.py`) has no clock.
 
 ## 8. Pictures
 
-Illustrations in `assets/`, used by the plain game (`app.py`); the prompts are in [imagens.md](imagens.md).
+Illustrations in `assets/`, used by the plain game (`app.py`).
 
 | Picture | File |
 |---|---|

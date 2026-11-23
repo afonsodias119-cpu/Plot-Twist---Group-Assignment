@@ -27,7 +27,7 @@ from campus_evidence import CLASSIC
 # The security recording that is the fourth proof (specs/camera-proof.md): server only.
 from campus_case import CAMERAS, FOOTAGE
 # Every reply is told on its way out with the friends' names (specs/your-own-group.md). The culprit is
-# always Duarte now (specs/computer-lab-backup.md removed the cases of specs/culprit-of-the-night.md).
+# always Duarte now (specs/computer-lab-backup.md removed the cases of specs/archive/culprit-of-the-night.md).
 from campus_evidence import retell
 # What the server remembers of a name's earlier nights (specs/earlier-nights.md). Server only too:
 # its texts (the unknown number's whispers, the true ending) are in campus_case.py.
