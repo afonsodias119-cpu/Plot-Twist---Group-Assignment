@@ -70,32 +70,63 @@ def _bye(label):
 PEOPLE = {
     "en": {
         "rita": {"name": "Rita", "nodes": {
+            # Two answers on every line, a right one and a wrong one (specs/two-answers.md): the USB stick,
+            # the photo, her claim line, Duarte, then the chat. Every wrong answer upsets her; an apology
+            # brings the first question back. Rita has no trust level and no rude answer that costs time.
             "start": {"text": "Rita looks up from her laptop. \"You don't look so good. Did you sleep at all?\"", "options": [
-                {"label": "Ask about the group photo", "next": "photo"},
-                {"label": "Ask what she remembers about Duarte", "next": "duarte"},
                 {"label": "Ask where the USB stick is", "next": "pen"},
-                {"label": "Ask about the chat messages", "next": "chat", "if": {"flags": {"files_viewed": True}}},
-                # A memory answer (specs/earlier-nights.md, point 5): a shortcut to her claim line.
+                {"label": "Tell her she is the one who lost the USB stick", "next": "upset"},
+                # A memory answer (specs/earlier-nights.md, point 5): a shortcut to her claim line.,
                 {"label": "Tell her you remember her counting heads", "next": "five", "night": 3},
                 _bye("Goodbye."),
             ]},
-            "photo": {"text": "\"The photo? We took it after the last meeting, the four of us.\"",
-                      "note": "Rita remembers four people in the group photo.", "options": [
+            "pen": {"text": "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza, but with this mess, it could be anywhere.\"", "note": "Rita cannot find the USB stick. The group ate pizza here last night.", "options": [
+                {"label": "Ask about the group photo", "next": "photo"},
+                {"label": "Tell her to look for it herself, it is her mess", "next": "upset"},
+            ]},
+            "photo": {"text": "\"The photo? We took it after the last meeting, the four of us.\"", "note": "Rita remembers four people in the group photo.", "options": [
                 {"label": "Ask why the photo in the folder shows five", "next": "five"},
-                _bye("Goodbye.")]},
-            # Rita's claim line (specs/evidence-and-hearing.md, point 7): broken by `files` or `original_photo`.
+                {"label": "Tell her that her memory does not count", "next": "upset"},
+            ]},
+            # Rita's claim line (specs/evidence-and-hearing.md, point 7): the right answer reminds her of a
+            # proof and makes her give in (the photo when it is held, otherwise the files); with no proof yet,
+            # the right answer moves on to Duarte. The wrong one agrees with her.
             "five": {"text": "\"Then I counted wrong.\" Rita turns the laptop towards you: five people. \"A photo cannot change. My memory can. He must have been standing right there.\"", "options": [
-                _bye("Goodbye.")]},
-            "pen": {"text": "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza, but with this mess, it could be anywhere.\"",
-                    "note": "Rita cannot find the USB stick. The group ate pizza here last night.", "options": [_bye("Goodbye.")]},
+                {"label": "Remind her of the print shop's original photo: four people", "next": "five", "if": {"has": ["original_photo"]}, "crack": "original_photo"},
+                {"label": "Remind her the file history has four authors in every copy", "next": "five", "if": {"lacks": ["original_photo"], "flags": {"files_viewed": True}}, "crack": "files"},
+                {"label": "Ask what she remembers about Duarte", "next": "duarte", "if": {"lacks": ["original_photo"], "flags": {"files_viewed": False}}},
+                {"label": "Agree that she must have counted wrong", "next": "counted"},
+            ]},
+            "counted": {"text": "Rita nods slowly. \"Yes. A photo does not lie.\" She turns the laptop back.", "options": [
+                {"label": "Ask what she remembers about Duarte", "next": "duarte"},
+                {"label": "Tell her that then Duarte stays in the group", "next": "upset"},
+            ]},
             "duarte": {"text": "\"Duarte... honestly, I cannot picture him. Every time I try, I only see the name on the cover.\"", "options": [
-                {"label": "Say you think the name was added last night", "next": "warned"}]},
-            "warned": {"text": "Rita goes quiet. \"If that is true, somebody wanted us to doubt ourselves.\"",
-                       "note": "Rita doubts the fifth name too.", "options": [
-                _bye("Goodbye.")]},
-            "chat": {"text": "\"Look at when the messages arrive. Some say three weeks ago, but my phone shows them as new, last night. That is not how old messages work.\"",
-                     "note": "Rita: an old message does not arrive as new. The messages about Duarte arrived last night.", "options": [
-                _bye("Goodbye.")]},
+                {"label": "Say you think the name was added last night", "next": "warned"},
+                {"label": "Say that then he must really be part of the group", "next": "upset"},
+            ]},
+            "warned": {"text": "Rita goes quiet. \"If that is true, somebody wanted us to doubt ourselves.\"", "note": "Rita doubts the fifth name too.", "options": [
+                {"label": "Ask about the chat messages", "next": "chat", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Tell her you will go and find proof", "next": "promise", "if": {"flags": {"files_viewed": False}}},
+                {"label": "Tell her it is all in her head", "next": "upset"},
+            ]},
+            "promise": {"text": "\"Go. I will stay here.\" Rita opens her laptop again.", "options": [
+                _bye("Goodbye."),
+            ]},
+            "chat": {"text": "\"Look at when the messages arrive. Some say three weeks ago, but my phone shows them as new, last night. That is not how old messages work.\"", "note": "Rita: an old message does not arrive as new. The messages about Duarte arrived last night.", "options": [
+                _bye("Goodbye."),
+            ]},
+            "upset": {"text": "Rita closes her laptop slowly. \"You do not have to talk to me like that. We are all tired.\"", "options": [
+                {"label": "Apologise", "next": "sorry"},
+                {"label": "Say you are only being honest", "next": "closed"},
+            ]},
+            "sorry": {"text": "\"Fine. Go on, ask.\"", "options": [
+                {"label": "Ask where the USB stick is", "next": "pen"},
+                {"label": "Tell her she is the one who lost the USB stick", "next": "upset"},
+            ]},
+            "closed": {"text": "Rita puts her headphones on. She is not listening any more.", "options": [
+                _bye("Leave."),
+            ]},
         }},
         "amelia": {"name": "Clerk", "nodes": {
             "start": {"text": "The clerk adjusts her glasses. \"Hello! We close in ten minutes. What do you need?\"", "options": [
@@ -144,7 +175,6 @@ PEOPLE = {
             "start": {"text": "Tomás is hunched over computer 11, avoiding your eyes. \"Oh. Hi. It is late.\"", "trust": 2, "options": [
                 {"label": "Ask kindly what he is doing here", "next": "kind"},
                 {"label": "Demand to know why he lied about Duarte", "next": "hard", "cost": 5},
-                {"label": "Show him the original photo", "next": "photo", "if": {"has": ["original_photo"]}},
                 # A memory answer, a shortcut to his claim line: from night 2 the player already knows the
                 # message, so it has no `if` and is the one way to `slides` before the files are viewed.
                 {"label": "Tell him you know what the chat says about the slides", "next": "slides", "night": 2},
@@ -152,30 +182,38 @@ PEOPLE = {
             ]},
             "kind": {"text": "\"I could not sleep, I just came here to finish the slides. And... I saw someone at computer 12 last night, near midnight.\"", "trust": 3, "options": [
                 {"label": "Ask who it was", "next": "who"},
-                {"label": "Ask for the password of computer 12", "next": "password"},
-                {"label": "Ask about message 5, the one with his name", "next": "msg5", "if": {"flags": {"files_viewed": True}}},
-                {"label": "Ask who made the slides", "next": "slides", "if": {"flags": {"files_viewed": True}}}]},
+                {"label": "Tell him that sounds like an excuse", "next": "hard"}]},
             "password": {"text": "\"The password of computer 12? It is the group's: the day and the month we took the cover photo. Four digits. I can never remember the date, but between all of us we can work it out.\"", "trust": 3,
-                         "note": "Tomás: the password of computer 12 is the day and month the cover photo was taken (4 digits).", "options": [_bye("Goodbye.")]},
+                         "note": "Tomás: the password of computer 12 is the day and month the cover photo was taken (4 digits).", "options": [
+                # Two answers on every line (specs/two-answers.md): after the files, the slides; before them,
+                # with the original photo, the photo.
+                {"label": "Ask who made the slides", "next": "slides", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Show him the original photo", "next": "photo",
+                 "if": {"has": ["original_photo"], "flags": {"files_viewed": False}}},
+                {"label": "Tell him he should know the date by heart", "next": "hard"}]},
             "who": {"text": "\"Only a hood. Like the one Duarte wears. But nobody ever saw him arrive.\"", "trust": 3,
                     "note": "Tomás saw someone in a hood at computer 12 near midnight.", "options": [
-                _bye("Goodbye.")]},
-            # He does not say "I never wrote that" before he is shown the proof (point 8): see `slides`.
-            "msg5": {"text": "\"'Duarte did the slides'? It is under my name, but I do not remember writing it. My phone buzzed with it last night, near midnight, as if it had been sent three weeks ago.\"", "trust": 3,
-                     "note": "Tomás does not remember writing message 5; it reached his phone last night.", "options": [
-                _bye("Goodbye.")]},
-            # Tomás's claim line (point 7): broken by `files`, the history that shows who made the slides
-            # (specs/computer-lab-backup.md: the flagged message 5 no longer exists).
+                {"label": "Ask for the password of computer 12", "next": "password"},
+                {"label": "Ask if the one in the hood was him", "next": "hard"}]},
+            # Tomás's claim line (point 7): broken by `files`, the history that shows who made the slides.
+            # The right answer reminds him of it and makes him give in (`crack`: the page shows that card
+            # to him, the `confront` operation); the wrong one leaves him convinced (specs/two-answers.md).
             "slides": {"text": "Tomás keeps his eyes on the screen. \"The slides? I am finishing them. But the chat says Duarte did them, under my name. So maybe he did, and I only tidied up.\"", "trust": 2,
                        "note": "Tomás thinks Duarte may have made the slides, only because a chat message under his own name says so.", "options": [
-                _bye("Goodbye.")]},
+                {"label": "Remind him the file history has his name on every version of the slides", "next": "slides",
+                 "crack": "files", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Tell him that then the credit is Duarte's", "next": "convinced"}]},
+            "convinced": {"text": "Tomás nods without looking up. \"Yeah. Maybe that is fairer. He did more than I think.\"", "trust": 2,
+                          "options": [_bye("Goodbye.")]},
             "hard": {"text": "\"Excuse me? I did not lie!\" His voice shakes.", "trust": 1, "options": [
                 {"label": "Apologise", "next": "calm"},
                 {"label": "Push harder", "next": "closed", "cost": 5}]},
             "calm": {"text": "\"Fine. It has been a long night. Ask properly.\"", "trust": 2, "options": [
-                {"label": "Ask kindly what he is doing here", "next": "kind"}, _bye("Goodbye.")]},
+                {"label": "Ask kindly what he is doing here", "next": "kind"},
+                {"label": "Insist that he lied", "next": "closed"}]},
             "photo": {"text": "Tomás stares at the photo. \"Four people... I never noticed.\" He swallows.", "trust": 2, "options": [
-                {"label": "Ask him to help you", "next": "help"}]},
+                {"label": "Ask him to help you", "next": "help"},
+                {"label": "Tell him it is his fault", "next": "hard"}]},
             "help": {"text": "\"All right. Save the group's conversations before someone deletes them. Not everything on my phone is mine.\"", "trust": 3,
                      "note": "Tomás hints that some chat messages are not from the people they name.", "options": [
                 _bye("Goodbye.")]},
@@ -225,30 +263,63 @@ PEOPLE = {
     },
     "pt": {
         "rita": {"name": "Rita", "nodes": {
+            # Two answers on every line, a right one and a wrong one (specs/two-answers.md): the USB stick,
+            # the photo, her claim line, Duarte, then the chat. Every wrong answer upsets her; an apology
+            # brings the first question back. Rita has no trust level and no rude answer that costs time.
             "start": {"text": "A Rita levanta os olhos do portátil. \"Estás com cara de quem não dormiu nada. Conseguiste descansar alguma coisa?\"", "options": [
-                {"label": "Perguntar pela fotografia do grupo", "next": "photo"},
-                {"label": "Perguntar o que ela se lembra do Duarte", "next": "duarte"},
                 {"label": "Perguntar onde está a pen", "next": "pen"},
-                {"label": "Perguntar pelas mensagens do chat", "next": "chat", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Dizer-lhe que foi ela que perdeu a pen", "next": "upset"},
+                # A memory answer (specs/earlier-nights.md, point 5): a shortcut to her claim line.,
                 {"label": "Dizer-lhe que te lembras de ela contar as cabeças", "next": "five", "night": 3},
                 _bye("Até já."),
             ]},
-            "photo": {"text": "\"A fotografia? Tirámo-la depois da última reunião, nós os quatro.\"",
-                      "note": "A Rita lembra-se de quatro pessoas na fotografia do grupo.", "options": [
+            "pen": {"text": "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado.\"", "note": "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite.", "options": [
+                {"label": "Perguntar pela fotografia do grupo", "next": "photo"},
+                {"label": "Dizer-lhe que procure ela, que a confusão é dela", "next": "upset"},
+            ]},
+            "photo": {"text": "\"A fotografia? Tirámo-la depois da última reunião, nós os quatro.\"", "note": "A Rita lembra-se de quatro pessoas na fotografia do grupo.", "options": [
                 {"label": "Perguntar porque é que a fotografia da pasta mostra cinco", "next": "five"},
-                _bye("Até já.")]},
+                {"label": "Dizer-lhe que a memória dela não conta", "next": "upset"},
+            ]},
+            # Rita's claim line (specs/evidence-and-hearing.md, point 7): the right answer reminds her of a
+            # proof and makes her give in (the photo when it is held, otherwise the files); with no proof yet,
+            # the right answer moves on to Duarte. The wrong one agrees with her.
             "five": {"text": "\"Então contei mal.\" A Rita vira o portátil para ti: cinco pessoas. \"Uma fotografia não muda. A minha memória muda. Ele devia estar mesmo ali.\"", "options": [
-                _bye("Até já.")]},
-            "pen": {"text": "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado.\"",
-                    "note": "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite.", "options": [_bye("Até já.")]},
+                {"label": "Lembrar-lhe a fotografia original da reprografia: quatro pessoas", "next": "five", "if": {"has": ["original_photo"]}, "crack": "original_photo"},
+                {"label": "Lembrar-lhe que o histórico dos ficheiros tem quatro autores em todas as cópias", "next": "five", "if": {"lacks": ["original_photo"], "flags": {"files_viewed": True}}, "crack": "files"},
+                {"label": "Perguntar o que ela se lembra do Duarte", "next": "duarte", "if": {"lacks": ["original_photo"], "flags": {"files_viewed": False}}},
+                {"label": "Concordar que ela deve ter contado mal", "next": "counted"},
+            ]},
+            "counted": {"text": "A Rita acena devagar. \"Pois. Uma fotografia não mente.\" Vira o portátil outra vez.", "options": [
+                {"label": "Perguntar o que ela se lembra do Duarte", "next": "duarte"},
+                {"label": "Dizer-lhe que então o Duarte fica no grupo", "next": "upset"},
+            ]},
             "duarte": {"text": "\"O Duarte... sinceramente, não o consigo imaginar. Sempre que tento, só vejo o nome na capa.\"", "options": [
-                {"label": "Dizer que achas que o nome foi acrescentado ontem à noite", "next": "warned"}]},
-            "warned": {"text": "A Rita fica calada. \"Se for verdade, alguém quis que duvidássemos de nós próprios.\"",
-                       "note": "A Rita também desconfia do quinto nome.", "options": [
-                _bye("Até já.")]},
-            "chat": {"text": "\"Repara na hora a que as mensagens chegam. Algumas dizem há três semanas, mas no meu telemóvel aparecem como novas, de ontem à noite. Mensagens antigas não funcionam assim.\"",
-                     "note": "Rita: uma mensagem antiga não chega como nova. As mensagens sobre o Duarte chegaram ontem à noite.", "options": [
-                _bye("Até já.")]},
+                {"label": "Dizer que achas que o nome foi acrescentado ontem à noite", "next": "warned"},
+                {"label": "Dizer que então ele faz mesmo parte do grupo", "next": "upset"},
+            ]},
+            "warned": {"text": "A Rita fica calada. \"Se for verdade, alguém quis que duvidássemos de nós próprios.\"", "note": "A Rita também desconfia do quinto nome.", "options": [
+                {"label": "Perguntar pelas mensagens do chat", "next": "chat", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Dizer-lhe que vais procurar provas", "next": "promise", "if": {"flags": {"files_viewed": False}}},
+                {"label": "Dizer-lhe que é tudo imaginação dela", "next": "upset"},
+            ]},
+            "promise": {"text": "\"Vai. Eu fico aqui.\" A Rita volta a abrir o portátil.", "options": [
+                _bye("Até já."),
+            ]},
+            "chat": {"text": "\"Repara na hora a que as mensagens chegam. Algumas dizem há três semanas, mas no meu telemóvel aparecem como novas, de ontem à noite. Mensagens antigas não funcionam assim.\"", "note": "Rita: uma mensagem antiga não chega como nova. As mensagens sobre o Duarte chegaram ontem à noite.", "options": [
+                _bye("Até já."),
+            ]},
+            "upset": {"text": "A Rita fecha o portátil devagar. \"Não precisas de falar assim comigo. Estamos todos cansados.\"", "options": [
+                {"label": "Pedir desculpa", "next": "sorry"},
+                {"label": "Dizer que só estás a ser sincero", "next": "closed"},
+            ]},
+            "sorry": {"text": "\"Está bem. Pergunta lá.\"", "options": [
+                {"label": "Perguntar onde está a pen", "next": "pen"},
+                {"label": "Dizer-lhe que foi ela que perdeu a pen", "next": "upset"},
+            ]},
+            "closed": {"text": "A Rita põe os auscultadores. Já não te está a ouvir.", "options": [
+                _bye("Sair."),
+            ]},
         }},
         "amelia": {"name": "Funcionária", "nodes": {
             "start": {"text": "A funcionária ajeita os óculos. \"Fechamos daqui a dez minutos, do que precisas?\"", "options": [
@@ -293,33 +364,38 @@ PEOPLE = {
             "start": {"text": "O Tomás está curvado sobre o computador 11, a evitar o teu olhar. \"Ah. Olá. Já é tarde.\"", "trust": 2, "options": [
                 {"label": "Perguntar com calma o que está ali a fazer", "next": "kind"},
                 {"label": "Exigir saber porque mentiu sobre o Duarte", "next": "hard", "cost": 5},
-                {"label": "Mostrar-lhe a fotografia original", "next": "photo", "if": {"has": ["original_photo"]}},
                 {"label": "Dizer-lhe que já sabes o que o chat diz sobre os slides", "next": "slides", "night": 2},
                 _bye("Até já."),
             ]},
             "kind": {"text": "\"Não conseguia dormir e vim acabar os slides. Ontem à noite, perto da meia-noite, vi alguém no computador 12.\"", "trust": 3, "options": [
                 {"label": "Perguntar quem era", "next": "who"},
-                {"label": "Perguntar a password do computador 12", "next": "password"},
-                {"label": "Perguntar pela mensagem 5, a que tem o nome dele", "next": "msg5", "if": {"flags": {"files_viewed": True}}},
-                {"label": "Perguntar quem fez os slides", "next": "slides", "if": {"flags": {"files_viewed": True}}}]},
+                {"label": "Dizer-lhe que isso parece uma desculpa", "next": "hard"}]},
             "password": {"text": "\"A password do computador? É o dia e o mês em que tirámos a fotografia da capa. São só 4 números, mas nunca me lembro da data. Entre todos havemos de lá chegar.\"", "trust": 3,
-                         "note": "Tomás: a password do computador 12 é o dia e o mês em que foi tirada a fotografia da capa (4 algarismos).", "options": [_bye("Até já.")]},
+                         "note": "Tomás: a password do computador 12 é o dia e o mês em que foi tirada a fotografia da capa (4 algarismos).", "options": [
+                {"label": "Perguntar quem fez os slides", "next": "slides", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Mostrar-lhe a fotografia original", "next": "photo",
+                 "if": {"has": ["original_photo"], "flags": {"files_viewed": False}}},
+                {"label": "Dizer-lhe que devia saber a data de cor", "next": "hard"}]},
             "who": {"text": "\"Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar.\"", "trust": 3,
                     "note": "O Tomás viu alguém de capuz no computador 12 perto da meia-noite.", "options": [
-                _bye("Até já.")]},
-            "msg5": {"text": "\"'Os slides foram do Duarte'? Está com o meu nome, mas não me lembro de a ter escrito. O meu telemóvel apitou com ela ontem à noite, perto da meia-noite, como se tivesse sido enviada há três semanas.\"", "trust": 3,
-                     "note": "O Tomás não se lembra de ter escrito a mensagem 5; chegou-lhe ao telemóvel ontem à noite.", "options": [
-                _bye("Até já.")]},
+                {"label": "Perguntar a password do computador 12", "next": "password"},
+                {"label": "Perguntar se o do capuz era ele", "next": "hard"}]},
             "slides": {"text": "O Tomás não tira os olhos do ecrã. \"Os slides? Estou a acabá-los. Mas o chat diz que foram do Duarte, com o meu nome. Se calhar foram mesmo, e eu só arrumei.\"", "trust": 2,
                        "note": "O Tomás acha que os slides podem ter sido do Duarte, só porque uma mensagem do chat com o nome dele o diz.", "options": [
-                _bye("Até já.")]},
+                {"label": "Lembrar-lhe que o histórico dos ficheiros tem o nome dele em todas as versões dos slides", "next": "slides",
+                 "crack": "files", "if": {"flags": {"files_viewed": True}}},
+                {"label": "Dizer-lhe que então o crédito é do Duarte", "next": "convinced"}]},
+            "convinced": {"text": "O Tomás acena sem levantar os olhos. \"Pois. Se calhar é mais justo. Ele fez mais do que eu penso.\"", "trust": 2,
+                          "options": [_bye("Até já.")]},
             "hard": {"text": "\"Como? Eu não menti!\" A voz dele treme.", "trust": 1, "options": [
                 {"label": "Pedir desculpa", "next": "calm"},
                 {"label": "Pressionar mais", "next": "closed", "cost": 5}]},
             "calm": {"text": "\"Está bem. Foi uma noite longa. Pergunta com educação.\"", "trust": 2, "options": [
-                {"label": "Perguntar com calma o que está ali a fazer", "next": "kind"}, _bye("Até já.")]},
+                {"label": "Perguntar com calma o que está ali a fazer", "next": "kind"},
+                {"label": "Insistir que ele mentiu", "next": "closed"}]},
             "photo": {"text": "O Tomás fica a olhar para a fotografia. \"Quatro pessoas... nunca tinha reparado.\" Engole em seco.", "trust": 2, "options": [
-                {"label": "Pedir-lhe ajuda", "next": "help"}]},
+                {"label": "Pedir-lhe ajuda", "next": "help"},
+                {"label": "Dizer-lhe que a culpa é dele", "next": "hard"}]},
             "help": {"text": "\"Está bem. Guarda as conversas do grupo antes que alguém as apague. Nem tudo o que está no meu telemóvel é meu.\"", "trust": 3,
                      "note": "O Tomás sugere que algumas mensagens do chat não são de quem diz.", "options": [
                 _bye("Até já.")]},
@@ -415,19 +491,16 @@ WITHHELD = {
     },
 }
 
-# One lie each, hostile only (point 5). The player can check it: the backup of the original
-# conversations (specs/computer-lab-backup.md) and Rita's `chat` line say otherwise. A lie is not a claim: a card shown on it
+# The lie of a hostile Leonor (point 5). The player can check it: the backup of the original
+# conversations (specs/computer-lab-backup.md) and Rita's `chat` line say otherwise. Tomás's lie was on
+# his line about message 5, which is gone with the chat (specs/two-answers.md). A lie is not a claim: a card shown on it
 # gets the usual rebuff. Its note is what the player was told.
 LIES = {
     "en": {
-        "tomas": {"msg5": {"text": '"The one with my name? I wrote it. Three weeks ago, like it says." He shrugs without looking at you.',
-                           "note": "Tomás says he wrote the message with his name himself, three weeks ago."}},
         "leonor": {"messages": {"text": '"Nothing strange about them. They came on the dates they say, weeks ago." She turns the phone face down.',
                                 "note": "Leonor says the messages arrived on their dates, weeks ago."}},
     },
     "pt": {
-        "tomas": {"msg5": {"text": '"A que tem o meu nome? Fui eu que a escrevi. Há três semanas, como lá diz." Encolhe os ombros sem olhar para ti.',
-                           "note": "O Tomás diz que foi ele que escreveu a mensagem com o nome dele, há três semanas."}},
         "leonor": {"messages": {"text": '"Não têm nada de estranho. Chegaram nas datas que lá dizem, há semanas." Vira o telemóvel ao contrário.',
                                 "note": "A Leonor diz que as mensagens chegaram nas datas delas, há semanas."}},
     },
@@ -478,6 +551,8 @@ def offered(option):
         shown["cost"] = option["cost"]
     if "night" in option:
         shown["memory"] = True
+    if "crack" in option:   # the answer that makes the person give in (specs/two-answers.md)
+        shown["crack"] = option["crack"]
     return shown
 
 

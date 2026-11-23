@@ -537,18 +537,19 @@ def test_leonor_is_not_cracked_by_any_card():
     assert "sure" in answers_of(call("talk", npc="leonor", node="start"))   # her claim is still there
 
 
+# Changed by specs/two-answers.md ("Reviewed tests that change"): Tomás's slides are asked after the password.
 def test_a_broken_claim_is_not_offered_again():
     investigate()
-    assert "slides" in answers_of(call("talk", npc="tomas", node="kind"))
+    assert "slides" in answers_of(call("talk", npc="tomas", node="password"))
     assert call("talk", npc="tomas", node="slides")["node"] == "slides"   # a valid `talk` first
     crack_tomas()                                                         # and a valid `confront`
     before = saved()
-    offered = answers_of(call("talk", npc="tomas", node="kind"))   # reading the notes writes nothing
-    assert "slides" not in offered and "msg5" in offered   # only the answer to the broken claim is gone
+    offered = answers_of(call("talk", npc="tomas", node="password"))   # reading the notes writes nothing
+    assert offered == ["hard"]   # only the answer to the broken claim is gone
     with pytest.raises(ValueError):
         call("talk", npc="tomas", node="slides")
     with pytest.raises(ValueError):
-        show("msg_5", "tomas", "slides")
+        show("files", "tomas", "slides")
     assert saved() == before
 
 
@@ -564,7 +565,7 @@ def test_any_other_card_gets_the_rebuff_and_costs_two_minutes():
 
 def test_the_right_card_on_another_line_does_not_crack():
     investigate()
-    for node in ("start", "kind", "msg5"):   # three rebuffs: 6 minutes, the most one game may be charged here
+    for node in ("start", "kind", "who"):   # three rebuffs: 6 minutes (specs/two-answers.md: no msg5 line)
         confront = show("files", "tomas", node)["confront"]
         assert confront["cracked"] is False and confront["minutes"] == 2, node
         assert confront["text"] == LINES["en"]["tomas_rebuff"], node
@@ -675,7 +676,8 @@ def test_the_reply_never_says_which_card_is_right():
 # ---------- The dialogue ----------
 
 # person: (the existing line that gains an answer, the new line that answer leads to)
-NEW_LINES = {"tomas": ("kind", "slides"), "rita": ("photo", "five"), "leonor": ("start", "mine")}
+# specs/two-answers.md: Tomás's slides are asked after the password.
+NEW_LINES = {"tomas": ("password", "slides"), "rita": ("photo", "five"), "leonor": ("start", "mine")}
 
 
 def line_shape(nodes, node):
@@ -699,11 +701,11 @@ def test_the_new_lines_have_the_same_shape_in_both_languages():
 
     # The wording the spec itself gives (points 7 and 8): the new answers and what the claim lines say.
     tomas, rita = people.PEOPLE["en"]["tomas"]["nodes"], people.PEOPLE["en"]["rita"]["nodes"]
-    assert [o["label"] for o in tomas["kind"]["options"] if o["next"] == "slides"] == ["Ask who made the slides"]
+    assert [o["label"] for o in tomas["password"]["options"] if o["next"] == "slides"] == ["Ask who made the slides"]
     assert [o["label"] for o in rita["photo"]["options"] if o["next"] == "five"] == ["Ask why the photo in the folder shows five"]
     assert "the chat says Duarte did them, under my name. So maybe he did, and I only tidied up." in tomas["slides"]["text"]
     assert "A photo cannot change. My memory can." in rita["five"]["text"]
-    assert len(tomas["kind"]["options"]) == 4 and len(rita["photo"]["options"]) == 2
+    assert len(tomas["kind"]["options"]) == 2 and len(rita["photo"]["options"]) == 2   # specs/two-answers.md
 
     # The names the spec fixes in the two new modules (point 3); the later specs build on them.
     assert case().FACTS == {"tomas": "tomas_word", "rita": "rita_word"}
@@ -720,30 +722,30 @@ def test_the_new_lines_have_the_same_shape_in_both_languages():
     assert not re.search(r"^\s*def ", case_file, flags=re.MULTILINE)
 
 
+# Changed by specs/two-answers.md ("Reviewed tests that change"): the question about message 5 is gone;
+# his claim line still never says he did not write it before the proof.
 def test_tomas_never_says_he_did_not_write_it_before_he_is_shown_the_proof():
     for language in ("en", "pt"):
         nodes = people.PEOPLE[language]["tomas"]["nodes"]
-        line = nodes["msg5"]
-        assert line["trust"] == 3 and line["note"].strip()
-        leading = [option for option in nodes["kind"]["options"] if option["next"] == "msg5"]
+        assert "msg5" not in nodes
+        line = nodes["slides"]
+        leading = [option for option in nodes["password"]["options"] if option["next"] == "slides"]
         assert len(leading) == 1 and leading[0]["if"] == {"flags": {"files_viewed": True}}
         words = (line["text"] + " " + line["note"]).lower()
         assert "never wrote" not in words and "nunca escrev" not in words, language
-        # The new note, as the spec writes it (point 8).
-        assert line["note"] == {"en": "Tomás does not remember writing message 5; it reached his phone last night.",
-                                "pt": "O Tomás não se lembra de ter escrito a mensagem 5; chegou-lhe ao telemóvel ontem à noite."}[language]
 
 
+# Changed by specs/two-answers.md ("Reviewed tests that change"): the slides are asked after the password.
 def test_the_slides_answer_waits_for_the_files_like_msg5():
     for language in ("en", "pt"):
         early, late = f"early {language}", f"late {language}"
         play("go_computer_lab", language=language, player=early)
-        assert "slides" not in answers_of(call("talk", language, early, npc="tomas", node="kind"))
+        assert "slides" not in answers_of(call("talk", language, early, npc="tomas", node="password"))
         with pytest.raises(ValueError):   # and the line cannot be asked for directly
             call("talk", language, early, npc="tomas", node="slides")
 
         play("open_drawer", "go_computer_lab", "view_files", language=language, player=late)
-        assert "slides" in answers_of(call("talk", language, late, npc="tomas", node="kind"))
+        assert "slides" in answers_of(call("talk", language, late, npc="tomas", node="password"))
         reply = call("talk", language, late, npc="tomas", node="slides")
         assert reply["text"] == people.PEOPLE[language]["tomas"]["nodes"]["slides"]["text"]
 
@@ -766,8 +768,6 @@ def test_nobody_lists_the_fake_messages():
         for person, (_old, new) in NEW_LINES.items():
             line = people.PEOPLE[language][person]["nodes"][new]
             texts += [line["text"], line.get("note", "")]
-        reworded = people.PEOPLE[language]["tomas"]["nodes"]["msg5"]
-        texts += [reworded["text"], reworded["note"]]
     for text in texts:
         assert not any(phrase in text.lower() for phrase in ("message 2", "message 4", "mensagem 2", "mensagem 4")), text
 
@@ -1114,7 +1114,9 @@ def test_the_page_and_early_snapshots_never_contain_the_case_file():
 
 
 def test_the_page_has_the_tray_and_the_hearing_inside_the_conversation_card():
-    new = ["function askEvidence(", "function showHearing(", 'action.id === "present_evidence"', "talk-evidence",
+    # Changed by specs/two-answers.md ("Reviewed tests that change"): no "Show evidence" tray; the right
+    # answer of a claim line shows its card (`option.crack`).
+    new = ["function confrontWith(", "function showHearing(", 'action.id === "present_evidence"', "option.crack",
            "ending.verdict", "hearing.said", "topics.delete(", 'line.npc === "rita" && line.node === "photo"']
     kept = ['action.id === "open_drawer"', "if (option.cost) penalize(option.cost)",
             "line.options.filter(option => option.next !== null && !asked.has(option.next))",
@@ -1124,9 +1126,9 @@ def test_the_page_has_the_tray_and_the_hearing_inside_the_conversation_card():
     assert 'id="hearing-card"' not in PAGE   # the hearing has no card of its own
     # PAGE holds every key of campus_text.py, used or not, so the use of these two is looked for in play.js itself.
     play_js = (FOLDER / "play.js").read_text(encoding="utf-8")
-    assert "evidence_show" in play_js and "hearing_concede" in play_js
+    assert "evidence_show" not in play_js and "talk-evidence" not in play_js and "hearing_concede" in play_js
     # The same for the other texts the page shows (points 5, 6 and 9), and for the two new operations it sends.
-    for key in ("evidence_back", "hearing_hint", "time_penalty_card", "time_penalty_duarte"):
+    for key in ("hearing_hint", "time_penalty_card", "time_penalty_duarte"):   # evidence_back went with the tray
         assert key in play_js, key
     for operation in ("confront", "hearing"):
         assert f'"{operation}"' in play_js or f"'{operation}'" in play_js, operation
@@ -1136,7 +1138,7 @@ def test_the_page_has_the_tray_and_the_hearing_inside_the_conversation_card():
     # passing are also read here, in the source.
     start = play_js.index("  function showLine(line) {")
     block = play_js[start:play_js.index("  // The player chose to do something", start)]
-    assert "talk-evidence" in block   # the evidence row is drawn inside showLine, on every line
+    assert "option.crack" in block   # the right answer of a claim line is handled inside showLine
     assert "classList.add" not in block and ".remove()" not in block   # the fake page has neither
     assert not re.search(r"\bt\.\w+\[", block)   # ui() is {} there: t.night_lines[0] would break
 

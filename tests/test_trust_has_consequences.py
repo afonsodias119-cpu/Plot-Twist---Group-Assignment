@@ -86,16 +86,13 @@ WITHHELD = {
     },
 }
 # A3: the lies (hostile only).
+# Changed by specs/two-answers.md ("Reviewed tests that change"): Tomás's lie was on his line about message 5, which is gone.
 LIES = {
     "en": {
-        "tomas": {"msg5": {"text": '"The one with my name? I wrote it. Three weeks ago, like it says." He shrugs without looking at you.',
-                           "note": "Tomás says he wrote the message with his name himself, three weeks ago."}},
         "leonor": {"messages": {"text": '"Nothing strange about them. They came on the dates they say, weeks ago." She turns the phone face down.',
                                 "note": "Leonor says the messages arrived on their dates, weeks ago."}},
     },
     "pt": {
-        "tomas": {"msg5": {"text": '"A que tem o meu nome? Fui eu que a escrevi. Há três semanas, como lá diz." Encolhe os ombros sem olhar para ti.',
-                           "note": "O Tomás diz que foi ele que escreveu a mensagem com o nome dele, há três semanas."}},
         "leonor": {"messages": {"text": '"Não têm nada de estranho. Chegaram nas datas que lá dizem, há semanas." Vira o telemóvel ao contrário.',
                                 "note": "A Leonor diz que as mensagens chegaram nas datas delas, há semanas."}},
     },
@@ -357,19 +354,17 @@ def test_wary_withholds_hints():
                 assert short["options"] == plain["options"], (person, node)
 
 
-def test_hostile_tomas_lies_about_his_message_and_the_backup_says_otherwise():
+# Changed by specs/two-answers.md ("Reviewed tests that change"): a hostile Tomás no longer lies (his
+# message 5 line is gone); his claim line stays the story's own, and the backup still says the message was new.
+def test_hostile_tomas_tells_no_lie_and_the_backup_says_otherwise():
     for language in ("en", "pt"):
         player = f"lied to {language}"
         investigate(player, language)
-        make("tomas", "wary", player, language)
-        assert talk("tomas", "msg5", player, language)["text"] == story_line("tomas", "msg5", language)["text"]   # wary: no lie
+        rude("tomas", "hard", player, language)
         rude("tomas", "closed", player, language)
-        lie = talk("tomas", "msg5", player, language)
-        assert lie["text"] == LIES[language]["tomas"]["msg5"]["text"], language
-        assert lie["note"] == LIES[language]["tomas"]["msg5"]["note"], language
-        assert lie["options"] == [people.offered(o) for o in story_line("tomas", "msg5", language)["options"]]
-        # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): the backup of the original
-        # conversations, in the diary, shows the group before last night: the message was not there.
+        assert "tomas" not in people.LIES[language]
+        slides = talk("tomas", "slides", player, language)
+        assert slides["text"] == story_line("tomas", "slides", language)["text"], language
         backup = STORIES[language]["scenes"]["computer_lab"]["actions"]["save_backup"]["result_text"]
         assert backup in [entry["text"] for entry in call(language=language, player=player)["notebook"]], language
         # And Rita says an old message does not arrive as new.
@@ -377,7 +372,6 @@ def test_hostile_tomas_lies_about_his_message_and_the_backup_says_otherwise():
         rita = talk("rita", "chat", player, language)
         assert (rita["text"], rita["note"]) == (story_line("rita", "chat", language)["text"],
                                                 story_line("rita", "chat", language)["note"]), language
-
 
 def test_hostile_leonor_lies_about_the_messages():
     for language in ("en", "pt"):
@@ -422,15 +416,14 @@ def test_the_warning_reaches_the_next_person_only():
 def test_cracking_forgives():
     investigate()
     make("tomas", "hostile")
-    assert talk("tomas", "msg5")["text"] == LIES["en"]["tomas"]["msg5"]["text"]
     assert talk("tomas", "start")["text"] == COLD["en"]["tomas"]["start"]
-    # A card on the lie is not a confrontation: the usual rebuff.
-    assert show("files", "tomas", "msg5")["confront"]["cracked"] is False
+    # A card on another line is not a confrontation: the usual rebuff (specs/two-answers.md: no msg5 line).
+    assert show("files", "tomas", "who")["confront"]["cracked"] is False
     walk("library")
     assert talk("leonor", "start")["text"] == WARNED["en"]["leonor"]
     walk("computer_lab")
     assert show("files", "tomas", "slides")["confront"]["cracked"] is True   # specs/computer-lab-backup.md
-    for node in ("start", "kind", "password", "who", "msg5"):
+    for node in ("start", "kind", "password", "who"):
         reply = talk("tomas", node)
         assert (reply["text"], reply["note"]) == (story_line("tomas", node)["text"],
                                                    story_line("tomas", node).get("note", "")), node
@@ -524,7 +517,7 @@ def test_no_reply_ever_carries_the_temper():
     walk("study_room")
     replies += [talk("rita", "start"), call()]
     walk("computer_lab")
-    replies.append(show("files", "tomas", "msg5"))
+    replies.append(show("files", "tomas", "who"))   # specs/two-answers.md: no msg5 line
     for reply in replies:
         assert not keys_of(reply) & {"rude", "mood", "moods", "temper"}, reply.get("node")
         text = json.dumps(reply, ensure_ascii=False)
@@ -550,7 +543,7 @@ def test_the_trust_texts_have_the_same_keys_in_both_languages_and_name_no_culpri
         for person, lines in table["en"].items():
             assert CLAIMS.get(person) not in lines and not set(TARGETS[person]) & set(lines), person
     texts = [text for table in tables.values() for text in texts_of(table)]
-    assert len(texts) == 2 * (7 + 4 + 2 * 2 + 3)
+    assert len(texts) == 2 * (7 + 4 + 2 * 1 + 3)   # specs/two-answers.md: only Leonor lies now
     for text in texts:
         for forbidden in ("14", "10 November", "10 de novembro", "1411", "account", "confess", "Tomas "):
             assert forbidden not in text, (forbidden, text)

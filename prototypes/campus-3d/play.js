@@ -348,7 +348,7 @@
       <header class="talk-head"><span id="talk-avatar" class="avatar" aria-hidden="true"></span>
         <div class="talk-who"><h3 id="talk-name"></h3></div>
         <button id="talk-close" class="secondary"></button></header>
-      <div id="talk-log" class="chat-log" aria-live="polite"></div><div id="talk-evidence" class="talk-evidence" hidden></div><div id="talk-options" class="chat-replies"></div></section>
+      <div id="talk-log" class="chat-log" aria-live="polite"></div><div id="talk-options" class="chat-replies"></div></section>
     <p id="renderer-status" class="renderer-status"></p>`;
   document.body.append(shell);
   const dialog = make("dialog"); dialog.id = "restart-dialog";
@@ -1005,6 +1005,8 @@
   }
   function showLine(line) {
     const t = ui();
+    // The people whose lines offer exactly two answers, a right one and a wrong one (specs/two-answers.md).
+    const TWO_ANSWERS = new Set(["tomas", "rita"]);
     if (talking !== line.npc) { $("talk-log").replaceChildren(); asked.clear(); topics.clear(); }   // a different person: a new conversation
     talking = line.npc;
     window.playing = false;   // the character stands still while talking
@@ -1019,9 +1021,10 @@
         topics.clear();
         line = { ...line, actions: [] };
       } else {
-        // Root subjects, Tomás's factual leads and Rita's question about the photo remain useful after choosing a sibling.
-        // Reactions such as "Apologise" belong only to the current exchange.
-        if (line.node === "start" || line.node === "result" || (line.npc === "tomas" && line.node === "kind") || (line.npc === "rita" && line.node === "photo")) {
+        // Root subjects and Rita's question about the photo remain useful after choosing a sibling.
+        // Reactions such as "Apologise" belong only to the current exchange. Tomás and Rita keep no topics:
+        // each of their lines offers exactly its own two answers, a right one and a wrong one (specs/two-answers.md).
+        if (!TWO_ANSWERS.has(line.npc) && (line.node === "start" || line.node === "result" || (line.npc === "rita" && line.node === "photo"))) {
           // A memory answer (↺) is something said on arriving: it is never kept as a topic, and it is
           // offered only with the greeting, the first line of a conversation (specs/earlier-nights.md, point 5).
           for (const option of line.options) {
@@ -1029,7 +1032,7 @@
           }
         }
         const available = new Map();
-        for (const option of [...line.options, ...topics.values()]) {
+        for (const option of [...line.options, ...(TWO_ANSWERS.has(line.npc) ? [] : topics.values())]) {
           if (option.next !== "start" && (firstLine || !option.memory)) available.set(option.next, option);
         }
         line = { ...line, options: [...available.values()] };
@@ -1041,7 +1044,10 @@
     // A question already chosen in this conversation is not offered again.
     // When a decision can be taken, it is the moment of the choice: only the decisions are offered (specs/actions-when-they-make-sense.md).
     const deciding = (line.actions || []).some(action => action.decision && action.allowed);
-    const answers = deciding ? [] : line.options.filter(option => option.next !== null && !asked.has(option.next)).map(option => {
+    // A person with two answers always shows both, even one chosen before (after an apology, "kind" again).
+    const offeredNow = TWO_ANSWERS.has(line.npc) ? line.options.filter(option => option.next !== null)
+      : line.options.filter(option => option.next !== null && !asked.has(option.next));
+    const answers = deciding ? [] : offeredNow.map(option => {
       // A memory answer has a small ↺ in front; screen readers hear "You have heard this before" instead.
       const button = make("button", option.memory ? `↺ ${option.label}` : option.label, "answer");
       if (option.memory) {
@@ -1049,6 +1055,9 @@
         button.setAttribute("aria-label", `${t.memory_answer}: ${option.label}`);
       }
       button.addEventListener("click", () => {
+        // The right answer on a line where someone says something false makes that person give in: the
+        // page shows the server the card it names, as "Show evidence" used to (specs/two-answers.md).
+        if (option.crack) { addBubble(option.label, "me"); confrontWith(line, { id: option.crack, label: option.label }, true); return; }
         asked.add(option.next);
         addBubble(option.label, "me");   // the player's answer goes on the right, like a sent message
         if (option.cost) penalize(option.cost);   // a rude answer: minutes off the countdown
@@ -1089,13 +1098,8 @@
       button.addEventListener("click", () => startHearing(present));
       doing.append(button, make("p", t.hearing_hint, "muted"));
     }
-    // "📁 Show evidence", in its own row between the log and the answers, on every line of a person
-    // (not computer 12, not a closed line, not during the hearing: specs/evidence-and-hearing.md, point 5).
-    const showsEvidence = line.npc !== "computer12" && line.node !== "closed" && !(current && current.hearing);
-    const evidenceButton = make("button", t.evidence_show, "secondary evidence-show");
-    evidenceButton.addEventListener("click", () => askEvidence(line));
-    $("talk-evidence").replaceChildren(...(showsEvidence ? [evidenceButton] : []));
-    $("talk-evidence").hidden = !showsEvidence;
+    // There is no "Show evidence" in a conversation any more (specs/two-answers.md): a person gives in
+    // when the player picks the right answer on the line where they say something false.
     if (doing.children.length && window.campusInside === false) doing.append(make("p", t.outside_hint, "muted"));
     $("talk-options").replaceChildren(...answers, ...(doing.children.length ? [doing] : []));
     $("talk-options").hidden = !doing.children.length && !answers.length;
@@ -1240,44 +1244,14 @@
       },
     });
   }
-  // ---------- showing evidence (specs/evidence-and-hearing.md, points 5 and 6) ----------
-  // Like the code field, the cards held replace the answers. The answers are kept aside, so
-  // "Put it away" puts back the very same buttons: nothing is sent and nothing is added to the log.
-  function askEvidence(line) {
-    const t = ui();
-    const kept = [...$("talk-options").children], wasHidden = $("talk-options").hidden;
-    const wasOnlyWay = $("talk-close").classList.contains("only-way");
-    const tray = make("div", undefined, "evidence-tray");
-    tray.append(make("p", t.evidence_title, "evidence-title"));
-    const cards = current.evidence || [];
-    if (!cards.length) tray.append(make("p", t.evidence_empty, "muted"));
-    for (const card of cards) {
-      const button = make("button", `📁 ${card.label}`, "answer evidence-card");
-      button.addEventListener("click", () => confrontWith(line, card));
-      tray.append(button);
-    }
-    const back = make("button", t.evidence_back, "secondary evidence-back");
-    back.addEventListener("click", () => {
-      $("talk-options").replaceChildren(...kept);
-      $("talk-options").hidden = wasHidden;
-      $("talk-close").classList.toggle("only-way", wasOnlyWay);
-      $("talk-evidence").hidden = false;
-      applyInside();
-      $("talk-evidence").querySelector("button")?.focus({ preventScroll: true });
-    });
-    tray.append(back);
-    $("talk-evidence").hidden = true;   // the tray is open: the button that opened it steps aside
-    $("talk-options").replaceChildren(tray);
-    $("talk-options").hidden = false;
-    $("talk-close").classList.remove("only-way");
-    tray.querySelector("button").focus({ preventScroll: true });
-  }
-  // A card is shown on the line on the screen. The server answers with the reveal or the rebuff,
-  // drawn as a line of that person with the answers that line had; a rebuff costs minutes, like a rude answer.
-  async function confrontWith(line, card) {
+  // ---------- giving in (specs/evidence-and-hearing.md, points 5 and 6; specs/two-answers.md) ----------
+  // The right answer names a card, shown on the line on the screen. The server answers with the reveal or
+  // the rebuff, drawn as a line of that person with the answers that line had. `said`: the answer is
+  // already in the log as the player's message.
+  async function confrontWith(line, card, said = false) {
     if (window.campusBusy || !current || !screenLine || screenLine.npc !== line.npc) return;
     const t = ui(), node = screenLine.node;
-    addBubble(`📁 ${card.label}`, "me");
+    if (!said) addBubble(`📁 ${card.label}`, "me");
     showTyping();
     if (!await send("confront", { npc: line.npc, node, evidence: card.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
     if (!talking || !current.confront) { goneLine = null; return; }   // a catch closed the card: nothing more is drawn
@@ -1343,8 +1317,6 @@
     const doubt = make("p", `${t.hearing_trust}: ${trust}/3`, `hearing-trust trust-${trust}`);
     for (const entry of hearing.said) addHeard(entry);
     $("talk-log").scrollTop = $("talk-log").scrollHeight;
-    $("talk-evidence").replaceChildren();
-    $("talk-evidence").hidden = true;   // no "Show evidence" and no story actions: the answers are the cards
     const answers = (current.evidence || []).map(card => {
       const button = make("button", `📁 ${card.label}`, "answer evidence-card");
       button.addEventListener("click", () => answerHearing(card.id));

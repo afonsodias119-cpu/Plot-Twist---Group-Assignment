@@ -112,11 +112,15 @@ def test_an_answer_is_offered_only_when_the_player_has_earned_it():
         call("talk", npc="tomas", node="msg5")
 
 
+# Changed by specs/two-answers.md ("Reviewed tests that change"): Tomás's right answer after the password
+# depends on what you hold: the original photo before the files, the slides after them. There is no
+# question about message 5 any more (the chat is gone).
 def test_the_right_items_unlock_more_answers():
-    play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_computer_lab", "view_files")
-    assert "photo" in [o["next"] for o in call("talk", npc="tomas", node="start")["options"]]
-    assert "msg5" in [o["next"] for o in call("talk", npc="tomas", node="kind")["options"]]
-    assert call("talk", npc="tomas", node="msg5")["note"]
+    play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_computer_lab")
+    assert [o["next"] for o in call("talk", npc="tomas", node="password")["options"]] == ["photo", "hard"]
+    call("play", action="view_files")
+    assert [o["next"] for o in call("talk", npc="tomas", node="password")["options"]] == ["slides", "hard"]
+    assert "msg5" not in people.PEOPLE["en"]["tomas"]["nodes"]
 
 
 def test_pressing_a_person_too_hard_ends_the_conversation():
