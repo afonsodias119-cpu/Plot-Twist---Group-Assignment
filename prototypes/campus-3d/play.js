@@ -1127,6 +1127,7 @@
       const menu = await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc: line.npc, node: "start" });
       screenLine = menu;   // a card shown now is shown on the start line (specs/evidence-and-hearing.md, point 5)
       showLine({ ...menu, node: "result", text: current.message });
+      if (action.id === "ask_for_help") { addSaid(ui().leonor_follow); speak(ui().leonor_follow, "leonor"); }   // she comes with you (specs/library-study-hall.md)
     } catch (error) {
       closeTalk();
       toast(error.name === "Error" ? error.message : ui().network_error);

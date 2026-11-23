@@ -750,7 +750,7 @@ rbox(0.5, 0.09, 0.36, -6.6, 1.05, -6.1, mat(0x7a1f24, { roughness: 0.7 }));
 rbox(0.46, 0.02, 0.33, -6.6, 1.14, -6.1, paper);
 
 // ---- Library (x 4.5..13)
-rug(5, 3.2, 8.75, -7.6, "#3d4a57", null);
+rug(6.6, 3.2, 8.9, -8.9, "#3d4a57", null);
 function bookshelf(x) {
   const z = -11.62, w = 2.3, h = 2.5, d = 0.45;
   rbox(w, h, 0.04, x, 0, z - d / 2 + 0.02, walnut);                                   // back
@@ -773,9 +773,37 @@ function bookshelf(x) {
   book.count = n; book.castShadow = book.receiveShadow = true; scene.add(book);
 }
 bookshelf(6.3); bookshelf(8.75); bookshelf(11.2);
-table(8.75, -7.6, 2.6, 1.2, oak);
-chair(8.1, -6.7, Math.PI); chair(9.4, -6.7, Math.PI);
-deskLamp(8.0, 0.76, -7.8);
+// A study hall (specs/library-study-hall.md): two long tables and a small one, with lamps, open books,
+// laptops and piles of books. The students are added with the people (they need makePerson).
+table(7.2, -8.9, 2.4, 1.0, oak); table(10.6, -8.9, 2.4, 1.0, oak); table(10.6, -5.9, 1.6, 0.9, oak);
+for (const [x, z, angle] of [[6.6, -9.65, 0], [7.8, -9.65, 0], [6.6, -8.15, Math.PI], [7.8, -8.15, Math.PI],
+                             [10.0, -9.65, 0], [11.2, -9.65, 0], [10.0, -8.15, Math.PI], [11.2, -8.15, Math.PI],
+                             [10.2, -6.6, 0], [11.0, -5.2, Math.PI]]) chair(x, z, angle);
+deskLamp(7.2, 0.76, -8.95); deskLamp(10.6, 0.76, -8.95);
+// what lies on a table in front of a chair: `facing` is where the person sitting there looks (0 = south)
+function inFront(x, z, facing, ahead = 0.45) { return [x + Math.sin(facing) * ahead, z + Math.cos(facing) * ahead]; }
+function openBook(x, z, facing, colour) {
+  const g = new THREE.Group();
+  rbox(0.38, 0.008, 0.26, 0, 0, 0, mat(colour, { roughness: 0.6 }), { parent: g });   // the cover
+  for (const side of [-1, 1]) { const page = rbox(0.17, 0.012, 0.23, side * 0.088, 0.008, 0, paper, { parent: g }); page.rotation.z = side * -0.07; }
+  g.position.set(x, 0.765, z); g.rotation.y = facing; scene.add(g);
+}
+function laptop(x, z, facing) {
+  const g = new THREE.Group(), shell = mat(0xb9bec6, { metalness: 0.6, roughness: 0.35 });
+  rbox(0.34, 0.018, 0.24, 0, 0, 0, shell, { parent: g });
+  const lid = new THREE.Group(); lid.position.set(0, 0.018, -0.12); lid.rotation.x = -0.3; g.add(lid);   // the lid opens around its back edge
+  rbox(0.34, 0.23, 0.012, 0, 0, 0, shell, { parent: lid });
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.19), mat(0x000000, { emissive: 0xbfd8ff, emissiveIntensity: 0.9 }));
+  glow.position.set(0, 0.12, 0.008); lid.add(glow);
+  g.position.set(x, 0.765, z); g.rotation.y = facing + Math.PI; scene.add(g);   // the screen faces the person
+}
+function bookPile(x, z, n) {
+  for (let i = 0; i < n; i++) {
+    const book = rbox(0.24, 0.045, 0.32, x, 0.765 + i * 0.047, z, mat([0x7a1f1f, 0x1f3f7a, 0x2f5a2f, 0xa8752a][i % 4], { roughness: 0.65 }));
+    book.rotation.y = rand(-0.25, 0.25);
+  }
+}
+bookPile(8.2, -8.75, 3); bookPile(11.75, -8.7, 2); bookPile(9.95, -5.85, 4);
 cyl(0.12, 0.16, 0.6, 12.2, 0, -4.2, walnut);   // a globe on a stand
 add(new THREE.Mesh(new THREE.SphereGeometry(0.28, 32, 32), mat(0xffffff, { roughness: 0.4, map: textPanel(256, 128, (g, w, h) => {
   g.fillStyle = "#2a5a8a"; g.fillRect(0, 0, w, h);
@@ -1182,7 +1210,8 @@ function placeNpc(look, x, z, angle, name, y = 0, id = "") {
   n.userData.baseAngle = angle;
   npcs.push(n);
 }
-placeNpc({ topColor: 0x2f7a5a, hair: 0x5a2a12, hairStyle: "long", skin: 0xd9a27e }, 10.6, -7.6, -Math.PI / 2, "Leonor", 0, "leonor");
+placeNpc({ topColor: 0x2f7a5a, hair: 0x5a2a12, hairStyle: "long", skin: 0xd9a27e }, 11.2, -9.65, 0, "Leonor", 0, "leonor");
+npcs[npcs.length - 1].userData.seat = true;   // she studies at her table until she comes with you (specs/library-study-hall.md)
 placeNpc({ topColor: 0x1d2025, hood: true, hair: 0x0e0b09, smug: true }, 4.0, 4.4, Math.PI, "Duarte", 0, "duarte");
 placeNpc({ topColor: 0x5a5070, pants: 0x3a3a44, hair: 0xb8b8b8, glasses: true, skin: 0xf0c8a8 }, 7.6, 10.2, Math.PI, "Professor", 0.4, "professor");
 placeNpc({ topColor: 0xc2566b, hair: 0x1c1410, hairStyle: "long", skin: 0xe8b896 }, 3.3, -6.0, -Math.PI / 2, "Rita", 0, "rita");          // study room
@@ -1191,6 +1220,33 @@ placeNpc({ topColor: 0x6a7a3a, hair: 0x2a1a0a, skin: 0xd9a27e }, -6.5, 7.6, Math
 
 lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stage";   // the stage light
 placeNpc({ topColor: 0x14233a, pants: 0x0f1724, hair: 0x9a9a9a, skin: 0xd9a27e, shirt: 0xcfe0f2, tie: 0x0a0a0c, cap: 0x14233a, badge: 0xd4a650, belt: true, epaulettes: 0xd4a650 }, -11.3, -2.15, 0, "José", 0, "guard");   // the security guard, in uniform   // the security guard
+// The students of the library: sitting at the tables, studying (they are not people you talk to).
+// seatPose puts a person on a chair: legs forward, the body lower, forearms on the table, eyes on the book.
+function seatPose(p) {
+  const { legs, arms, body, head } = p.userData;
+  for (const leg of legs) leg.rotation.x = -Math.PI / 2 + 0.05;
+  for (const arm of arms) arm.rotation.x = -1.0;
+  body.position.y = -0.38;
+  head.rotation.x = 0.3;
+}
+const students = [];
+for (const [look, x, z, facing, thing] of [
+  [{ topColor: 0x2f6f8f, hair: 0x1c1410, hairStyle: "long", skin: 0xe2b08a }, 6.6, -9.65, 0, "book"],
+  [{ topColor: 0x5b6470, hood: true, hair: 0x3a2414, skin: 0xc68863 }, 7.8, -9.65, 0, "laptop"],
+  [{ topColor: 0x8a3a3a, hair: 0x2a1a0a, glasses: true, skin: 0xf0c8a8 }, 6.6, -8.15, Math.PI, "book"],
+  [{ topColor: 0xd9a441, hair: 0xd9b36a, hairStyle: "long", skin: 0xf0c8a8 }, 10.0, -8.15, Math.PI, "laptop"],
+  [{ topColor: 0x3b6a8c, hair: 0x1c1410, skin: 0x8d5a3b }, 10.2, -6.6, 0, "book"],
+  [{ topColor: 0x7a5cc2, hair: 0x9a3a1c, hairStyle: "long", skin: 0xe2b08a }, 11.0, -5.2, Math.PI, "laptop"],
+]) {
+  const p = makePerson(look);
+  p.position.set(x, 0, z); p.rotation.y = facing; scene.add(p);
+  seatPose(p);
+  p.userData.phase = Math.random() * 6;
+  students.push(p);
+  const [tx, tz] = inFront(x, z, facing);
+  if (thing === "book") openBook(tx, tz, facing, [0x1f3f7a, 0x7a1f1f, 0x2f5a2f][students.length % 3]); else laptop(tx, tz, facing);
+}
+{ const [tx, tz] = inFront(11.2, -9.65, 0); openBook(tx, tz, 0, 0x2f5a2f); }   // Leonor's book, at her place
 const USABLE = [{ id: "computer12", x: -1.8, z: 9.0 }];   // see the computer lab: desk 6, right-hand screen
 // Things to look at (specs/more-to-find.md, point 7): where the character stands to read each one, beside
 // its furniture and at least 1.2 m from every person. Their names and texts come from the server.
@@ -1617,10 +1673,13 @@ function loop() {
   ring.position.set(player.position.x, 0.012, player.position.z);
   ring.material.opacity = 0.4 + Math.sin(t * 3) * 0.15;
 
+  for (const s of students) s.userData.head.rotation.x = 0.3 + Math.sin(t * 0.6 + s.userData.phase) * 0.06;   // reading
   updateFollowers(dt, t);   // Rita and Leonor, when they come with you
   // the others turn towards you when you come close
   for (const [i, n] of npcs.entries()) {
     animatePerson(n, t + i, n.userData.walking ? 1 : 0, n.userData.walk || 0);
+    const atHome = n.userData.home && Math.hypot(n.position.x - n.userData.home.x, n.position.z - n.userData.home.z) < 0.05;
+    if (n.userData.seat && atHome && !n.userData.walking) { seatPose(n); n.rotation.y = n.userData.home.angle; continue; }   // sitting: she does not turn
     const ddx = player.position.x - n.position.x, ddz = player.position.z - n.position.z;
     const want = !n.userData.walking && Math.hypot(ddx, ddz) < 4.5 ? Math.atan2(ddx, ddz) : n.userData.baseAngle;
     n.rotation.y += Math.atan2(Math.sin(want - n.rotation.y), Math.cos(want - n.rotation.y)) * Math.min(1, dt * 3);
