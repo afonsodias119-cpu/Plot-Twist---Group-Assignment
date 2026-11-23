@@ -380,7 +380,8 @@ COLD = {
     "en": {
         "tomas": {"start": 'Tomás does not look up from computer 11. "What now?"',
                   "kind": '"Finishing the slides." He keeps typing. "Someone was at computer 12 last night. That is all I know."',
-                  "password": '"The day and month of the cover photo. Four digits." He does not look up.'},
+                  "password": '"The day and month of the cover photo. Four digits." He does not look up.',
+                  "who": '"Someone in a hood, at computer 12." He keeps typing.'},
         "leonor": {"start": 'Leonor does not close her book this time. "Yes?"',
                    "messages": '"From a number I did not know. Last night."'},
         "duarte": {"start": 'Duarte does not bother to smile. "Still here?"',
@@ -389,7 +390,8 @@ COLD = {
     "pt": {
         "tomas": {"start": 'O Tomás nem levanta os olhos do computador 11. "O que foi agora?"',
                   "kind": '"A acabar os slides." Continua a escrever. "Esteve alguém no computador 12 ontem à noite. É tudo o que sei."',
-                  "password": '"O dia e o mês da fotografia da capa. Quatro algarismos." Nem levanta os olhos.'},
+                  "password": '"O dia e o mês da fotografia da capa. Quatro algarismos." Nem levanta os olhos.',
+                  "who": '"Alguém de capuz, no computador 12." Continua a escrever.'},
         "leonor": {"start": 'Desta vez a Leonor não fecha o livro. "Sim?"',
                    "messages": '"De um número que eu não conhecia. Ontem à noite."'},
         "duarte": {"start": 'O Duarte nem se dá ao trabalho de sorrir. "Ainda por aqui?"',
@@ -401,14 +403,12 @@ COLD = {
 # hints only: every clue needed for an ending has another source.
 WITHHELD = {
     "en": {
-        "tomas": {"who": '"I did not see anything. Can I work now?"',
-                  "help": 'Tomás looks at the photo a second too long. "Check what you like. I am busy."'},
+        "tomas": {"help": 'Tomás looks at the photo a second too long. "Check what you like. I am busy."'},
         "leonor": {"mine": '"Work it out yourself."'},
         "duarte": {"slide": '"Why would I tell you?" Duarte glances at the door.'},
     },
     "pt": {
-        "tomas": {"who": '"Não vi nada. Posso trabalhar?"',
-                  "help": 'O Tomás fica a olhar para a fotografia um segundo a mais. "Vê o que quiseres. Estou ocupado."'},
+        "tomas": {"help": 'O Tomás fica a olhar para a fotografia um segundo a mais. "Vê o que quiseres. Estou ocupado."'},
         "leonor": {"mine": '"Descobre tu."'},
         "duarte": {"slide": '"Porque é que te havia de dizer?" O Duarte olha para a porta.'},
     },

@@ -251,11 +251,11 @@ CASES = {
                     "The file history: four authors in every backup, and the fifth name added from Tomás's account",
                 "Tomás's word: he never wrote that message and made the slides himself":
                     "Tomás's confession: he added Duarte last night and wrote the message himself",
-                # Rita, `pen`: Tomás's alibi falls here (B1.9)
+                # Rita, `pen`: Tomás's alibi falls here (B1.9), and he went out hooded (specs/security-desk.md)
                 "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza, but with this mess, it could be anywhere.\"":
-                    "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza. Tomás went off to the lab at half past eleven, on his own.\"",
+                    "\"The USB stick? It should be here somewhere, but I can't find it.\" She looks at the table. \"We stayed here late last night eating pizza. Tomás went outside for some air before half past eleven, with his hood up, and he never came back.\"",
                 "Rita cannot find the USB stick. The group ate pizza here last night.":
-                    "Rita cannot find the USB stick. The group ate pizza here last night; Tomás went to the lab alone at half past eleven.",
+                    "Rita cannot find the USB stick. The group ate pizza here last night; Tomás went outside with his hood up before half past eleven and never came back.",
                 # Tomás lies: `who` (the account and Rita's half past eleven say otherwise), `msg5` (the arrival line) and `slides` (B1.10 to B1.13)
                 "\"Only a hood. Like the one Duarte wears. But nobody ever saw him arrive.\"":
                     "\"Only a hood. Like the one Duarte wears.\" He keeps his eyes on his screen. \"I was at computer 11 all night. I never went near computer 12.\"",
@@ -291,6 +291,14 @@ CASES = {
                     "Leonor wrote the chat message about the cover photo herself.",
                 "\"The slides, of course. Ask anyone.\" He hesitates for a second.":
                     "\"The slides, of course. Ask Tomás, he will tell you.\" He hesitates for a second.",
+                # Leonor's messages and the professor's line on them: a teammate sent fakes too, so no
+                # "number nobody knew", like the endings below
+                "\"Look. All from a number I did not know. Some are dated weeks ago, but they arrived last night.\"":
+                    "\"Look. Not all from strangers: some are under names I know. Some are dated weeks ago, but they all arrived last night.\"",
+                "Leonor received Duarte's messages last night, from an unknown number.":
+                    "Leonor received the fake messages last night; some are under names she knows.",
+                "\"Every one delivered on the same night, from a number nobody knew. A date can be typed. An arrival time cannot.\"":
+                    "\"Every one delivered on the same night, within minutes of each other. A date can be typed. An arrival time cannot.\"",
                 # the professor, when Tomás's confession answers the messages (B1.23)
                 "\"Then the person whose name is on it never sent it. That answers this one.\"":
                     "\"Its author tells me he wrote it last night. A message written yesterday proves nothing about three weeks ago.\"",
@@ -325,11 +333,11 @@ CASES = {
                     "O histórico dos ficheiros: quatro autores em todas as cópias, e o quinto nome acrescentado a partir da conta do Tomás",
                 "A palavra do Tomás: nunca escreveu aquela mensagem e foi ele que fez os slides":
                     "A confissão do Tomás: acrescentou o Duarte ontem à noite e escreveu ele próprio a mensagem",
-                # Rita, `pen`: Tomás's alibi falls here (B1.9)
+                # Rita, `pen`: Tomás's alibi falls here (B1.9), and he went out hooded (specs/security-desk.md)
                 "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza, mas com esta confusão, pode estar em qualquer lado.\"":
-                    "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza. O Tomás foi sozinho para a sala de informática às onze e meia.\"",
+                    "\"A pen? Devia estar aqui, mas não a encontro.\" Olha para a mesa. \"Ontem ficámos aqui até tarde a comer pizza. O Tomás foi lá para fora apanhar ar antes das onze e meia, de capuz posto, e nunca mais voltou.\"",
                 "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite.":
-                    "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite; o Tomás foi sozinho para a sala de informática às onze e meia.",
+                    "Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite; o Tomás foi lá para fora de capuz posto antes das onze e meia e nunca mais voltou.",
                 # Tomás lies: `who` (the account and Rita's half past eleven say otherwise), `msg5` (the arrival line) and `slides` (B1.10 to B1.13)
                 "\"Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar.\"":
                     "\"Só vi um capuz. Como o que o Duarte usa.\" Não tira os olhos do ecrã. \"Estive no computador 11 a noite toda. Nunca me aproximei do 12.\"",
@@ -365,6 +373,14 @@ CASES = {
                     "A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.",
                 "\"Os slides, claro. Pergunta a qualquer um.\" Hesita por um segundo.":
                     "\"Os slides, claro. Pergunta ao Tomás, ele diz-te.\" Hesita por um segundo.",
+                # Leonor's messages and the professor's line on them: a teammate sent fakes too, so no
+                # "number nobody knew", like the endings below
+                "\"Olha. Todas de um número que eu não conhecia. Algumas têm data de há semanas, mas chegaram ontem à noite.\"":
+                    "\"Olha. Nem todas de desconhecidos: algumas têm nomes que eu conheço. Algumas têm data de há semanas, mas chegaram todas ontem à noite.\"",
+                "A Leonor recebeu as mensagens do Duarte ontem à noite, de um número desconhecido.":
+                    "A Leonor recebeu as mensagens falsas ontem à noite; algumas têm nomes que ela conhece.",
+                "\"Todas entregues na mesma noite, de um número que ninguém conhecia. Uma data escreve-se. A hora de chegada, não.\"":
+                    "\"Todas entregues na mesma noite, com minutos de diferença. Uma data escreve-se. A hora de chegada, não.\"",
                 # the professor, when Tomás's confession answers the messages (B1.23)
                 "\"Então quem a assina nunca a enviou. Essa fica respondida.\"":
                     "\"O autor diz-me que a escreveu ontem à noite. Uma mensagem escrita ontem não prova nada sobre há três semanas.\"",
@@ -417,11 +433,12 @@ CASES = {
                     "Rita goes very still. \"Last night? I was at home last night.\"",
                 "Rita doubts the fifth name too.":
                     "Rita says she was at home last night.",
-                # Tomás tells the truth, and it is the second sign (B2.12 to B2.15)
+                # Tomás tells the truth, and it is the second sign (B2.12 to B2.15): the hooded figure of the
+                # security desk's recordings, seen closer (specs/security-desk.md)
                 "\"Only a hood. Like the one Duarte wears. But nobody ever saw him arrive.\"":
-                    "\"Long hair and a pink jumper. I thought it was Rita, but she told us she was going home early.\"",
+                    "\"Someone came in with the hood up. Long hair under it, and a pink sleeve on the mouse. I thought it was Rita, but she told us she was going home early.\"",
                 "Tomás saw someone in a hood at computer 12 near midnight.":
-                    "Tomás saw someone with long hair and a pink jumper at computer 12 near midnight. He thought it was Rita.",
+                    "Tomás saw someone come in with the hood up and sit at computer 12 near midnight: long hair under the hood, a pink sleeve. He thought it was Rita.",
                 "Ask about message 5, the one with his name":
                     "Ask about message 4, the one with his name",
                 "Tomás does not remember writing message 5; it reached his phone last night.":
@@ -440,6 +457,14 @@ CASES = {
                     "Leonor wrote the chat message about the cover photo herself.",
                 "\"The slides, of course. Ask anyone.\" He hesitates for a second.":
                     "\"The slides, of course. Ask Rita, she knows.\" He hesitates for a second.",
+                # Leonor's messages and the professor's line on them: a teammate sent fakes too, so no
+                # "number nobody knew", like the endings below
+                "\"Look. All from a number I did not know. Some are dated weeks ago, but they arrived last night.\"":
+                    "\"Look. Not all from strangers: some are under names I know. Some are dated weeks ago, but they all arrived last night.\"",
+                "Leonor received Duarte's messages last night, from an unknown number.":
+                    "Leonor received the fake messages last night; some are under names she knows.",
+                "\"Every one delivered on the same night, from a number nobody knew. A date can be typed. An arrival time cannot.\"":
+                    "\"Every one delivered on the same night, within minutes of each other. A date can be typed. An arrival time cannot.\"",
                 # the professor, when Rita's confession answers the photo (B2.23)
                 "\"A witness who counted. I will hear her tomorrow; tonight I believe her.\"":
                     "\"The one who swapped it tells me what was there before: four people. I will hear her tomorrow.\"",
@@ -481,11 +506,12 @@ CASES = {
                     "A Rita fica muito quieta. \"Ontem à noite? Ontem à noite eu estava em casa.\"",
                 "A Rita também desconfia do quinto nome.":
                     "A Rita diz que ontem à noite estava em casa.",
-                # Tomás tells the truth, and it is the second sign (B2.12 to B2.15)
+                # Tomás tells the truth, and it is the second sign (B2.12 to B2.15): the hooded figure of the
+                # security desk's recordings, seen closer (specs/security-desk.md)
                 "\"Só vi um capuz. Como o que o Duarte usa. Mas ninguém o viu chegar.\"":
-                    "\"Cabelo comprido e uma camisola cor-de-rosa. Pensei que era a Rita, mas ela tinha dito que ia cedo para casa.\"",
+                    "\"Entrou alguém de capuz posto. Cabelo comprido por baixo e uma manga cor-de-rosa no rato. Pensei que era a Rita, mas ela tinha dito que ia cedo para casa.\"",
                 "O Tomás viu alguém de capuz no computador 12 perto da meia-noite.":
-                    "O Tomás viu alguém de cabelo comprido e camisola cor-de-rosa no computador 12 perto da meia-noite. Pensou que era a Rita.",
+                    "O Tomás viu alguém entrar de capuz posto e sentar-se no computador 12 perto da meia-noite: cabelo comprido por baixo do capuz, uma manga cor-de-rosa. Pensou que era a Rita.",
                 "Perguntar pela mensagem 5, a que tem o nome dele":
                     "Perguntar pela mensagem 4, a que tem o nome dele",
                 "O Tomás não se lembra de ter escrito a mensagem 5; chegou-lhe ao telemóvel ontem à noite.":
@@ -504,6 +530,14 @@ CASES = {
                     "A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.",
                 "\"Os slides, claro. Pergunta a qualquer um.\" Hesita por um segundo.":
                     "\"Os slides, claro. Pergunta à Rita, ela sabe.\" Hesita por um segundo.",
+                # Leonor's messages and the professor's line on them: a teammate sent fakes too, so no
+                # "number nobody knew", like the endings below
+                "\"Olha. Todas de um número que eu não conhecia. Algumas têm data de há semanas, mas chegaram ontem à noite.\"":
+                    "\"Olha. Nem todas de desconhecidos: algumas têm nomes que eu conheço. Algumas têm data de há semanas, mas chegaram todas ontem à noite.\"",
+                "A Leonor recebeu as mensagens do Duarte ontem à noite, de um número desconhecido.":
+                    "A Leonor recebeu as mensagens falsas ontem à noite; algumas têm nomes que ela conhece.",
+                "\"Todas entregues na mesma noite, de um número que ninguém conhecia. Uma data escreve-se. A hora de chegada, não.\"":
+                    "\"Todas entregues na mesma noite, com minutos de diferença. Uma data escreve-se. A hora de chegada, não.\"",
                 # the professor, when Rita's confession answers the photo (B2.23)
                 "\"Uma testemunha que contou. Ouço-a amanhã; esta noite, acredito nela.\"":
                     "\"Quem a trocou diz-me o que lá estava antes: quatro pessoas. Ouço-a amanhã.\"",

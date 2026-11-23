@@ -2393,7 +2393,8 @@
   $("phone-back").addEventListener("click", () => showPhone("home"));
   phone.addEventListener("cancel", e => { e.preventDefault(); closePhone(); });
 
-  // ---------- earlier nights: the fifth figure grows on the case-file photo (specs/earlier-nights.md, point 6) ----------  // The start screen is drawn before the server knows the player, so it uses a display copy kept in this
+  // ---------- earlier nights: the fifth figure grows on the case-file photo (specs/earlier-nights.md, point 6) ----------
+  // The start screen is drawn before the server knows the player, so it uses a display copy kept in this
   // browser: the night and `over` the server last reported. Only the picture reads it, never the rules.
   const NIGHT_KEY = "plot-twist-night";
   function loadNight() {

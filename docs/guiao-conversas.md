@@ -377,41 +377,41 @@ Só muda o texto (e às vezes a nota) de uma fala: as respostas, as ações (a c
 
 ### Falas secas (`COLD`): desconfiado ou hostil; o diário guarda a nota de sempre
 - **Tomás, `start`**
-  - 🇵🇹 O Tomás nem levanta os olhos do computador 11. "O que foi agora?"  *(linha 390)*
+  - 🇵🇹 O Tomás nem levanta os olhos do computador 11. "O que foi agora?"  *(linha 391)*
   - 🇬🇧 Tomás does not look up from computer 11. "What now?"  *(linha 381)*
 - **Tomás, `kind`**
-  - 🇵🇹 "A acabar os slides." Continua a escrever. "Esteve alguém no computador 12 ontem à noite. É tudo o que sei."  *(linha 391)*
+  - 🇵🇹 "A acabar os slides." Continua a escrever. "Esteve alguém no computador 12 ontem à noite. É tudo o que sei."  *(linha 392)*
   - 🇬🇧 "Finishing the slides." He keeps typing. "Someone was at computer 12 last night. That is all I know."  *(linha 382)*
 - **Tomás, `password`** (a regra do código não muda: só fica mais seca)
-  - 🇵🇹 "O dia e o mês da fotografia da capa. Quatro algarismos." Nem levanta os olhos.  *(linha 392)*
+  - 🇵🇹 "O dia e o mês da fotografia da capa. Quatro algarismos." Nem levanta os olhos.  *(linha 393)*
   - 🇬🇧 "The day and month of the cover photo. Four digits." He does not look up.  *(linha 383)*
+- **Tomás, `who`** (a nota de sempre fica, por isso o diário guarda o que o caso diz)
+  - 🇵🇹 "Alguém de capuz, no computador 12." Continua a escrever.  *(linha 394)*
+  - 🇬🇧 "Someone in a hood, at computer 12." He keeps typing.  *(linha 384)*
 - **Leonor, `start`**
-  - 🇵🇹 Desta vez a Leonor não fecha o livro. "Sim?"  *(linha 393)*
-  - 🇬🇧 Leonor does not close her book this time. "Yes?"  *(linha 384)*
+  - 🇵🇹 Desta vez a Leonor não fecha o livro. "Sim?"  *(linha 395)*
+  - 🇬🇧 Leonor does not close her book this time. "Yes?"  *(linha 385)*
 - **Leonor, `messages`** (só desconfiada; hostil, mente: ver abaixo)
-  - 🇵🇹 "De um número que eu não conhecia. Ontem à noite."  *(linha 394)*
-  - 🇬🇧 "From a number I did not know. Last night."  *(linha 385)*
+  - 🇵🇹 "De um número que eu não conhecia. Ontem à noite."  *(linha 396)*
+  - 🇬🇧 "From a number I did not know. Last night."  *(linha 386)*
 - **Duarte, `start`**
-  - 🇵🇹 O Duarte nem se dá ao trabalho de sorrir. "Ainda por aqui?"  *(linha 395)*
-  - 🇬🇧 Duarte does not bother to smile. "Still here?"  *(linha 386)*
+  - 🇵🇹 O Duarte nem se dá ao trabalho de sorrir. "Ainda por aqui?"  *(linha 397)*
+  - 🇬🇧 Duarte does not bother to smile. "Still here?"  *(linha 387)*
 - **Duarte, `part`**
-  - 🇵🇹 "Os slides. Pergunta a qualquer um." Olha para além de ti.  *(linha 396)*
-  - 🇬🇧 "The slides. Ask anyone." He looks past you.  *(linha 387)*
+  - 🇵🇹 "Os slides. Pergunta a qualquer um." Olha para além de ti.  *(linha 398)*
+  - 🇬🇧 "The slides. Ask anyone." He looks past you.  *(linha 388)*
 
 ### Pistas que ficam por dar (`WITHHELD`): desconfiado ou hostil; sem nota no diário
 São só pistas: tudo o que é preciso para um final tem outra fonte.
-- **Tomás, `who`**
-  - 🇵🇹 "Não vi nada. Posso trabalhar?"  *(linha 410)*
-  - 🇬🇧 "I did not see anything. Can I work now?"  *(linha 404)*
 - **Tomás, `help`**
   - 🇵🇹 O Tomás fica a olhar para a fotografia um segundo a mais. "Vê o que quiseres. Estou ocupado."  *(linha 411)*
-  - 🇬🇧 Tomás looks at the photo a second too long. "Check what you like. I am busy."  *(linha 405)*
+  - 🇬🇧 Tomás looks at the photo a second too long. "Check what you like. I am busy."  *(linha 406)*
 - **Leonor, `mine`**
   - 🇵🇹 "Descobre tu."  *(linha 412)*
-  - 🇬🇧 "Work it out yourself."  *(linha 406)*
+  - 🇬🇧 "Work it out yourself."  *(linha 407)*
 - **Duarte, `slide`**
   - 🇵🇹 "Porque é que te havia de dizer?" O Duarte olha para a porta.  *(linha 413)*
-  - 🇬🇧 "Why would I tell you?" Duarte glances at the door.  *(linha 407)*
+  - 🇬🇧 "Why would I tell you?" Duarte glances at the door.  *(linha 408)*
 
 ### Mentiras (`LIES`): só hostil; o diário guarda o que te disseram
 Uma mentira não é uma afirmação: mostrar-lhe uma prova dá a resposta habitual da pessoa e custa os minutos de sempre. Vence-se não acreditando nela. O Duarte mente de qualquer maneira: hostil, não ganha uma mentira nova.
@@ -596,177 +596,193 @@ A história joga-se sempre com as suas mensagens 1 a 5 (falsas: 2, 4 e 5). Um ca
 | afirmação `name` desfaz-se com | `files` | `files`, `tomas_word` | `files`, `rita_word` |
 | o colega que cede | testemunha / nunca escreveu | o Tomás confessa | a Rita confessa |
 
-Os sinais contra quem mente, em cada caso: `tomas` — a conta do Tomás no histórico, e a Rita (`pen`) diz que ele foi sozinho para a sala de informática às onze e meia, quando ele (`who`) diz que nunca se aproximou do 12; `rita` — a conta da Rita, e o Tomás (`who`) viu uma camisola cor-de-rosa e cabelo comprido, quando ela (`pen`) diz que foi cedo para casa. O `fifth_element` tem o mesmo texto em todos os casos. Uma fala de "Quando foste rude" ganha sempre à do caso.
+Os sinais contra quem mente, em cada caso: `tomas` — a conta do Tomás no histórico, e a Rita (`pen`) diz que ele foi lá para fora de capuz posto antes das onze e meia e nunca mais voltou, quando ele (`who`) diz que nunca se aproximou do 12; `rita` — a conta da Rita, e o Tomás (`who`) viu entrar alguém de capuz, com cabelo comprido por baixo e uma manga cor-de-rosa, quando ela (`pen`) diz que foi cedo para casa. Os dois batem certo com as gravações do segurança (alguém de capuz entra pela porta principal às 23:38 e na sala de informática às 23:41). O `fifth_element` tem o mesmo texto em todos os casos. Uma fala de "Quando foste rude" ganha sempre à do caso.
 
 O computador 12 é igual em todos os casos (specs/calendar-code.md): a fotografia é de sábado, 17 de outubro, o código é `1710`, e o grupo lembra-se desse dia (Tomás: sol; Rita: sábado; Leonor: depois do teste de Finanças, a 15 de outubro). Nenhum caso muda a fotografia, a data, as falas da funcionária ou o papel da grade, e nenhuma fala de um caso fala desse dia: quem mente nunca mexe no que o grupo se lembra. Os nomes do teu grupo (specs/your-own-group.md) também aparecem nessas lembranças.
 
 ### Caso `tomas`: o Tomás deixou entrar o Duarte
 - **Chat, mensagem 1 da história**
-  - 🇵🇹 Rita, há 3 semanas, 21h05: "Alguém pode reservar a sala de estudo para quinta-feira?"  *(linha 311)*
+  - 🇵🇹 Rita, há 3 semanas, 21h05: "Alguém pode reservar a sala de estudo para quinta-feira?"  *(linha 319)*
   - 🇬🇧 Rita, 3 weeks ago, 9:05 pm: "Can someone book the study room for Thursday?"  *(linha 237)*
 - **Chat, mensagem 2 da história**
-  - 🇵🇹 Duarte, há 3 semanas, 21h07: "Já reservei. Também escrevi a conclusão, como sempre."  *(linha 313)*
+  - 🇵🇹 Duarte, há 3 semanas, 21h07: "Já reservei. Também escrevi a conclusão, como sempre."  *(linha 321)*
   - 🇬🇧 Duarte, 3 weeks ago, 9:07 pm: "Booked it. I wrote the conclusion too, like always."  *(linha 239)*
 - **Chat, mensagem 3 da história**
-  - 🇵🇹 Leonor, há 2 semanas, 18h40: "A fotografia para a capa está pronta. Os quatro, finalmente!"  *(linha 315)*
+  - 🇵🇹 Leonor, há 2 semanas, 18h40: "A fotografia para a capa está pronta. Os quatro, finalmente!"  *(linha 323)*
   - 🇬🇧 Leonor, 2 weeks ago, 6:40 pm: "Photo for the cover is ready. Four of us, finally!"  *(linha 241)*
 - **Chat, mensagem 4 da história**
-  - 🇵🇹 Número desconhecido, há 3 semanas, 22h10: "Mal posso esperar para apresentarmos os cinco."  *(linha 317)*
+  - 🇵🇹 Número desconhecido, há 3 semanas, 22h10: "Mal posso esperar para apresentarmos os cinco."  *(linha 325)*
   - 🇬🇧 Unknown number, 3 weeks ago, 10:10 pm: "Can't wait for the five of us to present."  *(linha 243)*
 - **Computador 12, o código certo (comparar os ficheiros)**
-  - 🇵🇹 Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador, e a pasta diz de que conta: a do Tomás. Foi acrescentado "Duarte" ao relatório e trocada a fotografia. Recuperas a versão original do trabalho.  *(linha 320)*
+  - 🇵🇹 Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador, e a pasta diz de que conta: a do Tomás. Foi acrescentado "Duarte" ao relatório e trocada a fotografia. Recuperas a versão original do trabalho.  *(linha 328)*
   - 🇬🇧 You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer, and the folder says from which account: Tomás's. "Duarte" was added to the report and the photo was swapped. You recover the original version of the work.  *(linha 246)*
 - **Sala de informática, depois de comparares os ficheiros**
-  - 🇵🇹 Já comparaste os ficheiros: quatro autores em todas as cópias da pen, e uma alteração na pasta partilhada ontem às 23h47, feita a partir da conta do Tomás.  *(linha 322)*
+  - 🇵🇹 Já comparaste os ficheiros: quatro autores em todas as cópias da pen, e uma alteração na pasta partilhada ontem às 23h47, feita a partir da conta do Tomás.  *(linha 330)*
   - 🇬🇧 You have compared the files: four authors in every copy on the USB stick, and a change in the shared folder yesterday at 11:47 pm, made from Tomás's account.  *(linha 248)*
 - **Carta `files`**
-  - 🇵🇹 O histórico dos ficheiros: quatro autores em todas as cópias, e o quinto nome acrescentado a partir da conta do Tomás  *(linha 325)*
+  - 🇵🇹 O histórico dos ficheiros: quatro autores em todas as cópias, e o quinto nome acrescentado a partir da conta do Tomás  *(linha 333)*
   - 🇬🇧 The file history: four authors in every backup, and the fifth name added from Tomás's account  *(linha 251)*
 - **Carta `tomas_word`**
-  - 🇵🇹 A confissão do Tomás: acrescentou o Duarte ontem à noite e escreveu ele próprio a mensagem  *(linha 327)*
+  - 🇵🇹 A confissão do Tomás: acrescentou o Duarte ontem à noite e escreveu ele próprio a mensagem  *(linha 335)*
   - 🇬🇧 Tomás's confession: he added Duarte last night and wrote the message himself  *(linha 253)*
 - **Rita, `pen`**
-  - 🇵🇹 "A pen? Devia estar aqui, mas não a encontro." Olha para a mesa. "Ontem ficámos aqui até tarde a comer pizza. O Tomás foi sozinho para a sala de informática às onze e meia."  *(linha 330)*
-  - 🇬🇧 "The USB stick? It should be here somewhere, but I can't find it." She looks at the table. "We stayed here late last night eating pizza. Tomás went off to the lab at half past eleven, on his own."  *(linha 256)*
-  - 📓 Diário 🇵🇹 Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite; o Tomás foi sozinho para a sala de informática às onze e meia.  *(linha 332)*
-  - 📓 Diário 🇬🇧 Rita cannot find the USB stick. The group ate pizza here last night; Tomás went to the lab alone at half past eleven.  *(linha 258)*
+  - 🇵🇹 "A pen? Devia estar aqui, mas não a encontro." Olha para a mesa. "Ontem ficámos aqui até tarde a comer pizza. O Tomás foi lá para fora apanhar ar antes das onze e meia, de capuz posto, e nunca mais voltou."  *(linha 338)*
+  - 🇬🇧 "The USB stick? It should be here somewhere, but I can't find it." She looks at the table. "We stayed here late last night eating pizza. Tomás went outside for some air before half past eleven, with his hood up, and he never came back."  *(linha 256)*
+  - 📓 Diário 🇵🇹 Rita: não encontra a pen. O grupo comeu pizza aqui ontem à noite; o Tomás foi lá para fora de capuz posto antes das onze e meia e nunca mais voltou.  *(linha 340)*
+  - 📓 Diário 🇬🇧 Rita cannot find the USB stick. The group ate pizza here last night; Tomás went outside with his hood up before half past eleven and never came back.  *(linha 258)*
 - **Tomás, `who`**
-  - 🇵🇹 "Só vi um capuz. Como o que o Duarte usa." Não tira os olhos do ecrã. "Estive no computador 11 a noite toda. Nunca me aproximei do 12."  *(linha 335)*
+  - 🇵🇹 "Só vi um capuz. Como o que o Duarte usa." Não tira os olhos do ecrã. "Estive no computador 11 a noite toda. Nunca me aproximei do 12."  *(linha 343)*
   - 🇬🇧 "Only a hood. Like the one Duarte wears." He keeps his eyes on his screen. "I was at computer 11 all night. I never went near computer 12."  *(linha 261)*
-  - 📓 Diário 🇵🇹 O Tomás diz que viu alguém de capuz no computador 12 perto da meia-noite e que ele próprio nunca se aproximou.  *(linha 337)*
+  - 📓 Diário 🇵🇹 O Tomás diz que viu alguém de capuz no computador 12 perto da meia-noite e que ele próprio nunca se aproximou.  *(linha 345)*
   - 📓 Diário 🇬🇧 Tomás says he saw someone in a hood at computer 12 near midnight, and that he never went near it himself.  *(linha 263)*
 - **Tomás, `msg5`**
-  - 🇵🇹 "'Os slides foram do Duarte'? Escrevi isso há semanas. É verdade e pronto." Não olha para ti.  *(linha 339)*
+  - 🇵🇹 "'Os slides foram do Duarte'? Escrevi isso há semanas. É verdade e pronto." Não olha para ti.  *(linha 347)*
   - 🇬🇧 "'Duarte did the slides'? I wrote that weeks ago. It is just true." He does not look at you.  *(linha 265)*
-  - 📓 Diário 🇵🇹 O Tomás diz que escreveu a mensagem com o nome dele há semanas.  *(linha 341)*
+  - 📓 Diário 🇵🇹 O Tomás diz que escreveu a mensagem com o nome dele há semanas.  *(linha 349)*
   - 📓 Diário 🇬🇧 Tomás says he wrote the message with his name weeks ago.  *(linha 267)*
 - **Tomás, `kind`: a resposta que leva a `msg5`**
-  - 🇵🇹 Perguntar pela mensagem 1, a que tem o nome dele  *(linha 343)*
+  - 🇵🇹 Perguntar pela mensagem 1, a que tem o nome dele  *(linha 351)*
   - 🇬🇧 Ask about message 1, the one with his name  *(linha 269)*
 - **Tomás, `slides`**
-  - 🇵🇹 O Tomás não tira os olhos do ecrã. "Os slides? Foi o Duarte que os fez. Eu disse-o no chat, há três semanas."  *(linha 345)*
+  - 🇵🇹 O Tomás não tira os olhos do ecrã. "Os slides? Foi o Duarte que os fez. Eu disse-o no chat, há três semanas."  *(linha 353)*
   - 🇬🇧 Tomás keeps his eyes on the screen. "The slides? Duarte made them. I said so in the chat, three weeks ago."  *(linha 271)*
-  - 📓 Diário 🇵🇹 O Tomás diz que foi o Duarte que fez os slides e que o escreveu no chat há três semanas.  *(linha 347)*
+  - 📓 Diário 🇵🇹 O Tomás diz que foi o Duarte que fez os slides e que o escreveu no chat há três semanas.  *(linha 355)*
   - 📓 Diário 🇬🇧 Tomás says Duarte made the slides, and that he wrote so in the chat three weeks ago.  *(linha 273)*
 - **Quando cede: Tomás**
-  - 🇵🇹 O Tomás lê a linha cinzenta mais pequena por baixo da mensagem. "Chegou ontem às 23h49." Fecha os olhos. "Escrevi-a ontem à noite. E pus o nome dele na capa às 23h47, no computador 12. Nunca fiz os slides. O Duarte disse que os fazia se o nome dele fosse para o relatório." Roda a cadeira para a parede de vidro. "Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta. Devo-te isso."  *(linha 350)*
+  - 🇵🇹 O Tomás lê a linha cinzenta mais pequena por baixo da mensagem. "Chegou ontem às 23h49." Fecha os olhos. "Escrevi-a ontem à noite. E pus o nome dele na capa às 23h47, no computador 12. Nunca fiz os slides. O Duarte disse que os fazia se o nome dele fosse para o relatório." Roda a cadeira para a parede de vidro. "Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta. Devo-te isso."  *(linha 358)*
   - 🇬🇧 Tomás reads the small grey line under his message. "Arrived yesterday, 11:49 pm." He closes his eyes. "I wrote it last night. And I put his name on the cover at 11:47, from computer 12. I never made the slides. Duarte said he would make them if his name went on the report." He turns his chair to face the glass wall. "He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door. I owe you that."  *(linha 276)*
-  - 📓 Diário 🇵🇹 O Tomás confessou: acrescentou o Duarte ontem à noite, no computador 12, e escreveu ele próprio a mensagem. Fica a vigiar o corredor por ti.  *(linha 352)*
+  - 📓 Diário 🇵🇹 O Tomás confessou: acrescentou o Duarte ontem à noite, no computador 12, e escreveu ele próprio a mensagem. Fica a vigiar o corredor por ti.  *(linha 360)*
   - 📓 Diário 🇬🇧 Tomás confessed: he added Duarte last night, from computer 12, and wrote the message himself. He is watching the corridor for you.  *(linha 278)*
 - **Quando cede: Leonor**
-  - 🇵🇹 Contas-lhe o que o Tomás te disse. A Leonor fica com o polegar parado no ecrã. "Foi o Tomás?" Volta atrás na conversa, mais devagar. "Então já não sei o que é que andei a ler."  *(linha 354)*
+  - 🇵🇹 Contas-lhe o que o Tomás te disse. A Leonor fica com o polegar parado no ecrã. "Foi o Tomás?" Volta atrás na conversa, mais devagar. "Então já não sei o que é que andei a ler."  *(linha 362)*
   - 🇬🇧 You tell her what Tomás told you. Leonor stops with her thumb on the screen. "Tomás did this?" She scrolls back, slower this time. "Then I do not know what I have been reading."  *(linha 280)*
-  - 📓 Diário 🇵🇹 A Leonor não sabia que tinha sido o Tomás a acrescentar o Duarte. Ficou abalada.  *(linha 356)*
+  - 📓 Diário 🇵🇹 A Leonor não sabia que tinha sido o Tomás a acrescentar o Duarte. Ficou abalada.  *(linha 364)*
   - 📓 Diário 🇬🇧 Leonor did not know that Tomás added Duarte. It shook her.  *(linha 282)*
 - **Quando cede: Rita**
-  - 🇵🇹 A Rita olha da tua prova para o ecrã e outra vez para a prova. "Então a fotografia mudou mesmo." Ri-se uma vez, sem alegria nenhuma. "Eu contei quatro. Disse-o em voz alta, nesse dia, a todos vocês." Fecha o portátil. "Diz ao professor que eu contei. Eu digo-lho na cara."  *(linha 358)*
+  - 🇵🇹 A Rita olha da tua prova para o ecrã e outra vez para a prova. "Então a fotografia mudou mesmo." Ri-se uma vez, sem alegria nenhuma. "Eu contei quatro. Disse-o em voz alta, nesse dia, a todos vocês." Fecha o portátil. "Diz ao professor que eu contei. Eu digo-lho na cara."  *(linha 366)*
   - 🇬🇧 Rita looks from your proof to her screen and back. "So the photo did change." She laughs once, without any joy. "I counted four. I said it out loud, on the day, to all of you." She closes the laptop. "Tell the professor I counted. I will say it to his face."  *(linha 284)*
-  - 📓 Diário 🇵🇹 A Rita contou quatro pessoas no dia da fotografia. Vai dizê-lo ao professor.  *(linha 360)*
+  - 📓 Diário 🇵🇹 A Rita contou quatro pessoas no dia da fotografia. Vai dizê-lo ao professor.  *(linha 368)*
   - 📓 Diário 🇬🇧 Rita counted four people on the day of the photo. She will tell the professor.  *(linha 286)*
 - **Leonor, `mine`**
-  - 🇵🇹 "A da fotografia da capa. Escrevi-a na noite em que a tirámos." A Leonor percorre o ecrã com um dedo. "As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite."  *(linha 363)*
+  - 🇵🇹 "A da fotografia da capa. Escrevi-a na noite em que a tirámos." A Leonor percorre o ecrã com um dedo. "As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite."  *(linha 371)*
   - 🇬🇧 "The one about the cover photo. I wrote that the evening we took it." Leonor scrolls with one finger. "The ones from the number I did not know all arrived within minutes of each other, last night."  *(linha 289)*
-  - 📓 Diário 🇵🇹 A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.  *(linha 365)*
+  - 📓 Diário 🇵🇹 A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.  *(linha 373)*
   - 📓 Diário 🇬🇧 Leonor wrote the chat message about the cover photo herself.  *(linha 291)*
 - **Duarte, `part`**
-  - 🇵🇹 "Os slides, claro. Pergunta ao Tomás, ele diz-te." Hesita por um segundo.  *(linha 367)*
+  - 🇵🇹 "Os slides, claro. Pergunta ao Tomás, ele diz-te." Hesita por um segundo.  *(linha 375)*
   - 🇬🇧 "The slides, of course. Ask Tomás, he will tell you." He hesitates for a second.  *(linha 293)*
+- **Leonor, `messages`**
+  - 🇵🇹 "Olha. Nem todas de desconhecidos: algumas têm nomes que eu conheço. Algumas têm data de há semanas, mas chegaram todas ontem à noite."  *(linha 379)*
+  - 🇬🇧 "Look. Not all from strangers: some are under names I know. Some are dated weeks ago, but they all arrived last night."  *(linha 297)*
+  - 📓 Diário 🇵🇹 A Leonor recebeu as mensagens falsas ontem à noite; algumas têm nomes que ela conhece.  *(linha 381)*
+  - 📓 Diário 🇬🇧 Leonor received the fake messages last night; some are under names she knows.  *(linha 299)*
+- **Audiência, afirmação 3. `messages`, certa com `leonor_messages` (professor)**
+  - 🇵🇹 "Todas entregues na mesma noite, com minutos de diferença. Uma data escreve-se. A hora de chegada, não."  *(linha 383)*
+  - 🇬🇧 "Every one delivered on the same night, within minutes of each other. A date can be typed. An arrival time cannot."  *(linha 301)*
 - **Audiência, afirmação 3. `messages`, certa com `tomas_word` (professor)**
-  - 🇵🇹 "O autor diz-me que a escreveu ontem à noite. Uma mensagem escrita ontem não prova nada sobre há três semanas."  *(linha 370)*
-  - 🇬🇧 "Its author tells me he wrote it last night. A message written yesterday proves nothing about three weeks ago."  *(linha 296)*
+  - 🇵🇹 "O autor diz-me que a escreveu ontem à noite. Uma mensagem escrita ontem não prova nada sobre há três semanas."  *(linha 386)*
+  - 🇬🇧 "Its author tells me he wrote it last night. A message written yesterday proves nothing about three weeks ago."  *(linha 304)*
 - **Final `full_case`**
-  - 🇵🇹 Mostras o histórico da pen e as três mensagens que marcaste: uma do próprio Duarte, semanas antes de alguém ter ouvido falar dele; uma de um número que ninguém conhecia, a contar cinco; e uma com o nome do Tomás que chegou ontem à noite, dois minutos depois de a conta dele ter alterado a pasta partilhada. A Leonor entra com as mensagens originais, e batem certo. Antes de o professor perguntar, o Tomás levanta-se e conta o que fez: o nome, a fotografia e a mensagem, tudo por uns slides que nunca fez. O professor risca o quinto nome da lista. Amanhã apresentam os quatro, e o Tomás apresenta os slides que acaba esta noite.  *(linha 373)*
-  - 🇬🇧 You show the history on the USB stick and the three messages you flagged: one from Duarte himself, weeks before anyone had heard of him; one from a number nobody knew, counting five of you; and one under Tomás's name that arrived last night, two minutes after his own account changed the shared folder. Leonor walks in with the original messages, and they match. Before the professor can ask, Tomás stands up and tells the room what he did: the name, the photo and the message, all for slides he never made. The professor crosses the fifth name off the list. Tomorrow, the four of you present, and Tomás presents the slides he finishes tonight.  *(linha 299)*
+  - 🇵🇹 Mostras o histórico da pen e as três mensagens que marcaste: uma do próprio Duarte, semanas antes de alguém ter ouvido falar dele; uma de um número que ninguém conhecia, a contar cinco; e uma com o nome do Tomás que chegou ontem à noite, dois minutos depois de a conta dele ter alterado a pasta partilhada. A Leonor entra com as mensagens originais, e batem certo. Antes de o professor perguntar, o Tomás levanta-se e conta o que fez: o nome, a fotografia e a mensagem, tudo por uns slides que nunca fez. O professor risca o quinto nome da lista. Amanhã apresentam os quatro, e o Tomás apresenta os slides que acaba esta noite.  *(linha 389)*
+  - 🇬🇧 You show the history on the USB stick and the three messages you flagged: one from Duarte himself, weeks before anyone had heard of him; one from a number nobody knew, counting five of you; and one under Tomás's name that arrived last night, two minutes after his own account changed the shared folder. Leonor walks in with the original messages, and they match. Before the professor can ask, Tomás stands up and tells the room what he did: the name, the photo and the message, all for slides he never made. The professor crosses the fifth name off the list. Tomorrow, the four of you present, and Tomás presents the slides he finishes tonight.  *(linha 307)*
 - **Final `impostor`**
-  - 🇵🇹 Mostras o histórico da pen: quatro autores até ontem à noite, e a última alteração feita a partir da conta do Tomás. A Leonor entra e entrega as mensagens que guardou: foram todas enviadas na mesma noite, com datas falsas. O professor risca o quinto nome da lista. O Duarte sai do auditório sem dizer nada, e o Tomás não olha para nenhum de vocês. Amanhã apresentam os quatro.  *(linha 375)*
-  - 🇬🇧 You show the history on the USB stick: four authors until last night, and the last change made from Tomás's account. Leonor walks in and hands over the messages she kept: they were all sent on the same night, with fake dates. The professor crosses the fifth name off the list. Duarte leaves the auditorium without a word, and Tomás does not look at any of you. Tomorrow, the four of you present.  *(linha 301)*
+  - 🇵🇹 Mostras o histórico da pen: quatro autores até ontem à noite, e a última alteração feita a partir da conta do Tomás. A Leonor entra e entrega as mensagens que guardou: foram todas enviadas na mesma noite, com datas falsas. O professor risca o quinto nome da lista. O Duarte sai do auditório sem dizer nada, e o Tomás não olha para nenhum de vocês. Amanhã apresentam os quatro.  *(linha 391)*
+  - 🇬🇧 You show the history on the USB stick: four authors until last night, and the last change made from Tomás's account. Leonor walks in and hands over the messages she kept: they were all sent on the same night, with fake dates. The professor crosses the fifth name off the list. Duarte leaves the auditorium without a word, and Tomás does not look at any of you. Tomorrow, the four of you present.  *(linha 309)*
 - **Final `stolen_credits`**
-  - 🇵🇹 Mostras o histórico da pen: o trabalho original tinha quatro autores até ontem à noite. Mas o Duarte levanta o telemóvel: "Tenho mensagens de todos a provar que participei." O Tomás acena que sim, depressa demais. Sem as mensagens originais, não consegues provar que são falsas. O professor suspira: "Sem provas de que as mensagens são falsas, o nome fica." Amanhã apresentam os cinco.  *(linha 377)*
-  - 🇬🇧 You show the history on the USB stick: the original work had four authors until last night. But Duarte raises his phone: "I have messages from everyone proving I took part." Tomás nods along, a little too fast. Without the original messages, you cannot prove they are fake. The professor sighs: "Without proof that the messages are fake, the name stays." Tomorrow, the five of you present.  *(linha 303)*
+  - 🇵🇹 Mostras o histórico da pen: o trabalho original tinha quatro autores até ontem à noite. Mas o Duarte levanta o telemóvel: "Tenho mensagens de todos a provar que participei." O Tomás acena que sim, depressa demais. Sem as mensagens originais, não consegues provar que são falsas. O professor suspira: "Sem provas de que as mensagens são falsas, o nome fica." Amanhã apresentam os cinco.  *(linha 393)*
+  - 🇬🇧 You show the history on the USB stick: the original work had four authors until last night. But Duarte raises his phone: "I have messages from everyone proving I took part." Tomás nods along, a little too fast. Without the original messages, you cannot prove they are fake. The professor sighs: "Without proof that the messages are fake, the name stays." Tomorrow, the five of you present.  *(linha 311)*
 - **Final verdadeiro, a frase de quem entra (o resto do texto não muda)**
-  - 🇵🇹 O Tomás entra primeiro, com os slides que finalmente acabou esta noite, sem olhar para ti; depois a Leonor com o telemóvel, e a Rita a contar baixinho.  *(linha 380)*
-  - 🇬🇧 Tomás comes in first, with the slides he finally finished tonight, and does not look at you; then Leonor with her phone, and Rita counting under her breath.  *(linha 306)*
+  - 🇵🇹 O Tomás entra primeiro, com os slides que finalmente acabou esta noite, sem olhar para ti; depois a Leonor com o telemóvel, e a Rita a contar baixinho.  *(linha 396)*
+  - 🇬🇧 Tomás comes in first, with the slides he finally finished tonight, and does not look at you; then Leonor with her phone, and Rita counting under her breath.  *(linha 314)*
 - **Audiência, afirmação 1. `name`, certa com `tomas_word` (professor; fala nova, só neste caso)**
   - 🇵🇹 "Quem pôs lá o nome já mo disse ele próprio. Lá se vai o 'desde o primeiro rascunho'."  *(linha 232)*
   - 🇬🇧 "The person who put the name there has told me so himself. So much for 'since the first draft'."  *(linha 231)*
 
 ### Caso `rita`: a Rita deixou entrar o Duarte
 - **Chat, mensagem 1 da história**
-  - 🇵🇹 Tomás, há 3 semanas, 21h05: "Alguém pode reservar a sala de estudo para quinta-feira?"  *(linha 460)*
-  - 🇬🇧 Tomás, 3 weeks ago, 9:05 pm: "Can someone book the study room for Thursday?"  *(linha 396)*
+  - 🇵🇹 Tomás, há 3 semanas, 21h05: "Alguém pode reservar a sala de estudo para quinta-feira?"  *(linha 485)*
+  - 🇬🇧 Tomás, 3 weeks ago, 9:05 pm: "Can someone book the study room for Thursday?"  *(linha 412)*
 - **Chat, mensagem 3 da história**
-  - 🇵🇹 Leonor, há 2 semanas, 18h40: "A fotografia para a capa está pronta. Os quatro, finalmente!"  *(linha 462)*
-  - 🇬🇧 Leonor, 2 weeks ago, 6:40 pm: "Photo for the cover is ready. Four of us, finally!"  *(linha 398)*
+  - 🇵🇹 Leonor, há 2 semanas, 18h40: "A fotografia para a capa está pronta. Os quatro, finalmente!"  *(linha 487)*
+  - 🇬🇧 Leonor, 2 weeks ago, 6:40 pm: "Photo for the cover is ready. Four of us, finally!"  *(linha 414)*
 - **Computador 12, o código certo (comparar os ficheiros)**
-  - 🇵🇹 Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador, e a pasta diz de que conta: a da Rita. Foi acrescentado "Duarte" ao relatório e trocada a fotografia. Recuperas a versão original do trabalho.  *(linha 465)*
-  - 🇬🇧 You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer, and the folder says from which account: Rita's. "Duarte" was added to the report and the photo was swapped. You recover the original version of the work.  *(linha 401)*
+  - 🇵🇹 Ligas a pen ao computador 12 e comparas. Nas cópias de segurança da pen, todas as versões têm quatro autores. Na pasta partilhada, a versão atual foi alterada ontem às 23h47, a partir deste mesmo computador, e a pasta diz de que conta: a da Rita. Foi acrescentado "Duarte" ao relatório e trocada a fotografia. Recuperas a versão original do trabalho.  *(linha 490)*
+  - 🇬🇧 You plug the USB stick into computer 12 and compare. In the backups on the USB stick, every version has four authors. In the shared folder, the current version was changed yesterday at 11:47 pm, from this same computer, and the folder says from which account: Rita's. "Duarte" was added to the report and the photo was swapped. You recover the original version of the work.  *(linha 417)*
 - **Sala de informática, depois de comparares os ficheiros**
-  - 🇵🇹 Já comparaste os ficheiros: quatro autores em todas as cópias da pen, e uma alteração na pasta partilhada ontem às 23h47, feita a partir da conta da Rita.  *(linha 467)*
-  - 🇬🇧 You have compared the files: four authors in every copy on the USB stick, and a change in the shared folder yesterday at 11:47 pm, made from Rita's account.  *(linha 403)*
+  - 🇵🇹 Já comparaste os ficheiros: quatro autores em todas as cópias da pen, e uma alteração na pasta partilhada ontem às 23h47, feita a partir da conta da Rita.  *(linha 492)*
+  - 🇬🇧 You have compared the files: four authors in every copy on the USB stick, and a change in the shared folder yesterday at 11:47 pm, made from Rita's account.  *(linha 419)*
 - **Carta `files`**
-  - 🇵🇹 O histórico dos ficheiros: quatro autores em todas as cópias, e o quinto nome acrescentado a partir da conta da Rita  *(linha 470)*
-  - 🇬🇧 The file history: four authors in every backup, and the fifth name added from Rita's account  *(linha 406)*
+  - 🇵🇹 O histórico dos ficheiros: quatro autores em todas as cópias, e o quinto nome acrescentado a partir da conta da Rita  *(linha 495)*
+  - 🇬🇧 The file history: four authors in every backup, and the fifth name added from Rita's account  *(linha 422)*
 - **Carta `rita_word`**
-  - 🇵🇹 A confissão da Rita: acrescentou o Duarte e trocou a fotografia ontem à noite  *(linha 472)*
-  - 🇬🇧 Rita's confession: she added Duarte and swapped the photo last night  *(linha 408)*
+  - 🇵🇹 A confissão da Rita: acrescentou o Duarte e trocou a fotografia ontem à noite  *(linha 497)*
+  - 🇬🇧 Rita's confession: she added Duarte and swapped the photo last night  *(linha 424)*
 - **Rita, `pen`**
-  - 🇵🇹 "A pen? Não faço ideia." Olha para a mesa e depois desvia o olhar. "Ontem fui cedo para casa. Os outros ficaram aqui a comer pizza."  *(linha 475)*
-  - 🇬🇧 "The USB stick? No idea." She looks at the table, then away. "I went home early last night. The others stayed here eating pizza."  *(linha 411)*
-  - 📓 Diário 🇵🇹 A Rita diz que ontem foi cedo para casa, enquanto os outros comiam pizza aqui, e que não sabe onde está a pen.  *(linha 477)*
-  - 📓 Diário 🇬🇧 Rita says she went home early last night, while the others ate pizza here, and does not know where the USB stick is.  *(linha 413)*
+  - 🇵🇹 "A pen? Não faço ideia." Olha para a mesa e depois desvia o olhar. "Ontem fui cedo para casa. Os outros ficaram aqui a comer pizza."  *(linha 500)*
+  - 🇬🇧 "The USB stick? No idea." She looks at the table, then away. "I went home early last night. The others stayed here eating pizza."  *(linha 427)*
+  - 📓 Diário 🇵🇹 A Rita diz que ontem foi cedo para casa, enquanto os outros comiam pizza aqui, e que não sabe onde está a pen.  *(linha 502)*
+  - 📓 Diário 🇬🇧 Rita says she went home early last night, while the others ate pizza here, and does not know where the USB stick is.  *(linha 429)*
 - **Rita, `duarte`**
-  - 🇵🇹 "O Duarte? É... simpático. Fez a parte dele." Volta para o portátil um bocadinho depressa demais.  *(linha 479)*
-  - 🇬🇧 "Duarte? He is... fine. He did his part." She goes back to her laptop a little too quickly.  *(linha 415)*
+  - 🇵🇹 "O Duarte? É... simpático. Fez a parte dele." Volta para o portátil um bocadinho depressa demais.  *(linha 504)*
+  - 🇬🇧 "Duarte? He is... fine. He did his part." She goes back to her laptop a little too quickly.  *(linha 431)*
 - **Rita, `warned`**
-  - 🇵🇹 A Rita fica muito quieta. "Ontem à noite? Ontem à noite eu estava em casa."  *(linha 481)*
-  - 🇬🇧 Rita goes very still. "Last night? I was at home last night."  *(linha 417)*
-  - 📓 Diário 🇵🇹 A Rita diz que ontem à noite estava em casa.  *(linha 483)*
-  - 📓 Diário 🇬🇧 Rita says she was at home last night.  *(linha 419)*
+  - 🇵🇹 A Rita fica muito quieta. "Ontem à noite? Ontem à noite eu estava em casa."  *(linha 506)*
+  - 🇬🇧 Rita goes very still. "Last night? I was at home last night."  *(linha 433)*
+  - 📓 Diário 🇵🇹 A Rita diz que ontem à noite estava em casa.  *(linha 508)*
+  - 📓 Diário 🇬🇧 Rita says she was at home last night.  *(linha 435)*
 - **Tomás, `who`**
-  - 🇵🇹 "Cabelo comprido e uma camisola cor-de-rosa. Pensei que era a Rita, mas ela tinha dito que ia cedo para casa."  *(linha 486)*
-  - 🇬🇧 "Long hair and a pink jumper. I thought it was Rita, but she told us she was going home early."  *(linha 422)*
-  - 📓 Diário 🇵🇹 O Tomás viu alguém de cabelo comprido e camisola cor-de-rosa no computador 12 perto da meia-noite. Pensou que era a Rita.  *(linha 488)*
-  - 📓 Diário 🇬🇧 Tomás saw someone with long hair and a pink jumper at computer 12 near midnight. He thought it was Rita.  *(linha 424)*
+  - 🇵🇹 "Entrou alguém de capuz posto. Cabelo comprido por baixo e uma manga cor-de-rosa no rato. Pensei que era a Rita, mas ela tinha dito que ia cedo para casa."  *(linha 512)*
+  - 🇬🇧 "Someone came in with the hood up. Long hair under it, and a pink sleeve on the mouse. I thought it was Rita, but she told us she was going home early."  *(linha 439)*
+  - 📓 Diário 🇵🇹 O Tomás viu alguém entrar de capuz posto e sentar-se no computador 12 perto da meia-noite: cabelo comprido por baixo do capuz, uma manga cor-de-rosa. Pensou que era a Rita.  *(linha 514)*
+  - 📓 Diário 🇬🇧 Tomás saw someone come in with the hood up and sit at computer 12 near midnight: long hair under the hood, a pink sleeve. He thought it was Rita.  *(linha 441)*
 - **Tomás, `kind`: a resposta que leva a `msg5`**
-  - 🇵🇹 Perguntar pela mensagem 4, a que tem o nome dele  *(linha 490)*
-  - 🇬🇧 Ask about message 4, the one with his name  *(linha 426)*
+  - 🇵🇹 Perguntar pela mensagem 4, a que tem o nome dele  *(linha 516)*
+  - 🇬🇧 Ask about message 4, the one with his name  *(linha 443)*
 - **Tomás, `msg5`**
-  - 📓 Diário 🇵🇹 O Tomás não se lembra de ter escrito a mensagem 4; chegou-lhe ao telemóvel ontem à noite.  *(linha 492)*
-  - 📓 Diário 🇬🇧 Tomás does not remember writing message 4; it reached his phone last night.  *(linha 428)*
+  - 📓 Diário 🇵🇹 O Tomás não se lembra de ter escrito a mensagem 4; chegou-lhe ao telemóvel ontem à noite.  *(linha 518)*
+  - 📓 Diário 🇬🇧 Tomás does not remember writing message 4; it reached his phone last night.  *(linha 445)*
 - **Quando cede: Tomás**
-  - 🇵🇹 O Tomás lê a linha por baixo do nome dele e depois a linha cinzenta mais pequena. "Chegou ontem às 23h49. Às 23h49 eu estava aqui sentado, no computador ao lado de quem estava no computador 12. Não escrevi uma palavra." Baixa a voz. "Eu nunca enviei isto. E os slides... fui eu que fiz os slides. Os onze. Fiquei aqui até às duas na terça-feira." Roda a cadeira para a parede de vidro. "Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta."  *(linha 494)*
-  - 🇬🇧 Tomás reads the line under his name, then the small grey line beneath it. "Arrived yesterday, 11:49 pm. At 11:49 I was sitting right here, one computer away from whoever was at computer 12. I did not type a word." His voice drops. "I never sent that. And the slides... I made the slides. All eleven. I was here until two on Tuesday." He turns his chair to face the glass wall. "He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door."  *(linha 430)*
+  - 🇵🇹 O Tomás lê a linha por baixo do nome dele e depois a linha cinzenta mais pequena. "Chegou ontem às 23h49. Às 23h49 eu estava aqui sentado, no computador ao lado de quem estava no computador 12. Não escrevi uma palavra." Baixa a voz. "Eu nunca enviei isto. E os slides... fui eu que fiz os slides. Os onze. Fiquei aqui até às duas na terça-feira." Roda a cadeira para a parede de vidro. "Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta."  *(linha 520)*
+  - 🇬🇧 Tomás reads the line under his name, then the small grey line beneath it. "Arrived yesterday, 11:49 pm. At 11:49 I was sitting right here, one computer away from whoever was at computer 12. I did not type a word." His voice drops. "I never sent that. And the slides... I made the slides. All eleven. I was here until two on Tuesday." He turns his chair to face the glass wall. "He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door."  *(linha 447)*
 - **Quando cede: Rita**
-  - 🇵🇹 A Rita olha da tua prova para o ecrã e outra vez para a prova, e o sorriso desaparece. "Fui eu que o pus lá." Di-lo muito baixinho. "Ontem à noite, no computador 12. Ele precisava de um grupo com boa nota, e eu disse que sim antes de perguntar a algum de vocês." Fecha o portátil. "Diz ao professor. Eu digo-lho na cara."  *(linha 497)*
-  - 🇬🇧 Rita looks from your proof to her screen and back, and the smile goes. "I put him there." She says it very quietly. "Last night, at computer 12. He needed a group with a good grade, and I said yes before I asked any of you." She closes the laptop. "Tell the professor. I will say it to his face."  *(linha 433)*
-  - 📓 Diário 🇵🇹 A Rita confessou: acrescentou o Duarte e trocou a fotografia ontem à noite, no computador 12. Vai dizê-lo ao professor.  *(linha 499)*
-  - 📓 Diário 🇬🇧 Rita confessed: she added Duarte and swapped the photo last night, from computer 12. She will tell the professor.  *(linha 435)*
+  - 🇵🇹 A Rita olha da tua prova para o ecrã e outra vez para a prova, e o sorriso desaparece. "Fui eu que o pus lá." Di-lo muito baixinho. "Ontem à noite, no computador 12. Ele precisava de um grupo com boa nota, e eu disse que sim antes de perguntar a algum de vocês." Fecha o portátil. "Diz ao professor. Eu digo-lho na cara."  *(linha 523)*
+  - 🇬🇧 Rita looks from your proof to her screen and back, and the smile goes. "I put him there." She says it very quietly. "Last night, at computer 12. He needed a group with a good grade, and I said yes before I asked any of you." She closes the laptop. "Tell the professor. I will say it to his face."  *(linha 450)*
+  - 📓 Diário 🇵🇹 A Rita confessou: acrescentou o Duarte e trocou a fotografia ontem à noite, no computador 12. Vai dizê-lo ao professor.  *(linha 525)*
+  - 📓 Diário 🇬🇧 Rita confessed: she added Duarte and swapped the photo last night, from computer 12. She will tell the professor.  *(linha 452)*
 - **Leonor, `mine`**
-  - 🇵🇹 "A da fotografia da capa. Escrevi-a na noite em que a tirámos." A Leonor percorre o ecrã com um dedo. "As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite."  *(linha 502)*
-  - 🇬🇧 "The one about the cover photo. I wrote that the evening we took it." Leonor scrolls with one finger. "The ones from the number I did not know all arrived within minutes of each other, last night."  *(linha 438)*
-  - 📓 Diário 🇵🇹 A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.  *(linha 504)*
-  - 📓 Diário 🇬🇧 Leonor wrote the chat message about the cover photo herself.  *(linha 440)*
+  - 🇵🇹 "A da fotografia da capa. Escrevi-a na noite em que a tirámos." A Leonor percorre o ecrã com um dedo. "As do número que eu não conhecia chegaram todas com minutos de diferença, ontem à noite."  *(linha 528)*
+  - 🇬🇧 "The one about the cover photo. I wrote that the evening we took it." Leonor scrolls with one finger. "The ones from the number I did not know all arrived within minutes of each other, last night."  *(linha 455)*
+  - 📓 Diário 🇵🇹 A Leonor escreveu ela própria a mensagem do chat sobre a fotografia da capa.  *(linha 530)*
+  - 📓 Diário 🇬🇧 Leonor wrote the chat message about the cover photo herself.  *(linha 457)*
 - **Duarte, `part`**
-  - 🇵🇹 "Os slides, claro. Pergunta à Rita, ela sabe." Hesita por um segundo.  *(linha 506)*
-  - 🇬🇧 "The slides, of course. Ask Rita, she knows." He hesitates for a second.  *(linha 442)*
+  - 🇵🇹 "Os slides, claro. Pergunta à Rita, ela sabe." Hesita por um segundo.  *(linha 532)*
+  - 🇬🇧 "The slides, of course. Ask Rita, she knows." He hesitates for a second.  *(linha 459)*
+- **Leonor, `messages`**
+  - 🇵🇹 "Olha. Nem todas de desconhecidos: algumas têm nomes que eu conheço. Algumas têm data de há semanas, mas chegaram todas ontem à noite."  *(linha 536)*
+  - 🇬🇧 "Look. Not all from strangers: some are under names I know. Some are dated weeks ago, but they all arrived last night."  *(linha 463)*
+  - 📓 Diário 🇵🇹 A Leonor recebeu as mensagens falsas ontem à noite; algumas têm nomes que ela conhece.  *(linha 538)*
+  - 📓 Diário 🇬🇧 Leonor received the fake messages last night; some are under names she knows.  *(linha 465)*
+- **Audiência, afirmação 3. `messages`, certa com `leonor_messages` (professor)**
+  - 🇵🇹 "Todas entregues na mesma noite, com minutos de diferença. Uma data escreve-se. A hora de chegada, não."  *(linha 540)*
+  - 🇬🇧 "Every one delivered on the same night, within minutes of each other. A date can be typed. An arrival time cannot."  *(linha 467)*
 - **Audiência, afirmação 2. `photo`, certa com `rita_word` (professor)**
-  - 🇵🇹 "Quem a trocou diz-me o que lá estava antes: quatro pessoas. Ouço-a amanhã."  *(linha 509)*
-  - 🇬🇧 "The one who swapped it tells me what was there before: four people. I will hear her tomorrow."  *(linha 445)*
+  - 🇵🇹 "Quem a trocou diz-me o que lá estava antes: quatro pessoas. Ouço-a amanhã."  *(linha 543)*
+  - 🇬🇧 "The one who swapped it tells me what was there before: four people. I will hear her tomorrow."  *(linha 470)*
 - **Final `full_case`**
-  - 🇵🇹 Mostras o histórico da pen e as três mensagens que marcaste: uma de um número que ninguém conhecia; uma do Duarte, a contar cinco quando eram quatro; e uma com o nome do Tomás que chegou ontem à noite, dois minutos depois de a conta da Rita ter alterado a pasta partilhada. A Leonor entra com as mensagens originais, e batem certo. A Rita não espera que lhe perguntem: conta ao professor que acrescentou o nome e trocou a fotografia, porque o Duarte precisava de um grupo. O professor risca o quinto nome da lista. Amanhã apresentam os quatro, e a Rita tem muito que explicar pelo caminho.  *(linha 512)*
-  - 🇬🇧 You show the history on the USB stick and the three messages you flagged: one from a number nobody knew; one from Duarte, counting five of you when there were four; and one under Tomás's name that arrived last night, two minutes after Rita's account changed the shared folder. Leonor walks in with the original messages, and they match. Rita does not wait to be asked: she tells the professor that she added the name and swapped the photo, because Duarte needed a group. The professor crosses the fifth name off the list. Tomorrow, the four of you present, and Rita has a lot to explain on the way there.  *(linha 448)*
+  - 🇵🇹 Mostras o histórico da pen e as três mensagens que marcaste: uma de um número que ninguém conhecia; uma do Duarte, a contar cinco quando eram quatro; e uma com o nome do Tomás que chegou ontem à noite, dois minutos depois de a conta da Rita ter alterado a pasta partilhada. A Leonor entra com as mensagens originais, e batem certo. A Rita não espera que lhe perguntem: conta ao professor que acrescentou o nome e trocou a fotografia, porque o Duarte precisava de um grupo. O professor risca o quinto nome da lista. Amanhã apresentam os quatro, e a Rita tem muito que explicar pelo caminho.  *(linha 546)*
+  - 🇬🇧 You show the history on the USB stick and the three messages you flagged: one from a number nobody knew; one from Duarte, counting five of you when there were four; and one under Tomás's name that arrived last night, two minutes after Rita's account changed the shared folder. Leonor walks in with the original messages, and they match. Rita does not wait to be asked: she tells the professor that she added the name and swapped the photo, because Duarte needed a group. The professor crosses the fifth name off the list. Tomorrow, the four of you present, and Rita has a lot to explain on the way there.  *(linha 473)*
 - **Final `impostor`**
-  - 🇵🇹 Mostras o histórico da pen: quatro autores até ontem à noite, e a última alteração feita a partir da conta da Rita. A Leonor entra e entrega as mensagens que guardou: foram todas enviadas na mesma noite, com datas falsas. O professor risca o quinto nome da lista. O Duarte sai do auditório sem dizer nada, e a Rita fica a olhar para o chão. Amanhã apresentam os quatro.  *(linha 514)*
-  - 🇬🇧 You show the history on the USB stick: four authors until last night, and the last change made from Rita's account. Leonor walks in and hands over the messages she kept: they were all sent on the same night, with fake dates. The professor crosses the fifth name off the list. Duarte leaves the auditorium without a word, and Rita stares at the floor. Tomorrow, the four of you present.  *(linha 450)*
+  - 🇵🇹 Mostras o histórico da pen: quatro autores até ontem à noite, e a última alteração feita a partir da conta da Rita. A Leonor entra e entrega as mensagens que guardou: foram todas enviadas na mesma noite, com datas falsas. O professor risca o quinto nome da lista. O Duarte sai do auditório sem dizer nada, e a Rita fica a olhar para o chão. Amanhã apresentam os quatro.  *(linha 548)*
+  - 🇬🇧 You show the history on the USB stick: four authors until last night, and the last change made from Rita's account. Leonor walks in and hands over the messages she kept: they were all sent on the same night, with fake dates. The professor crosses the fifth name off the list. Duarte leaves the auditorium without a word, and Rita stares at the floor. Tomorrow, the four of you present.  *(linha 475)*
 - **Final `stolen_credits`**
-  - 🇵🇹 Mostras o histórico da pen: o trabalho original tinha quatro autores até ontem à noite. Mas o Duarte levanta o telemóvel: "Tenho mensagens de todos a provar que participei." A Rita olha para as mãos. Sem as mensagens originais, não consegues provar que são falsas. O professor suspira: "Sem provas de que as mensagens são falsas, o nome fica." Amanhã apresentam os cinco.  *(linha 516)*
-  - 🇬🇧 You show the history on the USB stick: the original work had four authors until last night. But Duarte raises his phone: "I have messages from everyone proving I took part." Rita looks down at her hands. Without the original messages, you cannot prove they are fake. The professor sighs: "Without proof that the messages are fake, the name stays." Tomorrow, the five of you present.  *(linha 452)*
+  - 🇵🇹 Mostras o histórico da pen: o trabalho original tinha quatro autores até ontem à noite. Mas o Duarte levanta o telemóvel: "Tenho mensagens de todos a provar que participei." A Rita olha para as mãos. Sem as mensagens originais, não consegues provar que são falsas. O professor suspira: "Sem provas de que as mensagens são falsas, o nome fica." Amanhã apresentam os cinco.  *(linha 550)*
+  - 🇬🇧 You show the history on the USB stick: the original work had four authors until last night. But Duarte raises his phone: "I have messages from everyone proving I took part." Rita looks down at her hands. Without the original messages, you cannot prove they are fake. The professor sighs: "Without proof that the messages are fake, the name stays." Tomorrow, the five of you present.  *(linha 477)*
 - **Final verdadeiro, a frase de quem entra (o resto do texto não muda)**
-  - 🇵🇹 A Leonor entra com o telemóvel, o Tomás com os slides e, por último, devagar, a Rita, a contar baixinho.  *(linha 519)*
-  - 🇬🇧 Leonor comes in with her phone, Tomás with his slides, and Rita last of all, slowly, counting under her breath.  *(linha 455)*
+  - 🇵🇹 A Leonor entra com o telemóvel, o Tomás com os slides e, por último, devagar, a Rita, a contar baixinho.  *(linha 553)*
+  - 🇬🇧 Leonor comes in with her phone, Tomás with his slides, and Rita last of all, slowly, counting under her breath.  *(linha 480)*
 - **Audiência, afirmação 1. `name`, certa com `rita_word` (professor; fala nova, só neste caso)**
-  - 🇵🇹 "Quem pôs lá o nome já mo disse ela própria. Continue."  *(linha 391)*
-  - 🇬🇧 "The person who put the name there has told me so herself. Go on."  *(linha 390)*
+  - 🇵🇹 "Quem pôs lá o nome já mo disse ela própria. Continue."  *(linha 407)*
+  - 🇬🇧 "The person who put the name there has told me so herself. Go on."  *(linha 406)*
 
 ## O horário da noite (em `prototypes/campus-3d/campus_clock.py` e `campus_text.py`)
 

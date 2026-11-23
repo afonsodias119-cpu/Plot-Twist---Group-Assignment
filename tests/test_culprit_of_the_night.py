@@ -121,11 +121,11 @@ TRUE_SENTENCE = {
 ACCOUNT = {"tomas": {"en": "from which account: Tomás's.", "pt": "a pasta diz de que conta: a do Tomás."},
            "rita": {"en": "from which account: Rita's.", "pt": "a pasta diz de que conta: a da Rita."}}
 SIGNS = {
-    "tomas": {"rita": {"en": "Tomás went off to the lab at half past eleven, on his own.",
-                       "pt": "O Tomás foi sozinho para a sala de informática às onze e meia."},
+    "tomas": {"rita": {"en": "Tomás went outside for some air before half past eleven, with his hood up, and he never came back.",
+                       "pt": "O Tomás foi lá para fora apanhar ar antes das onze e meia, de capuz posto, e nunca mais voltou."},
               "tomas": {"en": "I never went near computer 12.", "pt": "Nunca me aproximei do 12."}},
-    "rita": {"tomas": {"en": "Long hair and a pink jumper. I thought it was Rita, but she told us she was going home early.",
-                       "pt": "Cabelo comprido e uma camisola cor-de-rosa. Pensei que era a Rita, mas ela tinha dito que ia cedo para casa."},
+    "rita": {"tomas": {"en": "Long hair under it, and a pink sleeve on the mouse. I thought it was Rita, but she told us she was going home early.",
+                       "pt": "Cabelo comprido por baixo e uma manga cor-de-rosa no rato. Pensei que era a Rita, mas ela tinha dito que ia cedo para casa."},
              "rita": {"en": "I went home early last night.", "pt": "Ontem fui cedo para casa."}},
 }
 
