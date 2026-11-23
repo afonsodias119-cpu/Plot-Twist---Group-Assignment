@@ -77,7 +77,7 @@ SEARCH_TEXT = {
 # Server only, like the rest of this file: the page gets only the id and the name of the things of the
 # saved room (`finds` in the snapshot), and a text only when the player looks.
 FINDS = {"print_shop": ("price_list", "order_book"), "library": ("noticeboard", "returns_trolley"),
-         "computer_lab": ("lab_whiteboard", "computer7"), "auditorium": ("podium",)}
+         "computer_lab": ("lab_whiteboard", "computer7"), "auditorium": ()}   # the auditorium: only the professor (specs/professor-before-podium.md)
 # The campus minutes a look costs. Only the order book: the red herring that wastes time on purpose.
 # (campus_clock.COSTS is not used: its keys are pinned by a reviewed test.)
 FIND_MINUTES = {"order_book": 2}
@@ -98,9 +98,7 @@ FIND_TEXT = {
         "lab_whiteboard": {"name": "Whiteboard", "text": "A perfect supply and demand graph, drawn with care. Underneath, in smaller letters: help."},
         "computer7": {"name": "Computer 7",
                       "text": "Computer 7 is locked too. A sticky note on its screen: pw 2311, presentation day!!",
-                      "later": "The sticky note on computer 7 again: 2311, the day of the presentation. Someone's own computer, someone's own password. It has nothing to do with computer 12."},
-        "podium": {"name": "Podium", "text": "A note taped to the podium: maximum 10 minutes per group. No exceptions. Yes, you."},
-    },
+                      "later": "The sticky note on computer 7 again: 2311, the day of the presentation. Someone's own computer, someone's own password. It has nothing to do with computer 12."},    },
     "pt": {
         "price_list": {"name": "Tabela de preços", "text": "Uma tabela de preços plastificada. Preto e branco, 5 cêntimos. Cores, 25 cêntimos. Encadernação de tese: pedir com jeitinho. Encadernação de tese depois da meia-noite: pedir com ainda mais jeitinho."},
         "order_book": {"name": "Livro de pedidos",
@@ -111,9 +109,7 @@ FIND_TEXT = {
         "lab_whiteboard": {"name": "Quadro branco", "text": "Um gráfico de oferta e procura perfeito, desenhado com cuidado. Por baixo, em letra mais pequena: socorro."},
         "computer7": {"name": "Computador 7",
                       "text": "O computador 7 também está bloqueado. Um post-it no ecrã: pw 2311, dia da apresentação!!",
-                      "later": "Outra vez o post-it do computador 7: 2311, o dia da apresentação. O computador de alguém, a password de alguém. Não tem nada a ver com o computador 12."},
-        "podium": {"name": "Púlpito", "text": "Um papel colado no púlpito: máximo de 10 minutos por grupo. Sem exceções. Sim, tu."},
-    },
+                      "later": "Outra vez o post-it do computador 7: 2311, o dia da apresentação. O computador de alguém, a password de alguém. Não tem nada a ver com o computador 12."},    },
 }
 
 # The torn photo of the print shop (specs/torn-photo.md). photo.js draws the 9 pieces; only here is it
