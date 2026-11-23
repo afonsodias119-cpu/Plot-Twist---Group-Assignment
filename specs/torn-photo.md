@@ -1,5 +1,7 @@
 # The torn photo
 
+> **Update (specs/calendar-code.md):** the cover photo is now dated Saturday 17 October, so the code of computer 12 is `1710`, the photo's stamp says 17.10 and the slip on the shutter says 17 October. The clerk's `order` line no longer says the date.
+
 Changes how the original photo is obtained in the 3D game (specs/actions-when-they-make-sense.md made the copy appear after the clerk mentions the order). Only the 3D game changes. No change to `story.py`, `logic.py`, `db.py`, `game.py`, `app.py` or any reviewed test.
 
 ## Before writing the spec

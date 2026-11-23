@@ -16,8 +16,9 @@ SPOTS = ("papers", "notebook", "pizza_box", "pizza_slice", "napkin", "can", "mug
 # Where the USB stick is: it is one of the objects of the table.
 PEN_SPOT = "usb_stick"
 
-# The password of computer 12: the day and month the cover photo was taken (14 November).
-PC12_CODE = "1411"
+# The password of computer 12: the day and month the cover photo was taken (Saturday 17 October,
+# specs/calendar-code.md).
+PC12_CODE = "1710"
 
 # What the player finds in each spot. "nothing" is for the wrong spots; "found" is for PEN_SPOT.
 SEARCH_TEXT = {
@@ -70,6 +71,6 @@ PHOTO_PIECES = ("k", "d", "q", "a", "n", "f", "w", "h", "s")
 PHOTO_SOLUTION = ("q", "w", "a", "f", "k", "s", "d", "n", "h")
 
 PHOTO_TEXT = {
-    "en": "The last piece fits. In the original photo there are four of you, and in the corner the date stamp says 14.11. The clerk tapes the pieces together and hands you the photo.",
-    "pt": "O último pedaço encaixa. Na fotografia original estão quatro pessoas, e no canto o carimbo da data diz 14.11. A funcionária cola os pedaços com fita-cola e dá-te a fotografia.",
+    "en": "The last piece fits. In the original photo there are four of you, and in the corner the date stamp says 17.10. The clerk tapes the pieces together and hands you the photo.",
+    "pt": "O último pedaço encaixa. Na fotografia original estão quatro pessoas, e no canto o carimbo da data diz 17.10. A funcionária cola os pedaços com fita-cola e dá-te a fotografia.",
 }

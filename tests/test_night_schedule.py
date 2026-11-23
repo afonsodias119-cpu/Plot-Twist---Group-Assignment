@@ -919,7 +919,7 @@ def test_the_date_of_the_code_can_still_be_read_after_2225():
         assert study["night"]["notice"] == "", language
         shop = walk("print_shop", player, language)
         first = shop["texts"][0]
-        assert "14" in first, language   # the day of the code (14 November), on the slip
+        assert "17" in first, language   # the day of the code (17 October), on the slip
         assert shop["night"]["notice"] == first, language
     for language in ("en", "pt"):
         assert not shows(PAGE, shutter(language)), language

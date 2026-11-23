@@ -101,8 +101,8 @@ def test_the_right_code_without_the_stick_is_still_refused():
     assert saved() == before
 
 
-def test_the_code_is_1411():
-    assert search.PC12_CODE == "1411"
+def test_the_code_is_1710():
+    assert search.PC12_CODE == "1710"   # Saturday 17 October (specs/calendar-code.md)
 
 
 # ---------- nothing in the page gives the answers away ----------
@@ -132,12 +132,15 @@ def test_every_spot_has_a_label_and_a_text_in_both_languages():
         assert search.SEARCH_TEXT[language]["found"].strip()
 
 
-def test_tomas_and_the_clerk_give_the_two_halves_of_the_code():
+def test_tomas_gives_the_rule_of_the_code_and_the_clerk_no_longer_says_the_date():
+    # Changed with the team's approval (specs/calendar-code.md): the day is worked out on the calendar of
+    # computer 12, so the clerk's `order` line no longer says it. The original photo still shows it.
     for language in ("en", "pt"):
         nodes_tomas = people.PEOPLE[language]["tomas"]["nodes"]
         nodes_clerk = people.PEOPLE[language]["amelia"]["nodes"]
         assert "password" in nodes_tomas and nodes_tomas["password"]["note"]
-        assert "14" in nodes_clerk["order"]["text"] and nodes_clerk["order"]["note"]
+        assert "17" not in nodes_clerk["order"]["text"] and nodes_clerk["order"]["note"]
+        assert "17.10" in search.PHOTO_TEXT[language]
         assert "pen" in people.PEOPLE[language]["rita"]["nodes"]
     play_js = (FOLDER / "play.js").read_text(encoding="utf-8")
     assert 'action.id === "open_drawer"' in play_js and 'action.id === "view_files"' in play_js

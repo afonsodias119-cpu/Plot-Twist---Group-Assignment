@@ -91,7 +91,7 @@ def test_the_solution_and_the_rebuilt_text_are_not_in_the_page():
 def test_photo_js_draws_nine_torn_pieces_and_the_date_stamp():
     pieces = dict(re.findall(r'(\w): \[(\d, \d)\]', PHOTO_JS[PHOTO_JS.index("const PIECES = {"):PHOTO_JS.index("};", PHOTO_JS.index("const PIECES = {"))]))
     assert set(pieces) == set(search.PHOTO_PIECES) and len(set(pieces.values())) == 9
-    assert "14.11.2026" in PHOTO_JS
+    assert "17.10.2026" in PHOTO_JS
     assert "submit" in PHOTO_JS and "send(" not in PHOTO_JS   # it only draws; play.js talks to the server
 
 
@@ -105,7 +105,7 @@ def test_the_texts_exist_in_both_languages():
     for language in ("pt", "en"):
         for key in ("photo_intro", "photo_title", "photo_hint", "photo_wrong", "photo_close"):
             assert TEXT[language][key].strip()
-        assert search.PHOTO_TEXT[language].strip() and "14.11" in search.PHOTO_TEXT[language]
+        assert search.PHOTO_TEXT[language].strip() and "17.10" in search.PHOTO_TEXT[language]
 
 
 def test_the_page_carries_photo_js():

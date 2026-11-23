@@ -41,7 +41,7 @@
                     extra: `<rect x="-24" y="152" width="48" height="12" rx="6" fill="#8a2f2f"/><rect x="8" y="160" width="10" height="34" rx="4" fill="#8a2f2f"/>` }) +
       person(445, { top: "#2251a8", legs: "#6b7178", hair: `<path d="M-27 112 Q -28 88 0 88 Q 28 88 27 112 L 24 100 L -24 100 Z" fill="#1d1d1d"/>`,
                     extra: `<circle cx="-9" cy="118" r="8" fill="none" stroke="#1d1d1d" stroke-width="2.5"/><circle cx="9" cy="118" r="8" fill="none" stroke="#1d1d1d" stroke-width="2.5"/><path d="M-1 118 L 1 118" stroke="#1d1d1d" stroke-width="2.5"/>` });
-    const stamp = `<text x="${PW - 18}" y="${PH - 16}" text-anchor="end" font-family="'Courier New', monospace" font-weight="700" font-size="24" fill="#ff8a1f" stroke="#ff8a1f55" stroke-width="3" paint-order="stroke">14.11.2026</text>`;
+    const stamp = `<text x="${PW - 18}" y="${PH - 16}" text-anchor="end" font-family="'Courier New', monospace" font-weight="700" font-size="24" fill="#ff8a1f" stroke="#ff8a1f55" stroke-width="3" paint-order="stroke">17.10.2026</text>`;
     return `<g id="photo-art">${sea}${people}${stamp}<rect x="3" y="3" width="${PW - 6}" height="${PH - 6}" fill="none" stroke="#f6f3ec" stroke-width="7"/></g>`;
   }
 
