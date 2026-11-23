@@ -94,6 +94,14 @@ Branch `grading-fixes`, feito depois de comparar o projeto com a grelha da pági
 
 Verificado: todos os testes a passar com o Streamlit 1.67, mais `tests/continuous-conversations.cjs`; o jogo jogado no browser (inglês e português, computador e telemóvel): nome inválido, nome de outro browser recusado, o dono continua, 3D e código QR carregados com os hashes. Nota: o primeiro pedido depois de o servidor arrancar demora 8 a 15 segundos (já acontecia na main) — abrir o jogo e começar uma vez antes da apresentação.
 
+### Pronto para a demo — 23/11/2026
+
+Branch `demo-ready`:
+
+- **O primeiro clique já não falha** (`specs/warm-start.md`): o Python responde em menos de 0,1 s, mas a primeira ida e volta pelo Streamlit depois de o servidor arrancar demorava cerca de 2 s, e enquanto o 3D carrega a página responde tarde (medido: 8,5 a 14,7 s no primeiro "Começar"; a ponte desistia aos 20 s). Agora a ponte acorda o servidor logo que a página abre (`{"warmup": true}`, respondido por `campus_game.keyed_command` sem nome, sem chave e sem gravar nada) e espera até 60 s. Medido depois: com o servidor acabado de arrancar, "Começar" respondeu em 0,4 s.
+- **Testes no GitHub** (`specs/tests-on-github.md`): `.github/workflows/tests.yml` corre o pytest e as verificações do JavaScript em cada push e pull request; o README mostra o selo "Tests" da `main`.
+- **README:** um diagrama de um clique, da página à base de dados e de volta.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

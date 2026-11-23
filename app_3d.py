@@ -95,7 +95,8 @@ BRIDGE = """<script>
       return new Promise((resolve, reject) => {
         const id = ++counter, who = nameOf(payload);
         pending.set(id, { resolve, reject, who });
-        setTimeout(() => { if (pending.delete(id)) reject(new TypeError("timeout")); }, 20000);
+        // 60 s: the first command after the app wakes up can be slow (specs/warm-start.md, point 2).
+        setTimeout(() => { if (pending.delete(id)) reject(new TypeError("timeout")); }, 60000);
         const key = keyFor(who);
         const sent = key ? Object.assign({}, payload, { key }) : payload;
         post({ type: "streamlit:setComponentValue", dataType: "json", value: { id, payload: sent } });
@@ -103,6 +104,8 @@ BRIDGE = """<script>
     },
   };
   post({ type: "streamlit:componentReady", apiVersion: 1 });
+  // Wake the server up now, while the player reads the case: its answer is not shown (specs/warm-start.md).
+  window.campusBridge.call({ warmup: true }).catch(() => {});
   fitHeight();
   window.addEventListener("resize", fitHeight);
 })();

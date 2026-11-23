@@ -1,5 +1,7 @@
 # Plot Twist
 
+[![Tests](https://github.com/afonsodias119-cpu/Plot-Twist---Group-Assignment/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/afonsodias119-cpu/Plot-Twist---Group-Assignment/actions/workflows/tests.yml)
+
 A short mystery game where clues unlock paths and choices change the ending.
 Team project for Introduction to Programming, Nova SBE 2026/27.
 
@@ -32,6 +34,22 @@ The plain version without 3D is `app.py`.
 The 3D game is a web page inside Streamlit. The page draws the campus and sends one small command per action
 (`{"operation": "talk", "player": …}`); Python checks it, applies the rules, saves, and sends back what the
 page should show. The browser never decides anything: answers, codes and the culprit stay on the server.
+
+One click, from the page to the database and back:
+
+```mermaid
+flowchart LR
+    A["play.js<br/>(the 3D page)"] -->|"command + name"| B["bridge in app_3d.py<br/>adds this browser's key"]
+    B --> C["campus_game.keyed_command<br/>is the name this browser's?"]
+    C -->|"yes"| D["campus_game.command<br/>allowed fields, types, clock"]
+    C -->|"no"| X["refused:<br/>name taken"]
+    D --> E["game.py<br/>one turn"]
+    E --> F["logic.py<br/>the rules"]
+    E --> G[("db.py<br/>SQLite")]
+    D -->|"what to show"| A
+```
+
+The tests run on GitHub on every push and pull request (`.github/workflows/tests.yml`); the badge at the top shows the result for `main`.
 
 | Part | Where | What it does |
 |---|---|---|

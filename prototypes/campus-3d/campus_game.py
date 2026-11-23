@@ -824,13 +824,23 @@ def command(payload):
     return told
 
 
+# What the bridge sends when the page opens, so Streamlit's first round trip happens while the
+# player reads the case, not on the first click (specs/warm-start.md).
+WARMUP = {"warmup": True}
+
+
 def keyed_command(payload):
     """command() for the published app: a name answers only to the browser that started it.
 
     The page's bridge adds `key` to every request (specs/name-belongs-to-browser.md, points 3 and 5).
     The key is taken out first, so command() and its allowed fields stay exactly as before.
     Returns (reply, key): the key goes back to the bridge, which keeps it for that name.
+    The bridge's warm-up when the page opens is answered at once, with nothing read or saved
+    (specs/warm-start.md, point 1).
     """
+    # `is True`, not `==`: in Python 1 == True, and {"warmup": 1} must be refused like any bad request.
+    if isinstance(payload, dict) and set(payload) == set(WARMUP) and payload["warmup"] is True:
+        return {"warm": True}, ""
     if not isinstance(payload, dict):
         return command(payload), ""   # command() refuses it with the usual message
     request = {field: value for field, value in payload.items() if field != "key"}
