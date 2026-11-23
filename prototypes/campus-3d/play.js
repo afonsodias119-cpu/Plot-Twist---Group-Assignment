@@ -925,6 +925,14 @@
       });
       return button;
     });
+    // At computer 12, before the files: ask the people around what they remember of the day of the photo
+    // (specs/calendar-code.md). Asked once in each conversation.
+    if (line.npc === "computer12" && (line.actions || []).some(action => action.id === "view_files") && !asked.has("group_photo")) {
+      const button = make("button", t.group_ask, "answer");
+      button.dataset.group = "photo";
+      button.addEventListener("click", () => askGroup(button));
+      answers.unshift(button);
+    }
     // What can be done by talking to this person (ask for the copy, take the decision...): choices inside the conversation.
     // They look like any other answer and come after the questions (specs/actions-when-they-make-sense.md).
     const doing = make("div", undefined, "actions investigate talk-actions");
@@ -996,8 +1004,49 @@
       toast(error.name === "Error" ? error.message : ui().network_error);
     } finally { setBusy(false); }
   }
-  // ---------- the code of computer 12 (specs/pen-and-code.md) ----------
-  // A small field for 4 digits replaces the answers. The server checks the code; a wrong one costs 1 minute.
+  // ---------- computer 12: the group remembers the day, the phone checks it (specs/calendar-code.md) ----------
+  // The code is the day and the month of the cover photo. Nobody says it: at computer 12 the player asks
+  // the people around what they remember. Tomás is in the lab; Rita and Leonor are there when they came
+  // along (the server's `followers`). Each remembers one thing; the Weather and Calendar apps of the phone
+  // turn those memories into one day. The code is typed in the usual 4-digit field and checked by the server.
+  const HELPER_NAMES = { tomas: "Tomás", rita: "Rita", leonor: "Leonor" };
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  function addHelper(who, text) {   // a line of the group: a speech bubble with the name of who says it
+    $("talk-log").querySelector(".typing")?.remove();
+    const bubble = make("div", undefined, "bubble them helper");
+    bubble.append(make("b", HELPER_NAMES[who], "helper-name"), make("p", text), make("time", campusTime()));
+    $("talk-log").append(bubble);
+    $("talk-log").scrollTop = $("talk-log").scrollHeight;
+  }
+  function helpersHere() {   // Tomás when he is in the room, and whoever came along
+    const helpers = [];
+    if (current.people.some(person => person.id === "tomas")) helpers.push("tomas");
+    for (const id of current.followers?.ids || []) if (HELPER_NAMES[id]) helpers.push(id);
+    return helpers;
+  }
+  // A live conversation: the question, then each person answers in turn, with the typing dots in between.
+  async function askGroup(button) {
+    const t = ui(), card = talking;
+    asked.add("group_photo");
+    button.remove();
+    addBubble(t.group_ask, "me");
+    const helpers = helpersHere();
+    if (canSpeak && !sound.isMuted()) { stopSpeaking(); say(helpers.map(who => [t.group_clues[who], who])); }
+    for (const who of helpers) {
+      showTyping();
+      await wait(1100);
+      if (talking !== card) return;   // the conversation was closed meanwhile
+      addHelper(who, t.group_clues[who]);
+      sound.talk();
+    }
+    if (helpers.length < 3) addSaid(t.group_alone);
+    addSaid(t.group_phone);
+  }
+  // The 4-digit field. A wrong code costs 2 minutes; after 3 wrong codes a line points to the date stamp
+  // on the original photo. The wrong codes are counted in this browser for this name and this night.
+  const wrongKey = () => `plot-twist-wrong-codes:${current?.player || ""}:${current?.memory?.night || 1}`;
+  function readWrong() { try { return Number(localStorage.getItem(wrongKey())) || 0; } catch (error) { return 0; } }
+  function saveWrong(n) { try { localStorage.setItem(wrongKey(), String(n)); } catch (error) { /* no storage */ } }
   function askCode(line) {
     const t = ui();
     const form = make("form", undefined, "code-form");
@@ -1005,7 +1054,7 @@
     Object.assign(input, { inputMode: "numeric", maxLength: 4, autocomplete: "off", placeholder: "• • • •" });
     input.setAttribute("aria-label", t.code_label);
     const unlock = make("button", t.code_unlock); unlock.type = "submit";
-    form.append(input, unlock);   // to give up, "End conversation" in the header
+    form.append(input, unlock, make("p", t.code_cost, "muted code-cost"));   // to give up, "End conversation" in the header
     form.addEventListener("submit", async event => {
       event.preventDefault();
       const code = input.value.trim();
@@ -1016,7 +1065,10 @@
       if (!await send("unlock", { code })) { $("talk-log").querySelector(".typing")?.remove(); return; }
       if (!current.unlocked) {   // wrong code: the computer stays locked, and it costs time
         addSaid(current.message);
-        penalize(1, t.time_penalty_code);
+        penalize(2, t.time_penalty_code);
+        const wrong = readWrong() + 1;
+        saveWrong(wrong);
+        if (wrong === 3) addSaid(t.code_hint);
         input.value = ""; input.focus();
         return;
       }
@@ -1810,19 +1862,63 @@
     }
   }
 
+  // ---------- the Weather and Calendar apps: October 2026, the month of the photo (specs/calendar-code.md) ----------
+  // Only facts about the month, no answer: the group's memories at computer 12 say which facts matter.
+  // October is over (tonight is in November), so the whole month is there.
+  const MONTH = 9;   // October, as JavaScript counts months (January is 0)
+  const WEATHER = { 1: "sun", 2: "cloud", 3: "sun", 4: "rain", 5: "cloud", 6: "sun", 7: "rain", 8: "rain", 9: "cloud", 10: "sun", 11: "cloud",
+                    12: "sun", 13: "rain", 14: "cloud", 15: "rain", 16: "cloud", 17: "sun", 18: "sun", 19: "rain", 20: "cloud", 21: "sun",
+                    22: "rain", 23: "cloud", 24: "rain", 25: "cloud", 26: "sun", 27: "rain", 28: "cloud", 29: "sun", 30: "rain", 31: "cloud" };
+  const WEATHER_ICON = { sun: "☀️", cloud: "☁️", rain: "🌧️" };
+  const WEATHER_TEMP = { sun: 19, cloud: 16, rain: 14 };
+  function drawWeather(screen, t) {
+    screen.append(make("p", t.weather_place, "muted weather-place"));
+    const list = make("ol", undefined, "weather-list");
+    for (const [day, kind] of Object.entries(WEATHER)) {
+      const weekday = t.calendar_weekdays[(new Date(2026, MONTH, Number(day)).getDay() + 6) % 7];
+      const row = make("li", undefined, `weather-day ${kind}`);
+      row.append(make("span", `${weekday} ${day}`, "weather-date"), make("span", WEATHER_ICON[kind], "weather-icon"),
+                 make("span", t.weather_kinds[kind], "weather-kind"), make("span", `${WEATHER_TEMP[kind] + (Number(day) % 3)}°`, "weather-temp"));
+      row.setAttribute("aria-label", `${weekday} ${day}: ${t.weather_kinds[kind]}`);
+      list.append(row);
+    }
+    screen.append(list);
+  }
+  function drawCalendar(screen, t) {
+    const grid = make("div", undefined, "phone-calendar");
+    for (const day of t.calendar_weekdays) grid.append(make("span", day, "calendar-weekday"));
+    const offset = (new Date(2026, MONTH, 1).getDay() + 6) % 7;   // October 2026 starts on a Thursday (Monday is the first column)
+    for (let i = 0; i < offset; i++) grid.append(make("span", "", "calendar-empty"));
+    for (let day = 1; day <= 31; day++) {
+      const cell = make("span", String(day), "calendar-day");
+      if (t.calendar_events[day]) cell.classList.add("has-event");
+      grid.append(cell);
+    }
+    const events = make("ul", undefined, "calendar-events");
+    for (const [day, text] of Object.entries(t.calendar_events)) {
+      const weekday = t.calendar_weekdays[(new Date(2026, MONTH, Number(day)).getDay() + 6) % 7];
+      const item = make("li");
+      item.append(make("b", `${weekday} ${day}`), make("span", text));
+      events.append(item);
+    }
+    screen.append(grid, events);
+  }
+
   function showPhone(view) {
     const t = ui(), screen = $("phone-screen");
     $("phone-back").hidden = view === "home";
     $("phone-back").textContent = `‹ ${t.phone_home}`;
     $("phone-close").setAttribute("aria-label", t.phone_close);
-    $("phone-title").textContent = view === "map" ? t.map_title : view === "todo" ? t.todo_title : view === "diary" ? t.diary_title : view === "msgs" ? t.msgs_title : t.phone;
+    $("phone-title").textContent = { map: t.map_title, todo: t.todo_title, diary: t.diary_title, msgs: t.msgs_title,
+                                     weather: t.weather_title, calendar: t.calendar_title }[view] || t.phone;
     screen.replaceChildren();
     if (view === "home") {
       const { done, total } = clueCount();
       const grid = make("div", undefined, "app-grid");
       for (const [id, icon, label, badge] of [["map", "📍", t.app_map, ""], ["todo", "✅", t.app_todo, `${done}/${total}`],
                                               ["diary", "📔", t.app_diary, String((current?.notebook || []).length + loadDiary().length)],
-                                              ["msgs", "💬", t.app_msgs, unreadMsgs() ? String(unreadMsgs()) : ""]]) {
+                                              ["msgs", "💬", t.app_msgs, unreadMsgs() ? String(unreadMsgs()) : ""],
+                                              ["weather", "🌦️", t.app_weather, ""], ["calendar", "📅", t.app_calendar, ""]]) {
         const app = make("button", undefined, "app-icon");
         app.dataset.app = id;
         app.append(make("span", icon, "app-glyph"), make("span", label, "app-name"));
@@ -1834,6 +1930,8 @@
     } else if (view === "map") drawMap(screen, t);
     else if (view === "diary") drawDiary(screen, t);
     else if (view === "msgs") drawMsgs(screen, t);
+    else if (view === "weather") drawWeather(screen, t);
+    else if (view === "calendar") drawCalendar(screen, t);
     else drawTodo(screen, t);
     (view === "home" ? screen.querySelector("button") : $("phone-back")).focus();
   }

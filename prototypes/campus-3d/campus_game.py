@@ -3,7 +3,7 @@
 import db
 import game
 import logic
-from campus_people import ACTION_PERSON, ROOM_OF_PERSON, people_in_room, room_of_scene, talk
+from campus_people import ACTION_PERSON, ROOM_OF_PERSON, followers, people_in_room, room_of_scene, talk
 from campus_text import TEXT
 # Evidence cards, confrontations and the hearing (specs/evidence-and-hearing.md). The answers stay on
 # the server: campus_case.py is read only by campus_evidence.py and campus_memory.py.
@@ -352,6 +352,9 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         # The 3D room where the saved scene takes place (the group chat happens in the computer lab).
         "room": room_of_scene(state["scene"]),
         "people": people_in_room(state["scene"], state, language, gone),
+        # Who walks with the player, and whether they already wait at computer 12 (specs/calendar-code.md).
+        "followers": {"ids": followers(state),
+                      "at_lab": state["flags"]["files_viewed"] or room_of_scene(state["scene"]) == "computer_lab"},
         "clock": clock_text(state),   # the old time from progress, kept for the reviewed tests; not shown
         # The campus minute and the schedule (specs/night-schedule.md, point 10).
         "night": night_view(state, night, language, charged, memory["night"]),

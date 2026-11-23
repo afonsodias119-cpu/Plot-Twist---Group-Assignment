@@ -1058,6 +1058,8 @@ function placeNpc(look, x, z, angle, name, y = 0, id = "") {
   n.userData.id = id;
   n.position.set(x, y, z); n.rotation.y = angle; scene.add(n);
   block(x, z, 0.6, 0.6);
+  n.userData.collider = colliders[colliders.length - 1];   // moved away while the person follows you
+  n.userData.home = { x, z, angle };
   n.userData.sign = label(name, x, y + 2.35, z, "small");
   n.userData.baseAngle = angle;
   npcs.push(n);
@@ -1241,6 +1243,69 @@ function showSchedule(state) {
   duarte.userData.sign.position.set(spot.x, 2.35, spot.z);
 }
 
+// ---- the people who come with you (specs/calendar-code.md) ----
+// Rita (once the USB stick is found) and Leonor (once she helps) walk along the path the character took,
+// a few steps behind, so they never cut through a wall. Once the saved room is the computer lab (or the files
+// were seen) they wait beside computer 12, where they help with the date. This is only a picture: the server
+// decides who follows (`followers` in the snapshot), and nothing about it is saved.
+const trail = [];   // the character's recent positions, the newest last
+const TRAIL_STEP = 0.3, TRAIL_GAP = 5;   // a point every 30 cm; each follower is 5 points (1.5 m) behind the one before
+const LAB_SPOTS = { rita: { x: -0.55, z: 9.9 }, leonor: { x: -1.25, z: 11.0 } };   // beside desk 6, facing computer 12
+const PARKED = { minX: 999, maxX: 999, minZ: 999, maxZ: 999 };
+function followerList() {
+  const f = window.campusState?.followers;
+  return f && !window.campusState.ending ? f : { ids: [], at_lab: false };
+}
+function moveCollider(n, x, z) {   // the follower's small box goes with it, or away while it walks
+  const c = n.userData.collider;
+  if (!c) return;
+  if (x === null) { Object.assign(c, PARKED); return; }
+  Object.assign(c, { minX: x - 0.3, maxX: x + 0.3, minZ: z - 0.3, maxZ: z + 0.3 });
+}
+function updateFollowers(dt, t) {
+  const last = trail[trail.length - 1];
+  if (!last || Math.hypot(player.position.x - last.x, player.position.z - last.z) > TRAIL_STEP) {
+    trail.push({ x: player.position.x, z: player.position.z });
+    if (trail.length > 60) trail.shift();
+  }
+  const { ids, at_lab } = followerList();
+  for (const id of ["rita", "leonor"]) {
+    const n = npcs.find(m => m.userData.id === id);
+    if (!n) continue;
+    const order = ids.indexOf(id), home = n.userData.home;
+    let target, walking = false;
+    if (order < 0) {   // not following: in its own place
+      target = home;
+      if (Math.hypot(n.position.x - home.x, n.position.z - home.z) > 0.01) { n.position.set(home.x, 0, home.z); n.userData.baseAngle = home.angle; moveCollider(n, home.x, home.z); }
+    } else if (at_lab) {   // waiting beside computer 12
+      target = LAB_SPOTS[id];
+      const lab = ROOMS.find(r => r.id === "computer_lab");
+      const inLab = n.position.x > lab.minX && n.position.x < lab.maxX && n.position.z > lab.minZ && n.position.z < lab.maxZ;
+      if (!inLab) n.position.set(target.x, 0, target.z);   // came in by a button: just there
+      n.userData.baseAngle = Math.atan2(USABLE[0].x - target.x, USABLE[0].z - target.z);
+      moveCollider(n, target.x, target.z);
+    } else {   // a few steps behind, on the character's own path
+      const point = trail[Math.max(0, trail.length - 1 - TRAIL_GAP * (order + 1))];
+      target = point;
+      if (Math.hypot(n.position.x - player.position.x, n.position.z - player.position.z) > 9) {   // the character jumped (a button, a reload)
+        trail.length = 0; trail.push({ x: player.position.x, z: player.position.z });
+        n.position.set(player.position.x - 0.8 * (order + 1), 0, player.position.z + 0.6);
+      }
+      moveCollider(n, null);
+    }
+    const ddx = target.x - n.position.x, ddz = target.z - n.position.z, d = Math.hypot(ddx, ddz);
+    if (d > 0.05) {
+      const step = Math.min(d, SPEED * 1.05 * dt);
+      n.position.x += ddx / d * step; n.position.z += ddz / d * step;
+      walking = d > 0.2;
+      if (walking) n.userData.baseAngle = Math.atan2(ddx, ddz);
+    }
+    n.userData.walking = walking;
+    n.userData.walk = (n.userData.walk || 0) + (walking ? dt * 9 : 0);
+    n.userData.sign.position.set(n.position.x, 2.35, n.position.z);
+  }
+}
+
 // Position the character after an accepted server response: outside for a new game, otherwise in the saved room.
 let savedScene = null, placedOutside = false;   // placedOutside: the character was already put outside for this game
 function syncCampus() {
@@ -1395,11 +1460,12 @@ function loop() {
   ring.position.set(player.position.x, 0.012, player.position.z);
   ring.material.opacity = 0.4 + Math.sin(t * 3) * 0.15;
 
+  updateFollowers(dt, t);   // Rita and Leonor, when they come with you
   // the others turn towards you when you come close
   for (const [i, n] of npcs.entries()) {
-    animatePerson(n, t + i, 0, 0);
+    animatePerson(n, t + i, n.userData.walking ? 1 : 0, n.userData.walk || 0);
     const ddx = player.position.x - n.position.x, ddz = player.position.z - n.position.z;
-    const want = Math.hypot(ddx, ddz) < 4.5 ? Math.atan2(ddx, ddz) : n.userData.baseAngle;
+    const want = !n.userData.walking && Math.hypot(ddx, ddz) < 4.5 ? Math.atan2(ddx, ddz) : n.userData.baseAngle;
     n.rotation.y += Math.atan2(Math.sin(want - n.rotation.y), Math.cos(want - n.rotation.y)) * Math.min(1, dt * 3);
   }
 

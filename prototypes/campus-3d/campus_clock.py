@@ -15,7 +15,7 @@ never changes a rule.
 COSTS = {"request_copy": 0.5, "ask_for_help": 1, "accuse": 1, "view_files": 1,
          "card_right": 0, "card_wrong": 2, "card_duarte": 1, "caught": 3}
 # Campus minutes the page takes off by itself, as before, and reports with `time`.
-PAGE_COSTS = {"rude_answer": 5, "wrong_spot": 1, "wrong_code": 1}
+PAGE_COSTS = {"rude_answer": 5, "wrong_spot": 1, "wrong_code": 2}   # a wrong date on the calendar: 2 (specs/calendar-code.md)
 NIGHT_MINUTES = 30
 # The minute at which each person leaves by the schedule: 22:25 and 22:30 (point 5).
 LEAVES = {"amelia": 10, "leonor": 15}
@@ -32,8 +32,8 @@ START = 22 * 60 + 15
 # The clerk's schedule sentence (design-notes/texts-2-schedule.md, A1). The slip on the shutter gives
 # the date of the code a second source, so it must never reach the page source.
 SHUTTER = {
-    "en": "The shutter is down and the counter is dark. The clerk went home at 22:25. A slip is taped to the shutter: cover photo, order of 14 November, collect tomorrow.",
-    "pt": "A grade está descida e o balcão às escuras. A funcionária foi para casa às 22:25. Há um papel colado na grade: fotografia da capa, pedido de 14 de novembro, levantar amanhã.",
+    "en": "The shutter is down and the counter is dark. The clerk went home at 22:25. A slip is taped to the shutter: cover photo, order of 17 October, collect tomorrow.",
+    "pt": "A grade está descida e o balcão às escuras. A funcionária foi para casa às 22:25. Há um papel colado na grade: fotografia da capa, pedido de 17 de outubro, levantar amanhã.",
 }
 
 
