@@ -1815,6 +1815,14 @@ function loop() {
       const d = Math.hypot(player.position.x - o.x, player.position.z - o.z);
       if (d < nearDistance) { nearDistance = d; near = o.id; }
     }
+    // The study room's table, while the USB stick is still to be found (specs/table-hint-and-guard-check.md):
+    // the distance is to its nearest edge (the table is 3.2 m by 1.5 m, centred at x 0, z -8), and it counts
+    // within 1 m. A person nearer than that edge still comes first.
+    if (canSearch()) {
+      const edgeX = Math.max(Math.abs(player.position.x) - 1.6, 0), edgeZ = Math.max(Math.abs(player.position.z + 8) - 0.75, 0);
+      const d = Math.hypot(edgeX, edgeZ);
+      if (d < 1 && d < nearDistance) { nearDistance = d; near = "table"; }
+    }
   }
   if (near !== window.campusNear) { window.campusNear = near; window.dispatchEvent(new Event("campus-near")); }
 
