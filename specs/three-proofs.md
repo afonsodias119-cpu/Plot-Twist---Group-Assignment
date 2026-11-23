@@ -40,10 +40,11 @@ To be approved by the team in the review of the pull request (they change what t
 
 - `tests/test_base_game.py`: the paths no longer accuse; a path without the backup ends in `stolen_credits`; the auditorium always opens; the reachable endings are two.
 - `tests/test_smoke.py`: the blocked click is now `ask_for_help` outside the library (the auditorium is never blocked).
-- `tests/test_campus_3d.py`, `tests/test_campus_people.py` (Leonor stays after helping; the clock), `tests/test_actions_when_they_make_sense.py`, `tests/test_harder_campus.py`, `tests/test_trust_has_consequences.py`: no `accuse`.
+- `tests/test_campus_3d.py`, `tests/test_campus_people.py` (Leonor stays after helping; the clock; after the merge with specs/night-and-clues.md, `test_phone_texts_exist_in_both_languages` has no label for Leonor), `tests/test_actions_when_they_make_sense.py`, `tests/test_harder_campus.py`, `tests/test_trust_has_consequences.py`: no `accuse`.
 - `tests/test_evidence_and_hearing.py`: the verdict line `missing` in both languages; any wrong answer gives Stolen credit; a catch costs time but not the ending; the damaged-notes and no-photo tests use a night without the photo.
 - `tests/test_earlier_nights.py`: two story endings; `memory` without `open` and `over`; no dare; the eight tests of the true ending are **deleted** and replaced by `test_there_is_no_true_ending_any_more`; three notices; no `night_done`.
 - `tests/test_night_schedule.py`: no `accuse` cost or decision; Leonor is not a clue row and her leaving is not `lost`; the auditorium opens without any proof (the old "still needs the old files" and "lost photo locks" tests are rewritten); route 1 gets the code but not the backup (Stolen credit); the endings test asks for two endings; the verdict `missing`; three notices and no `map_locked`; the door note is gone.
+- After the merge with specs/night-and-clues.md: `tests/test_night_and_clues.py` (Afonso): no "accuse" among the wrong choices, and the clues are three (no Leonor). `tests/test_night_schedule.py`: the charge test uses a wrong card instead of accusing; a night that says nothing still saves "full_case" as the story's own ending; the balance limits are measured again.
 - `tests/test_your_own_group.py`: the impostor night becomes a night without the backup; the true night is gone; the endings name nobody of the group.
 
 ## Done when

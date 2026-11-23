@@ -5,7 +5,7 @@ unknown number and of the true ending are in campus_case.py. Both are server onl
 import this file, so the page never sees what a name has seen or what the number will say.
 
 Reading writes nothing. A row is added only by `record`, which is called by the command that ends a
-night (the verdict, a direct present_evidence, or 22:45), and the note `run` of tonight's notes
+night (the verdict, a direct present_evidence, or 23:00), and the note `run` of tonight's notes
 (campus_evidence.read_night) says it was written, so a reload cannot write it again (point 2).
 """
 
@@ -16,7 +16,7 @@ from story import STORIES
 
 # The story's endings, in the order of its list: the order of `seen` (point 3).
 STORY_ENDINGS = [ending["id"] for ending in STORIES["en"]["endings"]]
-# The row of a night that reached 22:45 with no ending (point 2): it counts, and it opens nothing.
+# The row of a night that reached 23:00 with no ending (point 2): it counts, and it opens nothing.
 TIME_UP = "time_up"
 # From this night on, the three round warnings are the unknown number's whisper (point 4).
 ROUND_WHISPER_NIGHT = 3
@@ -40,7 +40,7 @@ def number_of(runs, night):
 def seen_in(runs):
     """The story endings among these rows, each once, in the order of the story's list.
 
-    A night that ended at 22:45 (TIME_UP) or in the true ending is not a story ending.
+    A night that ended at 23:00 (TIME_UP) or in the true ending is not a story ending.
     """
     return [ending for ending in STORY_ENDINGS if ending in runs]
 

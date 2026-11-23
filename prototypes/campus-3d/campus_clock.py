@@ -1,13 +1,11 @@
-"""The night's clock of the 3D game (specs/night-schedule.md): what costs campus minutes, when the
-clerk and Leonor leave, and when Duarte does his rounds. Rules and numbers.
+"""The night's clock of the 3D game (specs/night-schedule.md): what costs campus minutes, when
+Leonor leaves, and when Duarte does his rounds. Rules and numbers.
 
-SERVER ONLY (point 5): this file is never put in the page (page3d.py does not import it). Its only
-text is the clerk's schedule sentence, SHUTTER, because it names the date of the code of computer 12.
-Every other text of the schedule is in campus_text.py.
+SERVER ONLY (point 5): this file is never put in the page (page3d.py does not import it). The texts
+of the schedule are in campus_text.py.
 
-The campus minute goes from 0 (22:15) to 30 (22:45). It is a whole number or a whole number and a
-half: only the copy costs half a minute (point 1). Every mark below is a whole minute, so a half
-never changes a rule.
+The campus minute goes from 0 (22:30) to 30 (23:00) (specs/night-and-clues.md). Only wrong choices
+cost minutes: finding a clue never does. Every mark below is a whole minute.
 
 At the end, the day of the case (specs/case-of-the-day.md): which case a date gives.
 """
@@ -15,35 +13,28 @@ At the end, the day of the case (specs/case-of-the-day.md): which case a date gi
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-# Campus minutes charged by the server (point 2): an accepted story action, a card, being caught.
-# The copy costs half a minute because the torn photo already takes its own real time (point 13).
-COSTS = {"request_copy": 0.5, "ask_for_help": 1, "view_files": 1,
+# Campus minutes charged by the server (point 2). Only the wrong choices cost time
+# (specs/night-and-clues.md): the copy of the photo, asking Leonor for help and computer 12 are free.
+COSTS = {"request_copy": 0, "ask_for_help": 0, "view_files": 0,
          "card_right": 0, "card_wrong": 2, "card_duarte": 1, "caught": 3}
 # Campus minutes the page takes off by itself, as before, and reports with `time`.
 PAGE_COSTS = {"rude_answer": 5, "wrong_spot": 1, "wrong_code": 2}   # a wrong date on the calendar: 2 (specs/calendar-code.md)
 NIGHT_MINUTES = 30
-# The minute at which each person leaves by the schedule: 22:25 and 22:30 (point 5).
-LEAVES = {"amelia": 10, "leonor": 15}
-# The unknown number warns this many minutes before a person leaves: `shop` from minute 5 to 9,
-# `leonor` from minute 10 to 14 (point 7).
+# The minute at which a person leaves by the schedule: Leonor at 22:45, while undecided (point 5).
+# The print shop no longer closes (specs/night-and-clues.md): the clerk stays all night.
+LEAVES = {"leonor": 15}
+# The unknown number warns this many minutes before Leonor leaves: from minute 10 to 14 (point 7).
 WARNING = 5
-# Duarte's rounds: 22:27, 22:34, 22:41 (point 8).
+# Duarte's rounds: 22:42, 22:49, 22:56 (point 8).
 ROUNDS = (12, 19, 26)
 # The minutes the page must report (point 4): a warning, a departure, a round and the minute after it, the end.
-MARKS = (5, 10, 11, 12, 13, 15, 18, 19, 20, 25, 26, 27, 30)
-# Minute 0 is 22:15, in minutes after midnight.
-START = 22 * 60 + 15
-
-# The clerk's schedule sentence (design-notes/texts-2-schedule.md, A1). The slip on the shutter gives
-# the date of the code a second source, so it must never reach the page source.
-SHUTTER = {
-    "en": "The shutter is down and the counter is dark. The clerk went home at 22:25. A slip is taped to the shutter: cover photo, order of 17 October, collect tomorrow.",
-    "pt": "A grade está descida e o balcão às escuras. A funcionária foi para casa às 22:25. Há um papel colado na grade: fotografia da capa, pedido de 17 de outubro, levantar amanhã.",
-}
+MARKS = (10, 11, 12, 13, 15, 18, 19, 20, 25, 26, 27, 30)
+# Minute 0 is 22:30, in minutes after midnight.
+START = 22 * 60 + 30
 
 
 def time_text(minute):
-    """The campus time of a minute, as the interface writes it: 12.5 is "22:27" (the whole minutes)."""
+    """The campus time of a minute, as the interface writes it: 12.5 is "22:42" (the whole minutes)."""
     total = START + int(minute)
     return f"{total // 60:02d}:{total % 60:02d}"
 

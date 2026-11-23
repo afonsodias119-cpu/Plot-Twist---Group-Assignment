@@ -194,7 +194,8 @@ def test_leonor_is_not_a_clue():
 def test_phone_texts_exist_in_both_languages():
     """Every label of the phone, the map and the panel button exists in English and in Portuguese."""
     assert set(TEXT["pt"]) == set(TEXT["en"])
-    assert set(TEXT["pt"]["clues"]) == set(TEXT["en"]["clues"]) == {"usb_stick", "original_photo", "files_viewed", "leonor"}
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is not a clue, so she has no label.
+    assert set(TEXT["pt"]["clues"]) == set(TEXT["en"]["clues"]) == {"usb_stick", "original_photo", "files_viewed"}
     for language in TEXT:
         assert all(isinstance(v, (str, dict, list)) and v for v in TEXT[language].values())
 

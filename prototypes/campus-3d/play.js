@@ -208,11 +208,11 @@
   stepLook.querySelector(".look-body").append(creator);
   $("stepCase").after(stepLook);
   const lookError = stepLook.querySelector("#look-error");
-  // ---------- step 4: the warning before the game (the faculty closes at 22:45), the mission and the group ----------
+  // ---------- step 4: the warning before the game (the faculty closes at 23:00), the mission and the group ----------
   // The mission box of the case file moves here, so the case file only tells the story and asks for the name.
   const stepBrief = make("section", undefined, "step"); stepBrief.id = "stepBrief";
-  stepBrief.innerHTML = `<div class="file"><div class="file-top"><span class="rec"></span><span id="brief-case"></span><span class="clock">22:15</span></div>
-    <div class="brief-body"><div class="brief-warning" role="note"><p class="stamp">⏳ 22:45</p><p id="brief-label" class="label"></p>
+  stepBrief.innerHTML = `<div class="file"><div class="file-top"><span class="rec"></span><span id="brief-case"></span><span class="clock">22:30</span></div>
+    <div class="brief-body"><div class="brief-warning" role="note"><p class="stamp">⏳ 23:00</p><p id="brief-label" class="label"></p>
       <h2 id="brief-title"></h2><p id="brief-text"></p></div></div>
     <div class="file-foot"><button class="ghost" id="brief-back"></button><p id="brief-error" class="error" role="alert"></p><button id="brief-start"></button></div></div>`;
   stepBrief.querySelector(".brief-body").append($("mission"));
@@ -334,8 +334,11 @@
       <div class="share"><pre id="share-text"></pre><button id="share-copy" class="secondary"></button></div>
       <div class="ending-actions"><button id="ending-again"></button><button id="ending-card-btn" class="secondary"></button><button id="ending-hide" class="secondary"></button></div></section>
     <section id="timeup-card" class="ending-card timeup-card" role="alertdialog" aria-labelledby="timeup-title" hidden>
-      <p class="stamp">⏳ 22:45</p><h2 id="timeup-title"></h2><div id="timeup-text"></div>
+      <p class="stamp">⏳ 23:00</p><h2 id="timeup-title"></h2><div id="timeup-text"></div>
       <div class="ending-actions"><button id="timeup-again"></button></div></section>
+    <section id="clues-card" class="ending-card clues-card" role="dialog" aria-labelledby="clues-title" hidden>
+      <h2 id="clues-title"></h2><p id="clues-intro"></p><ol id="clues-order" class="clues-order"></ol><p id="clues-end" class="muted"></p>
+      <div class="ending-actions"><button id="clues-ok"></button><button id="clues-phone" class="secondary"></button></div></section>
     <button id="panel-toggle" class="panel-tab" aria-expanded="true"></button>
     <div id="hud-bottom" class="hud-bottom">
       <button id="near-hint" class="near-hint" hidden></button>
@@ -601,9 +604,7 @@
     $("brief-text").textContent = t.brief_text;
     $("brief-back").textContent = t.brief_back;
     $("brief-start").textContent = t.start;
-    $("case-eyebrow").textContent = t.case;
-    // In the game, the day of the case before " · NOVA SBE" (specs/case-of-the-day.md, point 7).
-    if (current?.day?.label) $("case-eyebrow").textContent = t.case.replace(" · NOVA SBE", ` · ${current.day.label} · NOVA SBE`);
+    $("case-eyebrow").textContent = t.case;   // no date on screen any more (specs/night-and-clues.md)
     $("game-title").textContent = t.title;
     $("scene-label").textContent = current?.ending ? t.the_end : t.scene;
     $("inventory-label").textContent = t.inventory;
@@ -862,7 +863,8 @@
     // Duarte walks to the lab door before a round, and back after it: only heard inside the lab (point 1).
     if (room === "computer_lab" && before.night.duarte !== state.night.duarte) sound.footsteps(state.night.duarte === "lab_door");
     const left = person => state.night.gone.includes(person) && !before.night.gone.includes(person);
-    // The clerk's shutter at 22:25: loud in the print shop, softer down the corridor (point 3).
+    // The clerk's shutter: loud in the print shop, softer down the corridor (point 3). Since
+    // specs/night-and-clues.md the clerk stays all night, so the server never sends her as gone.
     if (left("amelia")) sound.shutter(room === "print_shop" ? 1 : 0.4);
     // Leonor pushes her chair back and walks away: only heard in the library (point 2).
     if (left("leonor") && room === "library") {
@@ -1499,12 +1501,14 @@
     $("hud-bottom").classList.toggle("talking", Boolean(talking));
     const person = window.campusNear && (window.campusNear === "guard" ? { id: "guard", name: ui().security.guard_name } : current?.people.find(p => p.id === window.campusNear));
     const thing = nearThing();
-    $("near-hint").hidden = !(person || thing) || Boolean(talking);
-    if (!person && !thing) return;
+    const table = window.campusNear === "table";   // the study room's table, before the USB stick is found
+    $("near-hint").hidden = !(person || thing || table) || Boolean(talking);
+    if (!person && !thing && !table) return;
     const t = ui();
     // A thing says "look" (specs/more-to-find.md, point 7). On a phone the note is tapped instead of K
     // (specs/touch-card-qr.md): the click below does the same as K, for a thing and for a person.
-    const sentence = thing ? t.press_look.replace("{name}", thing.name)
+    const sentence = table ? t.press_table   // specs/table-hint-and-guard-check.md
+      : thing ? t.press_look.replace("{name}", thing.name)
       : person.object ? t.press_use.replace("{name}", person.name.toLowerCase())
       : t.press_talk.replace("{name}", person.name);
     const key = make("kbd", "K");
@@ -1515,6 +1519,7 @@
   function useNear() {
     const thing = nearThing();
     if (window.campusNear === "guard") talkStep("guard", "start");   // José talks in the ordinary card
+    else if (window.campusNear === "table") window.campusOpenTable();   // the close-up of the table
     else if (thing) lookAt(thing.id);
     else talkStep(window.campusNear, "start");
   }
@@ -1560,11 +1565,9 @@
     return `${collectionCount()}   ${all.map(e => found.includes(e.id) ? ENDING_EMOJI[e.id] || "✔" : "🔒").join(" ")}`;
   }
   function shareText(ending) {
-    const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
+    const t = ui(), clues = phoneClues(), done = clues.filter(c => c.done).length;
     const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("");
-    // The day of the case, never the case itself: no name, no code (specs/case-of-the-day.md, point 8).
-    const day = current?.day?.label ? [`📅 ${current.day.label}`] : [];
-    return [`${t.share_title} 🕵️`, ...day, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
+    return [`${t.share_title} 🕵️`, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
             `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
   }
   $("share-copy").addEventListener("click", async () => {
@@ -1585,7 +1588,7 @@
   // game can be continued later with the time it had. Rude answers take 5 minutes off; at 0 the game
   // stops and only "Try again" is left.
   const COUNTDOWN_MINUTES = 30, FULL_TIME = COUNTDOWN_MINUTES * 60000;
-  const NIGHT_STARTS = 22 * 60 + 15;   // 22:15, the time on the case file, so the doors close at 22:45
+  const NIGHT_STARTS = 22 * 60 + 30;   // 22:30, the time on the case file, so the doors close at 23:00
   const timeKey = player => `plot-twist-time-left:${player}`;
   let timeLeft = null;      // milliseconds left for the player of `current` (null until a game is open)
   let timeOwner = null;     // the player `timeLeft` belongs to
@@ -1602,7 +1605,7 @@
     const seconds = Math.ceil(ms / 1000);
     return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   };
-  function campusTime() {   // the time on the campus clocks: 22:15 plus the time already used
+  function campusTime() {   // the time on the campus clocks: 22:30 plus the time already used
     const minutes = Math.floor(NIGHT_STARTS + COUNTDOWN_MINUTES - msLeft() / 60000);
     return `${String(Math.floor(minutes / 60) % 24).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
   }
@@ -1702,11 +1705,11 @@
     if (!current || timeLeft === null) return;
     const now = Date.now();
     // The time goes down only while the game is on the screen and running.
-    const running = !current.ending && !document.hidden && !shell.hidden && $("timeup-card").hidden;
+    const running = !current.ending && !document.hidden && !shell.hidden && $("timeup-card").hidden && $("clues-card").hidden;   // reading the clues is free
     if (running && lastTick !== null) { timeLeft = Math.max(0, timeLeft - (now - lastTick)); saveTime(); }
     lastTick = now;
     const left = msLeft();
-    // The campus time first, then the countdown: "22:27 · ⏳ 17:04" (specs/night-schedule.md, point 4).
+    // The campus time first, then the countdown: "22:42 · ⏳ 17:04" (specs/night-schedule.md, point 4).
     $("clock").textContent = `${campusTime()} · ⏳ ${minutesSeconds(left)}`;
     $("clock").setAttribute("aria-label", `${campusTime()} · ${ui().time_aria}: ${minutesSeconds(left)}`);
     $("clock").classList.toggle("urgent", !current.ending && left < 5 * 60000);
@@ -1952,7 +1955,7 @@
     c.font = '800 26px Inter, system-ui, sans-serif'; c.fillStyle = accent; c.strokeStyle = accent; c.lineWidth = 4;
     const stamp = (t.stamps || {})[ending.id] || ending.title, width = c.measureText(stamp).width + 44;
     roundedRect(c, -width / 2, -32, width, 52, 8); c.stroke(); c.fillText(stamp, 0, 4); c.restore();
-    const clues = current?.clues || [], done = clues.filter(x => x.done).length;
+    const clues = phoneClues(), done = clues.filter(x => x.done).length;
     c.fillStyle = "#e9e4d6"; c.font = '500 24px Inter, system-ui, sans-serif';
     c.fillText(ending.title, W / 2, 905);
     c.fillStyle = "#b7bdc5"; c.font = '500 21px Inter, system-ui, sans-serif';
@@ -1990,7 +1993,19 @@
     } catch (error) { return { convinced: false, wired: false, footage: false }; }
   }
   function saveSecurity(state) { try { localStorage.setItem(securityKey(), JSON.stringify(state)); } catch (error) { /* no storage */ } }
-  function syncSecurity() { window.campusDeskPower = loadSecurity().wired; }   // the monitors of the 3D desk light up when it is true
+  function syncSecurity() { window.campusDeskPower = loadSecurity().wired; }
+  // The clues the player reads (the phone's list, the start card, the share card): the server's clues,
+  // with the security cameras after the photo, because the photo is what convinces José
+  // (specs/camera-clue.md). The cameras live on the screen only, so the server does not know this clue
+  // and the auditorium door does not wait for it.
+  function phoneClues() {
+    const clues = current?.clues || [];
+    if (!clues.length) return clues;
+    const t = ui().security;
+    const cameras = { id: "cameras", label: t.clue_label, room: t.clue_room, done: loadSecurity().footage, lost: false, until: "" };
+    const after = clues.findIndex(clue => clue.id === "original_photo");
+    return [...clues.slice(0, after + 1), cameras, ...clues.slice(after + 1)];
+  }   // the monitors of the 3D desk light up when it is true
   const anyDialogOpen = () => Boolean(document.querySelector("dialog[open]"));
   const backToPlay = () => { if (!talking && !anyDialogOpen()) window.playing = true; };
 
@@ -2001,7 +2016,8 @@
   function guardMenu() {   // the answers on his start line, by what has been done so far
     const t = ui().security, state = loadSecurity();
     if (state.footage) return [{ label: t.opt_rewatch, next: "watch" }];
-    if (state.wired) return [{ label: t.opt_watch, next: "watch" }];
+    // He asks which camera and what time (`ready`): the player says the computer lab at 23:47 (specs/guard-answer-and-cameras.md).
+    if (state.wired) return [{ label: t.opt_ask_lab, next: "granted" }];
     if (state.convinced) return [{ label: t.opt_wire, next: "wire" }, { label: t.opt_who, next: "who" }];
     return [{ label: t.opt_explain, next: "explain" }, { label: t.opt_broken, next: "broken" }];
   }
@@ -2015,12 +2031,21 @@
     const t = ui().security;
     if (node === "start") { showLine(guardStart()); return; }
     if (node === "wire") { asked.delete("wire"); openWires(); return; }       // the cables can be tried again
-    if (node === "watch") { asked.delete("watch"); openCctv(); return; }
+    if (node === "watch") { asked.delete("watch"); openCctv(); return; }   // asked again next time
+    if (node === "watch_lab") {   // after "granted": the computer lab camera, already on 23:47
+      asked.delete("watch_lab"); asked.delete("granted");
+      cctvCamera = "computer_lab"; cctvMinute = 23 * 60 + 47;
+      openCctv(); return;
+    }
     showTyping();
     setTimeout(() => {
       $("talk-log").querySelector(".typing")?.remove();
       if (talking !== "guard") return;
-      showLine(guardLine(node, t[node], node === "explain" ? [{ label: t.opt_rude, next: "rude", cost: 2 }] : []));   // demanding costs 2 minutes
+      // "explain": demanding costs 2 minutes. "granted": he agrees to show the computer lab at 23:47, and
+      // "Watch the recordings" opens them there (specs/guard-answer-and-cameras.md).
+      const options = node === "explain" ? [{ label: t.opt_rude, next: "rude", cost: 2 }]
+        : node === "granted" ? [{ label: t.opt_watch, next: "watch_lab" }] : [];
+      showLine(guardLine(node, t[node], options));
     }, 600);
   }
   // What he says after something was done: it brings back his menu, as it is now.
@@ -2247,7 +2272,7 @@
     return el;
   }
   const clueCount = () => {
-    const clues = current?.clues || [];
+    const clues = phoneClues();   // with the security cameras (specs/camera-clue.md)
     return { done: clues.filter(c => c.done).length, total: clues.length };
   };
   const titleLines = text => {   // a long room name goes on two lines
@@ -2264,7 +2289,7 @@
     fill.style.width = `${total ? (100 * done) / total : 0}%`;
     bar.append(fill);
     const list = make("ul", undefined, "todo-list");
-    for (const clue of current?.clues || []) {
+    for (const clue of phoneClues()) {
       const item = make("li", undefined, clue.done ? "done" : clue.lost ? "lost" : "");
       const box = make("span", clue.done ? "✔" : clue.lost ? "✕" : "○", "todo-box");
       box.setAttribute("aria-label", clue.done ? t.todo_done : clue.lost ? t.todo_lost : t.todo_open);
@@ -2498,31 +2523,50 @@
     else delete redBox.dataset.initial;
   }
   function drawNight() {
-    const shown = shownNight(), t = ui(), stage = nightStage(shown.night);
-    drawFifthFigure(shown);
-    // night_lines has one line for each of nights 2, 3, 4, 5 and 6-and-later.
-    nightLine.textContent = stage === 1 ? "" : t.night_lines[stage - 2].replace("{n}", shown.night);
-    nightLine.hidden = !nightLine.textContent;
+    drawFifthFigure(shownNight());
+    // The photo still changes from night to night, but the start screen no longer writes a line about
+    // it ("Night 2. The fifth figure…"): the team removed it (specs/night-and-clues.md).
+    nightLine.textContent = "";
+    nightLine.hidden = true;
   }
   window.addEventListener("language", () => { if (!current) drawNight(); });   // only the start screen shows it
   name.addEventListener("input", () => { if (!current) drawNight(); });   // the initial follows the name typed
   window.addEventListener("campus-look", () => { if (!current) drawNight(); });   // and the coat follows the look
   drawNight();
 
-  // ---------- the day of the case on the case file (specs/case-of-the-day.md, point 6) ----------
-  // The browser's own day and month in Lisbon, written with the same words as the server, so both say
-  // exactly the same. It is only a label: the server decides the case when the game begins.
-  const caseDay = make("span", undefined, "case-day"); caseDay.id = "case-day";
-  $("caseNo")?.after(caseDay);
-  function todayLabel() {
+  // The day of the case ("Case of 23 November") is no longer shown on the case file, in the top bar or
+  // on the share card (specs/night-and-clues.md). The server still keeps the date of each game.
+
+  // ---------- the clues, when the game starts (specs/night-and-clues.md) ----------
+  // A card lists the clues of the phone in the order they have to be done (the server sends them in
+  // that order), each with its room, and says that the evidence is shown to the professor at the end.
+  // While it is open the character stands still and the countdown waits.
+  function showCluesNotice() {
+    if (!current || current.ending) return;
     const t = ui();
-    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Lisbon", day: "numeric", month: "numeric" }).formatToParts(new Date());
-    const part = type => Number(parts.find(p => p.type === type).value);
-    return t.case_of_day.replace("{d}", part("day")).replace("{month}", t.months[part("month") - 1]);
+    $("clues-title").textContent = t.clues_notice_title;
+    $("clues-intro").textContent = t.clues_notice_intro;
+    $("clues-order").replaceChildren(...phoneClues().map(clue => {
+      const row = make("li", `${clue.label} · ${clue.room}`);
+      if (clue.done) row.classList.add("done");   // a continued game: what is done is crossed out
+      return row;
+    }));
+    $("clues-end").textContent = t.clues_notice_end;
+    $("clues-ok").textContent = t.clues_notice_ok;
+    $("clues-phone").textContent = t.app_todo;
+    $("clues-card").hidden = false;
+    window.playing = false;
+    $("clues-ok").focus({ preventScroll: true });
   }
-  const drawCaseDay = () => { caseDay.textContent = todayLabel(); };
-  window.addEventListener("language", drawCaseDay);
-  drawCaseDay();
+  function closeCluesNotice(view) {
+    if ($("clues-card").hidden) return;
+    $("clues-card").hidden = true;
+    window.playing = true;
+    if (view) openPhone(view);   // "Clues": the same list in the phone
+  }
+  $("clues-ok").addEventListener("click", () => closeCluesNotice());
+  $("clues-phone").addEventListener("click", () => closeCluesNotice("todo"));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeCluesNotice(); });
 
   window.campusStart = async () => {
     sound.start();
@@ -2542,6 +2586,7 @@
     window.playing = true;
     window.dispatchEvent(new Event("start-game"));
     $("scene-heading").focus({ preventScroll: true });
+    showCluesNotice();   // the clues, in order, as the night starts
   };
   // The 3D scene calls this when the character walks through a door into another room.
   window.campusEnter = room => send("enter", { room });
@@ -2572,7 +2617,8 @@
         tick();
         try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); localStorage.removeItem(securityKey()); } catch (error) { /* no storage */ }
         restarting = false;
-        checkNotices(current);   // now the new night's whisper lands in an empty phone, at 22:15
+        checkNotices(current);   // now the new night's whisper lands in an empty phone, at 22:30
+        showCluesNotice();       // and a new night starts with the clues again
       }
     } finally { restarting = false; }
   });
