@@ -1,5 +1,7 @@
 # The professor: present the evidence or ask, then hand over every proof at once
 
+> **Update (specs/missing-proof-is-a-warning.md):** a missing proof no longer ends the night. Point 3 (the ending names the missing proofs) is replaced: the professor says only how many are missing and the night goes on.
+
 Changes the 3D server (`campus_evidence.py`), the page (`play.js`) and two texts in `campus_text.py`. Extends specs/professor-line-of-thought.md and specs/hearing-show-evidence.md. No change to `story.py`, `logic.py`, `db.py`, `game.py` or `app.py`. Every text exists in Portuguese and English.
 
 ## Before writing the spec

@@ -35,24 +35,35 @@ def hand_over(player="detective", language="en"):
     return call("hearing", language, player, answer="all")
 
 
-def test_every_proof_closes_the_case_and_nothing_is_missing():
+def test_every_proof_closes_the_case():
     night()
     ended = hand_over()
     assert ended["accepted"] and ended["heard"] is True
-    assert ended["ending"]["id"] == "full_case" and ended["ending"]["missing"] == []
-    assert ended["hearing"]["doubts"] == 0
+    assert ended["ending"]["id"] == "full_case" and ended["hearing"]["doubts"] == 0
 
 
-def test_the_missing_proofs_are_named_and_the_credit_is_stolen():
+def test_a_missing_proof_is_only_a_warning_with_how_many(tmp_path):
+    # specs/missing-proof-is-a-warning.md: the professor says how many proofs are missing, never which,
+    # nothing is saved, and the night goes on.
+    import db
     for language in ("en", "pt"):
-        player = f"missing {language}"
-        night(player, language, backup=False, footage=False)
-        ended = hand_over(player, language)
-        labels = case.CASE_TEXT[language]["labels"]
-        assert ended["ending"]["id"] == "stolen_credits"
-        assert ended["ending"]["missing"] == [labels["backup"], labels["footage"]]
-        assert ended["ending"]["verdict"] == case.CASE_TEXT[language]["verdicts"]["missing"]
-        assert "{list}" in TEXT[language]["hearing_missing"]
+        one = f"one {language}"
+        night(one, language, footage=False)
+        before = db.DB_PATH.read_bytes()
+        warned = hand_over(one, language)
+        assert not warned["accepted"] and warned["heard"] is False and warned["ending"] is None
+        assert warned["message"] == TEXT[language]["hearing_short_one"]
+        assert db.DB_PATH.read_bytes() == before
+        for label in case.CASE_TEXT[language]["labels"].values():
+            assert label not in warned["message"]
+        # The night goes on: keep the recording, then hand everything over again.
+        assert call("footage", language, one, camera="computer_lab", minute=23 * 60 + 47)["footage"] is True
+        assert hand_over(one, language)["ending"]["id"] == "full_case"
+
+        two = f"two {language}"
+        night(two, language, backup=False, footage=False)
+        warned = hand_over(two, language)
+        assert warned["message"] == TEXT[language]["hearing_short_many"].replace("{n}", "2")
 
 
 def test_handing_over_twice_or_before_the_auditorium_is_refused():
@@ -71,6 +82,6 @@ def test_a_bad_answer_still_raises():
         call("hearing", answer="everything")
 
 
-def test_the_page_hands_everything_over_and_shows_what_is_missing():
+def test_the_page_hands_everything_over_and_shows_the_warning():
     assert 'send("hearing", { answer: "all" })' in PLAY_JS
-    assert 't.hearing_missing.replace("{list}", ending.missing.join("; "))' in PLAY_JS
+    assert 'if (!current.heard && current.message) { addHeard({ who: "professor", name: "Professor", text: current.message }); return; }' in PLAY_JS

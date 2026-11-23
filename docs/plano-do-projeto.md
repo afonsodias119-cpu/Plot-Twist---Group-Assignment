@@ -146,6 +146,10 @@ Na primeira fala, o professor oferece duas coisas: apresentar as provas ou pergu
 
 O ecrã do final, o texto de partilha e o cartão deixam de mostrar "Finais descobertos: 1/2". Ver `specs/no-endings-count.md`.
 
+### Uma prova em falta é um aviso — Maria (23/11/2026)
+
+Se apresentares as provas e faltar alguma, o professor diz só quantas faltam ("Falta-lhe uma das provas") e o jogo continua: podes ir buscá-la e voltar. Se a faculdade fechar às 23:00 antes, o Duarte fica com o crédito. Ver `specs/missing-proof-is-a-warning.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

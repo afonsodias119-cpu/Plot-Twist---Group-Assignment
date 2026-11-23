@@ -388,11 +388,17 @@ def hearing(player, state, night, language, answer):
         return False, messages["not_here"], False
     if answer == "all":
         # The player hands over every proof they hold, at once (specs/hand-over-the-proofs.md): each claim
-        # still waiting is answered with a held card that breaks it, or with nothing ("concede").
+        # still waiting is answered with a held card that breaks it. If a claim has none, the professor
+        # only says how many proofs are missing and nothing is saved: the night goes on
+        # (specs/missing-proof-is-a-warning.md).
         have = held(state, night)
         tonight = claims_of(night)
         done = night["hearing"] or []
-        rest = [next((card for card in claim["accepts"] if card in have), "concede") for claim in tonight[len(done):]]
+        rest = [next((card for card in claim["accepts"] if card in have), None) for claim in tonight[len(done):]]
+        missing = rest.count(None)
+        if missing:
+            text = TEXT[language]
+            return False, text["hearing_short_one"] if missing == 1 else text["hearing_short_many"].replace("{n}", str(missing)), False
         night = dict(night, hearing=done + rest)
         return finish_hearing(player, night, language)
     if night["hearing"] is None:
@@ -484,11 +490,4 @@ def shown_ending(state, night, language):
         shown, line = verdict_of(state, night["hearing"], bool(night["caught"]), claims_of(night))
     ending = next(e for e in STORIES[language]["endings"] if e["id"] == shown)
     verdict = CASE_TEXT[language]["verdicts"][line] if line else ""
-    # The proofs that were missing, by the label of the card that breaks each claim left without one
-    # (specs/hand-over-the-proofs.md): the system says what the professor did not get.
-    missing = []
-    if night["hearing"] is not None:
-        missing = [card_label(claim["accepts"][0], language)
-                   for claim, answer in zip(claims_of(night), night["hearing"]) if answer not in claim["accepts"]]
-    return {"id": ending["id"], "title": ending["title"], "text": ending["text"], "verdict": verdict,
-            "missing": missing}
+    return {"id": ending["id"], "title": ending["title"], "text": ending["text"], "verdict": verdict}

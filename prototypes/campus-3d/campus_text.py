@@ -205,7 +205,9 @@ TEXT = {
         "time_penalty_card": "−{n} minutos: isso não provou nada.",
         "time_penalty_duarte": "−{n} minuto: ele nem olhou.",
         "hearing_hint": "Entregas de uma vez todas as provas que tens.",
-        "hearing_missing": "Faltam provas: {list}.",
+        # when a proof is missing, the professor says only how many (specs/missing-proof-is-a-warning.md)
+        "hearing_short_one": "O professor folheia o que lhe entregas e abana a cabeça. \"Falta-lhe uma das provas. Volte quando a tiver.\"",
+        "hearing_short_many": "O professor folheia o que lhe entregas e abana a cabeça. \"Faltam-lhe {n} provas. Volte quando as tiver.\"",
         "hearing_concede": "Não dizer nada", "hearing_step": "Afirmação {n} de 4",
         "hearing_how": "O Duarte faz uma afirmação. Responde com a prova que mostra que é falsa, ou não digas nada.",
         "hearing_trust": "Confiança do professor em ti",
@@ -430,7 +432,9 @@ TEXT = {
         "time_penalty_card": "−{n} minutes: that proved nothing.",
         "time_penalty_duarte": "−{n} minute: he did not even look.",
         "hearing_hint": "You hand over every proof you have, at once.",
-        "hearing_missing": "Missing proofs: {list}.",
+        # when a proof is missing, the professor says only how many (specs/missing-proof-is-a-warning.md)
+        "hearing_short_one": "The professor leafs through what you hand him and shakes his head. \"One of the proofs is missing. Come back when you have it.\"",
+        "hearing_short_many": "The professor leafs through what you hand him and shakes his head. \"{n} proofs are missing. Come back when you have them.\"",
         "hearing_concede": "Say nothing", "hearing_step": "Claim {n} of 4",
         "hearing_how": "Duarte makes a claim. Answer with the proof that shows it is false, or say nothing.",
         "hearing_trust": "The professor's trust in you",

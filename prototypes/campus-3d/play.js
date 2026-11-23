@@ -894,10 +894,6 @@
       // then the professor's verdict when there is one (specs/evidence-and-hearing.md, point 11).
       const reply = lastReply();
       if (ending.verdict) $("ending-text").prepend(make("p", ending.verdict, "verdict"));
-      // What the professor did not get (specs/hand-over-the-proofs.md).
-      if (ending.missing && ending.missing.length) {
-        $("ending-text").prepend(make("p", t.hearing_missing.replace("{list}", ending.missing.join("; ")), "verdict missing"));
-      }
       if (reply) {
         const said = make("p", undefined, "hearing-reply");
         said.append(make("strong", `${reply.name}: `), document.createTextNode(reply.text));
@@ -1353,6 +1349,9 @@
     // with the proof that breaks it, or with nothing, and the night ends. The ending card says what was missing.
     if (!await send("hearing", { answer: "all" })) { $("talk-log").querySelector(".typing")?.remove(); return; }
     $("talk-log").querySelector(".typing")?.remove();
+    // A proof missing: the professor says how many, and the conversation (and the night) go on
+    // (specs/missing-proof-is-a-warning.md).
+    if (!current.heard && current.message) { addHeard({ who: "professor", name: "Professor", text: current.message }); return; }
     if (current.heard && current.hearing && !current.ending) showHearing(current.hearing);
   }
   async function answerHearing(answer) {
