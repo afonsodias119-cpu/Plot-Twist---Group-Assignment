@@ -247,3 +247,13 @@ Os prompts para gerar cada imagem, e as instruções para as guardar, estão em 
 - **Caderno do detetive e acusação:** as pistas ficam num caderno e, no auditório, o jogador escolhe quem acusar.
 - **Limite de ações:** "o edifício fecha às 23h" dá um terceiro final.
 - **Vários mistérios:** esta história fica num ficheiro de dados, e um segundo mistério na Nova SBE é outro ficheiro.
+
+## 13. Os três casos do dia (jogo 3D)
+
+No jogo 3D, a data (hora de Lisboa) escolhe um de três casos, o mesmo para toda a gente nesse dia (specs/case-of-the-day.md e specs/culprit-of-the-night.md). A história, as ações e os quatro finais são sempre os de `story.py`; cada caso só muda a ordem do chat, a data da fotografia (e o código) e alguns textos, em `prototypes/campus-3d/campus_case.py` (`CASES`). Os textos estão todos no [guião das conversas](guiao-conversas.md), secção "Os três casos do dia". A Leonor nunca é culpada: a decisão dela (ajudar ou acusar) decide os finais e tem de ser honesta.
+
+- **`outsider` — o Duarte sozinho** (o caso clássico). O Duarte forjou tudo; nenhum colega mente de propósito. Fotografia de 14.11, código 1411. Falsas: a 2, a 4 e a 5.
+- **`tomas` — o Tomás deixou-o entrar.** O Tomás nunca fez os slides; o Duarte, que repete a cadeira, prometeu fazê-los se o nome dele fosse para o relatório. Foi o Tomás que mudou o relatório e a fotografia às 23h47, no computador 12, e que escreveu a mensagem tardia com o próprio nome. Mente sobre o computador 12 e sobre os slides; desmentem-no a conta dele no histórico e a Rita, que o viu ir sozinho para a sala de informática às onze e meia. Fotografia de 10.11, código 1011. Falsas, como se veem: a 1, a 3 e a 5. Mostrada a mensagem com o nome dele, confessa.
+- **`rita` — a Rita deixou-o entrar.** O Duarte precisava de um grupo com boa nota e a Rita disse que sim sem perguntar a ninguém. Mudou os ficheiros às 23h47, no computador 12; diz que foi cedo para casa e que não sabe da pen. Desmentem-na a conta dela no histórico e o Tomás, que viu cabelo comprido e uma camisola cor-de-rosa no computador 12. Fotografia de 13.11, código 1311. Falsas, como se veem: a 1, a 2 e a 4. Mostrado o histórico ou a fotografia, confessa.
+
+Em qualquer caso, a confissão de quem acrescentou o nome também responde à primeira afirmação do Duarte na audiência ("está lá desde o primeiro rascunho"), e o final verdadeiro continua possível.

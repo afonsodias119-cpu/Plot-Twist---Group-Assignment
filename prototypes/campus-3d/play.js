@@ -453,6 +453,8 @@
     nameHint.textContent = t.continue_hint;
     $("accept").textContent = t.start;
     $("case-eyebrow").textContent = t.case;
+    // In the game, the day of the case before " · NOVA SBE" (specs/case-of-the-day.md, point 7).
+    if (current?.day?.label) $("case-eyebrow").textContent = t.case.replace(" · NOVA SBE", ` · ${current.day.label} · NOVA SBE`);
     $("game-title").textContent = t.title;
     $("scene-label").textContent = current?.ending ? t.the_end : t.scene;
     $("inventory-label").textContent = t.inventory;
@@ -530,7 +532,7 @@
     if (location.protocol === "file:") { startError.textContent = ui().local_only; return; }
     // Before a command the server hears the page's own minute (specs/night-schedule.md, point 4). The
     // command is for the person of the open card: it is not sent if the report shows that person gone.
-    if (!["open", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
+    if (!["open", "begin", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
     setBusy(true);
     try {
       const result = await request({ operation, player: current?.player || name.value,
@@ -1022,6 +1024,8 @@
     addSaid(t.photo_intro);
     window.campusPhoto.open({
       title: t.photo_title, hint: t.photo_hint, close: t.photo_close,
+      // The date stamp of tonight's case, sent only here in the print shop (specs/culprit-of-the-night.md, point 4).
+      stamp: current.day ? current.day.photo_date : "",
       submit: async pieces => {
         const scene = current.scene;
         if (!await send("assemble", { pieces })) return;
@@ -1294,7 +1298,9 @@
   function shareText(ending) {
     const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
     const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("") + (current?.flagged ? "🟨" : "⬛");
-    return [`${t.share_title} 🕵️`, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
+    // The day of the case, never the case itself: no name, no code (specs/case-of-the-day.md, point 8).
+    const day = current?.day?.label ? [`📅 ${current.day.label}`] : [];
+    return [`${t.share_title} 🕵️`, ...day, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
             `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
   }
   $("share-copy").addEventListener("click", async () => {
@@ -1366,7 +1372,7 @@
     // A fresh game at minute 0, opened or restarted: the server is starting a new night, so the page starts
     // from 30 minutes too (after a restart of the host the browser would otherwise push its old time onto
     // the new night). Only then: the other replies of an untouched game must not give time back.
-    const opening = operation === "open" || operation === "restart";
+    const opening = operation === "open" || operation === "begin" || operation === "restart";
     if (opening && state.fresh && night.minute === 0) timeLeft = FULL_TIME;
     timeLeft = Math.max(0, timeLeft - night.charged * 60000);   // the countdown counts in ms: half a minute is 30 seconds
     timeLeft = Math.min(timeLeft, (COUNTDOWN_MINUTES - night.minute) * 60000);
@@ -1816,9 +1822,25 @@
   window.addEventListener("campus-look", () => { if (!current) drawNight(); });   // and the coat follows the look
   drawNight();
 
+  // ---------- the day of the case on the case file (specs/case-of-the-day.md, point 6) ----------
+  // The browser's own day and month in Lisbon, written with the same words as the server, so both say
+  // exactly the same. It is only a label: the server decides the case when the game begins.
+  const caseDay = make("span", undefined, "case-day"); caseDay.id = "case-day";
+  $("caseNo")?.after(caseDay);
+  function todayLabel() {
+    const t = ui();
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Lisbon", day: "numeric", month: "numeric" }).formatToParts(new Date());
+    const part = type => Number(parts.find(p => p.type === type).value);
+    return t.case_of_day.replace("{d}", part("day")).replace("{month}", t.months[part("month") - 1]);
+  }
+  const drawCaseDay = () => { caseDay.textContent = todayLabel(); };
+  window.addEventListener("language", drawCaseDay);
+  drawCaseDay();
+
   window.campusStart = async () => {
     sound.start();
-    if (!await send("open")) return;
+    // `begin` is `open` plus the case of the day; the three names of specs/your-own-group.md are empty for now.
+    if (!await send("begin", { names: ["", "", ""] })) return;
     try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
     saveLook(current.player); saveLook(name.value);
     if (window.campusPreview) window.campusPreview.stop();

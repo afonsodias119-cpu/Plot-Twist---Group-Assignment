@@ -390,3 +390,6 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .text-mode .creator-preview { display: none; }
 .text-mode .creator { grid-template-columns: 1fr; }
 @media (max-width: 640px) { .creator { grid-template-columns: 1fr; justify-items: center; } .creator-controls { justify-self: stretch; } }
+
+/* the day of the case on the case file, after the case number (specs/case-of-the-day.md, point 6) */
+.case-day { color: var(--gold); }

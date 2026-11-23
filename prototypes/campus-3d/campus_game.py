@@ -1,5 +1,7 @@
 """Adapt the existing Python game for the 3D screen; never duplicate its rules."""
 
+from datetime import date
+
 import db
 import game
 import logic
@@ -16,6 +18,13 @@ from campus_evidence import moods, remember_rude
 # like the two files below: the clerk's sentence names the date of the code.
 from campus_clock import (COSTS, LEAVES, NIGHT_MINUTES, ROUNDS, SHUTTER, WARNING, duarte_place, next_mark,
                           round_reached, time_text)
+# The case of the day (specs/case-of-the-day.md): the date picks the case, the notes keep it. The
+# case's data stays on the server: campus_evidence.case_of gives it, and the page sees only the date.
+from campus_clock import case_day, case_of_day
+from campus_evidence import CLASSIC, case_of
+# A different culprit some nights (specs/culprit-of-the-night.md): the page only ever sees the chat as
+# shown, and every reply is told in tonight's case on its way out.
+from campus_evidence import retell, story_card, story_number
 # What the server remembers of a name's earlier nights (specs/earlier-nights.md). Server only too:
 # its texts (the unknown number's whispers, the true ending) are in campus_case.py.
 from campus_memory import TIME_UP, memory_view, night_number, record, round_warning, whispers
@@ -251,24 +260,49 @@ def clock_text(state):
     return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
 
-def chat_notes(story, state):
-    """The chat messages the player has flagged, in order. Says nothing about which ones are fake."""
+def chat_notes(story, state, night):
+    """The chat messages the player has flagged, in the order they are shown, with their shown
+    number (specs/culprit-of-the-night.md, point 3). Says nothing about which ones are fake."""
     messages = [t["text"] for t in story["scenes"]["group_chat"]["texts"] if t["when"] == {}][1:]
     title = story["scenes"]["group_chat"]["title"]
-    return [{"title": f"{title} · {n}", "text": messages[n - 1]} for n in range(1, 6)
-            if state["flags"].get(f"flagged_{n}")]
+    return [{"title": f"{title} · {n}", "text": messages[story_number(n, night) - 1]} for n in range(1, 6)
+            if state["flags"].get(f"flagged_{story_number(n, night)}")]
 
 
-def chat_view(story, state):
-    """What the chat screen of computer 12 shows: the five messages and which ones are flagged.
-    It never says which messages are fake."""
+def chat_view(story, state, night):
+    """What the chat screen of computer 12 shows: the five messages in tonight's order, and which
+    ones are flagged. `n` and `action` are the shown place, never the story's number
+    (specs/culprit-of-the-night.md, point 3). It never says which messages are fake."""
     if state["scene"] != "group_chat":
         return None
     texts = story["scenes"]["group_chat"]["texts"]
     messages = [t["text"] for t in texts if t["when"] == {}]
     return {"intro": messages[0], "messages": [
-        {"n": n, "text": messages[n], "flagged": bool(state["flags"].get(f"flagged_{n}")), "action": f"flag_{n}"}
+        {"n": n, "text": messages[story_number(n, night)],
+         "flagged": bool(state["flags"].get(f"flagged_{story_number(n, night)}")), "action": f"flag_{n}"}
         for n in range(1, 6)]}
+
+
+# The five flag actions of the story's group chat. The page sends them with a shown number.
+FLAG_ACTIONS = [f"flag_{n}" for n in range(1, 6)]
+
+
+def story_action(action, night):
+    """A flag the page sent (flag_<shown>) as the story's own action (flag_<message>). Every other
+    action is the story's already (point 3)."""
+    if action not in FLAG_ACTIONS:
+        return action
+    return f"flag_{story_number(int(action[len('flag_'):]), night)}"
+
+
+def shown_flag_rows(story, actions, night):
+    """The rows of the chat with shown numbers: the flags first, as in the story, but each with the id
+    and the label of its shown place and in shown order, so the order of the rows tells nothing."""
+    chat_actions = story["scenes"]["group_chat"]["actions"]
+    by_id = {row["id"]: row for row in actions}
+    flags = [dict(by_id[story_action(f"flag_{n}", night)], id=f"flag_{n}", label=chat_actions[f"flag_{n}"]["label"])
+             for n in range(1, 6) if story_action(f"flag_{n}", night) in by_id]
+    return flags + [row for row in actions if row["id"] not in FLAG_ACTIONS]
 
 
 def route(story, start, goal):
@@ -284,10 +318,11 @@ def route(story, start, goal):
     return seen.get(goal)
 
 
-def action_rows(story, state, language, minute=0):
+def action_rows(story, state, language, night):
     """The actions offered in the saved scene, ready for the screen. `person` says who offers it, if anyone.
-    `minute` is the campus minute: a lost clue no longer locks the auditorium."""
-    scene = story["scenes"][state["scene"]]
+    The campus minute of `night` matters: a lost clue no longer locks the auditorium. The flags of the
+    chat have shown numbers (specs/culprit-of-the-night.md, point 3)."""
+    scene, minute = story["scenes"][state["scene"]], night["minute"]
     note = missing_clues_note(state, language, minute)
     actions = []
     for action in logic.available_actions(story, state):
@@ -305,7 +340,7 @@ def action_rows(story, state, language, minute=0):
         if definition.get("go_to") == FINAL_ROOM and note:
             row.update(allowed=False, blocked_text=note)
         actions.append(row)
-    return actions
+    return shown_flag_rows(story, actions, night)
 
 
 def find_rows(state, language):
@@ -315,6 +350,53 @@ def find_rows(state, language):
         return []
     things = FINDS.get(room_of_scene(state["scene"]), ())
     return [{"id": thing, "name": FIND_TEXT[language][thing]["name"]} for thing in things]
+
+
+# ---------- the case of the day (specs/case-of-the-day.md) ----------
+
+def todays_case():
+    """The note `case` of a game that starts now: today's case and today's date (point 2)."""
+    today = case_day()
+    return {"variant": case_of_day(today), "date": today.isoformat()}
+
+
+def check_names(names):
+    """`names` of `begin` must be a list of exactly three texts, each of them may be empty (point 2).
+    Until specs/your-own-group.md is built, they are only checked, never saved."""
+    if not isinstance(names, list) or len(names) != 3 or not all(isinstance(name, str) for name in names):
+        raise ValueError("Invalid names / Nomes inválidos.")
+
+
+def mark_case(player, continued):
+    """After `begin` opened the game: a new game gets today's case; a continued game with no case
+    (a save from before this feature, or a game started with `open`) is marked as the classic case,
+    with no date; a continued game that has a case keeps it and nothing is written (point 2)."""
+    night = read_night(player, game.load(player))
+    if not continued:
+        write_night(player, dict(night, case=todays_case()))
+    elif night["case"] is None:
+        write_night(player, dict(night, case={"variant": CLASSIC, "date": ""}))
+
+
+def day_label(day_text, language):
+    """"Case of 22 November" for "2026-11-22", "" for no date (point 5)."""
+    if not day_text:
+        return ""
+    day, t = date.fromisoformat(day_text), TEXT[language]
+    return t["case_of_day"].format(d=day.day, month=t["months"][day.month - 1])
+
+
+def day_view(state, night, language):
+    """The snapshot's `day` (point 5): the date, its label and the stamp the torn photo must draw.
+    The stamp is sent only in the print shop while the photo is not held; a classic game sends
+    none (also an old save marked classic, with no date: it finishes as the classic case). It never
+    says the case's id, its code or its chat order."""
+    case = night["case"]
+    if case is None or not case["date"]:
+        return {"date": "", "label": "", "photo_date": ""}
+    in_shop = state["scene"] == "print_shop" and "original_photo" not in state["inventory"]
+    return {"date": case["date"], "label": day_label(case["date"], language),
+            "photo_date": case_of(night)["photo_date"] if in_shop else ""}
 
 
 def snapshot(player, language, message="", accepted=True, charged=0):
@@ -332,7 +414,7 @@ def snapshot(player, language, message="", accepted=True, charged=0):
     night = read_night(player, state)
     minute = night["minute"]
     gone = gone_people(state, minute)
-    actions = action_rows(story, state, language, minute)
+    actions = action_rows(story, state, language, night)
     # What the server remembers of this name's earlier nights (specs/earlier-nights.md, point 3).
     memory = memory_view(player, night)
 
@@ -351,7 +433,7 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         {"title": story["scenes"][room]["title"],
          "text": story["scenes"][room]["actions"][action]["result_text"]}
         for room, action in sources
-    ] + chat_notes(story, state)
+    ] + chat_notes(story, state, night)
     return {
         "player": player, "language": language, "scene": state["scene"],
         # While the person of the room has left, its first paragraph is the schedule sentence (point 5).
@@ -378,11 +460,13 @@ def snapshot(player, language, message="", accepted=True, charged=0):
         # messages as this night starts (specs/earlier-nights.md, points 3 and 4).
         # No whisper once the faculty has closed: 22:45 ends the night as an ending does.
         "memory": memory, "whispers": [] if night_closed(state, night) else whispers(state, memory, language),
-        "chat": chat_view(story, state),
+        "chat": chat_view(story, state, night),
         "flagged": sum(1 for n in range(1, 6) if state["flags"].get(f"flagged_{n}")),   # for the unknown number's messages and the share card
         "leonor_present": choice != "accused" and "leonor" not in gone,
         # True while the game is untouched: the 3D scene then starts the character outside.
         "fresh": state == story["start"],
+        # The day of the case: its date, "Case of 22 November", the photo's stamp (specs/case-of-the-day.md, point 5).
+        "day": day_view(state, night, language),
     }
 
 
@@ -464,7 +548,10 @@ def unlock_computer(player, language, code):
     if locked(player):
         return locked_reply(player, language, unlocked=False)
     language = db.load_language(player) or language
-    if code != PC12_CODE:
+    # Each case has its own date of the photo, so its own code (specs/culprit-of-the-night.md, point 4).
+    night = read_night(player, game.load(player))
+    right_code = case_of(night)["code"] if night["case"] else PC12_CODE
+    if code != right_code:
         return dict(snapshot(player, language, TEXT[language]["code_wrong"], accepted=False), unlocked=False)
     result, clock = play_and_charge(player, "view_files", language)   # 1 minute, the same as a direct view_files
     return dict(clocked_snapshot(player, language, result["message"], result["accepted"], clock), unlocked=True)
@@ -567,13 +654,15 @@ def closed_reply(player, language, operation):
     return dict(snapshot(player, language, closed_text, accepted=False), **extra.get(operation, {}))
 
 
-def command(payload):
+def run_command(payload):
     """Validate browser input before calling the existing saved-game functions."""
     if not isinstance(payload, dict):
         raise ValueError("Invalid request / Pedido inválido.")
     operation = payload.get("operation")
     allowed_fields = {
         "open": {"operation", "player", "language"},
+        # `open` plus the case of the day and the group's three names (specs/case-of-the-day.md, point 2)
+        "begin": {"operation", "player", "language", "names"},
         "play": {"operation", "player", "language", "action"},
         "restart": {"operation", "player", "language", "confirmed"},
         "enter": {"operation", "player", "language", "room"},
@@ -602,11 +691,15 @@ def command(payload):
     if player is None:
         raise ValueError(UI_TEXTS[language]["invalid_name"])
 
-    if operation == "open":
+    if operation == "begin":
+        check_names(payload["names"])   # before anything is opened, so a bad request writes nothing
+    if operation in ("open", "begin"):
         result = game.open_game(player, language)
         if not result["continued"]:
             # A new game is a new night: notes left behind by an older game must not help it.
             db.delete_night(player)
+        if operation == "begin":
+            mark_case(player, result["continued"])
         language = result["language"]
         message = UI_TEXTS[language]["continued" if result["continued"] else "started"]
         return snapshot(player, language, message)
@@ -615,8 +708,13 @@ def command(payload):
     if operation == "restart":
         if payload["confirmed"] is not True:
             raise ValueError(UI_TEXTS[language]["confirm_question"])
+        # The kind of game is kept (specs/case-of-the-day.md, point 3): a game of the day starts
+        # today's case, a classic game stays classic and writes no notes, exactly as before.
+        daily = read_night(player, game.load(player))["case"] is not None
         game.restart(player)
         db.delete_night(player)   # a new night at 22:15: nobody is cracked, gone or caught, no hearing
+        if daily:
+            write_night(player, dict(read_night(player, game.load(player)), case=todays_case()))
         return snapshot(player, language)
     if operation == "time":
         return report_time(player, language, payload["minute"])
@@ -640,18 +738,22 @@ def command(payload):
         # (specs/trust-has-consequences.md). Only the text and the note change.
         reply = temper(reply, moods(night), language)
         # The things the player can do by talking to this person (ask for the copy, take the decision, ...).
-        reply["actions"] = [a for a in action_rows(STORIES[language], state, language, night["minute"])
+        reply["actions"] = [a for a in action_rows(STORIES[language], state, language, night)
                             if a["person"] == reply["npc"]]
         return reply
     if operation == "confront":
         # Showing a card: cracking a person writes in the night's notes, and the card's minutes are
         # added to the campus minute (specs/night-schedule.md, point 2). They can reach a round.
-        result = confront(player, state, night, language, payload["npc"], payload["node"], payload["evidence"],
+        # The page shows a flagged message by its shown number: it is turned back into the story's card
+        # first, so the case file's rules are untouched (specs/culprit-of-the-night.md, point 3).
+        card = story_card(payload["evidence"], night)
+        result = confront(player, state, night, language, payload["npc"], payload["node"], card,
                           gone_people(state, night["minute"]), night_number(player, night))
         clock = charge(player, language, result["minutes"])
         return dict(clocked_snapshot(player, language, "", True, clock), confront=result)
     if operation == "hearing":
-        accepted, message, heard = hearing(player, state, night, language, payload["answer"])
+        answer = story_card(payload["answer"], night)   # a shown message card, turned back as for confront
+        accepted, message, heard = hearing(player, state, night, language, answer)
         return dict(snapshot(player, language, message, accepted), heard=heard)
     if operation == "enter":
         room = payload["room"]
@@ -672,7 +774,10 @@ def command(payload):
         raise ValueError("Invalid action / Ação inválida.")
     if locked(player):
         return locked_reply(player, language)
-    action = payload["action"]
+    # A flag comes with the shown number: it is played as the story's own flag of that message
+    # (specs/culprit-of-the-night.md, point 3). Every other action is the story's already.
+    shown = payload["action"]
+    action = story_action(shown, night)
     definition = STORIES[language]["scenes"][state["scene"]]["actions"].get(action, {})
     if leads_outside_3d(definition):
         return snapshot(player, language, STORIES[language]["messages"]["not_here"], accepted=False)
@@ -686,4 +791,23 @@ def command(payload):
         if note:
             return snapshot(player, language, note, accepted=False)
     result, clock = play_and_charge(player, action, language)
-    return clocked_snapshot(player, language, result["message"], result["accepted"], clock)
+    message = result["message"]
+    if result["accepted"] and shown in FLAG_ACTIONS:   # "You flag message 3", with the number the player saw
+        message = STORIES[language]["scenes"]["group_chat"]["actions"][shown]["result_text"]
+    return clocked_snapshot(player, language, message, result["accepted"], clock)
+
+
+def command(payload):
+    """Validate browser input, run the operation, then tell the reply in tonight's case.
+
+    retell runs once, on every reply, after the operation has run, so it reads the night's notes as
+    they are now (specs/culprit-of-the-night.md, point 6). A request that raises is never told.
+    """
+    reply = run_command(payload)
+    player = game.clean_name(payload["player"])   # valid: run_command has checked it
+    state = game.load(player)
+    if state is None:
+        return reply
+    language = db.load_language(player)
+    language = language if language in LANGUAGES else payload["language"]
+    return retell(reply, read_night(player, state), language)
