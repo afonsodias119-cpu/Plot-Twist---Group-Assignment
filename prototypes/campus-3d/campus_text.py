@@ -15,6 +15,7 @@ TEXT = {
         "map_no_3d": "O mapa desenhado precisa do cenário 3D.",
         "todo_title": "Pistas a recolher", "todo_progress": "pistas feitas",
         "todo_hint": "Reúne todas as pistas antes de entrares no auditório.",
+        "todo_kindness_hint": "A simpatia pode levar-vos mais longe do que imaginam.",
         "todo_done": "Feito", "todo_open": "Por fazer",
         # searching the study room and the code of computer 12 (specs/pen-and-code.md); the answers are NOT here
         "spots": {"papers": "Folhas do relatório", "notebook": "Caderno", "pizza_box": "Caixa de pizza",
@@ -248,6 +249,7 @@ TEXT = {
         "map_no_3d": "The drawn map needs the 3D scenery.",
         "todo_title": "Clues to collect", "todo_progress": "clues done",
         "todo_hint": "Collect every clue before you walk into the auditorium.",
+        "todo_kindness_hint": "Kindness can take you further than you think.",
         "todo_done": "Done", "todo_open": "To do",
         "spots": {"papers": "Report pages", "notebook": "Notebook", "pizza_box": "Pizza box",
                   "pizza_slice": "Pizza slice", "napkin": "Napkin", "can": "Can", "mug": "Mug",
