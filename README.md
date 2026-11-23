@@ -74,7 +74,7 @@ working language; the game itself is in both.
 | File | What it contains | Language |
 |---|---|---|
 | [docs/historia.md](docs/historia.md) | The story as it is today: characters, map, the four proofs, the professor, the endings | Portuguese |
-| [docs/story-en.md](docs/story-en.md) | A short English summary of the story | English |
+| [docs/story-en.md](docs/story-en.md) | The same story, translated into English | English |
 | [docs/guiao-conversas.md](docs/guiao-conversas.md) | Every line of dialogue in the game, with its answers, in both languages | Portuguese (lines in PT and EN) |
 | [docs/plano-do-projeto.md](docs/plano-do-projeto.md) | The team plan: course requirements, decisions, phases and the history of every change | Portuguese |
 | [docs/plot-twist-brd.md](docs/plot-twist-brd.md) | The course brief we started from | English |

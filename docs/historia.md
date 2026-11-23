@@ -7,6 +7,7 @@ inglês, estão em [guiao-conversas.md](guiao-conversas.md). Cada mudança tem a
 [specs/README.md](../specs/README.md)).
 
 Os nomes em letra de código (por exemplo `study_room`) são os identificadores do código, por isso estão em inglês.
+A tradução inglesa deste ficheiro é [story-en.md](story-en.md): se um mudar, o outro muda também.
 
 ## 1. Resumo
 
