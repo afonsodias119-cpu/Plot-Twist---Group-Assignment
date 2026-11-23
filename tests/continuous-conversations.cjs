@@ -66,18 +66,20 @@ assert.deepEqual(choices(), []);
 show('rita', 'start', [option('photo')]);
 click('photo'); show('rita', 'result', [option('photo'), option('chat')]);
 assert.deepEqual(choices(), ['chat']);
-// Leonor's decisions stay hidden until they can be taken (specs/actions-when-they-make-sense.md).
+// Leonor before she decides (changed by specs/leonor-two-answers.md, was: her decisions show once they can be taken).
 const decisions = allowed => [
   { id: 'ask_for_help', label: 'Ask for help', decision: true, allowed },
   { id: 'accuse', label: 'Accuse', decision: true, allowed }];
 const shownActions = () => $('talk-options').children.filter(child => child.children.length)
   .flatMap(group => group.children.map(button => button.dataset.action));
-show('leonor', 'start', [option('sure')], 'start', decisions(false));
+show('leonor', 'start', [option('sure'), option('soft'), option('harsh', 5)], 'start', decisions(false));
 assert.deepEqual(shownActions(), []);
-assert.deepEqual(choices(), ['sure']);   // without the photo: her normal answers
-show('leonor', 'start', [option('sure')], 'start', decisions(true));
-assert.deepEqual(shownActions(), ['ask_for_help', 'accuse']);
-assert.deepEqual(choices(), ['']);   // with the photo: only the group of decisions, no answers
+assert.deepEqual(choices(), ['soft', 'harsh']);   // one right and one wrong answer
+assert.equal($('talk-evidence').hidden, true);   // no evidence before the right answer
+click('soft'); show('leonor', 'soft', [option('messages')], 'soft', decisions(true));
+assert.deepEqual(shownActions(), []);   // no decision buttons: the photo is shown with "Show evidence"
+assert.deepEqual(choices(), []);
+assert.equal($('talk-evidence').hidden, false);   // after the right answer
 
 // The clerk offers the copy only after she mentions the original order.
 const copy = [{ id: 'request_copy', label: 'Ask for a copy', allowed: true }];
