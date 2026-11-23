@@ -895,6 +895,10 @@
       // then the professor's verdict when there is one (specs/evidence-and-hearing.md, point 11).
       const reply = lastReply();
       if (ending.verdict) $("ending-text").prepend(make("p", ending.verdict, "verdict"));
+      // What the professor did not get (specs/hand-over-the-proofs.md).
+      if (ending.missing && ending.missing.length) {
+        $("ending-text").prepend(make("p", t.hearing_missing.replace("{list}", ending.missing.join("; ")), "verdict missing"));
+      }
       if (reply) {
         const said = make("p", undefined, "hearing-reply");
         said.append(make("strong", `${reply.name}: `), document.createTextNode(reply.text));
@@ -1113,7 +1117,8 @@
     // a short line under it says the hearing cannot be left. The hearing is played in this same card (showHearing).
     // Only once he has said "Present it when you are ready" (`proof`), at the end of his one line of thought
     // (specs/professor-line-of-thought.md).
-    const present = line.node === "proof" && (line.actions || []).find(action => action.id === "present_evidence");
+    // On his first line, beside "Ask how many members…" (specs/hand-over-the-proofs.md).
+    const present = line.node === "start" && (line.actions || []).find(action => action.id === "present_evidence");
     if (present) {
       const button = make("button", present.label, "answer");
       button.dataset.action = "hearing";
@@ -1346,7 +1351,9 @@
     if (window.campusBusy || !current) return;
     addBubble(action.label, "me");
     showTyping();
-    if (!await send("hearing", { answer: "start" })) { $("talk-log").querySelector(".typing")?.remove(); return; }
+    // Every proof held is handed over at once (specs/hand-over-the-proofs.md): the server answers each claim
+    // with the proof that breaks it, or with nothing, and the night ends. The ending card says what was missing.
+    if (!await send("hearing", { answer: "all" })) { $("talk-log").querySelector(".typing")?.remove(); return; }
     $("talk-log").querySelector(".typing")?.remove();
     if (current.heard && current.hearing && !current.ending) showHearing(current.hearing);
   }

@@ -321,7 +321,7 @@ Onde está: **Sala de informática** (`computer_lab`).
   - Se resultar 🇬🇧: Computer 12 still has the group's account open. You copy the whole history of the group's conversations onto the USB stick, as it was before last night: four people, and not one message from Duarte. Now the professor can see the original conversations.
 
 ## Professor
-Onde está: **Auditório** (`auditorium`). Uma só linha de raciocínio (specs/professor-line-of-thought.md): quantos elementos → cinco → só quatro → trazer provas → apresentar as provas.
+Onde está: **Auditório** (`auditorium`). Na primeira fala há duas escolhas (specs/hand-over-the-proofs.md): "▶ Apresentar as provas ao professor" (entregas de uma vez todas as provas que tens; se faltar alguma, o cartão do final diz "Faltam provas: …") ou perguntar quantos elementos tem o grupo (quantos elementos → cinco → só quatro → trazer provas, e a conversa acaba).
 
 ### `start`
 - 🇵🇹 O professor levanta os olhos da lista de grupos. "É sobre as apresentações de amanhã?"
@@ -347,7 +347,7 @@ Onde está: **Auditório** (`auditorium`). Uma só linha de raciocínio (specs/p
 ### `proof`
 - 🇵🇹 "Provas são bem-vindas. Apresente-as quando estiver pronto."
 - 🇬🇧 "Evidence is welcome. Present it when you are ready."
-- Só nesta fala aparece "▶ Apresentar as provas ao professor" (a audiência).
+- Não há mais respostas: a conversa acaba aqui (specs/hand-over-the-proofs.md).
 - Respostas:
   - "Até já." / "Goodbye." → fim
 

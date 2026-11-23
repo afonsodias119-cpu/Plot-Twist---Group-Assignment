@@ -138,6 +138,10 @@ Na audiência, cada afirmação do Duarte responde-se com "📁 Mostrar uma prov
 
 O cartão do início e o telemóvel mostram só quatro pistas, sem a sala e sem dicas de onde ou com quem: a pen do grupo, a fotografia original, as imagens da câmara da sala de informática e o histórico dos ficheiros. Ver `specs/clues-without-answers.md`.
 
+### O professor: apresentar as provas ou perguntar — Maria (23/11/2026)
+
+Na primeira fala, o professor oferece duas coisas: apresentar as provas ou perguntar quantos elementos tem o grupo (essa conversa acaba em "vou trazer provas"). Apresentar entrega de uma vez todas as provas que tens; se faltar alguma, o final diz quais. Ver `specs/hand-over-the-proofs.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

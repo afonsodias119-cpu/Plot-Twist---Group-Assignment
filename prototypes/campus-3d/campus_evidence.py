@@ -377,7 +377,7 @@ def hearing(player, state, night, language, answer):
     take a doubt back. After the third answer the story's own present_evidence is played, the
     night ends and its row is written with the ending shown (specs/earlier-nights.md, point 2).
     """
-    if not isinstance(answer, str) or not (answer in ("start", "concede") or answer in CARDS):
+    if not isinstance(answer, str) or not (answer in ("start", "concede", "all") or answer in CARDS):
         raise ValueError("Invalid answer / Resposta inválida.")
     if answer in CARDS and answer not in held(state, night):
         raise ValueError("You do not have that / Não tens isso.")
@@ -386,6 +386,15 @@ def hearing(player, state, night, language, answer):
         return False, messages["game_over"], False
     if state["scene"] != FINAL_ROOM:
         return False, messages["not_here"], False
+    if answer == "all":
+        # The player hands over every proof they hold, at once (specs/hand-over-the-proofs.md): each claim
+        # still waiting is answered with a held card that breaks it, or with nothing ("concede").
+        have = held(state, night)
+        tonight = claims_of(night)
+        done = night["hearing"] or []
+        rest = [next((card for card in claim["accepts"] if card in have), "concede") for claim in tonight[len(done):]]
+        night = dict(night, hearing=done + rest)
+        return finish_hearing(player, night, language)
     if night["hearing"] is None:
         if answer != "start":
             return False, messages["not_here"], False
@@ -396,11 +405,19 @@ def hearing(player, state, night, language, answer):
 
     night = dict(night, hearing=night["hearing"] + [answer])
     if len(night["hearing"]) == len(HEARING):
-        # The saved ending is still "the first ending whose condition is true"; the verdict caps what is shown.
-        game.play(player, "present_evidence", language)
-        state = game.load(player)
-        night["verdict"], _line = verdict_of(state, night["hearing"], bool(night["caught"]), claims_of(night))
-        night = record(player, night, night["verdict"])
+        return finish_hearing(player, night, language)
+    write_night(player, night)
+    return True, "", True
+
+
+def finish_hearing(player, night, language):
+    """The last claim is answered: the story's own present_evidence is played, the night ends and its
+    row is written with the ending shown (specs/earlier-nights.md, point 2)."""
+    # The saved ending is still "the first ending whose condition is true"; the verdict caps what is shown.
+    game.play(player, "present_evidence", language)
+    state = game.load(player)
+    night["verdict"], _line = verdict_of(state, night["hearing"], bool(night["caught"]), claims_of(night))
+    night = record(player, night, night["verdict"])
     write_night(player, night)
     return True, "", True
 
@@ -467,4 +484,11 @@ def shown_ending(state, night, language):
         shown, line = verdict_of(state, night["hearing"], bool(night["caught"]), claims_of(night))
     ending = next(e for e in STORIES[language]["endings"] if e["id"] == shown)
     verdict = CASE_TEXT[language]["verdicts"][line] if line else ""
-    return {"id": ending["id"], "title": ending["title"], "text": ending["text"], "verdict": verdict}
+    # The proofs that were missing, by the label of the card that breaks each claim left without one
+    # (specs/hand-over-the-proofs.md): the system says what the professor did not get.
+    missing = []
+    if night["hearing"] is not None:
+        missing = [card_label(claim["accepts"][0], language)
+                   for claim, answer in zip(claims_of(night), night["hearing"]) if answer not in claim["accepts"]]
+    return {"id": ending["id"], "title": ending["title"], "text": ending["text"], "verdict": verdict,
+            "missing": missing}
