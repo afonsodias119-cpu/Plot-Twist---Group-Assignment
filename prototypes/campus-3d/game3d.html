@@ -983,13 +983,38 @@ block(1.6, 4.1, 1.2, 0.4);
 const seatFabric = mat(0x1f5662, { roughness: 0.85 });
 for (const z of [5.6, 7.0, 8.4]) {
   for (let x = 1.4; x <= 11.8; x += 0.75) {
-    if (Math.abs(x - 6.55) < 0.6) continue;   // aisle in the middle
+    // A wide aisle in the middle, to walk up to the professor (specs/duarte-only-in-the-hearing.md): three seats
+    // fewer in each row, and the blocks follow the seats that are left (x 1.09 to 5.46 and 7.84 to 11.46).
+    if (Math.abs(x - 6.55) < 0.9) continue;
     rbox(0.62, 0.12, 0.55, x, 0.38, z, seatFabric, { radius: 0.05 });
     rbox(0.62, 0.6, 0.1, x, 0.42, z - 0.27, seatFabric, { radius: 0.05 });
     rbox(0.05, 0.6, 0.5, x - 0.33, 0, z, blackPlastic);
   }
-  block(3.7, z - 0.05, 4.9, 0.7); block(9.4, z - 0.05, 4.9, 0.7);
+  block(3.275, z - 0.05, 4.37, 0.7); block(9.65, z - 0.05, 3.62, 0.7);
 }
+
+// ---- A security camera high in a corner of every room, and one by the entrance (specs/guard-answer-and-cameras.md):
+// a pole from the ceiling, a white body looking down at the middle of the room, a black lens and a red light that
+// blinks (all the lights share one material, so one line in the animation loop blinks them all). Only scenery.
+const cameraLed = mat(0xff2a2a, { emissive: 0xff2a2a, emissiveIntensity: 3 });
+function securityCamera(x, z, lookX, lookZ) {
+  const mount = new THREE.Group(), head = new THREE.Group();
+  rbox(0.04, 0.3, 0.04, 0, 0.05, 0, blackMetal, { parent: mount });                              // the pole, up to the ceiling
+  head.rotation.x = 0.45;                                                                        // looking down
+  mount.add(head);
+  rbox(0.13, 0.11, 0.26, 0, -0.05, 0.08, mat(0xe8e8e4, { roughness: 0.4 }), { radius: 0.03, parent: head });   // the body
+  add(new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 16), mat(0x0c0e12, { metalness: 0.6, roughness: 0.2 })), 0, 0.005, 0.22, head);   // the lens
+  add(new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 10), cameraLed), 0.045, 0.07, 0.17, head);   // the red light
+  mount.position.set(x, 1.85, z);
+  mount.rotation.y = Math.atan2(lookX - x, lookZ - z);   // the body points at the middle of the room
+  scene.add(mount);
+}
+securityCamera(-12.75, -11.75, -8.75, -7.5);   // print shop
+securityCamera(-4.25, -11.75, 0, -7.5);        // study room
+securityCamera(12.75, -11.75, 8.75, -7.5);     // library
+securityCamera(-12.75, 3.3, -6.5, 7.5);        // computer lab
+securityCamera(12.75, 3.3, 6.5, 7.5);          // auditorium
+securityCamera(-12.75, -2.75, -9, 0);          // the entrance
 
 // ---- Corridor
 plant(-12.3, -2.3); plant(12.3, -2.3); plant(-12.3, 2.3); plant(12.3, 2.3);
@@ -1622,7 +1647,7 @@ function syncCampus() {
   npcs[0].visible = state.leonor_present;
   npcs[0].userData.sign.visible = state.leonor_present;
   // Duarte is gone in these endings, and in an ending that carries its own stamp (specs/earlier-nights.md, point 9).
-  npcs[1].visible = state.ending?.id !== "impostor" && !state.ending?.stamp;   // in "The impostor" Duarte walks out
+  npcs[1].visible = !state.ending?.stamp;   // an ending with its own stamp takes him away
   npcs[1].userData.sign.visible = npcs[1].visible;
   showSchedule(state);
   showGroup(state);
@@ -1773,6 +1798,7 @@ function loop() {
   ring.material.opacity = 0.4 + Math.sin(t * 3) * 0.15;
 
   for (const s of students) s.userData.head.rotation.x = 0.3 + Math.sin(t * 0.6 + s.userData.phase) * 0.06;   // reading
+  cameraLed.emissiveIntensity = t % 1.2 < 0.25 ? 4 : 0.15;   // the cameras' red lights blink (specs/guard-answer-and-cameras.md)
   updateFollowers(dt, t);   // Rita and Leonor, when they come with you
   // the others turn towards you when you come close
   for (const [i, n] of npcs.entries()) {
@@ -1790,6 +1816,7 @@ function loop() {
   if (here && window.playing && !window.campusBusy && !window.campusState.ending) {
     for (const n of npcs) {
       if (!n.visible || !here.some(p => p.id === n.userData.id)) continue;
+      if (n.userData.id === "duarte") continue;   // he only speaks in the hearing (specs/duarte-only-in-the-hearing.md)
       const d = Math.hypot(player.position.x - n.position.x, player.position.z - n.position.z);
       if (d < nearDistance) { nearDistance = d; near = n.userData.id; }
     }
@@ -1814,6 +1841,14 @@ function loop() {
       if (someone || !finds.some(f => f.id === o.id)) continue;
       const d = Math.hypot(player.position.x - o.x, player.position.z - o.z);
       if (d < nearDistance) { nearDistance = d; near = o.id; }
+    }
+    // The study room's table, while the USB stick is still to be found (specs/table-hint-and-guard-check.md):
+    // the distance is to its nearest edge (the table is 3.2 m by 1.5 m, centred at x 0, z -8), and it counts
+    // within 1 m. A person nearer than that edge still comes first.
+    if (canSearch()) {
+      const edgeX = Math.max(Math.abs(player.position.x) - 1.6, 0), edgeZ = Math.max(Math.abs(player.position.z + 8) - 0.75, 0);
+      const d = Math.hypot(edgeX, edgeZ);
+      if (d < 1 && d < nearDistance) { nearDistance = d; near = "table"; }
     }
   }
   if (near !== window.campusNear) { window.campusNear = near; window.dispatchEvent(new Event("campus-near")); }

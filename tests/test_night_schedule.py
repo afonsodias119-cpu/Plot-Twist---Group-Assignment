@@ -186,10 +186,11 @@ def caught_note(player=PLAYER):
     return db.load_night(player)["notes"].get("caught", [])
 
 
-def refuses_both_decisions(player, sentence):
-    """Leonor's two decisions are refused with `sentence`, and nothing is saved."""
+def refuses_the_decision(player, sentence):
+    """Leonor's decision is refused with `sentence`, and nothing is saved.
+    Changed by specs/three-proofs.md ("Reviewed tests that change"): she has one decision now (no "accuse")."""
     before = saved()
-    for action in ("ask_for_help", "accuse"):
+    for action in ("ask_for_help",):
         refused = call("play", player=player, action=action)
         assert not refused["accepted"] and refused["message"] == sentence, action
     assert saved() == before
@@ -259,8 +260,11 @@ def warnings_due(result, language):
 #   "photo"             the torn photo: the answer that asks for the copy, the pieces, one `assemble`
 #   "backup"            computer12 (its card is open after the code): do save_backup. Changed by
 #                       specs/computer-lab-backup.md ("Reviewed tests that change"): it replaces "chat 5 2 4"
+#   "camera"            the security desk (specs/camera-proof.md): the walk to José and his conversation up to
+#                       the card that convinces him (GUARD_COMMANDS, no request: his lines are the page's),
+#                       the hands on the cables and the minute bar (CAMERA_HANDS), then `footage`
 #   "show x"            card x shown on the line just heard (`confront`)
-#   "hearing a, b, c"   start and three answers ("-" is "Say nothing")
+#   "hearing a, b, c, d" start and four answers ("-" is "Say nothing"; specs/camera-proof.md)
 #   "wait until 22:45"  the player does nothing until that time
 #
 # `paced(seconds, route)` plays one route through campus.command. Each command takes `seconds` of real
@@ -276,6 +280,12 @@ QUICK_SECONDS = 5
 
 LAB = "> computer_lab; computer12: start; code; backup"
 END = "> auditorium; professor: start"
+# Changed by specs/camera-proof.md ("Reviewed tests that change"): the security desk. The walk to José,
+# "start", "Explain the situation", "Show evidence", the card, the button to the cables, "Plug in", the
+# button to the recordings and the computer lab's tab: nine commands that send no request. Then the
+# hands: two clicks for each of the five cables (2 seconds each) and the minute bar (5 seconds).
+GUARD_COMMANDS = 9
+CAMERA_HANDS = 5 * 2 * 2 + 5
 
 
 def clues(choice):
@@ -286,32 +296,38 @@ def clues(choice):
 
 ROUTES = {
     # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): no chat, no flags and no
-    # "fifth_element"; Leonor's choice decides the story's ending, and LAB saves the backup.
-    1: "; ".join([clues("accuse"), LAB, END, "hearing files, original_photo, -"]),
-    2: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
+    # "fifth_element"; LAB saves the backup.
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): the proofs decide the ending, so route 1
+    # (it accused Leonor) now gets the code but never saves the backup: Stolen credit.
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): every route answers four claims, and
+    # the routes that close the case go to the security desk ("camera") after the lab.
+    1: "; ".join([clues("ask_for_help"), "> computer_lab; computer12: start; code", END,
+                  "hearing files, original_photo, -, -"]),
+    2: "; ".join([clues("ask_for_help"), LAB, "camera", END, "hearing files, original_photo, backup, footage"]),
     # Route 3 is route 2, the careful night that route 6 is compared with.
-    3: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
+    3: "; ".join([clues("ask_for_help"), LAB, "camera", END, "hearing files, original_photo, backup, footage"]),
     # Changed by specs/night-and-clues.md: the photo can no longer be lost, so this night gets it, skips
-    # Leonor (lost at 22:45) and says nothing to the other claims. Was: only the lab, waiting until 22:30.
+    # Leonor (gone at 22:45) and says nothing to the other claims. Was: only the lab, waiting until 22:30.
     5: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo", LAB, "wait until 22:45", END,
-                  "hearing files, -, -"]),
+                  "hearing files, -, -, -"]),
     # Route 6 is route 3 played by a player who waits at computer 12, the files open, until Duarte comes.
-    6: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
+    6: "; ".join([clues("ask_for_help"), LAB, "camera", END, "hearing files, original_photo, backup, footage"]),
     # With the photo, Leonor's card offers only the two decisions (specs/actions-when-they-make-sense.md).
     7: "; ".join(["rita: start, pen; search can; search usb_stick; > print_shop; amelia: start, order; "
                   "photo; > library; leonor: start; do ask_for_help; > computer_lab; "
-                  "tomas: start, kind, who, password; computer12: start; code; backup",
-                  END, "hearing files, original_photo, backup"]),
+                  "tomas: start, kind, who, password; computer12: start; code; backup", "camera",
+                  END, "hearing files, original_photo, backup, footage"]),
     9: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo; > study_room; "
                   "rita: start, photo, five; show original_photo; > library; leonor: start; do ask_for_help",
                   LAB, "tomas: start, kind, who, password, slides; show files",   # specs/two-answers.md: the order
-                  END, "hearing files, original_photo, backup"]),
+                  "camera", END, "hearing files, original_photo, backup, footage"]),
     11: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo",
                    LAB, "tomas: start, kind, who, password, slides; show files; "
                    "> library; leonor: start; do ask_for_help; leonor: soft, messages, mine, sure; "
-                   "> study_room; rita: start, photo, duarte, warned, pen, chat, five; show files; "
-                   "> auditorium; duarte: start, part, slide; show files; professor: start, list, evidence, proof",
-                   "hearing files, original_photo, backup"]),
+                   "> study_room; rita: start, photo, duarte, warned, chat, five; show files", "camera",
+                   # Changed by specs/duarte-only-in-the-hearing.md ("Reviewed tests that change"): no conversation with Duarte.
+                   "> auditorium; professor: start, list, evidence, proof",
+                   "hearing files, original_photo, backup, footage"]),
 }
 
 # How each route treats a round while Tomás has not cracked (the rule under the routes in the spec):
@@ -323,9 +339,12 @@ ROUND_HABITS = {1: "knows", 2: "knows", 3: "knows", 5: "knows", 6: "linger", 7: 
 
 # The commands of "everything" that are not polite lines and cannot be skipped (spec, point 13).
 # One of them takes QUICK_SECONDS: opening the table.
+# Changed by specs/camera-proof.md ("Reviewed tests that change"): the security desk (its nine commands and
+# keeping the picture) and a fourth answer.
 OTHER_COMMANDS = {"open the table": 1, "search": 1, "doors (print shop, library, lab, back to Rita, auditorium)": 5,
                   "copy (the answer and the full frame)": 2, "decision": 1, "code": 1, "backup": 1,
-                  "cards (Tomás, Rita, Duarte)": 3, "hearing (start and three answers)": 4}
+                  "cards (Tomás, Rita)": 2, "security desk (José, cables, recordings, the picture)": GUARD_COMMANDS + 1,
+                  "hearing (start and four answers)": 5}
 
 
 def photo_hands():
@@ -504,6 +523,13 @@ def play_step(run, step):
             raise ValueError(f"refused: {step}")
     elif step == "backup":
         backup(run)
+    elif step == "camera":   # specs/camera-proof.md
+        for _ in range(GUARD_COMMANDS):
+            think(run, run["pace"])
+        run["seconds"] += CAMERA_HANDS   # the hands on the cables and the minute bar
+        time_left_check(run)
+        reply = sent(send(run, "footage", camera="computer_lab", minute=23 * 60 + 47), step)
+        assert reply["footage"] is True
     elif step.startswith("show "):
         person, node = run["line"]
         sent(send(run, "confront", npc=person, node=node, evidence=step[len("show "):]), step)
@@ -583,17 +609,15 @@ def test_finding_the_clues_costs_nothing_and_accusing_leonor_one_minute():
     code = unlock()
     assert code["night"]["charged"] == 0 and code["night"]["minute"] == 0
 
-    # The other decision, a wrong one, and view_files played directly (a hand-made request).
-    play("open_drawer", "go_print_shop", player="accuser")
-    assert do("request_copy", "accuser")["night"]["charged"] == 0
-    do("go_study_room", "accuser")
-    do("go_library", "accuser")
-    accuse = do("accuse", "accuser")
-    assert accuse["night"]["charged"] == 1 and accuse["night"]["minute"] == 1
-    do("go_study_room", "accuser")
-    do("go_computer_lab", "accuser")
-    files = do("view_files", "accuser")
-    assert files["night"]["charged"] == 0 and files["night"]["minute"] == 1
+    # view_files played directly (a hand-made request), with no decision: nothing is charged.
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): there is no "accuse" decision any more.
+    # Changed by specs/night-and-clues.md: the copy and the files cost nothing.
+    play("open_drawer", "go_print_shop", player="direct")
+    assert do("request_copy", "direct")["night"]["charged"] == 0
+    do("go_study_room", "direct")
+    do("go_computer_lab", "direct")
+    files = do("view_files", "direct")
+    assert files["night"]["charged"] == 0 and files["night"]["minute"] == 0
 
 
 def test_the_copy_is_free_and_the_clerk_is_still_there_at_2240():
@@ -637,8 +661,10 @@ def test_walking_talking_the_backup_and_the_hearing_cost_nothing():
     costs_nothing(walk("computer_lab"), 0)                    # a door: two moves of the story
     costs_nothing(unlock(), 0)
     costs_nothing(do("save_backup"), 0)                       # the backup (specs/computer-lab-backup.md: it replaces the chat)
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): keeping the picture costs nothing, and the hearing has five commands.
+    costs_nothing(call("footage", camera="computer_lab", minute=23 * 60 + 47), 0)
     costs_nothing(walk("auditorium"), 0)
-    for value in ("start", "files", "original_photo", "backup"):   # the four hearing commands
+    for value in ("start", "files", "original_photo", "backup", "footage"):   # the five hearing commands
         costs_nothing(answer(value), 0)
     assert game.load(PLAYER)["ending"] != "none"
 
@@ -646,8 +672,10 @@ def test_walking_talking_the_backup_and_the_hearing_cost_nothing():
 def test_refused_actions_cost_nothing_and_save_nothing():
     call()
     before = saved()
+    # # Changed by specs/three-proofs.md ("Reviewed tests that change"): the auditorium door is never refused now,
+    # so the refused action is a decision asked for outside the library.
     refused = [call("search", spot="can"),             # a wrong object of the table (the page takes its minute, not the server)
-               call("enter", room="auditorium")]       # a refused door: no clue is done yet
+               call("play", action="ask_for_help")]    # not offered in the study room
     assert saved() == before
     do("go_computer_lab")
     before = saved()
@@ -677,7 +705,8 @@ def test_cards_cost_what_the_table_says():
 def test_the_cost_table_is_whole_or_half_minutes_and_matches_the_rude_answers():
     rules = clock_rules()
     # The names the spec fixes (point 2); the numbers can be retuned, the balance tests below guard them.
-    assert set(rules.COSTS) == {"request_copy", "ask_for_help", "accuse", "view_files",
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): no "accuse".
+    assert set(rules.COSTS) == {"request_copy", "ask_for_help", "view_files",
                                 "card_right", "card_wrong", "card_duarte", "caught"}
     assert set(rules.PAGE_COSTS) == {"rude_answer", "wrong_spot", "wrong_code"}
     for name, minutes in rules.COSTS.items():   # the server's costs may be a half (none is, since specs/night-and-clues.md)
@@ -707,10 +736,12 @@ def test_time_keeps_the_larger_minute_and_never_goes_down():
 def test_a_charge_is_added_to_the_reported_minute():
     # Changed by specs/night-and-clues.md ("Reviewed tests that change"): the copy is free, so the
     # charge is accusing Leonor (1 minute). Was: the copy at 4 made 4.5.
-    play("go_print_shop", "request_copy", "go_study_room", "go_library")
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): there is no accusing, so the charge is a
+    # wrong card (2 minutes): the photo shown to Rita on her first line.
+    play("go_print_shop", "request_copy", "go_study_room")
     assert at(4)["night"]["minute"] == 4
-    accuse = do("accuse")
-    assert accuse["night"]["minute"] == 5 and accuse["night"]["charged"] == 1
+    wrong = show("original_photo", "rita", "start")
+    assert wrong["night"]["minute"] == 6 and wrong["night"]["charged"] == 2
 
 
 def test_time_rejects_bad_minutes_and_extra_fields_and_saves_nothing():
@@ -829,35 +860,26 @@ def test_the_schedule_sentence_is_only_for_the_room_of_the_person_who_left():
 def test_leonor_leaves_at_2230_unless_she_is_helping():
     empty_chair = schedule("en", "leonor_gone")
 
-    # Undecided, with the photo: gone at minute 15, and both decisions are refused with her sentence.
+    # Undecided, with the photo: gone at minute 15, and her decision is refused with her sentence.
     play("go_print_shop", "request_copy", "go_study_room", "go_library", player="with photo")
     gone = at(15, "with photo")
     assert people_ids(gone) == [] and "leonor" in gone["night"]["gone"]
     assert gone["night"]["notice"] == empty_chair
-    refuses_both_decisions("with photo", empty_chair)
+    refuses_the_decision("with photo", empty_chair)
 
     # Undecided, without the photo (the story would answer with its own blocked text).
     play("go_library", player="without photo")
     gone = at(15, "without photo")
     assert people_ids(gone) == [] and "leonor" in gone["night"]["gone"]
     assert gone["night"]["notice"] == empty_chair
-    refuses_both_decisions("without photo", empty_chair)
+    refuses_the_decision("without photo", empty_chair)
 
     # Helping: she stays, saving her screenshots.
     play("go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help", player="helping")
     late = at(29, "helping")
     assert "leonor" in people_ids(late) and "leonor" not in late["night"]["gone"]
     assert late["night"]["notice"] == ""
-
-    # Accused: the story already emptied her table, and minute 15 changes nothing.
-    play("go_print_shop", "request_copy", "go_study_room", "go_library", "accuse", player="accused")
-    fourteen = at(14, "accused")
-    asked_at_14 = call("play", player="accused", action="ask_for_help")
-    fifteen = at(15, "accused")
-    asked_at_15 = call("play", player="accused", action="ask_for_help")
-    assert fifteen["texts"] == fourteen["texts"]
-    assert asked_at_15["message"] == asked_at_14["message"]
-    assert "leonor" not in fifteen["night"]["gone"] and fifteen["night"]["notice"] == ""
+    # # Changed by specs/three-proofs.md ("Reviewed tests that change"): the "accused" case is gone with the decision.
 
 
 def test_the_room_text_starts_with_the_schedule_sentence():
@@ -892,17 +914,18 @@ def test_the_print_shop_keeps_its_own_text_all_night():
 def test_the_closing_times_are_on_the_clue_rows_from_the_start():
     for language in ("en", "pt"):
         rows = call(language=language, player=f"new {language}")["clues"]
+        # # Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is no longer a row (she is not a proof).
         assert {row["id"]: row["until"] for row in rows} == {
-            # Changed by specs/night-and-clues.md: the photo has no closing time, Leonor leaves at 22:45.
-            "usb_stick": "", "original_photo": "", "files_viewed": "", "leonor": "22:45"}, language
+            # Changed by specs/night-and-clues.md: the photo has no closing time.
+            "usb_stick": "", "original_photo": "", "files_viewed": ""}, language
         assert not any(row["lost"] for row in rows), language
         assert all(set(row) == {"id", "label", "room", "done", "until", "lost"} for row in rows), language
 
 
-def test_the_photo_is_never_lost_and_without_it_the_auditorium_stays_locked():
-    # Changed by specs/night-and-clues.md ("Reviewed tests that change"): the photo can no longer
-    # be lost. Was test_a_lost_photo_loses_leonor_too_and_no_longer_locks_the_auditorium: at minute 10 the
-    # photo and Leonor were lost, and the auditorium opened.
+def test_the_photo_is_never_lost_and_the_auditorium_is_always_open():
+    # Changed by specs/night-and-clues.md ("Reviewed tests that change"): the photo can no longer be lost.
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): the auditorium is always open, and Leonor is
+    # not a row of the phone. Was test_a_lost_photo_loses_leonor_too_and_no_longer_locks_the_auditorium.
     for way in ("door", "button"):
         player = f"no photo by {way}"
         call(player=player)
@@ -912,46 +935,43 @@ def test_the_photo_is_never_lost_and_without_it_the_auditorium_stays_locked():
         do("save_backup", player)
         late = at(29, player)
         assert clue_row(late, "original_photo")["lost"] is False and clue_row(late, "original_photo")["done"] is False, way
-        assert clue_row(late, "leonor")["lost"] is True, way   # Leonor left undecided at 22:45
+        assert "leonor" not in [row["id"] for row in late["clues"]], way
         if way == "door":
             entered = call("enter", player=player, room="auditorium")
-        else:
+        else:   # the button is in the study room
+            walk("study_room", player)
             entered = call("play", player=player, action="go_auditorium")
-        assert not entered["accepted"], way
+        assert entered["accepted"] and entered["scene"] == "auditorium", way
 
-def test_leonor_alone_is_lost_at_2230_when_the_photo_is_held():
+
+def test_leonor_leaving_at_2245_loses_no_clue():
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is not a clue, so her leaving
+    # loses nothing on the phone, and the auditorium was open before she left.
     call()
     call("search", spot=search.PEN_SPOT)
     walk("print_shop")
     do("request_copy")
     walk("computer_lab")
-    unlock()   # minute 1.5
-    do("save_backup")   # specs/computer-lab-backup.md: away from computer 12 before the round at 22:27
+    unlock()
+    do("save_backup")   # away from computer 12 before the round at 22:42
     fourteen = at(14)
-    assert clue_row(fourteen, "leonor")["lost"] is False and clue_row(fourteen, "leonor")["done"] is False
-    assert not call("enter", room="auditorium")["accepted"]
+    assert not any(row["lost"] for row in fourteen["clues"])
     fifteen = at(15)
-    assert clue_row(fifteen, "leonor")["lost"] is True and clue_row(fifteen, "leonor")["done"] is False
-    assert clue_row(fifteen, "original_photo")["done"] is True and clue_row(fifteen, "original_photo")["lost"] is False
+    assert "leonor" in fifteen["night"]["gone"]
+    assert not any(row["lost"] for row in fifteen["clues"])
+    assert clue_row(fifteen, "original_photo")["done"] is True
     assert call("enter", room="auditorium")["accepted"]
 
 
-def test_the_story_rule_still_needs_the_old_files():
-    # Changed by specs/night-and-clues.md ("Reviewed tests that change"): the photo is never lost,
-    # so the player gets it and Leonor is lost at 15. Was: at minute 10 the photo and Leonor were lost.
+def test_the_auditorium_opens_without_any_proof():
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): the story no longer asks for the old files
+    # (or anything else) at the auditorium door: the hearing decides with what the player has.
     call()
-    call("search", spot=search.PEN_SPOT)
-    walk("print_shop")
-    do("request_copy")
-    walk("study_room")
-    fifteen = at(15)
-    assert clue_row(fifteen, "leonor")["lost"] and clue_row(fifteen, "original_photo")["done"]
-    before = saved()
     door = call("enter", room="auditorium")
-    button = call("play", action="go_auditorium")
-    assert not door["accepted"] and not button["accepted"]
-    assert door["scene"] == button["scene"] == "study_room"
-    assert saved() == before
+    assert door["accepted"] and door["scene"] == "auditorium"
+    call(player="button")
+    button = call("play", player="button", action="go_auditorium")
+    assert button["accepted"] and button["scene"] == "auditorium"
 
 def test_a_night_that_lost_leonor_and_says_nothing_ends_in_stolen_credit():
     # Changed by specs/night-and-clues.md ("Reviewed tests that change"): the print shop can no
@@ -965,10 +985,12 @@ def test_a_night_that_lost_leonor_and_says_nothing_ends_in_stolen_credit():
     do("save_backup")  # specs/computer-lab-backup.md: the auditorium needs the backup too
     at(15)             # Leonor leaves undecided
     walk("auditorium")
-    # The player answers the first claim and says nothing to the other two.
-    result = hear("files", "concede", "concede")
-    assert result["hearing"]["doubts"] == 2
-    assert result["ending"]["id"] == "stolen_credits" and game.load(PLAYER)["ending"] == "stolen_credits"
+    # The player answers the first claim and says nothing to the other three (specs/camera-proof.md: four claims).
+    result = hear("files", "concede", "concede", "concede")
+    assert result["hearing"]["doubts"] == 3
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): the story's own ending is "full_case" (every proof
+    # of the save is held); the claims left without proof show "Stolen credit".
+    assert result["ending"]["id"] == "stolen_credits" and game.load(PLAYER)["ending"] == "full_case"
 
 def test_the_reviewed_paths_never_meet_the_schedule():
     ended = play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help",
@@ -978,11 +1000,9 @@ def test_the_reviewed_paths_never_meet_the_schedule():
     assert ended["night"]["minute"] == 0   # no report, and finding the clues is free (specs/night-and-clues.md; was 2.5)
     assert ended["night"]["gone"] == [] and ended["night"]["caught"] is False
 
-    # The door note for a new game, with the two reviewed arguments and with the new optional one.
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): there is no door note any more.
     new = game.load(call(player="newcomer")["player"])
-    note = TEXT["en"]["auditorium_note"]
-    assert campus.missing_clues_note(new, "en") == note
-    assert campus.missing_clues_note(new, "en", minute=0) == note
+    assert not hasattr(campus, "missing_clues_note")
     # people_in_room keeps its three reviewed arguments; the fourth, `gone`, is optional (point 5).
     assert [person["id"] for person in people.people_in_room("print_shop", new, "en")] == ["amelia"]
     assert people.people_in_room("print_shop", new, "en", gone=("amelia",)) == []
@@ -994,11 +1014,12 @@ def test_the_warnings_come_at_minute_10_and_when_leonor_is_lost():
     # Changed by specs/night-and-clues.md ("Reviewed tests that change"): no `shop` warning, and
     # the photo is never lost. Was test_the_warnings_come_at_minute_5_and_10_and_when_a_clue_is_lost.
     for language in ("en", "pt"):
-        # Leonor undecided, with or without the photo: `leonor` from 10 to 14; at 15 she is lost.
+        # Leonor undecided, with or without the photo: `leonor` from 10 to 14; at 15 she leaves.
+        # Changed by specs/three-proofs.md ("Reviewed tests that change"): she is not a clue, so her leaving is not `lost`.
         for player, steps in ((f"no photo {language}", ()), (f"photo {language}", ("go_print_shop", "request_copy"))):
             play(*steps, language=language, player=player)
             for minute in range(4, 17):
-                expected = {"leonor"} if 10 <= minute <= 14 else {"lost"} if minute >= 15 else set()
+                expected = {"leonor"} if 10 <= minute <= 14 else set()
                 assert warnings_due(at(minute, player, language), language) == expected, (language, minute)
 
         # With the photo and Leonor helping: no warning and nothing lost.
@@ -1138,10 +1159,12 @@ def test_a_caught_player_who_fails_every_claim_still_has_three_doubts():
     assert answer("start")["hearing"]["doubts"] == 1
     assert answer("concede")["hearing"]["doubts"] == 2
     assert answer("concede")["hearing"]["doubts"] == 3
+    assert answer("concede")["hearing"]["doubts"] == 3   # specs/camera-proof.md: a fourth claim
     last = answer("concede")
     assert last["hearing"]["doubts"] == 3   # never counted above three
     assert last["ending"]["id"] == "stolen_credits"
-    assert last["ending"]["verdict"] == case().CASE_TEXT["en"]["verdicts"]["three_help"]   # `three` when Leonor does not help
+    # # Changed by specs/three-proofs.md ("Reviewed tests that change"): one verdict line, `missing`, for any claim left without proof.
+    assert last["ending"]["verdict"] == case().CASE_TEXT["en"]["verdicts"]["missing"]
 
 
 def test_a_catch_at_the_first_round_loses_an_undecided_leonor():
@@ -1149,9 +1172,10 @@ def test_a_catch_at_the_first_round_loses_an_undecided_leonor():
          "view_files")   # the photo is held, Leonor is undecided, minute 1.5, at computer 12 (specs/computer-lab-backup.md)
     caught = at(12)
     assert caught["night"]["caught"] is True and caught["night"]["minute"] == 15   # the 3 minutes end at 22:30
-    assert clue_row(caught, "leonor")["lost"] is True and clue_row(caught, "leonor")["done"] is False
+    # # Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is not a row of the phone; she is gone.
+    assert "leonor" in caught["night"]["gone"]
     walk("library")
-    refuses_both_decisions(PLAYER, schedule("en", "leonor_gone"))
+    refuses_the_decision(PLAYER, schedule("en", "leonor_gone"))
 
 
 def test_a_damaged_caught_note_counts_as_not_caught():
@@ -1209,23 +1233,35 @@ def test_the_faculty_closes_at_2300():
 
 # ---------- The balance, over the real tables ----------
 
-def test_every_story_ending_has_a_route_at_15_30_45_and_60_seconds():
-    for seconds in (15, 30, 45, 60):
-        # Changed by specs/computer-lab-backup.md: three story endings, chosen by Leonor's decision.
+def test_every_story_ending_has_a_route_at_15_30_and_45_seconds():
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): the night keeps its 30 minutes
+    # (decided by the team), so with the security desk "Case closed" fits up to 52 seconds a command and
+    # no longer at 60; "Stolen credit" is still reached at 60.
+    for seconds in (15, 30, 45):
+        # Changed by specs/three-proofs.md ("Reviewed tests that change"): two story endings, chosen by the proofs.
         shown = {paced(seconds, route)["ending"] for route in (1, 2, 5)}
-        assert {"stolen_credits", "impostor", "full_case"} <= shown, seconds
+        assert {"stolen_credits", "full_case"} <= shown, seconds
+    # After the merge with specs/night-and-clues.md (the clues are free): up to 55 seconds and no longer at 56.
+    assert paced(55, 2)["ending"] == "full_case" and paced(56, 2)["ending"] is None
+    assert paced(60, 1)["ending"] == "stolen_credits"
 
 
-def test_a_careful_first_night_fits_at_45_seconds_with_two_minutes_left():
-    for seconds in (43, 45, 47):
+def test_a_careful_first_night_fits_at_39_seconds_with_two_minutes_left():
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): the security desk makes the careful night
+    # longer and the night keeps its 30 minutes: it fits with two minutes left up to 37 seconds a command (was 47).
+    # After the merge with specs/night-and-clues.md (the clues are free): up to 41 seconds; the check is made at 37, 39 and 41.
+    for seconds in (37, 39, 41):
         night = paced(seconds, 7)
         assert night["ending"] == "full_case", (seconds, night)
         assert clock_rules().NIGHT_MINUTES - night["minute"] >= 2, (seconds, night)
 
 
-def test_the_best_night_fits_at_45_seconds():
+def test_the_best_night_fits_at_39_seconds():
     # It fits at 45 seconds again because the copy costs half a minute (spec, point 13): 29.0 in the model.
-    night = paced(45, 9)
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): with the security desk it fits with a
+    # minute left up to 37 seconds a command; the check is made at 35.
+    # After the merge with specs/night-and-clues.md (the clues are free): it fits with a minute left up to 39 seconds.
+    night = paced(39, 9)
     assert night["ending"] == "full_case" and night["doubts"] == 0, night
     assert clock_rules().NIGHT_MINUTES - night["minute"] >= 1, night
 
@@ -1242,26 +1278,28 @@ def test_being_caught_costs_three_minutes_and_one_doubt_and_the_night_still_ends
 
 def test_doing_everything_does_not_fit_at_30_seconds():
     rules = clock_rules()
-    lines = sum(len(polite_lines(person)) for person in people.PEOPLE["en"])
+    # Changed by specs/duarte-only-in-the-hearing.md ("Reviewed tests that change"): Duarte is not talked to, so his lines
+    # and his card are not part of "everything".
+    lines = sum(len(polite_lines(person)) for person in people.PEOPLE["en"] if person != "duarte")
     commands = lines + sum(OTHER_COMMANDS.values())
     # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): opening the chat, the five
     # flags and closing it (7 commands) became one backup, and Leonor is no longer shown a card: 19
     # commands instead of 26.
-    assert sum(OTHER_COMMANDS.values()) == 19
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): the security desk (10 commands) and a
+    # fourth answer: 30 commands.
+    assert sum(OTHER_COMMANDS.values()) == 29   # specs/duarte-only-in-the-hearing.md: no card for Duarte
     # Every command at half a minute, except opening the table (QUICK_SECONDS) and the hands on the
     # pieces of the photo.
-    real_minutes = ((commands - 1) * 30 + QUICK_SECONDS + photo_hands()) / 60
+    real_minutes = ((commands - 1) * 30 + QUICK_SECONDS + photo_hands() + CAMERA_HANDS) / 60
     # The smallest charges of such a night: the copy, the decision, the files, two right cards, Duarte's card.
     costs = rules.COSTS
-    charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 2 * costs["card_right"]
-               + costs["card_duarte"])
+    charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 2 * costs["card_right"])
     assert real_minutes + charges > rules.NIGHT_MINUTES, (lines, commands, real_minutes, charges)
-    # Route 11 (not every polite line) lost the same commands, and Tomás's conversation is shorter
-    # (specs/two-answers.md): it now fits up to 34 seconds a command (26.8 minutes at 30) and no longer at 35.
-    assert paced(37, 11)["ending"] == "full_case"
-    assert paced(38, 11)["ending"] is None
-    # Changed by specs/night-and-clues.md ("Reviewed tests that change"): finding the clues is free, so the
-    # same route now fits up to 37 seconds a command (29.55 minutes) and no longer at 38. Was 34 and 35.
+    # Route 11 (not every polite line). Changed by specs/camera-proof.md and specs/duarte-only-in-the-hearing.md
+    # ("Reviewed tests that change"): the security desk, and no conversation with Duarte; after the merge with
+    # specs/night-and-clues.md (the clues are free) it fits up to 33 seconds a command and no longer at 34.
+    assert paced(33, 11)["ending"] == "full_case"
+    assert paced(34, 11)["ending"] is None
 
 
 # ---------- The texts, the page and the files ----------
@@ -1276,10 +1314,10 @@ def test_the_schedule_texts_exist_in_both_languages():
             assert TEXT[language][key].strip(), (language, key)
         assert "{time}" in TEXT[language]["todo_until"], language
         assert "{n}" in TEXT[language]["time_charged"], language
-        assert len(TEXT[language]["notices"]) == 4, language
-    # `map_locked` is reworded: the auditorium now also opens when a clue is lost.
-    assert TEXT["en"]["map_locked"] != "Closed until you have every clue"
-    assert TEXT["pt"]["map_locked"] != "Fechado até teres todas as pistas"
+        assert len(TEXT[language]["notices"]) == 3, language   # specs/three-proofs.md: no accusing
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): the auditorium is never locked, so the
+    # map has no `map_locked` line any more.
+    assert "map_locked" not in TEXT["en"] and "map_locked" not in TEXT["pt"]
     # Changed by specs/night-and-clues.md: the clerk no longer leaves, so there is no shutter sentence.
     # Was: campus_clock.SHUTTER in both languages, kept out of campus_text.py.
     assert not hasattr(clock_rules(), "SHUTTER")

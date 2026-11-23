@@ -24,7 +24,8 @@ def test_the_night_runs_from_half_past_ten_to_eleven():
 def test_finding_a_clue_costs_nothing_and_wrong_choices_still_do():
     for action in ("request_copy", "ask_for_help", "view_files"):
         assert clock.COSTS[action] == 0, action
-    for wrong in ("accuse", "card_wrong", "caught"):
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): there is no "accuse" any more.
+    for wrong in ("card_wrong", "caught"):
         assert clock.COSTS[wrong] > 0, wrong
     assert all(minutes > 0 for minutes in clock.PAGE_COSTS.values())
 
@@ -39,10 +40,12 @@ def test_the_print_shop_never_closes():
 
 
 def test_the_clues_are_in_the_order_they_are_done():
-    assert [clue for clue, _room in campus.CLUES] == ["usb_stick", "original_photo", "leonor", "files_viewed"]
+    # Changed by specs/three-proofs.md ("Reviewed tests that change"): Leonor is not a clue of the phone (she helps
+    # at computer 12, but she is not a proof). Was: usb_stick, original_photo, leonor, files_viewed.
+    assert [clue for clue, _room in campus.CLUES] == ["usb_stick", "original_photo", "files_viewed"]
     for language in ("pt", "en"):
         t = TEXT[language]
-        assert list(t["clues"]) == ["usb_stick", "original_photo", "leonor", "files_viewed"]
+        assert list(t["clues"]) == ["usb_stick", "original_photo", "files_viewed"]
         for key in ("clues_notice_title", "clues_notice_intro", "clues_notice_end", "clues_notice_ok"):
             assert t[key].strip(), (language, key)
 

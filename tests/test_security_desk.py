@@ -63,9 +63,14 @@ def test_only_the_photo_or_the_old_files_convince_the_guard_and_a_wrong_card_cos
 
 
 def test_the_guard_and_the_recordings_never_call_the_server():
+    # Changed by specs/camera-proof.md ("Reviewed tests that change"): phase 2. Keeping the picture is now
+    # the one request of the desk, so the server holds the fourth proof; the guard and the cables still
+    # never call it.
     code = section()
-    for call in ("request(", "send(", "fetch(", "campusBridge"):
+    for call in ("request(", "fetch(", "campusBridge"):
         assert call not in code, call
+    assert code.count("send(") == 1
+    assert 'send("footage", { camera: cctvCamera, minute: cctvMinute })' in code
 
 
 def test_what_is_read_from_the_browser_must_be_exactly_true_and_a_new_game_forgets_it():

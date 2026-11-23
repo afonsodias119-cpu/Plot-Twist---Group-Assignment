@@ -24,7 +24,7 @@ from datetime import date
 import db
 import game
 import logic
-from campus_case import CASE_TEXT, CONFRONT, EVIDENCE, FACTS, HEARING
+from campus_case import CASE_TEXT, CONFRONT, EVIDENCE, FACTS, HEARING, NIGHT_EVIDENCE
 # The cases of the day (specs/case-of-the-day.md): server only.
 from campus_case import CASES
 # The cost of a card is in the night's cost table (specs/night-schedule.md, point 2): the server adds
@@ -32,7 +32,7 @@ from campus_case import CASES
 from campus_clock import COSTS, NIGHT_MINUTES, ROUNDS
 # What the server remembers of earlier nights (specs/earlier-nights.md): the gate of the true ending
 # and the row of tonight's ending.
-from campus_memory import TRUE_ENDING, record, seen_all, true_ending
+from campus_memory import record
 from campus_people import OBJECTS, PEOPLE, TEMPERS, talk
 # The friends' names of specs/your-own-group.md: kept in the notes, swapped in by retell.
 from campus_people import DEFAULT_GROUP, clean_group
@@ -41,7 +41,7 @@ from story import STORIES
 
 # The ten cards, in the order the hand shows them (point 4): the ones the save gives, then the facts.
 # specs/computer-lab-backup.md: the facts of FACTS are no longer cards; the hand is the proofs only.
-CARDS = list(EVIDENCE)
+CARDS = list(EVIDENCE) + NIGHT_EVIDENCE   # the recording last (specs/camera-proof.md)
 FINAL_ROOM = "auditorium"
 # The doubts are never counted above three (point 10).
 MAX_DOUBTS = 3
@@ -144,16 +144,15 @@ def read_night(player, state):
     night = {"minute": clean_minute(saved), "cracked": cracked,
              "hearing": answers if valid_hearing(answers, state) else None, "verdict": "", "caught": caught,
              "run": notes.get("run") is True, "rude": clean_rude(notes.get("rude")),
-             "case": clean_case(notes.get("case")), "names": clean_names(notes.get("names"))}
+             "case": clean_case(notes.get("case")), "names": clean_names(notes.get("names")),
+             # The security recording was kept for the professor (specs/camera-proof.md): only exactly true.
+             "footage": notes.get("footage") is True}
     # The saved verdict is only a record of what was shown (point 10): the screen always works the
     # ending out again from the answers (shown_ending), so editing this note by hand changes nothing.
     if night["hearing"] is not None and state["ending"] != "none":
         shown, _line = verdict_of(state, night["hearing"], bool(caught), claims_of(night))
         if notes.get("verdict") == shown:
             night["verdict"] = shown
-        # The true ending is believed only when tonight's game agrees with it (specs/earlier-nights.md, point 8).
-        if notes.get("verdict") == TRUE_ENDING and perfect_night(state, night):
-            night["verdict"] = TRUE_ENDING
     return night
 
 
@@ -175,6 +174,8 @@ def write_night(player, night):
     # Only a group that is not the story's (specs/your-own-group.md, point 4): the `games` row never has it.
     if night.get("names") and night["names"] != DEFAULT_GROUP:
         notes["names"] = night["names"]
+    if night.get("footage") is True:   # only once the recording was kept (specs/camera-proof.md)
+        notes["footage"] = True
     db.save_night(player, int(minute), notes)
 
 
@@ -266,7 +267,8 @@ def moods(night):
 def held(state, night):
     """The ids of the cards the player holds now, in the order of CARDS (the facts of a cracked
     person are not cards any more: specs/computer-lab-backup.md)."""
-    return [card for card, condition in EVIDENCE.items() if logic._condition_met(condition, state)]
+    cards = [card for card, condition in EVIDENCE.items() if logic._condition_met(condition, state)]
+    return cards + (["footage"] if night.get("footage") is True else [])   # specs/camera-proof.md
 
 
 def card_label(card, language):
@@ -359,26 +361,13 @@ def doubts(answers, caught=False, claims=HEARING):
 def verdict_of(state, answers, caught=False, claims=HEARING):
     """The ending shown after the hearing and the key of the professor's verdict line ("" for none).
 
-    The story decides the best the player earned (state["ending"]); the hearing can only lose it
-    (point 10 and design-notes, B6). `caught`: the player was caught at a round tonight.
+    Every claim answered with its proof: the story's own ending (Duarte incriminated when every proof is
+    held). A claim with no proof (a wrong card or "concede"): Stolen credit, with the line `missing`
+    (specs/three-proofs.md). A catch at a round costs time and a doubt on the screen, never the ending.
     """
-    story_ending = state["ending"]
-    count = doubts(answers, caught, claims)
-    if count >= MAX_DOUBTS:
-        return "stolen_credits", "three_help" if state["flags"]["colleague_choice"] == "help" else "three"
-    if count == 2 and story_ending == "full_case":   # "The impostor" now means Leonor was accused (specs/computer-lab-backup.md)
-        return "stolen_credits", "two"
-    return story_ending, ""
-
-
-def perfect_night(state, night):
-    """True when tonight could give the true ending (specs/earlier-nights.md, point 8): the story's
-    `full_case`, a hearing of three answers with no doubt (a catch is a doubt) and the words of
-    Tomás and Rita both won tonight. The story endings of earlier nights are checked by the caller."""
-    answers = night["hearing"]
-    return (state["ending"] == "full_case" and answers is not None and len(answers) == len(HEARING)
-            and doubts(answers, bool(night["caught"]), claims_of(night)) == 0
-            and all(person in night["cracked"] for person in FACTS))
+    if any(answer not in claim["accepts"] for claim, answer in zip(claims, answers)):
+        return "stolen_credits", "missing"
+    return state["ending"], ""
 
 
 def hearing(player, state, night, language, answer):
@@ -411,10 +400,6 @@ def hearing(player, state, night, language, answer):
         game.play(player, "present_evidence", language)
         state = game.load(player)
         night["verdict"], _line = verdict_of(state, night["hearing"], bool(night["caught"]), claims_of(night))
-        # The true ending: every story ending seen on earlier nights (tonight's row is not written
-        # yet) and a perfect night. The save keeps the story's full_case (point 8).
-        if seen_all(player) and perfect_night(state, night):
-            night["verdict"] = TRUE_ENDING
         night = record(player, night, night["verdict"])
     write_night(player, night)
     return True, "", True
@@ -477,8 +462,6 @@ def shown_ending(state, night, language):
     """
     if state["ending"] == "none":
         return None
-    if night["verdict"] == TRUE_ENDING:
-        return true_ending(language)
     shown, line = state["ending"], ""
     if night["hearing"] is not None:
         shown, line = verdict_of(state, night["hearing"], bool(night["caught"]), claims_of(night))

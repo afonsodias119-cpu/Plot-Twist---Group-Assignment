@@ -40,11 +40,18 @@ def test_every_line_of_tomas_and_rita_offers_at_most_two_answers_whatever_is_hel
 
 
 def test_rita_goes_from_the_usb_stick_to_the_photo_to_her_claim():
+    # specs/evidence-after-monitors.md: the photo is asked on her first line once the USB stick is found,
+    # never right after her line about the stick.
+    without, holding = {"inventory": [], "flags": {}}, {"inventory": ["usb_stick"], "flags": {}}
     for language in ("en", "pt"):
         nodes = people.PEOPLE[language]["rita"]["nodes"]
+        open_now = lambda node, state: [o["next"] for o in shown(nodes[node]["options"]) if logic._condition_met(o.get("if", {}), state)]
+        assert open_now("start", without) == ["pen", "upset"] and open_now("start", holding) == ["photo", "upset"], language
+        assert open_now("sorry", without) == ["pen", "upset"] and open_now("sorry", holding) == ["photo", "upset"], language
+        assert open_now("pen", without) == [], language   # "it could be anywhere": the player goes and looks
         right = lambda node: [o["next"] for o in shown(nodes[node]["options"])][0]
-        assert (right("start"), right("pen"), right("photo")) == ("pen", "photo", "five"), language
-        for node in ("start", "pen", "photo", "counted", "duarte", "warned", "sorry"):
+        assert right("photo") == "five", language
+        for node in ("photo", "counted", "duarte", "warned"):
             assert shown(nodes[node]["options"])[-1]["next"] == "upset", (language, node)
         assert [o["next"] for o in nodes["upset"]["options"]] == ["sorry", "closed"]
         assert not any("cost" in o for line in nodes.values() for o in line["options"])   # Rita has no rude answer
@@ -80,8 +87,10 @@ def test_tomas_gives_in_through_the_right_answer():
     assert reply["confront"]["cracked"] is True
 
 
-def test_show_evidence_is_gone_only_in_the_print_shop_and_the_computer_lab():
-    assert 'const NO_EVIDENCE = ["amelia", "tomas", "computer12"];' in PLAY
+def test_show_evidence_is_gone_for_the_clerk_tomas_and_rita_and_waits_for_the_monitors_with_the_guard():
+    assert 'const NO_EVIDENCE = ["amelia", "tomas", "computer12", "rita"];' in PLAY
+    assert 'const guardWaits = line.npc === "guard" && line.node !== "explain" && !asked.has("explain");' in PLAY
+    assert "!guardWaits" in PLAY
     assert "const showsEvidence = !NO_EVIDENCE.includes(line.npc)" in PLAY
     assert 'if (line.npc === "guard") { guardShown(card); return; }' in PLAY   # the guard is not touched
     assert "if (option.crack) {" in PLAY and "confrontWith(line, { id: option.crack, label: option.label }, true)" in PLAY
