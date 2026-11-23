@@ -356,7 +356,7 @@ def test_the_page_can_look():
     people = [(float(x), float(z)) for x, z in re.findall(r"placeNpc\(\{[^}]*\}, (-?[\d.]+), (-?[\d.]+),", GAME_HTML)]
     door = re.search(r"lab_door: \{ x: (-?[\d.]+), z: (-?[\d.]+)", GAME_HTML)
     people.append((float(door.group(1)), float(door.group(2))))
-    assert len(people) == 7
+    assert len(people) >= 7   # the seven of the story (and the security desk's guard, specs/security-desk.md)
     for thing in ROOM:
         for person in people:
             assert math.dist(spots[thing], person) >= 1.2, (thing, person)

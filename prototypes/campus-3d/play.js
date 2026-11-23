@@ -324,6 +324,9 @@
     <button id="sms" class="sms" hidden><span id="sms-from" class="sms-from"></span><span id="sms-text"></span></button>
     <div id="joystick" class="joystick" aria-hidden="true"><div id="stick-base" class="stick-base"><div id="stick-knob" class="stick-knob"></div></div></div>
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
+    <section id="guard-card" class="talk-card guard-card" role="dialog" aria-labelledby="guard-name" aria-live="polite" hidden>
+      <header><h3 id="guard-name"></h3><button id="guard-close" class="secondary"></button></header>
+      <p id="guard-text"></p><div id="guard-options"></div></section>
     <section id="chat-card" class="chat-card" role="dialog" aria-labelledby="chat-title" hidden>
       <header><h3 id="chat-title"></h3><button id="chat-close" class="secondary"></button></header>
       <p id="chat-intro" class="muted"></p><ol id="chat-messages"></ol></section>
@@ -830,6 +833,7 @@
     showEnding(state.ending);
     showChat(state.chat);
     checkNotices(state);
+    syncSecurity();
     sound.setTension(state.ending ? 0 : tensionOf(state));
     soundCues(before, state, operation);
     if (roomChanged) {
@@ -1453,10 +1457,10 @@
     return window.campusNear && (current?.finds || []).find(thing => thing.id === window.campusNear);
   }
   function updateNear() {
-    $("hud-bottom").classList.toggle("talking", Boolean(talking));
-    const person = window.campusNear && current?.people.find(p => p.id === window.campusNear);
+    $("hud-bottom").classList.toggle("talking", Boolean(talking) || Boolean(window.campusGuardOpen));
+    const person = window.campusNear && (window.campusNear === "guard" ? { id: "guard", name: ui().security.guard_name } : current?.people.find(p => p.id === window.campusNear));
     const thing = nearThing();
-    $("near-hint").hidden = !(person || thing) || Boolean(talking);
+    $("near-hint").hidden = !(person || thing) || Boolean(talking) || Boolean(window.campusGuardOpen);
     if (!person && !thing) return;
     const t = ui();
     // A thing says "look" (specs/more-to-find.md, point 7). On a phone the note is tapped instead of K
@@ -1467,10 +1471,12 @@
     const key = make("kbd", "K");
     $("near-hint").replaceChildren(key, document.createTextNode(" " + sentence));
   }
-  // K (or a click on the note): a thing is looked at, a person is talked to.
+  // K (or a click on the note): the guard opens his desk (specs/security-desk.md), a thing is looked at,
+  // a person is talked to.
   function useNear() {
     const thing = nearThing();
-    if (thing) lookAt(thing.id);
+    if (window.campusNear === "guard") openGuard();
+    else if (thing) lookAt(thing.id);
     else talkStep(window.campusNear, "start");
   }
   window.addEventListener("campus-near", updateNear);
@@ -1934,6 +1940,253 @@
   $("ending-card-btn").addEventListener("click", openCard);
   $("card-close").addEventListener("click", () => cardDialog.close());
 
+  // ---------- the security desk: a guard, five cables and the cameras (specs/security-desk.md) ----------
+  // Everything here is on the screen; what the player has done is kept in this browser, like the diary.
+  const securityKey = () => `plot-twist-security:${current?.player || ""}`;
+  function loadSecurity() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(securityKey()) || "{}");
+      return { convinced: saved.convinced === true, wired: saved.wired === true, footage: saved.footage === true };
+    } catch (error) { return { convinced: false, wired: false, footage: false }; }
+  }
+  function saveSecurity(state) { try { localStorage.setItem(securityKey(), JSON.stringify(state)); } catch (error) { /* no storage */ } }
+  function syncSecurity() { window.campusDeskPower = loadSecurity().wired; }   // the monitors of the 3D desk light up when it is true
+  const anyDialogOpen = () => Boolean(document.querySelector("dialog[open]"));
+  const backToPlay = () => { if (!talking && $("chat-card").hidden && !anyDialogOpen() && !window.campusGuardOpen) window.playing = true; };
+
+  // ----- the guard -----
+  function guardSay(text, options) {
+    $("guard-text").textContent = text;
+    $("guard-options").replaceChildren(...options.map(([label, handler]) => {
+      const button = make("button", label, "answer");
+      button.addEventListener("click", handler);
+      return button;
+    }));
+    $("guard-options").querySelector("button")?.focus({ preventScroll: true });
+  }
+  function openGuard() {
+    if (!current || current.ending || window.campusGuardOpen) return;
+    window.campusGuardOpen = true;
+    window.playing = false;
+    const t = ui().security;
+    $("guard-name").textContent = t.guard_name;
+    $("guard-close").textContent = ui().talk_close;
+    $("guard-card").hidden = false;
+    updateNear();
+    const state = loadSecurity();
+    guardNode(state.footage ? "done" : state.wired ? "ready" : state.convinced ? "cables" : "hello");
+  }
+  function closeGuard() {
+    window.campusGuardOpen = false;
+    $("guard-card").hidden = true;
+    updateNear();
+    backToPlay();
+  }
+  function guardNode(id) {
+    const t = ui().security, bye = [t.opt_bye, closeGuard], state = loadSecurity();
+    if (id === "hello") guardSay(t.hello, [[t.opt_explain, () => guardNode("explain")], [t.opt_broken, () => guardNode("broken")], bye]);
+    else if (id === "broken") guardSay(t.broken, [[t.opt_explain, () => guardNode("explain")], bye]);
+    else if (id === "explain") guardSay(t.explain, [[t.opt_show, () => guardNode("evidence")], [t.opt_rude, () => { penalize(2); guardNode("rude"); }], bye]);
+    else if (id === "rude") guardSay(t.rude, [[t.opt_back, () => guardNode("explain")], bye]);
+    else if (id === "evidence") {
+      const cards = current?.evidence || [];
+      if (!cards.length) { guardSay(t.evidence_none, [[t.opt_back, () => guardNode("explain")], bye]); return; }
+      // The photo with four people, or the old files with four authors, are what makes him doubt the report.
+      guardSay(t.evidence_title, [...cards.map(card => [card.label, () => {
+        if (card.id === "original_photo" || card.id === "files") { state.convinced = true; saveSecurity(state); guardNode("convinced"); }
+        else { penalize(1); guardNode("rebuff"); }
+      }]), [t.opt_back, () => guardNode("explain")]]);
+    }
+    else if (id === "rebuff") guardSay(t.rebuff, [[t.opt_show, () => guardNode("evidence")], bye]);
+    else if (id === "convinced") guardSay(t.convinced, [[t.opt_wire, openWires], [t.opt_who, () => guardNode("who")], bye]);
+    else if (id === "who") guardSay(t.who, [[t.opt_wire, openWires], bye]);
+    else if (id === "cables") guardSay(t.cables, [[t.opt_wire, openWires], [t.opt_who, () => guardNode("who")], bye]);
+    else if (id === "ready") guardSay(t.ready, [[t.opt_watch, openCctv], bye]);
+    else guardSay(t.done, [[t.opt_rewatch, openCctv], bye]);
+  }
+  $("guard-close").addEventListener("click", closeGuard);
+
+  // ----- the five cables -----
+  // The monitors are placed like the rooms are on the plan of the building (print shop, study room and library
+  // above the corridor; computer lab and auditorium below it). A cable says its room; the player must know where it is.
+  const SVG_NS_SEC = "http://www.w3.org/2000/svg";
+  const WIRE_CABLES = [["library", "#6aa8ff"], ["computer_lab", "#ff8c7a"], ["print_shop", "#e8b45c"], ["auditorium", "#c79bff"], ["study_room", "#7fd6a0"]];
+  const WIRE_PORTS = [{ room: "print_shop", x: 380, y: 98 }, { room: "study_room", x: 470, y: 98 }, { room: "library", x: 560, y: 98 },
+                      { room: "computer_lab", x: 410, y: 250 }, { room: "auditorium", x: 530, y: 250 }];
+  const wiresDialog = make("dialog", undefined, "wires-dialog"); wiresDialog.id = "wires-dialog";
+  wiresDialog.setAttribute("aria-labelledby", "wires-title");
+  wiresDialog.innerHTML = '<h2 id="wires-title"></h2><p id="wires-intro" class="muted"></p><svg id="wires-svg" viewBox="0 0 640 330" role="img"></svg>' +
+    '<p id="wires-status" role="status" class="wires-status"></p><div class="dialog-actions"><button id="wires-connect"></button><button id="wires-close" class="secondary"></button></div>';
+  document.body.append(wiresDialog);
+  let wireSelected = null, wireLinks = {};
+  const sec = (tag, attributes, text) => {
+    const element = document.createElementNS(SVG_NS_SEC, tag);
+    for (const [name, value] of Object.entries(attributes || {})) element.setAttribute(name, value);
+    if (text !== undefined) element.textContent = text;
+    return element;
+  };
+  function drawWires() {
+    const t = ui().security, svgBox = $("wires-svg");
+    svgBox.replaceChildren();
+    // the plan of the building, without names
+    svgBox.append(sec("text", { x: 470, y: 24, class: "wires-caption" }, t.wires_plan));
+    for (const [x, y, w, h] of [[335, 50, 90, 95], [425, 50, 90, 95], [515, 50, 90, 95], [335, 205, 135, 90], [470, 205, 135, 90]]) svgBox.append(sec("rect", { x, y, width: w, height: h, class: "wires-room" }));
+    svgBox.append(sec("rect", { x: 335, y: 150, width: 270, height: 50, class: "wires-corridor" }), sec("path", { d: "M 318 175 l 14 -10 v 20 z", class: "wires-entrance" }));
+    WIRE_PORTS.forEach((port, index) => {
+      const linked = Object.values(wireLinks).includes(index);
+      const group = sec("g", { class: `wires-port${linked ? " linked" : ""}`, tabindex: "0", role: "button", "aria-label": `${index + 1}` });
+      group.append(sec("rect", { x: port.x - 26, y: port.y - 18, width: 52, height: 36, rx: 6, class: "wires-monitor" }), sec("circle", { cx: port.x, cy: port.y, r: 7, class: "wires-hole" }));
+      const connect = () => { if (wireSelected !== null) { for (const cable of Object.keys(wireLinks)) if (wireLinks[cable] === index) delete wireLinks[cable]; wireLinks[wireSelected] = index; wireSelected = null; setWiresStatus(t.wires_pick); drawWires(); } };
+      group.addEventListener("click", connect);
+      group.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); connect(); } });
+      svgBox.append(group);
+    });
+    WIRE_CABLES.forEach(([room, color], row) => {
+      const y = 48 + row * 62, linked = wireLinks[room], end = { x: 200, y };
+      if (linked !== undefined) {
+        const port = WIRE_PORTS[linked];
+        svgBox.append(sec("path", { d: `M ${end.x} ${end.y} C ${end.x + 70} ${end.y}, ${port.x - 70} ${port.y}, ${port.x} ${port.y}`, class: "wires-line", stroke: color }));
+      }
+      const group = sec("g", { class: `wires-cable${wireSelected === room ? " selected" : ""}`, tabindex: "0", role: "button", "aria-pressed": String(wireSelected === room) });
+      group.append(sec("rect", { x: 30, y: y - 17, width: 170, height: 34, rx: 8, fill: color, class: "wires-body" }),
+                   sec("text", { x: 44, y: y + 5, class: "wires-label" }, t[`cable_${room}`]), sec("circle", { cx: end.x, cy: end.y, r: 9, fill: "#0b1b29", stroke: color, "stroke-width": 4 }));
+      const pick = () => { wireSelected = room; setWiresStatus(t.wires_selected); drawWires(); };
+      group.addEventListener("click", pick);
+      group.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+      svgBox.append(group);
+    });
+    $("wires-connect").disabled = Object.keys(wireLinks).length < WIRE_CABLES.length;
+  }
+  function setWiresStatus(text) { $("wires-status").textContent = text; }
+  function openWires() {
+    const t = ui().security;
+    wireSelected = null; wireLinks = {};
+    $("wires-title").textContent = t.wires_title; $("wires-intro").textContent = t.wires_intro;
+    $("wires-connect").textContent = t.wires_connect; $("wires-close").textContent = t.wires_close;
+    setWiresStatus(t.wires_pick);
+    drawWires();
+    wiresDialog.showModal();
+  }
+  $("wires-close").addEventListener("click", () => wiresDialog.close());
+  $("wires-connect").addEventListener("click", () => {
+    const t = ui().security;
+    const right = Object.entries(wireLinks).filter(([room, port]) => WIRE_PORTS[port].room === room).length;
+    if (right === WIRE_CABLES.length) {
+      const state = loadSecurity(); state.convinced = true; state.wired = true; saveSecurity(state);
+      syncSecurity();
+      sound.chime();
+      toast(t.wires_ok);
+      wiresDialog.close();
+      guardNode("ready");
+    } else {
+      wiresDialog.classList.remove("sparks"); void wiresDialog.offsetWidth; wiresDialog.classList.add("sparks");   // the sparks
+      setWiresStatus(t.wires_wrong.replace("{n}", right));
+      penalize(1);
+      sound.refuse();
+    }
+  });
+  wiresDialog.addEventListener("close", backToPlay);
+
+  // ----- the recordings of last night -----
+  // The cameras keep what they saw. The detective moves a bar to the minute the folder was changed (23:47) and
+  // finds the hooded figure at computer 12 in the computer lab. Everything drawn here is made up in the browser.
+  const CCTV_CAMERAS = ["entrance", "print_shop", "study_room", "library", "computer_lab", "auditorium"];
+  const CCTV_FROM = 22 * 60, CCTV_TO = 23 * 60 + 59;
+  const CCTV_EVENTS = {   // [from minute, to minute, where the figure is, is it the proof?]
+    entrance: [[23 * 60 + 38, 23 * 60 + 39, "door", false]],
+    computer_lab: [[23 * 60 + 41, 23 * 60 + 41, "door", false], [23 * 60 + 46, 23 * 60 + 49, "desk", true]],
+  };
+  const cctvDialog = make("dialog", undefined, "cctv-dialog"); cctvDialog.id = "cctv-dialog";
+  cctvDialog.setAttribute("aria-labelledby", "cctv-title");
+  cctvDialog.innerHTML = '<h2 id="cctv-title"></h2><div id="cctv-tabs" class="cctv-tabs"></div><canvas id="cctv-canvas" width="640" height="360"></canvas>' +
+    '<div class="cctv-controls"><button id="cctv-minus" class="secondary">◀</button><input id="cctv-slider" type="range"><button id="cctv-plus" class="secondary">▶</button><output id="cctv-clock"></output></div>' +
+    '<p id="cctv-hint" class="muted"></p><p id="cctv-saved" role="status" class="cctv-saved" hidden></p>' +
+    '<div class="dialog-actions"><button id="cctv-save" hidden></button><button id="cctv-close" class="secondary"></button></div>';
+  document.body.append(cctvDialog);
+  let cctvCamera = "computer_lab", cctvMinute = 23 * 60 + 20, cctvFigure = null, cctvTimer = null;
+  const hoodedFigure = { topColor: 0x15171b, pants: 0x1a1a1f, hood: true, hair: 0x0e0b09, skin: 0xd9a27e };
+  function cctvEvent() {
+    return (CCTV_EVENTS[cctvCamera] || []).find(([from, to]) => cctvMinute >= from && cctvMinute <= to) || null;
+  }
+  function drawCctvFrame() {
+    const canvas = $("cctv-canvas"), c = canvas.getContext("2d"), W = canvas.width, H = canvas.height, t = ui().security;
+    const event = cctvEvent();
+    const sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#12181c"); sky.addColorStop(1, "#1d262b");
+    c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#0d1316"; c.fillRect(0, H * 0.62, W, H * 0.38);   // the floor
+    // the furniture of each room, in a few dark shapes
+    c.fillStyle = "#0a0f12";
+    if (cctvCamera === "computer_lab") for (const x of [60, 250, 440]) { c.fillRect(x, 190, 150, 26); c.fillRect(x + 20, 150, 40, 36); c.fillRect(x + 90, 150, 40, 36); }
+    else if (cctvCamera === "library") for (const x of [40, 150, 260, 370, 480]) c.fillRect(x, 70, 80, 200);
+    else if (cctvCamera === "auditorium") for (const row of [0, 1, 2]) for (let i = 0; i < 7; i++) c.fillRect(50 + i * 80, 200 + row * 40, 56, 26);
+    else if (cctvCamera === "entrance") { c.fillStyle = "#1a2328"; c.fillRect(250, 60, 140, 250); c.fillStyle = "#0a0f12"; c.fillRect(318, 60, 4, 250); }
+    else c.fillRect(150, 200, 340, 30);
+    if (event) {
+      const [, , where, proof] = event;
+      if (proof) { c.fillStyle = "#59ff9c"; c.globalAlpha = 0.18; c.fillRect(460, 130, 90, 70); c.globalAlpha = 1; }   // computer 12 glows
+      if (cctvFigure) {
+        c.save(); c.filter = "grayscale(1) contrast(1.25) brightness(0.85)";
+        const x = where === "door" ? 70 : 405, w = where === "door" ? 130 : 150;
+        c.drawImage(cctvFigure, x, H - w * 2 - 20 + (where === "door" ? 10 : 0), w, w * 2);
+        c.restore();
+      }
+    }
+    // the picture of an old camera: grain, lines, a dark edge and a green tint
+    for (let i = 0; i < 900; i++) { c.fillStyle = `rgba(255,255,255,${Math.random() * 0.1})`; c.fillRect(Math.random() * W, Math.random() * H, 2, 1); }
+    c.fillStyle = "rgba(0,0,0,0.18)"; for (let y = 0; y < H; y += 3) c.fillRect(0, y, W, 1);
+    const edge = c.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.85); edge.addColorStop(0, "#0000"); edge.addColorStop(1, "#000c");
+    c.fillStyle = edge; c.fillRect(0, 0, W, H);
+    c.fillStyle = "rgba(40,110,70,0.12)"; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#b8ffd0"; c.font = "bold 16px ui-monospace, Consolas, monospace";
+    const number = CCTV_CAMERAS.indexOf(cctvCamera) + 1;
+    c.fillText(`CAM ${String(number).padStart(2, "0")} · ${t[`cctv_${cctvCamera}`].toUpperCase()}`, 16, 28);
+    c.fillText(`${t.cctv_yesterday} ${Math.floor(cctvMinute / 60)}:${String(cctvMinute % 60).padStart(2, "0")}:${String(Math.floor(Math.random() * 60)).padStart(2, "0")}`, 16, H - 16);
+    if (Math.floor(Date.now() / 600) % 2) { c.fillStyle = "#ff5b5b"; c.beginPath(); c.arc(W - 62, 24, 6, 0, 7); c.fill(); }
+    c.fillStyle = "#ff8c8c"; c.fillText("REC", W - 48, 29);
+    if (event) { c.fillStyle = "#ffd36b"; c.fillText(t.cctv_motion, W - 130, H - 16); }
+    $("cctv-clock").textContent = `${String(Math.floor(cctvMinute / 60)).padStart(2, "0")}:${String(cctvMinute % 60).padStart(2, "0")}`;
+    const proof = event && event[3];
+    $("cctv-save").hidden = !(proof && !loadSecurity().footage);
+  }
+  function paintCctv() {
+    const t = ui().security;
+    $("cctv-title").textContent = t.cctv_title; $("cctv-hint").textContent = t.cctv_hint; $("cctv-close").textContent = t.cctv_close;
+    $("cctv-save").textContent = t.cctv_save; $("cctv-minus").setAttribute("aria-label", t.cctv_previous); $("cctv-plus").setAttribute("aria-label", t.cctv_next);
+    $("cctv-slider").setAttribute("aria-label", t.cctv_time);
+    $("cctv-tabs").replaceChildren(...CCTV_CAMERAS.map(camera => {
+      const tab = make("button", t[`cctv_${camera}`], "secondary"); tab.type = "button";
+      tab.setAttribute("aria-pressed", String(camera === cctvCamera));
+      tab.addEventListener("click", () => { cctvCamera = camera; paintCctv(); drawCctvFrame(); });
+      return tab;
+    }));
+  }
+  function openCctv() {
+    $("cctv-slider").min = CCTV_FROM; $("cctv-slider").max = CCTV_TO; $("cctv-slider").value = cctvMinute;
+    $("cctv-saved").hidden = true;
+    paintCctv();
+    // the hooded figure, seen from behind, drawn once by the 3D scene
+    if (!cctvFigure && window.campusFigure) {
+      try { const image = new Image(); image.onload = () => { cctvFigure = image; drawCctvFrame(); }; image.src = window.campusFigure(hoodedFigure, 200, 400, Math.PI); } catch (error) { /* no picture */ }
+    }
+    drawCctvFrame();
+    clearInterval(cctvTimer); cctvTimer = setInterval(drawCctvFrame, 400);   // the grain moves
+    cctvDialog.showModal();
+  }
+  $("cctv-slider").addEventListener("input", () => { cctvMinute = Number($("cctv-slider").value); drawCctvFrame(); });
+  $("cctv-minus").addEventListener("click", () => { cctvMinute = Math.max(CCTV_FROM, cctvMinute - 1); $("cctv-slider").value = cctvMinute; drawCctvFrame(); });
+  $("cctv-plus").addEventListener("click", () => { cctvMinute = Math.min(CCTV_TO, cctvMinute + 1); $("cctv-slider").value = cctvMinute; drawCctvFrame(); });
+  $("cctv-save").addEventListener("click", () => {
+    const t = ui().security, state = loadSecurity();
+    state.footage = true; saveSecurity(state);
+    saveDiary(t.cctv_diary_title, t.cctv_proof);   // the proof goes to the diary
+    $("cctv-saved").textContent = t.cctv_saved; $("cctv-saved").hidden = false;
+    $("cctv-save").hidden = true;
+    sound.chime();
+    toast(t.cctv_saved);
+  });
+  $("cctv-close").addEventListener("click", () => cctvDialog.close());
+  cctvDialog.addEventListener("close", () => { clearInterval(cctvTimer); backToPlay(); if (window.campusGuardOpen) guardNode(loadSecurity().footage ? "done" : "ready"); });
+
   // ---------- the phone: a map, the to-do list of clues and the diary ----------
   const phone = make("dialog", undefined, "phone-dialog"); phone.id = "phone";
   phone.setAttribute("aria-labelledby", "phone-title");
@@ -2281,7 +2534,7 @@
         timeLeft = FULL_TIME; timeOwner = current.player; lastTick = null; saveTime();   // a new game: 30 new minutes
         $("timeup-card").hidden = true;
         tick();
-        try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); } catch (error) { /* no storage */ }
+        try { localStorage.removeItem(msgKey(current.player)); localStorage.removeItem(diaryKey()); localStorage.removeItem(securityKey()); } catch (error) { /* no storage */ }
         restarting = false;
         checkNotices(current);   // now the new night's whisper lands in an empty phone, at 22:15
       }
