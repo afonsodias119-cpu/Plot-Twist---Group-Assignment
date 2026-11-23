@@ -1989,7 +1989,8 @@
   function guardMenu() {   // the answers on his start line, by what has been done so far
     const t = ui().security, state = loadSecurity();
     if (state.footage) return [{ label: t.opt_rewatch, next: "watch" }];
-    if (state.wired) return [{ label: t.opt_watch, next: "confirm" }];   // he checks what you want first (specs/table-hint-and-guard-check.md)
+    // He asks which camera and what time (`ready`): the player says the computer lab at 23:47 (specs/guard-answer-and-cameras.md).
+    if (state.wired) return [{ label: t.opt_ask_lab, next: "granted" }];
     if (state.convinced) return [{ label: t.opt_wire, next: "wire" }, { label: t.opt_who, next: "who" }];
     return [{ label: t.opt_explain, next: "explain" }, { label: t.opt_broken, next: "broken" }];
   }
@@ -2003,15 +2004,20 @@
     const t = ui().security;
     if (node === "start") { showLine(guardStart()); return; }
     if (node === "wire") { asked.delete("wire"); openWires(); return; }       // the cables can be tried again
-    if (node === "watch") { asked.delete("watch"); asked.delete("confirm"); openCctv(); return; }   // asked again next time
+    if (node === "watch") { asked.delete("watch"); openCctv(); return; }   // asked again next time
+    if (node === "watch_lab") {   // after "granted": the computer lab camera, already on 23:47
+      asked.delete("watch_lab"); asked.delete("granted");
+      cctvCamera = "computer_lab"; cctvMinute = 23 * 60 + 47;
+      openCctv(); return;
+    }
     showTyping();
     setTimeout(() => {
       $("talk-log").querySelector(".typing")?.remove();
       if (talking !== "guard") return;
-      // "explain": demanding costs 2 minutes. "confirm": he asks whether you want 23:47 in the computer lab,
-      // and only "Yes" opens the recordings (specs/table-hint-and-guard-check.md).
+      // "explain": demanding costs 2 minutes. "granted": he agrees to show the computer lab at 23:47, and
+      // "Watch the recordings" opens them there (specs/guard-answer-and-cameras.md).
       const options = node === "explain" ? [{ label: t.opt_rude, next: "rude", cost: 2 }]
-        : node === "confirm" ? [{ label: t.opt_yes, next: "watch" }] : [];
+        : node === "granted" ? [{ label: t.opt_watch, next: "watch_lab" }] : [];
       showLine(guardLine(node, t[node], options));
     }, 600);
   }

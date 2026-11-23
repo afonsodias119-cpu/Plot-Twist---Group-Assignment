@@ -16,8 +16,8 @@ def test_the_texts_exist_in_both_languages():
     for language in ("pt", "en"):
         t = TEXT[language]
         assert t["press_table"].strip() and "K" in t["press_table"], language
-        assert "23:47" in t["security"]["confirm"], language
-        assert t["security"]["opt_yes"].strip(), language
+        # Changed by specs/guard-answer-and-cameras.md: the player says 23:47, José agrees. Was: `confirm` and `opt_yes`.
+        assert "23:47" in t["security"]["opt_ask_lab"] and "23:47" in t["security"]["granted"], language
 
 
 def test_the_table_is_near_only_while_searching_and_within_one_metre():
@@ -31,6 +31,8 @@ def test_k_opens_the_table():
 
 
 def test_jose_asks_before_the_recordings():
-    assert 'if (state.wired) return [{ label: t.opt_watch, next: "confirm" }];' in PLAY
-    assert ': node === "confirm" ? [{ label: t.opt_yes, next: "watch" }] : [];' in PLAY
+    # Changed by specs/guard-answer-and-cameras.md: José asks which camera and what time, the player answers the
+    # computer lab at 23:47, he agrees. Was: "Watch the recordings" -> his question -> "Yes".
+    assert 'if (state.wired) return [{ label: t.opt_ask_lab, next: "granted" }];' in PLAY
+    assert ': node === "granted" ? [{ label: t.opt_watch, next: "watch_lab" }] : [];' in PLAY
     assert 'if (state.footage) return [{ label: t.opt_rewatch, next: "watch" }];' in PLAY   # watching again: no question
