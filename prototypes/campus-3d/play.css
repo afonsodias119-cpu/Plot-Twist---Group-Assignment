@@ -405,3 +405,30 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .card-dialog img { display: block; width: 100%; max-height: 62vh; object-fit: contain; margin: 12px auto; border-radius: 14px; }
 .card-dialog .dialog-actions { justify-content: center; flex-wrap: wrap; }
 .button-link { display: inline-block; font: 500 13px/1.5 Inter, system-ui, sans-serif; border-radius: 7px; padding: 11px 13px; color: #101c25; background: var(--gold); text-decoration: none; cursor: pointer; border: 1px solid #e8b45c66; }
+
+/* step 3 of the first screen: the detective, after the name (specs/creator-after-name.md) */
+#stepLook { width: min(760px, 94vw); }
+#stepLook .look-body { padding: 22px; }
+#stepLook .creator { margin-top: 0; padding-top: 0; border-top: none; }
+#stepLook .creator h3 { font-size: 13px; }
+#stepLook #look-error { margin: 0 0 0 auto; font-size: 12px; }
+#look-start { font: inherit; font-weight: 600; font-size: 14px; color: #0B1B2B; background: #E8A33D; border: none; border-radius: 10px; padding: 11px 20px; cursor: pointer; }
+#look-start:hover { box-shadow: 0 0 24px rgba(232,163,61,.55); }
+#look-start:disabled { opacity: .5; cursor: wait; }
+#look-start:focus { outline: none; }
+#look-start:focus-visible { outline: 2px solid #F2EEE3; outline-offset: 3px; }
+
+/* step 4: the warning before the game, with the mission and the group (specs/creator-after-name.md) */
+#stepBrief { width: min(640px, 94vw); }
+#stepBrief .brief-body { padding: 22px; }
+.brief-warning { padding: 16px 18px; border: 1px solid rgba(229,72,77,.45); border-radius: 12px; background: rgba(229,72,77,.08); }
+.brief-warning .stamp { border-color: #e5484d; margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .14em; color: #ff8a8d; }
+.brief-warning h2 { margin: 0 0 8px; }
+.brief-warning p:last-child { margin: 0; font-size: 15px; line-height: 1.6; }
+#stepBrief .mission { opacity: 1; transform: none; }
+#stepBrief #brief-error { margin: 0 0 0 auto; font-size: 12px; }
+#brief-start { font: inherit; font-weight: 600; font-size: 14px; color: #0B1B2B; background: #E8A33D; border: none; border-radius: 10px; padding: 11px 20px; cursor: pointer; }
+#brief-start:hover { box-shadow: 0 0 24px rgba(232,163,61,.55); }
+#brief-start:disabled { opacity: .5; cursor: wait; }
+#brief-start:focus { outline: none; }
+#brief-start:focus-visible { outline: 2px solid #F2EEE3; outline-offset: 3px; }
