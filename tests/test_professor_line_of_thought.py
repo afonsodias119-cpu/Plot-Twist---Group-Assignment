@@ -46,4 +46,5 @@ def test_the_hearing_says_what_to_do_when_duarte_speaks():
         assert TEXT[language]["hearing_how"].strip(), language
     assert "Duarte" in TEXT["en"]["hearing_how"] and "Duarte" in TEXT["pt"]["hearing_how"]
     assert "t.hearing_how" in PLAY_JS
-    assert "replaceChildren(step, how, doubt, ...answers, silent)" in PLAY_JS
+    # specs/hearing-show-evidence.md: the proofs are behind "Show evidence", as in every conversation.
+    assert "replaceChildren(step, how, doubt, show, silent)" in PLAY_JS

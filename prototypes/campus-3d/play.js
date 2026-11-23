@@ -1384,14 +1384,28 @@
     $("talk-log").scrollTop = $("talk-log").scrollHeight;
     $("talk-evidence").replaceChildren();
     $("talk-evidence").hidden = true;   // no "Show evidence" and no story actions: the answers are the cards
-    const answers = (current.evidence || []).map(card => {
-      const button = make("button", `📁 ${card.label}`, "answer evidence-card");
-      button.addEventListener("click", () => answerHearing(card.id));
-      return button;
+    // "📁 Show evidence" opens the proofs held, as in every other conversation (specs/hearing-show-evidence.md);
+    // with nothing held the tray says so. "Put it away" comes back to the claim.
+    const show = make("button", t.evidence_show, "answer evidence-show");
+    show.addEventListener("click", () => {
+      const tray = make("div", undefined, "evidence-tray");
+      tray.append(make("p", t.evidence_title, "evidence-title"));
+      const cards = current.evidence || [];
+      if (!cards.length) tray.append(make("p", t.evidence_empty, "muted"));
+      for (const card of cards) {
+        const button = make("button", `📁 ${card.label}`, "answer evidence-card");
+        button.addEventListener("click", () => answerHearing(card.id));
+        tray.append(button);
+      }
+      const back = make("button", t.evidence_back, "secondary evidence-back");
+      back.addEventListener("click", () => showHearing(current.hearing));
+      tray.append(back);
+      $("talk-options").replaceChildren(step, how, doubt, tray);
+      tray.querySelector("button").focus({ preventScroll: true });
     });
     const silent = make("button", t.hearing_concede, "answer");
     silent.addEventListener("click", () => answerHearing("concede"));
-    $("talk-options").replaceChildren(step, how, doubt, ...answers, silent);
+    $("talk-options").replaceChildren(step, how, doubt, show, silent);
     $("talk-options").hidden = false;
     $("talk-close").classList.remove("only-way");
     $("talk").hidden = false;
