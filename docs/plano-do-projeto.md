@@ -138,6 +138,10 @@ Na audiência, cada afirmação do Duarte responde-se com "📁 Mostrar uma prov
 
 O cartão do início e o telemóvel mostram só quatro pistas, sem a sala e sem dicas de onde ou com quem: a pen do grupo, a fotografia original, as imagens da câmara da sala de informática e o histórico dos ficheiros. Ver `specs/clues-without-answers.md`.
 
+### O José primeiro ouve porque vieste — 23/11/2026
+
+Alteração preparada em `guard-explain-first`, só na página do 3D: a primeira fala do José (o segurança) oferece só "Explicar a situação". Depois de explicares, ele pede uma prova e aparecem "Perguntar pelos monitores" e "Exigir as imagens" (2 minutos, como antes), cada uma até ser escolhida. A resposta sobre os monitores deixa de dizer "diz-me primeiro porque queres imagens" e passa a dizer que ele continua a precisar de ver uma prova. Os menus depois de convencido não mudam. Ver `specs/guard-explain-first.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.
