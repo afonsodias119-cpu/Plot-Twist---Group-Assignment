@@ -4,7 +4,10 @@ The screens (app.py) call these functions. The rules are in logic.py and the sav
 is in db.py. See specs/base-game.md, section 5.
 """
 
+import hashlib
+import hmac
 import re
+import secrets
 from pathlib import Path
 
 import db
@@ -15,6 +18,9 @@ DEFAULT_LANGUAGE = "en"
 
 # 1 to 20 characters: letters (accented ones too), digits, space, "-" and "_".
 NAME_PATTERN = re.compile(r"[\w -]{1,20}")
+
+# A browser key (specs/name-belongs-to-browser.md): 20 to 100 letters, digits, "-" or "_", long enough not to be guessed.
+KEY_PATTERN = re.compile(r"[A-Za-z0-9_-]{20,100}")
 
 # The illustrations. Read every time image_file runs, so the tests can point it elsewhere.
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
@@ -29,6 +35,31 @@ def clean_name(text) -> str | None:
         return None
     name = text.strip().lower()
     return name if NAME_PATTERN.fullmatch(name) else None
+
+
+def claim_name(text, key) -> str | None:
+    """The browser key for this name (specs/name-belongs-to-browser.md, point 1).
+
+    "" for a name that is not valid (nothing is claimed; the command refuses the name itself).
+    A free name is claimed with the key the browser made (so a reply lost on the way never locks the
+    name), or with a new key when the browser sent none. A claimed name gives the key back only to the
+    browser that holds it, and None to anyone else. Only the key's SHA-256 hash is stored, so the
+    database never reveals a key.
+    """
+    player = clean_name(text)
+    if player is None:
+        return ""
+    stored = db.load_key_hash(player)
+    if stored is None:
+        made_by_browser = isinstance(key, str) and KEY_PATTERN.fullmatch(key)
+        new_key = key if made_by_browser else secrets.token_urlsafe(24)
+        db.save_key_hash(player, hashlib.sha256(new_key.encode("utf-8")).hexdigest())
+        return new_key
+    if not isinstance(key, str) or not key:
+        return None
+    given = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    # compare_digest takes the same time whether the first letter or the last one differs.
+    return key if hmac.compare_digest(given, stored) else None
 
 
 def _language_or_default(language) -> str:

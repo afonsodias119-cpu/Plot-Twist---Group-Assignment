@@ -18,17 +18,21 @@ As a player, I want nobody else to be able to continue, change or restart my gam
 
 1. **The key.** `game.claim_name(player, key)` (in `game.py`, next to `clean_name`):
    - a name that is not valid returns `""` (nothing is claimed; the command refuses the name as before);
-   - a name nobody has claimed gets a new key (`secrets.token_urlsafe(24)`), which is returned;
+   - a name nobody has claimed is claimed with the key the browser sent, when it is 20 to 100 letters, digits, `-` or `_` (`game.KEY_PATTERN`); otherwise with a new key (`secrets.token_urlsafe(24)`). The key is returned;
    - a claimed name returns the same key when the given key matches, and `None` when it does not (or when no key is given).
    - Only a SHA-256 hash of the key is stored, so a copy of the database does not reveal any key. Keys are compared with `hmac.compare_digest`.
 2. **Storage.** `db.py` gets a fourth table, `keys (player TEXT PRIMARY KEY, key_hash TEXT NOT NULL)`, created in `init_db` with the others, and two functions: `load_key_hash(player)` and `save_key_hash(player, key_hash)`. The `games`, `nights` and `runs` tables do not change.
 3. **The command.** `campus_game.keyed_command(payload)` takes the `key` out of the payload, calls `game.claim_name` and then `command` with the rest (so `command` and its allowed fields stay exactly as they are). A taken name raises `ValueError` with `TEXT[language]["name_taken"]`. It returns `(result, key)`.
 4. **The app.** `app_3d.answer` calls `keyed_command` and adds `"key"` to the reply.
-5. **The bridge** (the script `app_3d.py` puts before the page): before sending, it adds the key this browser keeps for that name (lower case, trimmed, as `game.clean_name`); when a reply brings a key, it keeps it. Keys are kept in `localStorage` under `plot-twist-keys`, and in memory when storage is blocked.
+5. **The bridge** (the script `app_3d.py` puts before the page): before sending, it adds the key this browser keeps for that name (lower case, trimmed, as `game.clean_name`). For a name it has no key for, it first makes one (24 random bytes from `crypto.getRandomValues`, as 48 hex letters) and keeps it, so a reply lost on the way never locks the player out of the name. When a reply brings a key, it keeps it. Keys are kept in `localStorage` under `plot-twist-keys`, and in memory when storage is blocked.
 6. **The page.** When the reply before the game starts is the "name taken" message, the start screen goes back to the name step and shows the message under the name field.
 7. **Texts** (`campus_text.TEXT`, both languages): `name_taken`:
    - en: "Someone on another device or browser is already playing with this name. Choose another name."
    - pt: "Alguém noutro dispositivo ou browser já está a jogar com este nome. Escolhe outro nome."
+
+   and `continue_here`, the hint under the name field of the 3D page (the plain game keeps `story.UI_TEXTS["continue_hint"]`, which is still true there):
+   - en: "To continue a saved game, type the same name you used before, in this browser."
+   - pt: "Para continuar um jogo gravado, escreve o mesmo nome que usaste antes, neste browser."
 
 ## Limits
 

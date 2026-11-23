@@ -36,6 +36,20 @@ def test_a_free_name_gets_a_new_key():
     assert isinstance(key, str) and len(key) >= 32
 
 
+def test_a_free_name_takes_the_key_the_browser_made():
+    made = "ab12-_" * 8   # 48 characters, as the bridge makes them
+    assert game.claim_name("Ana", made) == made
+    assert game.claim_name("Ana", made) == made
+    assert game.claim_name("Ana", None) is None
+
+
+@pytest.mark.parametrize("bad", ["short", "x" * 101, "has spaces in it, twenty+", "ção" * 10])
+def test_a_badly_made_key_is_replaced_by_a_new_one(bad):
+    key = game.claim_name("Ana", bad)
+    assert key != bad and game.KEY_PATTERN.fullmatch(key)
+    assert game.claim_name("Ana", bad) is None
+
+
 def test_the_owner_gets_the_same_key_back():
     key = game.claim_name("Ana", None)
     assert game.claim_name("Ana", key) == key
@@ -148,6 +162,13 @@ def test_the_bridge_sends_and_keeps_the_key():
     assert "localStorage" in APP
 
 
+def test_the_bridge_makes_the_key_before_the_first_request():
+    # a lost reply must never lock the player out of the name (point 5)
+    assert "crypto.getRandomValues(bytes)" in APP
+    call = APP[APP.index("call(payload) {"):]
+    assert call.index("keyFor(who)") < call.index('post({ type: "streamlit:setComponentValue"')
+
+
 # ---------- points 6 and 7: the page and the texts ----------
 
 def test_the_texts_exist_in_both_languages():
@@ -155,6 +176,13 @@ def test_the_texts_exist_in_both_languages():
                                         "Choose another name.")
     assert TEXT["pt"]["name_taken"] == ("Alguém noutro dispositivo ou browser já está a jogar com este nome. "
                                         "Escolhe outro nome.")
+
+
+def test_the_hint_says_the_name_continues_in_this_browser():
+    assert TEXT["en"]["continue_here"] == "To continue a saved game, type the same name you used before, in this browser."
+    assert TEXT["pt"]["continue_here"] == ("Para continuar um jogo gravado, escreve o mesmo nome que usaste antes, "
+                                           "neste browser.")
+    assert "nameHint.textContent = t.continue_here;" in PLAY
 
 
 def test_the_page_goes_back_to_the_name_when_it_is_taken():
