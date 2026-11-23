@@ -3,6 +3,8 @@
 Documento de referência da equipa. Resume o que foi decidido até agora e o que falta fazer.
 Última atualização: 23/11/2026 (correções para a grelha de avaliação no branch `grading-fixes`: o nome pertence ao browser, dependências sem vulnerabilidades, o nome verificado no primeiro passo e o README).
 
+O branch `maria/combined-start-briefing` reúne o aviso de fecho e as pistas num ecrã inicial, sem o bloco da missão e do grupo. Ver `specs/combined-start-briefing.md`.
+
 ## 1. O que o curso pede
 
 Fonte: [site do curso](https://nova-sbe-introduction-to-programming.github.io/intro-to-programming-2026/) e [página de avaliação](https://nova-sbe-introduction-to-programming.github.io/intro-to-programming-2026/evaluation.html).

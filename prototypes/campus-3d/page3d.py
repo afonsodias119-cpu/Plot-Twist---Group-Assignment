@@ -24,12 +24,6 @@ EXTRA = {
     "pt": {
         "stamp": "Confidencial",
         "case_label": "O caso",
-        "mission_label": "A tua missão",
-        "mission": "Descobre a verdade sobre o quinto nome antes de a apresentação começar.",
-        # who is really in the group (specs/chat-dialogues.md): shown in the mission box of the case file
-        "group_label": "O teu grupo",
-        "group": ["Tu", "Leonor", "Rita", "Tomás"],
-        "group_note": "O quinto nome na capa, Duarte, nunca fez parte do grupo.",
         "button": "Aceitar o caso →",
         "back": "← Língua",
         "skip": "Clica no texto ou carrega em Backspace para ler tudo",
@@ -41,11 +35,6 @@ EXTRA = {
     "en": {
         "stamp": "Confidential",
         "case_label": "The case",
-        "mission_label": "Your mission",
-        "mission": "Uncover the truth about the fifth name before the presentation begins.",
-        "group_label": "Your group",
-        "group": ["You", "Leonor", "Rita", "Tomás"],
-        "group_note": "The fifth name on the cover, Duarte, was never part of the group.",
         "button": "Accept the case →",
         "back": "← Language",
         "skip": "Click the text or press Backspace to read it all",

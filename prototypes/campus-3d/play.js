@@ -208,14 +208,14 @@
   stepLook.querySelector(".look-body").append(creator);
   $("stepCase").after(stepLook);
   const lookError = stepLook.querySelector("#look-error");
-  // ---------- step 4: the warning before the game (the faculty closes at 23:00), the mission and the group ----------
-  // The mission box of the case file moves here, so the case file only tells the story and asks for the name.
+  // ---------- step 4: the closing-time warning and the ordered clues ----------
   const stepBrief = make("section", undefined, "step"); stepBrief.id = "stepBrief";
   stepBrief.innerHTML = `<div class="file"><div class="file-top"><span class="rec"></span><span id="brief-case"></span><span class="clock">22:30</span></div>
     <div class="brief-body"><div class="brief-warning" role="note"><p class="stamp">⏳ 23:00</p><p id="brief-label" class="label"></p>
-      <h2 id="brief-title"></h2><p id="brief-text"></p></div></div>
+      <h2 id="brief-title"></h2><p id="brief-text"></p></div>
+      <section class="brief-clues" aria-labelledby="brief-clues-title"><h2 id="brief-clues-title"></h2>
+        <p id="brief-clues-intro"></p><ol id="brief-clues-order" class="clues-order"></ol></section></div>
     <div class="file-foot"><button class="ghost" id="brief-back"></button><p id="brief-error" class="error" role="alert"></p><button id="brief-start"></button></div></div>`;
-  stepBrief.querySelector(".brief-body").append($("mission"));
   stepLook.after(stepBrief);
   const briefError = stepBrief.querySelector("#brief-error");
   // Before the game starts, a message goes under the step on screen: the name, the detective or the warning.
@@ -278,20 +278,10 @@
     groupHint.textContent = t.group_hint;
     groupFields.forEach((field, i) => { field.caption.textContent = t.group_slots[i]; });
   }
-  // The name chips of the case file (#groupList: "You" first, then the three teammates) show the names
-  // typed. Only the text changes, with textContent, so a name is never read as HTML.
-  function paintGroupChips() {
-    const chips = $("groupList") ? $("groupList").children : [];
-    groupFields.forEach((field, i) => {
-      if (chips[i + 1]) chips[i + 1].textContent = tidyName(field.input.value) || STORY_GROUP[i];
-    });
-  }
   groupFields.forEach(field => field.input.addEventListener("input", () => {
-    paintGroupChips();
     try { localStorage.setItem(GROUP_KEY, JSON.stringify(typedGroup())); } catch (error) { /* no storage */ }
   }));
-  // game3d.html draws the chips again when the language is chosen: they are renamed after it (a microtask).
-  window.addEventListener("language", () => queueMicrotask(() => { paintGroup(); if (!current) paintGroupChips(); }));
+  window.addEventListener("language", paintGroup);
   paintGroup();
   // The note of point 8, after `begin`: a field the server gave the story's name back, or a continued
   // game that kept the group it started with. "" when the names are the ones typed.
@@ -303,7 +293,7 @@
     return state.message === t.continued ? t.group_kept : t.group_reset;
   }
 
-  $("premise").after(nameBox);   // the mission box went to step 4 (specs/creator-after-name.md)
+  $("premise").after(nameBox);
   // Which night of this name it is, under the name box (specs/earlier-nights.md, point 6). Empty on night 1,
   // so a first player sees only the name field and its hint. It never counts endings. drawNight fills it.
   const nightLine = make("p", "", "night-line");
@@ -602,6 +592,10 @@
     $("brief-label").textContent = t.brief_label;
     $("brief-title").textContent = t.brief_title;
     $("brief-text").textContent = t.brief_text;
+    $("brief-clues-title").textContent = t.clues_notice_title;
+    $("brief-clues-intro").textContent = t.clues_notice_intro;
+    const firstNightClues = Object.entries(t.clues).map(([id, label]) => ({ id, label }));
+    $("brief-clues-order").replaceChildren(...withCameraClue(firstNightClues, false).map(clue => make("li", clue.label)));
     $("brief-back").textContent = t.brief_back;
     $("brief-start").textContent = t.start;
     $("case-eyebrow").textContent = t.case;   // no date on screen any more (specs/night-and-clues.md)
@@ -2006,8 +2000,11 @@
   function phoneClues() {
     const clues = current?.clues || [];
     if (!clues.length) return clues;
+    return withCameraClue(clues, loadSecurity().footage);
+  }
+  function withCameraClue(clues, done) {
     const t = ui().security;
-    const cameras = { id: "cameras", label: t.clue_label, room: t.clue_room, done: loadSecurity().footage, lost: false, until: "" };
+    const cameras = { id: "cameras", label: t.clue_label, room: t.clue_room, done, lost: false, until: "" };
     const after = clues.findIndex(clue => clue.id === "original_photo");
     return [...clues.slice(0, after + 1), cameras, ...clues.slice(after + 1)];
   }   // the monitors of the 3D desk light up when it is true
@@ -2542,7 +2539,7 @@
   // The day of the case ("Case of 23 November") is no longer shown on the case file, in the top bar or
   // on the share card (specs/night-and-clues.md). The server still keeps the date of each game.
 
-  // ---------- the clues, when the game starts (specs/night-and-clues.md) ----------
+  // ---------- the clues after an in-game restart (specs/night-and-clues.md) ----------
   // A card lists the clues of the phone in the order they have to be done (the server sends them in
   // that order), each with its room, and says that the evidence is shown to the professor at the end.
   // While it is open the character stands still and the countdown waits.
@@ -2591,7 +2588,6 @@
     window.playing = true;
     window.dispatchEvent(new Event("start-game"));
     $("scene-heading").focus({ preventScroll: true });
-    showCluesNotice();   // the clues, in order, as the night starts
   };
   // The 3D scene calls this when the character walks through a door into another room.
   window.campusEnter = room => send("enter", { room });

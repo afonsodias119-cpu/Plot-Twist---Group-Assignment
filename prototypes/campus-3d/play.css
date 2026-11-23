@@ -429,14 +429,18 @@ body:has(#clues-card:not([hidden])) .joystick { display: none; }   /* the clues 
 #look-start:focus { outline: none; }
 #look-start:focus-visible { outline: 2px solid #F2EEE3; outline-offset: 3px; }
 
-/* step 4: the warning before the game, with the mission and the group (specs/creator-after-name.md) */
+/* Step 4: the closing-time warning and clues (specs/combined-start-briefing.md). */
 #stepBrief { width: min(640px, 94vw); }
 #stepBrief .brief-body { padding: 22px; }
 .brief-warning { padding: 16px 18px; border: 1px solid rgba(229,72,77,.45); border-radius: 12px; background: rgba(229,72,77,.08); }
 .brief-warning .stamp { border-color: #e5484d; margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .14em; color: #ff8a8d; }
 .brief-warning h2 { margin: 0 0 8px; }
 .brief-warning p:last-child { margin: 0; font-size: 15px; line-height: 1.6; }
-#stepBrief .mission { opacity: 1; transform: none; }
+.brief-clues { margin-top: 18px; }
+.brief-clues h2 { margin: 0 0 8px; font-size: clamp(22px, 3vw, 30px); }
+.brief-clues p { margin: 0; }
+.brief-clues .clues-order { margin-bottom: 0; }
+#intro:has(#stepBrief.on) { align-items: safe center; }
 #stepBrief #brief-error { margin: 0 0 0 auto; font-size: 12px; }
 #brief-start { font: inherit; font-weight: 600; font-size: 14px; color: #0B1B2B; background: #E8A33D; border: none; border-radius: 10px; padding: 11px 20px; cursor: pointer; }
 #brief-start:hover { box-shadow: 0 0 24px rgba(232,163,61,.55); }
