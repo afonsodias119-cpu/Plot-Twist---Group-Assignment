@@ -873,9 +873,6 @@ function bench(x, z) {
 }
 bench(-4.4, -2.45); bench(4.4, -2.45); bench(0, 2.45);
 // ---- the security desk by the main entrance (specs/security-desk.md): a desk, a wall of monitors and the guard ----
-rbox(2.5, 0.05, 0.7, -11.3, 0.74, -1.45, mat(0x3b4048, { roughness: 0.5 }));
-rbox(0.06, 0.74, 0.62, -12.5, 0, -1.45, metal); rbox(0.06, 0.74, 0.62, -10.1, 0, -1.45, metal);
-block(-11.3, -1.45, 2.5, 0.7);
 rbox(2.9, 1.2, 0.14, -11.3, 1.0, -2.8, blackPlastic, { radius: 0.03 });   // the rack the monitors hang on
 const deskScreens = [];
 const deskOffTexture = textPanel(256, 160, (g, w, h) => {
@@ -1010,6 +1007,50 @@ function line(x1, y1, x2, y2) {
 }
 // the light on the sign: soft uplights on the ground and a cool glow behind the letters
 for (const dx of [-3.6, 0, 3.6]) lamp(0xfff4e0, 3, SIGN_X + dx, 0.4, SIGN_Z + 1.6, 5.5);
+// "NOVA" in the same letters as the big sign outside, at any size and colour (used on the front of the security counter).
+// (cx, cy) is the bottom centre of the letters, cz their front; k the scale (1 = as big as the sign), depth their thickness.
+function novaLetters(cx, cy, cz, k, material, depth) {
+  const bar = (w, h, x, y, angle = 0) => {
+    const mesh = add(new THREE.Mesh(new RoundedBoxGeometry(w * k, h * k, depth, 2, Math.min(0.06 * k, depth / 3)), material), cx + x * k, cy + y * k, cz);
+    mesh.rotation.z = angle;
+  };
+  const diagonal = (x1, y1, x2, y2) => bar(STROKE, Math.hypot(x2 - x1, y2 - y1), (x1 + x2) / 2, (y1 + y2) / 2, Math.atan2(x1 - x2, y2 - y1));
+  const x0 = -5.1, H = LETTER_H, half = (2.3 - STROKE) / 2;
+  bar(STROKE, H, x0 + STROKE / 2, H / 2); bar(STROKE, H, x0 + 2.0 - STROKE / 2, H / 2); diagonal(x0 + STROKE / 2, H, x0 + 2.0 - STROKE / 2, 0);   // N
+  const ring = add(new THREE.Mesh(new THREE.TorusGeometry(0.9 * k, 0.3 * k, 16, 48), material), cx + (x0 + 3.6) * k, cy + H / 2 * k, cz);   // O
+  ring.scale.z = depth / (0.6 * k);
+  const vx = x0 + 6.35; diagonal(vx - half, H, vx, 0); diagonal(vx + half, H, vx, 0);                                                          // V
+  const ax = x0 + 9.05; diagonal(ax - half, 0, ax, H); diagonal(ax + half, 0, ax, H); bar(1.1, 0.4, ax, 0.75);                                // A
+}
+// ---- the security counter by the main entrance (specs/security-desk.md): a white reception counter, "NOVA" on its front, a PC ----
+{
+  const white = mat(0xf4f3ef, { roughness: 0.35 }), slab = mat(0xe6e4de, { roughness: 0.22 });
+  const cx = -11.3, cz = -1.4, W = 3.0, D = 0.85, BODY = 1.0, FOOT = 0.06;
+  rbox(W - 0.1, FOOT, D - 0.1, cx, 0, cz, mat(0x2a2d33, { roughness: 0.6 }));                       // the dark foot
+  rbox(W, BODY, D, cx, FOOT, cz, white, { radius: 0.03 });                                          // the body
+  rbox(W + 0.14, 0.07, D + 0.16, cx, FOOT + BODY, cz, slab, { radius: 0.03 });                      // the top, a little wider
+  block(cx, cz, W + 0.14, D + 0.16);
+  // "NOVA" on the front, small and black, in the letters of the sign outside
+  const k = 0.12;
+  novaLetters(cx, FOOT + BODY / 2 - LETTER_H * k / 2, cz + D / 2 + 0.012, k, mat(0x15171b, { roughness: 0.5 }), 0.03);
+  rbox(W - 0.5, 0.012, 0.012, cx, FOOT + BODY - 0.12, cz + D / 2 + 0.005, mat(0xc9c6bd, { roughness: 0.4 }));   // a thin line under the lettering's top edge
+  // a PC on the counter, turned towards the guard who stands behind it
+  const surface = FOOT + BODY + 0.07, pcX = cx - 0.75, pcZ = cz - 0.12;
+  cyl(0.11, 0.13, 0.025, pcX, surface, pcZ, blackPlastic, 20);
+  rbox(0.05, 0.2, 0.05, pcX, surface, pcZ, blackPlastic);
+  rbox(0.64, 0.4, 0.04, pcX, surface + 0.2, pcZ, blackPlastic, { radius: 0.02 });
+  const pcScreen = add(new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.34), mat(0x000000, { emissive: 0xffffff, emissiveIntensity: 1.1, emissiveMap: textPanel(256, 160, (g, w, h) => {
+    g.fillStyle = "#0e2236"; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#e8b45c"; g.font = "bold 20px sans-serif"; g.textAlign = "center"; g.fillText("NOVA SBE", w / 2, 60);
+    g.fillStyle = "#9db8e0"; g.font = "13px sans-serif"; g.fillText("Segurança · Registo de visitas", w / 2, 88);
+    g.fillStyle = "#ffffff22"; g.fillRect(40, 108, w - 80, 22);
+  }) })), pcX, surface + 0.4, pcZ - 0.025);
+  pcScreen.rotation.y = Math.PI;                                                                     // it faces the guard
+  rbox(0.44, 0.018, 0.15, pcX, surface, pcZ - 0.3, mat(0x23262b, { roughness: 0.5 }), { radius: 0.01 });   // the keyboard
+  rbox(0.06, 0.025, 0.1, pcX + 0.4, surface, pcZ - 0.3, mat(0x23262b, { roughness: 0.4 }), { radius: 0.02 }); // the mouse
+  rbox(0.3, 0.025, 0.22, cx + 0.7, surface, cz - 0.05, mat(0xfbfaf6, { roughness: 0.7 }));           // the visitors' book
+  cyl(0.05, 0.05, 0.1, cx + 1.15, surface, cz - 0.15, mat(0x2f6f8f, { roughness: 0.5 }), 14);        // a pen pot
+}
 
 // street lamps along the boardwalk and pine trees
 function streetLamp(x, z, withLight) {
@@ -1067,6 +1108,12 @@ function makePerson(o) {
   if (o.hood) { const hood = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.06, 10, 24), top); hood.rotation.x = Math.PI / 2 - 0.3; hood.position.set(0, 1.5, -0.06); body.add(hood); }
   const collar = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.045, 10, 24), o.scarf ? mat(o.scarf, { roughness: 0.95 }) : top);
   collar.rotation.x = Math.PI / 2; collar.position.y = 1.5; body.add(collar);
+  if (o.badge) { const shield = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.07, 0.015), mat(o.badge, { metalness: 0.8, roughness: 0.3 })); shield.position.set(0.11, 1.26, 0.268); body.add(shield); }
+  if (o.belt) {   // a black belt with a silver buckle
+    const strap = new THREE.Mesh(new THREE.TorusGeometry(0.245, 0.022, 8, 32), mat(0x0a0a0c, { roughness: 0.5 })); strap.rotation.x = Math.PI / 2; strap.position.y = 0.97; body.add(strap);
+    const clasp = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.02), mat(0xc0c4ca, { metalness: 0.9, roughness: 0.3 })); clasp.position.set(0, 0.97, 0.262); body.add(clasp);
+  }
+  if (o.epaulettes) for (const side of [-1, 1]) { const strip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.025, 0.09), mat(o.epaulettes, { metalness: 0.6, roughness: 0.4 })); strip.position.set(side * 0.24, 1.51, 0); body.add(strip); }
   if (o.shirt) {   // a jacket or a suit: the white shirt shows at the neck, and maybe a tie
     const front = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.3, 0.03), mat(o.shirt, { roughness: 0.8 })); front.position.set(0, 1.32, 0.262); body.add(front);
     if (o.tie) { const tie = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.03), mat(o.tie, { roughness: 0.6 })); tie.position.set(0, 1.28, 0.28); body.add(tie); }
@@ -1103,6 +1150,13 @@ function makePerson(o) {
     for (const side of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.006, 6, 20), frame); ring.position.set(side * 0.06, 0.03, 0.165); head.add(ring); }
     const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.006, 0.006), frame); bridge.position.set(0, 0.04, 0.168); head.add(bridge);
   }
+  if (o.cap) {   // a peaked cap with a badge: the uniform of the security guard
+    const cloth = mat(o.cap, { roughness: 0.8, side: THREE.DoubleSide });
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.19, 28, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), cloth); dome.position.set(0, 0.035, -0.005); dome.scale.y = 0.85; head.add(dome);
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.192, 0.195, 0.05, 28, 1, true), mat(0x070b12, { roughness: 0.7, side: THREE.DoubleSide })); band.position.y = 0.04; head.add(band);
+    const visor = new THREE.Mesh(new RoundedBoxGeometry(0.25, 0.02, 0.15, 2, 0.01), mat(0x05080d, { roughness: 0.3 })); visor.position.set(0, 0.045, 0.2); visor.rotation.x = 0.12; head.add(visor);
+    const crest = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.045, 0.012), mat(0xd4a650, { metalness: 0.8, roughness: 0.3 })); crest.position.set(0, 0.095, 0.192); head.add(crest);
+  }
   if (o.hat) {   // fedora
     const felt = mat(o.hat, { roughness: 0.8, side: THREE.DoubleSide });
     const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.3, 0.025, 40), felt); brim.position.y = 0.11; head.add(brim);
@@ -1136,7 +1190,7 @@ placeNpc({ topColor: 0x3b6a8c, pants: 0x5a4a3a, hair: 0x8a8a8a, glasses: true, s
 placeNpc({ topColor: 0x6a7a3a, hair: 0x2a1a0a, skin: 0xd9a27e }, -6.5, 7.6, Math.PI, "Tomás", 0, "tomas");                                  // computer lab
 
 lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stage";   // the stage light
-placeNpc({ topColor: 0x1f3a5f, pants: 0x1a2230, hair: 0x9a9a9a, skin: 0xd9a27e, shirt: 0xf2f0e8, tie: 0x111111 }, -11.3, -2.15, 0, "Anselmo", 0, "guard");   // the security guard
+placeNpc({ topColor: 0x14233a, pants: 0x0f1724, hair: 0x9a9a9a, skin: 0xd9a27e, shirt: 0xcfe0f2, tie: 0x0a0a0c, cap: 0x14233a, badge: 0xd4a650, belt: true, epaulettes: 0xd4a650 }, -11.3, -2.15, 0, "José", 0, "guard");   // the security guard, in uniform   // the security guard
 const USABLE = [{ id: "computer12", x: -1.8, z: 9.0 }];   // see the computer lab: desk 6, right-hand screen
 // Things to look at (specs/more-to-find.md, point 7): where the character stands to read each one, beside
 // its furniture and at least 1.2 m from every person. Their names and texts come from the server.
@@ -1151,7 +1205,7 @@ scene.add(player);
 // The detective's torch: a warm cone in the direction the character faces (it has no shadow: that would be too slow).
 const torch = new THREE.SpotLight(0xfff0d2, 0, 11, 0.5, 0.7, 1.7);
 scene.add(torch, torch.target);
-let torchAmount = 0;
+let torchAmount = 0, torchClose = 0;
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 48), new THREE.MeshBasicMaterial({ color: 0xE8A33D, transparent: true, opacity: 0.6, toneMapped: false }));
 ring.rotation.x = -Math.PI / 2; ring.position.y = 0.012; scene.add(ring);
 
@@ -1552,7 +1606,10 @@ function loop() {
   torchAmount += (torchWanted - torchAmount) * Math.min(1, dt * 4);
   // Close to the glowing NOVA sign (where a new game starts) the torch is much weaker, or it would burn the letters out.
   const awayFromSign = Math.min(1, Math.max(0.15, (Math.hypot(player.position.x - SIGN_X, player.position.z - SIGN_Z) - 3) / 5));
-  torch.intensity = 85 * torchAmount * awayFromSign;
+  // A surface right in front of the character (a counter, a wall) would be burned white by the torch: it is much weaker then.
+  const surfaceAhead = d => blocked(player.position.x + Math.sin(facing) * d, player.position.z + Math.cos(facing) * d);
+  torchClose += ((surfaceAhead(0.9) || surfaceAhead(1.7) ? 1 : 0) - torchClose) * Math.min(1, dt * 6);
+  torch.intensity = 85 * torchAmount * awayFromSign * (1 - 0.7 * torchClose);
   torch.position.set(player.position.x, 1.55, player.position.z);
   torch.target.position.set(player.position.x + Math.sin(facing) * 5, 0.3, player.position.z + Math.cos(facing) * 5);
   hemi.intensity = 0.35 * (1 - 0.5 * torchAmount);
