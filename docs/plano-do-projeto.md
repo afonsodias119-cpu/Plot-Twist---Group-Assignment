@@ -206,3 +206,7 @@ A revisão serve de preparação para a pergunta "explica código que não escre
 
 - **Publicação:** o Streamlit Community Cloud é gratuito e liga-se ao GitHub, mas lá o SQLite pode ser apagado quando a app reinicia. Resolver isto na fase E.
 - A base de dados (`data/*.db`) não vai para o GitHub: cada pessoa tem o seu progresso local.
+
+### Repositório arrumado para a apresentação — Maria (23/11/2026)
+
+Apagados os 72 branches que já estavam no `main` (ficam o `main`, os PRs abertos e os branches não integrados). `docs/historia.md` e `docs/story-en.md` descrevem a história de hoje; o `README.md` do 3D explica cada ficheiro; `specs/README.md` agrupa as specs por tema e diz quais foram mudadas ou substituídas.
