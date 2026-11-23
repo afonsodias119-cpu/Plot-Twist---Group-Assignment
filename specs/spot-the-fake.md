@@ -1,5 +1,7 @@
 # Spot the fake — the group chat puzzle
 
+> **Replaced by specs/computer-lab-backup.md:** the group chat and its flags no longer exist; the player saves a backup of the original conversations instead.
+
 **Blocked by:** the base game merged into `main` (done), and the team approving this spec, because it changes one reviewed test (see "Reviewed tests that change").
 
 Phase D extra 2 of 2. It adds one scene, five new remembered facts and a third ending, using only the rules that already exist: no change to `logic.py`.

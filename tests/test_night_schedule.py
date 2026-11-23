@@ -118,27 +118,28 @@ def show(card, npc, node, player=PLAYER, language="en"):
     return call("confront", language, player, npc=npc, node=node, evidence=card)
 
 
-def investigate(player=PLAYER, language="en", leonor="ask_for_help", flagged=()):
+def investigate(player=PLAYER, language="en", leonor="ask_for_help", backup=True):
     """A new game played up to the computer lab, as in tests/test_evidence_and_hearing.py: the USB
     stick, the copy, the decision about Leonor, the old files (2.5 charged minutes: half a minute for
-    the copy, one for the decision, one for the files) and the chat messages in `flagged`. The player
-    stands beside Tomás."""
+    the copy, one for the decision, one for the files) and, unless `backup` is False, the backup of
+    the conversations (it costs nothing). The player stands beside Tomás; with `backup=False` the
+    player is still working at computer 12, where Duarte's rounds catch (specs/computer-lab-backup.md)."""
     steps = ["open_drawer", "go_print_shop", "request_copy", "go_study_room",
              "go_library", leonor, "go_study_room", "go_computer_lab", "view_files"]
-    if flagged:
-        steps += ["open_chat"] + [f"flag_{n}" for n in flagged] + ["go_computer_lab"]
+    if backup:
+        steps.append("save_backup")
     return play(*steps, language=language, player=player)
 
 
 def crack_tomas(player=PLAYER, language="en"):
-    """In the computer lab, with message 5 flagged: the right card on his claim line (0 minutes)."""
-    reply = show("msg_5", "tomas", "slides", player, language)
+    """In the computer lab: the file history on his claim line (0 minutes; specs/computer-lab-backup.md)."""
+    reply = show("files", "tomas", "slides", player, language)
     assert reply["confront"]["cracked"] is True
     return reply
 
 
 def to_the_hearing(player=PLAYER, language="en"):
-    """A whole investigation (Leonor helps, nothing flagged) and then into the auditorium: minute 2.5."""
+    """A whole investigation (Leonor helps, the backup saved) and then into the auditorium: minute 2.5."""
     investigate(player, language)
     return walk("auditorium", player, language)
 
@@ -260,14 +261,14 @@ def warnings_due(result, language):
 #   "do x"              the story action x
 #   "code"              the right code
 #   "photo"             the torn photo: the answer that asks for the copy, the pieces, one `assemble`
-#   "chat 5 2 4"        computer12: start, do open_chat, one flag for each number, and the close
+#   "backup"            computer12 (its card is open after the code): do save_backup. Changed by
+#                       specs/computer-lab-backup.md ("Reviewed tests that change"): it replaces "chat 5 2 4"
 #   "show x"            card x shown on the line just heard (`confront`)
 #   "hearing a, b, c"   start and three answers ("-" is "Say nothing")
 #   "wait until 22:25"  the player does nothing until that time
 #
 # `paced(seconds, route)` plays one route through campus.command. Each command takes `seconds` of real
-# time; two clicks with nothing to read take QUICK_SECONDS (opening the close-up of the table, closing
-# computer 12), and the hands on the pieces of the photo take photo_hands() seconds. The page's campus
+# time; a click with nothing to read takes QUICK_SECONDS (opening the close-up of the table), and the hands on the pieces of the photo take photo_hands() seconds. The page's campus
 # minute is that real time plus every minute charged so far: by the server (night.charged) and by the
 # page (1 for each wrong place). Right before a request is sent, the page reports its whole minute
 # with `time` when it is ahead of the server; a player who waits reports when the wait ends (a wait
@@ -277,7 +278,7 @@ def warnings_due(result, language):
 
 QUICK_SECONDS = 5
 
-LAB = "> computer_lab; computer12: start; code"
+LAB = "> computer_lab; computer12: start; code; backup"
 END = "> auditorium; professor: start"
 
 
@@ -288,43 +289,45 @@ def clues(choice):
 
 
 ROUTES = {
+    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): no chat, no flags and no
+    # "fifth_element"; Leonor's choice decides the story's ending, and LAB saves the backup.
     1: "; ".join([clues("accuse"), LAB, END, "hearing files, original_photo, -"]),
-    2: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, leonor_messages"]),
-    3: "; ".join([clues("ask_for_help"), LAB, "chat 5 2 4", END, "hearing files, original_photo, leonor_messages"]),
-    4: "; ".join([clues("ask_for_help"), LAB, "chat 1 2 3 4 5", END, "hearing files, original_photo, leonor_messages"]),
-    5: "; ".join(["search usb_stick", LAB, "chat 1 2 3 4 5", "wait until 22:25", END, "hearing files, -, -"]),
-    # Route 6 is route 3 played by a player who waits at the open chat (ROUND_HABITS below).
-    6: "; ".join([clues("ask_for_help"), LAB, "chat 5 2 4", END, "hearing files, original_photo, leonor_messages"]),
+    2: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
+    # Route 3 is route 2, the careful night that route 6 is compared with.
+    3: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
+    # Only the lab: the photo is lost at 22:25 and Leonor at 22:30, so the auditorium opens.
+    5: "; ".join(["search usb_stick", LAB, "wait until 22:30", END, "hearing files, -, -"]),
+    # Route 6 is route 3 played by a player who waits at computer 12, the files open, until Duarte comes.
+    6: "; ".join([clues("ask_for_help"), LAB, END, "hearing files, original_photo, backup"]),
     # With the photo, Leonor's card offers only the two decisions (specs/actions-when-they-make-sense.md).
     7: "; ".join(["rita: start, pen; search can; search usb_stick; > print_shop; amelia: start, order; "
                   "photo; > library; leonor: start; do ask_for_help; > computer_lab; "
-                  "tomas: start, kind, password; computer12: start; code; chat 5 2 4",
-                  END, "hearing files, original_photo, leonor_messages"]),
+                  "tomas: start, kind, password; computer12: start; code; backup",
+                  END, "hearing files, original_photo, backup"]),
     9: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo; > study_room; "
                   "rita: start, photo, five; show original_photo; > library; leonor: start; do ask_for_help",
-                  LAB, "chat 5; tomas: start, kind, slides; show msg_5; chat 2 4",
-                  END, "hearing files, rita_word, tomas_word"]),
+                  LAB, "tomas: start, kind, slides; show files",
+                  END, "hearing files, original_photo, backup"]),
     11: "; ".join(["search usb_stick; > print_shop; amelia: start, order; photo",
-                   LAB, "chat 1 2 3 4 5; tomas: start, kind, who, password, msg5, photo, help, slides; show msg_5; "
-                   "> library; leonor: start; do ask_for_help; leonor: soft, messages, mine, sure; show tomas_word; "
+                   LAB, "tomas: start, kind, who, password, msg5, photo, help, slides; show files; "
+                   "> library; leonor: start; do ask_for_help; leonor: soft, messages, mine, sure; "
                    "> study_room; rita: start, photo, duarte, warned, pen, chat, five; show files; "
-                   "> auditorium; duarte: start, part, slide; show tomas_word; professor: start, list, evidence, proof",
-                   "hearing files, original_photo, leonor_messages"]),
+                   "> auditorium; duarte: start, part, slide; show files; professor: start, list, evidence, proof",
+                   "hearing files, original_photo, backup"]),
 }
 
 # How each route treats a round while Tomás has not cracked (the rule under the routes in the spec):
-# "warning": waits, or closes the chat, when the warning has come (the round is at most a minute away);
-# "knows":   the same, and also closes when the round would come before this flag and the close are done;
-# "linger":  waits at the open chat until Duarte comes (route 6).
-ROUND_HABITS = {1: "knows", 2: "knows", 3: "knows", 4: "knows", 5: "knows", 6: "linger", 7: "warning",
+# "warning": waits before the code when the warning has come (the round is at most a minute away);
+# "knows":   the same, and also waits when the round would come before the code and the backup are done;
+# "linger":  waits at computer 12, the files open, until Duarte comes (route 6).
+ROUND_HABITS = {1: "knows", 2: "knows", 3: "knows", 5: "knows", 6: "linger", 7: "warning",
                 9: "knows", 11: "knows"}
 
 # The commands of "everything" that are not polite lines and cannot be skipped (spec, point 13).
-# Two of them take QUICK_SECONDS: opening the table and closing the chat.
+# One of them takes QUICK_SECONDS: opening the table.
 OTHER_COMMANDS = {"open the table": 1, "search": 1, "doors (print shop, library, lab, back to Rita, auditorium)": 5,
-                  "copy (the answer and the full frame)": 2, "decision": 1, "code": 1, "open the chat": 1,
-                  "flags": 5, "close the chat": 1, "cards (Tomás, Rita, Leonor, Duarte)": 4,
-                  "hearing (start and three answers)": 4}
+                  "copy (the answer and the full frame)": 2, "decision": 1, "code": 1, "backup": 1,
+                  "cards (Tomás, Rita, Duarte)": 3, "hearing (start and three answers)": 4}
 
 
 def photo_hands():
@@ -415,7 +418,7 @@ def next_round(run):
 
 def tomas_cracked(run):
     """Tomás stands in the lab door once he has cracked: a round can no longer catch the player."""
-    return "tomas_word" in [card["id"] for card in run["last"]["evidence"]]
+    return "tomas" in db.load_night(run["player"])["notes"].get("cracked", [])   # a fact, not a card (specs/computer-lab-backup.md)
 
 
 def warned_round(run):
@@ -427,45 +430,30 @@ def warned_round(run):
     return mark
 
 
-def open_the_chat(run):
-    """computer12: start and do open_chat, waiting first for a round that is about to come."""
-    if warned_round(run):
-        wait_until(run, warned_round(run))
-    play_step(run, "computer12: start")
-    if warned_round(run):   # the warning came while the player was clicking computer 12
-        wait_until(run, warned_round(run))
-    play_step(run, "do open_chat")
+def before_the_code(run):
+    """A careful player does not open the files with a round about to come: between the code and the
+    backup the player is at computer 12, where Duarte catches (specs/computer-lab-backup.md)."""
     mark = next_round(run)
-    if run["habit"] == "linger" and not run["last"]["night"]["caught"] and mark:
-        wait_until(run, mark)   # Duarte finds the chat open
+    if run["habit"] == "linger" or tomas_cracked(run) or mark is None:
+        return
+    warned = page_minute(run) >= mark - 1
+    # the code and the backup, and the minute the code itself costs
+    too_close = page_minute(run) + 2 * run["pace"] / 60 + clock_rules().COSTS["view_files"] >= mark
+    if warned or (run["habit"] == "knows" and too_close):
+        wait_until(run, mark)
 
 
-def close_the_chat(run):
-    """One click with nothing to read. A catch on the way has already closed it."""
-    send(run, "play", seconds=QUICK_SECONDS, action="go_computer_lab")
-
-
-def chat(run, flags):
-    """The step "chat ...": open the chat, flag each message, close it; the rounds as ROUND_HABITS says."""
-    open_the_chat(run)
-    for n in flags:
-        mark = next_round(run)
-        safe = tomas_cracked(run) or mark is None or run["habit"] == "linger"
-        warned = mark is not None and page_minute(run) >= mark - 1
-        too_close = mark is not None and page_minute(run) + (run["pace"] + QUICK_SECONDS) / 60 >= mark
-        if not safe and (warned or (run["habit"] == "knows" and too_close)):
-            close_the_chat(run)
-            wait_until(run, mark)
-            open_the_chat(run)
-        while True:
-            if run["last"]["scene"] != "group_chat":   # caught: Duarte closed the chat, so open it again
-                open_the_chat(run)
-            reply = send(run, "play", action=f"flag_{n}")
-            if reply is not None:
-                sent(reply, f"flag_{n}")
-                break
-    if run["last"]["scene"] == "group_chat":
-        close_the_chat(run)
+def backup(run):
+    """The step "backup": save_backup at computer 12. A lingering player first waits for Duarte with
+    the files open; a catch only costs time, so the backup is then simply asked for again."""
+    mark = next_round(run)
+    if run["habit"] == "linger" and not tomas_cracked(run) and not run["last"]["night"]["caught"] and mark:
+        wait_until(run, mark)   # Duarte finds the player at computer 12
+    while True:
+        reply = send(run, "play", action="save_backup")
+        if reply is not None:
+            sent(reply, "backup")
+            return
 
 
 def hearing(run, answers):
@@ -510,9 +498,14 @@ def play_step(run, step):
         assert reply["assembled"] is True
         run["line"] = None   # after the photo the clerk's card offers nothing more
     elif step == "code":
-        sent(send(run, "unlock", code=search.PC12_CODE), step)
-    elif step.startswith("chat "):
-        chat(run, [int(n) for n in step.split()[1:]])
+        before_the_code(run)
+        reply = send(run, "unlock", code=search.PC12_CODE)
+        # The code's own minute may reach a round: Duarte then catches the player with the files just
+        # opened (not accepted), but the files are seen all the same.
+        if reply is None or not reply["unlocked"]:
+            raise ValueError(f"refused: {step}")
+    elif step == "backup":
+        backup(run)
     elif step.startswith("show "):
         person, node = run["line"]
         sent(send(run, "confront", npc=person, node=node, evidence=step[len("show "):]), step)
@@ -623,7 +616,7 @@ def test_half_a_minute_is_kept_and_the_time_shows_the_whole_minutes():
     assert night_row(PLAYER)[0] == 10 and json.loads(night_row(PLAYER)[1]).get("half", False) is False
 
 
-def test_walking_talking_flagging_and_the_hearing_cost_nothing():
+def test_walking_talking_the_backup_and_the_hearing_cost_nothing():
     def costs_nothing(result, minute):
         assert result["night"]["charged"] == 0 and result["night"]["minute"] == minute
 
@@ -639,11 +632,9 @@ def test_walking_talking_flagging_and_the_hearing_cost_nothing():
     assert do("ask_for_help")["night"]["minute"] == 1.5
     costs_nothing(walk("computer_lab"), 1.5)                  # a door: two moves of the story
     assert unlock()["night"]["minute"] == 2.5
-    costs_nothing(do("open_chat"), 2.5)
-    costs_nothing(do("flag_5"), 2.5)                          # a flag
-    costs_nothing(do("go_computer_lab"), 2.5)                 # closing the chat
+    costs_nothing(do("save_backup"), 2.5)                     # the backup (specs/computer-lab-backup.md: it replaces the chat)
     costs_nothing(walk("auditorium"), 2.5)
-    for value in ("start", "files", "original_photo", "leonor_messages"):   # the four hearing commands
+    for value in ("start", "files", "original_photo", "backup"):   # the four hearing commands
         costs_nothing(answer(value), 2.5)
     assert game.load(PLAYER)["ending"] != "none"
 
@@ -667,7 +658,7 @@ def test_refused_actions_cost_nothing_and_save_nothing():
 
 def test_cards_cost_what_the_table_says():
     costs = clock_rules().COSTS
-    investigate(flagged=(5,))   # minute 2.5
+    investigate()   # minute 2.5
     right = crack_tomas()
     assert right["night"]["charged"] == right["confront"]["minutes"] == costs["card_right"] == 0
     rebuff = show("files", "tomas", "start")
@@ -851,6 +842,7 @@ def test_the_schedule_sentence_is_only_for_the_room_of_the_person_who_left():
     call("search", spot=search.PEN_SPOT)
     walk("computer_lab")
     unlock()
+    do("save_backup")  # specs/computer-lab-backup.md: the auditorium needs the backup too
     walk("auditorium")
     assert do("present_evidence")["ending"] is not None
     before = saved()
@@ -941,6 +933,7 @@ def test_a_lost_photo_loses_leonor_too_and_no_longer_locks_the_auditorium():
         call("search", player=player, spot=search.PEN_SPOT)
         walk("computer_lab", player)
         unlock(player)
+        do("save_backup", player)  # specs/computer-lab-backup.md: the auditorium needs the backup too
         at(9, player)
         assert not call("enter", player=player, room="auditorium")["accepted"], way   # still locked at 22:24
         ten = at(10, player)   # the walk stopped in the study room
@@ -961,7 +954,8 @@ def test_leonor_alone_is_lost_at_2230_when_the_photo_is_held():
     walk("print_shop")
     do("request_copy")
     walk("computer_lab")
-    unlock()   # minute 1.5, outside the chat
+    unlock()   # minute 1.5
+    do("save_backup")   # specs/computer-lab-backup.md: away from computer 12 before the round at 22:27
     fourteen = at(14)
     assert clue_row(fourteen, "leonor")["lost"] is False and clue_row(fourteen, "leonor")["done"] is False
     assert not call("enter", room="auditorium")["accepted"]
@@ -989,6 +983,7 @@ def test_a_night_that_lost_the_print_shop_ends_in_stolen_credit():
     call("search", spot=search.PEN_SPOT)
     walk("computer_lab")
     unlock()
+    do("save_backup")  # specs/computer-lab-backup.md: the auditorium needs the backup too
     at(10)
     walk("auditorium")
     # The photo claim and the messages claim cannot be answered: the player says nothing to both.
@@ -999,8 +994,8 @@ def test_a_night_that_lost_the_print_shop_ends_in_stolen_credit():
 
 def test_the_reviewed_paths_never_meet_the_schedule():
     ended = play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_library", "ask_for_help",
-                 "go_study_room", "go_computer_lab", "view_files", "open_chat", "flag_2", "flag_4", "flag_5",
-                 "go_computer_lab", "go_study_room", "go_auditorium", "present_evidence")
+                 "go_study_room", "go_computer_lab", "view_files", "save_backup",
+                 "go_study_room", "go_auditorium", "present_evidence")   # specs/computer-lab-backup.md
     assert ended["ending"]["id"] == "full_case"
     assert ended["night"]["minute"] == 2.5   # no report: only the copy (0.5), the decision and the files
     assert ended["night"]["gone"] == [] and ended["night"]["caught"] is False
@@ -1054,7 +1049,7 @@ def test_the_warning_comes_one_minute_before_each_round_and_is_impersonal():
     assert "I " not in schedule("en", "round")   # it must not say who the unknown number is
 
     # Once Tomás has cracked, no round warning comes.
-    investigate("cracked", flagged=(5,))
+    investigate("cracked")
     crack_tomas("cracked")
     for mark in (12, 19, 26):
         assert not any(found.startswith("round-") for found in message_ids(at(mark - 1, "cracked"))), mark
@@ -1062,24 +1057,24 @@ def test_the_warning_comes_one_minute_before_each_round_and_is_impersonal():
 
 # ---------- Duarte's rounds ----------
 
-def test_duarte_catches_the_player_in_the_group_chat():
+# Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): Duarte now catches the player
+# at computer 12, with the files open and the backup not saved yet (there is no chat any more).
+def test_duarte_catches_the_player_at_computer_12():
     for language in ("en", "pt"):
         player = f"caught {language}"
-        investigate(player, language)                 # minute 2.5
-        do("open_chat", player, language)
-        do("flag_2", player, language)
+        investigate(player, language, backup=False)   # minute 2.5, the files open at computer 12
         caught = at(12, player, language)
         assert not caught["accepted"] and caught["scene"] == "computer_lab", language
-        assert game.load(player)["flags"]["flagged_2"] is True, language   # the flags already made stay
+        flags = game.load(player)["flags"]
+        assert flags["files_viewed"] is True and flags["backup_saved"] is False, language   # nothing else changes
         assert caught["night"]["minute"] == 15 and caught["night"]["charged"] == 3, language
         assert caught["night"]["caught"] is True and caught_note(player) == [12], language
         assert caught["message"] == schedule(language, "caught"), language
-        assert caught["message"].endswith(TEXT[language]["notice_chat"] + '"'), language
+        assert "Duarte" in caught["message"], language
 
 
 def test_a_charge_that_reaches_a_round_catches_too():
-    investigate()
-    do("open_chat")
+    investigate(backup=False)   # at computer 12 (specs/computer-lab-backup.md)
     at(10)
     rebuff = show("files", "tomas", "start")   # 2 minutes: 10 + 2 reaches the round at 12
     assert rebuff["confront"]["cracked"] is False and rebuff["confront"]["minutes"] == 2
@@ -1090,8 +1085,7 @@ def test_a_charge_that_reaches_a_round_catches_too():
 
 
 def test_one_report_that_passes_two_rounds_catches_once():
-    investigate()
-    do("open_chat")
+    investigate(backup=False)   # at computer 12 (specs/computer-lab-backup.md)
     assert at(11)["night"]["caught"] is False
     caught = at(20)   # passes 12 and 19: only the first round reached catches
     assert caught["night"]["minute"] == 23 and caught["night"]["charged"] == 3
@@ -1100,7 +1094,8 @@ def test_one_report_that_passes_two_rounds_catches_once():
 
 def test_a_round_is_reached_from_a_half_minute():
     def chat_at_eleven_and_a_half(player):
-        """The copy at minute 9 (9.5), Leonor's help (10.5), the files (11.5), then the open chat."""
+        """The copy at minute 9 (9.5), Leonor's help (10.5), the files (11.5), and the player stays at
+        computer 12 without saving the backup (specs/computer-lab-backup.md: no chat any more)."""
         call(player=player)
         call("search", player=player, spot=search.PEN_SPOT)
         walk("print_shop", player)
@@ -1109,8 +1104,8 @@ def test_a_round_is_reached_from_a_half_minute():
         walk("library", player)
         do("ask_for_help", player)
         walk("computer_lab", player)
-        assert unlock(player)["night"]["minute"] == 11.5
-        assert do("open_chat", player)["night"]["caught"] is False
+        files = unlock(player)
+        assert files["night"]["minute"] == 11.5 and files["night"]["caught"] is False
 
     # A report: 11.5 is below the round and 12 is at it.
     chat_at_eleven_and_a_half("report")
@@ -1138,25 +1133,23 @@ def test_outside_the_chat_a_round_changes_nothing():
 
 
 def test_tomas_at_the_door_prevents_the_catch():
-    investigate(flagged=(5,))
+    investigate(backup=False)   # specs/computer-lab-backup.md: at computer 12, the backup not saved
     crack_tomas()
-    do("open_chat")
     door = at(12)
-    assert door["accepted"] and door["scene"] == "group_chat"   # the chat stays open
+    assert door["accepted"] and door["scene"] == "computer_lab"   # the player stays at computer 12
     assert door["night"]["minute"] == 12 and door["night"]["charged"] == 0
     assert door["night"]["caught"] is False and caught_note() == []
     assert door["message"] == schedule("en", "door")
 
 
 def test_being_caught_twice_costs_six_minutes_and_one_doubt():
-    investigate()   # minute 2.5
-    do("open_chat")
+    investigate(backup=False)   # minute 2.5   # specs/computer-lab-backup.md: at computer 12, the backup not saved
     first = at(12)
     assert first["night"]["minute"] == 12 + 3 and first["night"]["charged"] == 3
-    do("open_chat")
-    second = at(19)
+    second = at(19)   # still at computer 12: a catch moves nobody
     assert second["night"]["minute"] == 19 + 3 and second["night"]["charged"] == 3
     assert caught_note() == [12, 19]
+    do("save_backup")
     walk("auditorium")
     hearing = answer("start")["hearing"]
     assert hearing["doubts"] == 1   # however many times it happened
@@ -1165,9 +1158,9 @@ def test_being_caught_twice_costs_six_minutes_and_one_doubt():
 
 
 def test_a_caught_player_who_fails_every_claim_still_has_three_doubts():
-    investigate()   # Leonor helps
-    do("open_chat")
+    investigate(backup=False)   # Leonor helps   # specs/computer-lab-backup.md: at computer 12, the backup not saved
     assert at(12)["night"]["caught"] is True
+    do("save_backup")
     walk("auditorium")
     assert answer("start")["hearing"]["doubts"] == 1
     assert answer("concede")["hearing"]["doubts"] == 2
@@ -1179,8 +1172,8 @@ def test_a_caught_player_who_fails_every_claim_still_has_three_doubts():
 
 
 def test_a_catch_at_the_first_round_loses_an_undecided_leonor():
-    play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_computer_lab", "view_files",
-         "open_chat")   # the photo is held, Leonor is undecided, minute 1.5
+    play("open_drawer", "go_print_shop", "request_copy", "go_study_room", "go_computer_lab",
+         "view_files")   # the photo is held, Leonor is undecided, minute 1.5, at computer 12 (specs/computer-lab-backup.md)
     caught = at(12)
     assert caught["night"]["caught"] is True and caught["night"]["minute"] == 15   # the 3 minutes end at 22:30
     assert clue_row(caught, "leonor")["lost"] is True and clue_row(caught, "leonor")["done"] is False
@@ -1245,8 +1238,9 @@ def test_the_faculty_closes_at_2245():
 
 def test_every_story_ending_has_a_route_at_15_30_45_and_60_seconds():
     for seconds in (15, 30, 45, 60):
-        shown = {paced(seconds, route)["ending"] for route in (1, 2, 3, 4, 5)}
-        assert {"stolen_credits", "impostor", "full_case", "fifth_element"} <= shown, seconds
+        # Changed by specs/computer-lab-backup.md: three story endings, chosen by Leonor's decision.
+        shown = {paced(seconds, route)["ending"] for route in (1, 2, 5)}
+        assert {"stolen_credits", "impostor", "full_case"} <= shown, seconds
 
 
 def test_a_careful_first_night_fits_at_45_seconds_with_two_minutes_left():
@@ -1277,16 +1271,21 @@ def test_doing_everything_does_not_fit_at_30_seconds():
     rules = clock_rules()
     lines = sum(len(polite_lines(person)) for person in people.PEOPLE["en"])
     commands = lines + sum(OTHER_COMMANDS.values())
-    assert sum(OTHER_COMMANDS.values()) == 26
-    # Every command at half a minute, except opening the table and closing the chat (QUICK_SECONDS),
-    # and the hands on the pieces of the photo.
-    real_minutes = ((commands - 2) * 30 + 2 * QUICK_SECONDS + photo_hands()) / 60
-    # The smallest charges of such a night: the copy, the decision, the files, three right cards, Duarte's card.
+    # Changed by specs/computer-lab-backup.md ("Reviewed tests that change"): opening the chat, the five
+    # flags and closing it (7 commands) became one backup, and Leonor is no longer shown a card: 19
+    # commands instead of 26.
+    assert sum(OTHER_COMMANDS.values()) == 19
+    # Every command at half a minute, except opening the table (QUICK_SECONDS) and the hands on the
+    # pieces of the photo.
+    real_minutes = ((commands - 1) * 30 + QUICK_SECONDS + photo_hands()) / 60
+    # The smallest charges of such a night: the copy, the decision, the files, two right cards, Duarte's card.
     costs = rules.COSTS
-    charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 3 * costs["card_right"]
+    charges = (costs["request_copy"] + costs["ask_for_help"] + costs["view_files"] + 2 * costs["card_right"]
                + costs["card_duarte"])
     assert real_minutes + charges > rules.NIGHT_MINUTES, (lines, commands, real_minutes, charges)
-    assert paced(30, 11)["ending"] is None
+    # Route 11 (not every polite line) lost the same commands: it now fits up to 32 seconds a
+    # command (28.3 minutes at 30) and no longer at 33.
+    assert paced(33, 11)["ending"] is None
 
 
 # ---------- The texts, the page and the files ----------

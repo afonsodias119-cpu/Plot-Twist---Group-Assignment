@@ -33,3 +33,5 @@ The team speaks Portuguese (PT-PT): explain in Portuguese, keep code and specs i
 - Work only on the current spec. Do not build other features.
 - The story content is data, not code: keep it separate from the rules.
 - Every claim about the code comes with file and line.
+- No secrets (keys, passwords, connection strings) in the code or the repository: if one is ever needed, read it from `.streamlit/secrets.toml` or an environment variable, and keep that file in `.gitignore`.
+- Dependencies stay pinned in `pyproject.toml` / `uv.lock`; run `uv audit` after changing them (specs/safe-dependencies.md).

@@ -5,4 +5,7 @@ __pycache__/
 
 # Local database: each person's game progress stays on their own computer
 data/*.db
+
+# Secrets never go to GitHub (the app uses none today; see AGENTS.md)
 .env
+.streamlit/secrets.toml

@@ -11,7 +11,7 @@
   };
   const ui = () => data[window.lang || "pt"].play_ui;
   // One emoji for each ending (the collection and the share card). It is defined here because the first screen uses it at start-up.
-  const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸", fifth_element: "👁️" };
+  const ENDING_EMOJI = { full_case: "🏆", impostor: "🔍", stolen_credits: "💸" };
   document.body.classList.add("playable");
 
   const nameBox = make("div", undefined, "name-box");
@@ -26,6 +26,9 @@
   // The last name used in this browser is filled in again: if the page reloads (for example after an
   // update of the app), continuing the game is one click (specs/chat-dialogues.md).
   const LAST_NAME_KEY = "plot-twist-last-name";
+  // The page's copy of game.NAME_PATTERN, so a name the server would refuse is caught under the field
+  // (specs/name-check-first-step.md). The server still checks every name.
+  const NAME_RULE = /^[\p{L}\p{N}_ -]{1,20}$/u;
   try { name.value = localStorage.getItem(LAST_NAME_KEY) || ""; } catch (error) { /* no storage */ }
   // ---------- the character creator: boy or girl, clothes, colours (kept in this browser, for each name) ----------
   // It only changes how the detective looks; the server never sees it (specs/rules-and-character.md).
@@ -227,6 +230,7 @@
   }
   window.campusNext = () => {
     if (!name.value.trim()) { startError.textContent = ui().name_needed; name.focus(); return; }
+    if (!NAME_RULE.test(name.value.trim())) { startError.textContent = ui().name_invalid; name.focus(); return; }
     startError.textContent = ""; lookError.textContent = "";
     goStep($("stepCase"), stepLook);
   };
@@ -241,6 +245,63 @@
   });
   $("brief-back").addEventListener("click", () => goStep(stepBrief, stepLook));
   $("brief-start").addEventListener("click", () => window.campusStart());
+
+  // ---------- your own group: three friends' names in the teammates' places (specs/your-own-group.md) ----------
+  // Under the creator, in a closed <details>, so a first player still sees only the name field, its hint and
+  // the creator (specs/no-endings-on-start.md). The server cleans the names again: it never trusts this browser.
+  const STORY_GROUP = ["Leonor", "Rita", "Tomás"];   // the order of the fields, as campus_people.DEFAULT_GROUP
+  const GROUP_KEY = "plot-twist-group";
+  const groupBox = make("details", undefined, "group-box");
+  const groupTitle = make("summary"), groupHint = make("p", undefined, "muted");
+  const groupFields = STORY_GROUP.map((storyName, i) => {
+    const label = make("label", undefined, "group-field"), caption = make("span");
+    const input = make("input"); input.id = `group-name-${i + 1}`; input.maxLength = 14;
+    input.placeholder = storyName; input.autocomplete = "off"; input.spellcheck = false;
+    label.append(caption, input);
+    return { caption, input };
+  });
+  groupBox.append(groupTitle, groupHint, ...groupFields.map(field => field.caption.parentNode));
+  // In the "Your detective" step, under the creator (specs/your-own-group.md, point 1; specs/creator-after-name.md).
+  stepLook.querySelector(".look-body").append(groupBox);
+  // Whatever is read from the browser is checked, as cleanLook does: a damaged note gives three empty fields.
+  function cleanGroup(raw) {
+    if (!Array.isArray(raw) || raw.length !== 3) return ["", "", ""];
+    return raw.map(value => (typeof value === "string" ? value.slice(0, 14) : ""));
+  }
+  try { cleanGroup(JSON.parse(localStorage.getItem(GROUP_KEY) || "null")).forEach((value, i) => { groupFields[i].input.value = value; }); } catch (error) { /* no storage */ }
+  const typedGroup = () => groupFields.map(field => field.input.value);
+  // A typed name as the server would write it: single spaces, the first letter upper-cased (point 3).
+  const tidyName = text => text.normalize("NFC").trim().replace(/\s+/g, " ").replace(/\p{L}/u, letter => letter.toUpperCase());
+  function paintGroup() {
+    const t = ui();
+    groupTitle.textContent = t.group_title;
+    groupHint.textContent = t.group_hint;
+    groupFields.forEach((field, i) => { field.caption.textContent = t.group_slots[i]; });
+  }
+  // The name chips of the case file (#groupList: "You" first, then the three teammates) show the names
+  // typed. Only the text changes, with textContent, so a name is never read as HTML.
+  function paintGroupChips() {
+    const chips = $("groupList") ? $("groupList").children : [];
+    groupFields.forEach((field, i) => {
+      if (chips[i + 1]) chips[i + 1].textContent = tidyName(field.input.value) || STORY_GROUP[i];
+    });
+  }
+  groupFields.forEach(field => field.input.addEventListener("input", () => {
+    paintGroupChips();
+    try { localStorage.setItem(GROUP_KEY, JSON.stringify(typedGroup())); } catch (error) { /* no storage */ }
+  }));
+  // game3d.html draws the chips again when the language is chosen: they are renamed after it (a microtask).
+  window.addEventListener("language", () => queueMicrotask(() => { paintGroup(); if (!current) paintGroupChips(); }));
+  paintGroup();
+  // The note of point 8, after `begin`: a field the server gave the story's name back, or a continued
+  // game that kept the group it started with. "" when the names are the ones typed.
+  function groupNote(state) {
+    if (!Array.isArray(state.group)) return "";
+    const t = ui(), typed = typedGroup().map(tidyName);
+    const differs = typed.some((value, i) => value && value.toLowerCase() !== String(state.group[i]).toLowerCase());
+    if (!differs) return "";
+    return state.message === t.continued ? t.group_kept : t.group_reset;
+  }
 
   $("premise").after(nameBox);   // the mission box went to step 4 (specs/creator-after-name.md)
   // Which night of this name it is, under the name box (specs/earlier-nights.md, point 6). Empty on night 1,
@@ -267,9 +328,6 @@
     <button id="sms" class="sms" hidden><span id="sms-from" class="sms-from"></span><span id="sms-text"></span></button>
     <div id="joystick" class="joystick" aria-hidden="true"><div id="stick-base" class="stick-base"><div id="stick-knob" class="stick-knob"></div></div></div>
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
-    <section id="chat-card" class="chat-card" role="dialog" aria-labelledby="chat-title" hidden>
-      <header><h3 id="chat-title"></h3><button id="chat-close" class="secondary"></button></header>
-      <p id="chat-intro" class="muted"></p><ol id="chat-messages"></ol></section>
     <section id="ending-card" class="ending-card" role="dialog" aria-labelledby="ending-title" hidden>
       <p id="ending-stamp" class="stamp"></p><p id="ending-label" class="label"></p><h2 id="ending-title"></h2><div id="ending-text"></div>
       <p id="ending-collection" class="collection"></p>
@@ -335,6 +393,60 @@
       gain.gain.setValueAtTime(0.07, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
       osc.connect(gain); gain.connect(master); osc.start(now); osc.stop(now + 0.12);
     }
+    // ---- sounds that tell the player something happened (specs/sounds-that-tell.md, point 6) ----
+    // Each one starts with the same guard as tone and step, so the Sound button silences it.
+    // One step of someone else: a triangle wave falling from 90 to 45 Hz. `filtered`: heard through a wall.
+    function thump(volume, filtered) {
+      if (!ctx || muted) return;
+      const now = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = "triangle"; osc.frequency.setValueAtTime(90, now); osc.frequency.exponentialRampToValueAtTime(45, now + 0.1);
+      gain.gain.setValueAtTime(volume, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      osc.connect(gain);
+      if (filtered) {
+        const wall = ctx.createBiquadFilter(); wall.type = "lowpass"; wall.frequency.value = 600;
+        gain.connect(wall); wall.connect(master);
+      } else gain.connect(master);
+      osc.start(now); osc.stop(now + 0.14);
+    }
+    // 8 steps, 0.42 s apart: louder and louder when someone comes closer, softer when they go away.
+    function footsteps(coming) {
+      if (!ctx || muted) return;
+      for (let i = 0; i < 8; i++) {
+        const volume = 0.015 + (0.08 - 0.015) * (coming ? i : 7 - i) / 7;
+        setTimeout(() => { if (!muted) thump(volume, true); }, 420 * i);   // the Sound button can stop the steps half way
+      }
+    }
+    // A short noise (random samples, as the sea is made) through a band-pass filter sliding `from` -> `to` Hz.
+    // Returns its gain, so the shutter can shake it.
+    function noise(seconds, from, to, volume) {
+      if (!ctx || muted) return;
+      const now = ctx.currentTime, length = Math.ceil(ctx.sampleRate * seconds);
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate), samples = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) samples[i] = Math.random() * 2 - 1;
+      const source = ctx.createBufferSource(); source.buffer = buffer;
+      const band = ctx.createBiquadFilter(); band.type = "bandpass"; band.Q.value = 1.2;
+      band.frequency.setValueAtTime(from, now); band.frequency.exponentialRampToValueAtTime(to, now + seconds);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(volume, now); gain.gain.setValueAtTime(volume, now + seconds * 0.8);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + seconds);
+      source.connect(band); band.connect(gain); gain.connect(master);
+      source.start(now); source.stop(now + seconds);
+      return gain;
+    }
+    // The print shop's metal shutter rolling down: 1.4 s of rattle, then a thump. `level`: 1 in the print shop, 0.4 elsewhere.
+    function shutter(level) {
+      if (!ctx || muted) return;
+      const gain = noise(1.4, 2200, 700, 0.06 * level), now = ctx.currentTime;
+      const rattle = ctx.createOscillator(), depth = ctx.createGain();   // a 14 Hz wobble of the volume: the slats
+      rattle.frequency.value = 14; depth.gain.value = 0.03 * level;
+      rattle.connect(depth); depth.connect(gain.gain); rattle.start(now); rattle.stop(now + 1.4);
+      setTimeout(() => thump(0.1 * level, false), 1400);   // the shutter hits the counter
+    }
+    // A chair scraping on the floor: a short low noise.
+    function chair() {
+      if (!ctx || muted) return;
+      noise(0.25, 400, 200, 0.05);
+    }
     // music: a low drone and a pulse that get faster and darker as the night goes on (tension 0..1)
     let tension = 0, droneGain = null, droneFilter = null, musicOn = false, beatCount = 0;
     const NOTES = [110, 130.8, 164.8, 196, 220];   // A minor
@@ -387,6 +499,7 @@
       talk: () => tone(340 + Math.random() * 60, 0.07, "triangle", 0.05),
       buzz() { tone(110, 0.13, "square", 0.07); setTimeout(() => tone(110, 0.13, "square", 0.07), 180); },   // the phone
       setTension(value) { tension = Math.max(0, Math.min(1, value)); },
+      footsteps, shutter, chair,   // specs/sounds-that-tell.md
     };
   })();
   // The torch of the 3D scene and the voices of the people; both are remembered in this browser.
@@ -477,7 +590,7 @@
     const t = ui();
     document.documentElement.lang = window.lang || "pt";
     nameLabel.textContent = t.name_label;
-    nameHint.textContent = t.continue_hint;
+    nameHint.textContent = t.continue_here;   // a name continues only in its own browser (specs/name-belongs-to-browser.md)
     $("accept").textContent = t.next_step;
     $("look-case").textContent = data[window.lang || "pt"].intro.title;   // the name of the game
     $("look-back").textContent = t.look_back;
@@ -489,6 +602,8 @@
     $("brief-back").textContent = t.brief_back;
     $("brief-start").textContent = t.start;
     $("case-eyebrow").textContent = t.case;
+    // In the game, the day of the case before " · NOVA SBE" (specs/case-of-the-day.md, point 7).
+    if (current?.day?.label) $("case-eyebrow").textContent = t.case.replace(" · NOVA SBE", ` · ${current.day.label} · NOVA SBE`);
     $("game-title").textContent = t.title;
     $("scene-label").textContent = current?.ending ? t.the_end : t.scene;
     $("inventory-label").textContent = t.inventory;
@@ -547,7 +662,6 @@
       $("scene-paragraphs").hidden = outside;
     }
     shell.querySelectorAll(".actions.investigate button").forEach(b => { b.disabled = outside || Boolean(window.campusBusy); });
-    shell.querySelectorAll("#chat-messages li.flagged button").forEach(b => { b.disabled = true; });   // a flag cannot be undone
   }
   window.addEventListener("campus-inside", applyInside);
 
@@ -580,7 +694,7 @@
     if (location.protocol === "file:") { introError.textContent = ui().local_only; return; }
     // Before a command the server hears the page's own minute (specs/night-schedule.md, point 4). The
     // command is for the person of the open card: it is not sent if the report shows that person gone.
-    if (!["open", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
+    if (!["open", "begin", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
     setBusy(true);
     try {
       const result = await request({ operation, player: current?.player || name.value,
@@ -593,6 +707,14 @@
       uncertain = true;
       const message = error.name === "Error" ? error.message : ui().network_error;
       (current ? $("feedback") : introError).textContent = message;
+      // Another browser holds this name's key: back to the name, with the message under the field
+      // (specs/name-belongs-to-browser.md, point 6).
+      if (!current && message === ui().name_taken) {
+        const from = [stepBrief, stepLook].find(step => step.classList.contains("on"));
+        if (from) goStep(from, $("stepCase"));
+        introError.textContent = ""; startError.textContent = message;
+        setTimeout(() => name.focus({ preventScroll: true }), 450);
+      }
       if (current) { $("feedback").className = "error"; $("feedback").hidden = false; toast(message); }
       return false;
     } finally { setBusy(false); }
@@ -601,6 +723,7 @@
   function render(state, operation) {   // operation: the command this snapshot answers
     const roomChanged = !current || current.scene !== state.scene || Boolean(current.ending) !== Boolean(state.ending);
     const gotItem = current && state.inventory.length > current.inventory.length;
+    const before = current;   // the snapshot this one replaces: soundCues compares the two (specs/sounds-that-tell.md)
     current = state;
     window.campusState = state;
     window.lang = state.language;
@@ -630,6 +753,20 @@
           const button = make("button", person.object ? `🖥️ ${t.use} ${person.name}` : `💬 ${t.talk_to} ${person.name}`);
           button.dataset.talk = person.id;
           button.addEventListener("click", () => talkStep(person.id, "start"));
+          box.append(button); group.append(box);
+        }
+        $("action-groups").append(group);
+      }
+      // The things to look at in this room (specs/more-to-find.md, point 7): one button for each, in the side
+      // panel and so in the text mode too. Like investigating, it needs the character inside the room.
+      if ((state.finds || []).length) {
+        const group = make("section", undefined, "actions finds investigate");
+        group.append(make("h3", t.look_title));
+        for (const thing of state.finds) {
+          const box = make("div", undefined, "action-row");
+          const button = make("button", `🔎 ${thing.name}`);
+          button.dataset.thing = thing.id;
+          button.addEventListener("click", () => lookAt(thing.id));
           box.append(button); group.append(box);
         }
         $("action-groups").append(group);
@@ -699,48 +836,38 @@
       ? state.message || (state.night ? state.night.notice : "") || null : null;   // an empty text is nothing to draw
     showNotice(state);
     showEnding(state.ending);
-    showChat(state.chat);
     checkNotices(state);
     syncSecurity();
     sound.setTension(state.ending ? 0 : tensionOf(state));
+    soundCues(before, state, operation);
     if (roomChanged) {
       $("scene-heading").focus({ preventScroll: true });
       document.querySelector(".scene-panel").scrollTop = 0;
     }
   }
 
-  // ---------- computer 12: the group chat is read and flagged on a screen over the picture ----------
-  function showChat(chat) {
-    const card = $("chat-card"), t = ui();
-    const wasOpen = !card.hidden;
-    $("hud-bottom").classList.toggle("chatting", Boolean(chat));
-    if (!chat) {
-      card.hidden = true;
-      if (wasOpen && !talking && !phone.open && !dialog.open) window.playing = true;
-      return;
+  // ---------- sounds that tell the player something happened (specs/sounds-that-tell.md, point 5) ----------
+  // Only between two snapshots of the same night: never on opening the game (a reload at 22:40 must not
+  // play the shutter again), never for a new game or another player, never once the night has an ending.
+  function soundCues(before, state, operation) {
+    if (!before || before.player !== state.player || state.ending || ["open", "begin", "restart"].includes(operation)) return;
+    if (!before.night || !state.night) return;
+    const room = state.room;   // the 3D room of the saved scene
+    // Duarte walks to the lab door before a round, and back after it: only heard inside the lab (point 1).
+    if (room === "computer_lab" && before.night.duarte !== state.night.duarte) sound.footsteps(state.night.duarte === "lab_door");
+    const left = person => state.night.gone.includes(person) && !before.night.gone.includes(person);
+    // The clerk's shutter at 22:25: loud in the print shop, softer down the corridor (point 3).
+    if (left("amelia")) sound.shutter(room === "print_shop" ? 1 : 0.4);
+    // Leonor pushes her chair back and walks away: only heard in the library (point 2).
+    if (left("leonor") && room === "library") {
+      sound.chair();
+      setTimeout(() => sound.footsteps(false), 350);
     }
-    window.playing = false;   // the character stands at the computer
-    $("chat-title").textContent = t.chat_title;
-    $("chat-close").textContent = t.chat_close;
-    $("chat-intro").textContent = chat.intro;
-    $("chat-messages").replaceChildren(...chat.messages.map(message => {
-      const row = make("li", undefined, message.flagged ? "flagged" : "");
-      const button = make("button", message.flagged ? t.chat_flagged : t.chat_flag, message.flagged ? "secondary" : "");
-      button.disabled = message.flagged;
-      button.dataset.action = message.action;
-      button.addEventListener("click", () => send("play", { action: message.action }));
-      row.append(make("p", message.text), button);
-      return row;
-    }));
-    card.hidden = false;
-    if (!wasOpen) $("chat-messages").querySelector("button:not(:disabled)")?.focus({ preventScroll: true });
   }
-  $("chat-close").addEventListener("click", () => send("play", { action: "go_computer_lab" }));
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("chat-card").hidden && !dialog.open) $("chat-close").click(); });
 
   // ---------- the ending: a screen over the picture, with a stamp and confetti ----------
   const CONFETTI = { full_case: ["#e8b45c", "#f4e3b0", "#7fd6a0"], impostor: ["#7fd6a0", "#e8b45c", "#cfe8d8"],
-                     fifth_element: ["#b79cff", "#ffffff", "#6a4cff"], stolen_credits: ["#ff8c7a", "#9aa4ad"],
+                     stolen_credits: ["#ff8c7a", "#9aa4ad"],
                      extra: ["#ffb38a", "#ffe2a8", "#f2d089"] };
   function showEnding(ending) {
     const card = $("ending-card"), t = ui();
@@ -922,7 +1049,7 @@
         asked.add(option.next);
         addBubble(option.label, "me");   // the player's answer goes on the right, like a sent message
         if (option.cost) penalize(option.cost);   // a rude answer: minutes off the countdown
-        talkStep(line.npc, option.next);
+        talkStep(line.npc, option.next, Boolean(option.cost));   // and the server remembers it (specs/trust-has-consequences.md)
       });
       return button;
     });
@@ -985,7 +1112,7 @@
     addBubble(action.label, "me");
     showTyping();
     if (!await send("play", { action: action.id })) { $("talk-log").querySelector(".typing")?.remove(); return; }
-    if (!talking || current.scene !== scene) return;   // the scene changed (for example the chat opened): the conversation is over
+    if (!talking || current.scene !== scene) return;   // the scene changed: the conversation is over
     // The person is no longer here (Leonor after `accuse`, or gone by the schedule): send() has already
     // ended the conversation with the reply's message, so the start menu is not asked for again.
     if (!current.people.some(person => person.id === line.npc)) return;
@@ -1011,11 +1138,18 @@
   // along (the server's `followers`). Each remembers one thing; the Weather and Calendar apps of the phone
   // turn those memories into one day. The code is typed in the usual 4-digit field and checked by the server.
   const HELPER_NAMES = { tomas: "Tomás", rita: "Rita", leonor: "Leonor" };
+  // With your own group the names and the memories say tonight's names (specs/your-own-group.md, point 5):
+  // these lines are the page's own, so the server's retell never sees them. One pass over whole words,
+  // like retell, so "Leonor -> Rita, Rita -> Ana" can never chain.
+  function inGroup(text) {
+    const group = Array.isArray(current?.group) && current.group.length === 3 ? current.group : STORY_GROUP;
+    return text.replace(/(?<!\p{L})(Leonor|Rita|Tomás)(?!\p{L})/gu, story => group[STORY_GROUP.indexOf(story)]);
+  }
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   function addHelper(who, text) {   // a line of the group: a speech bubble with the name of who says it
     $("talk-log").querySelector(".typing")?.remove();
     const bubble = make("div", undefined, "bubble them helper");
-    bubble.append(make("b", HELPER_NAMES[who], "helper-name"), make("p", text), make("time", campusTime()));
+    bubble.append(make("b", inGroup(HELPER_NAMES[who]), "helper-name"), make("p", text), make("time", campusTime()));
     $("talk-log").append(bubble);
     $("talk-log").scrollTop = $("talk-log").scrollHeight;
   }
@@ -1032,12 +1166,12 @@
     button.remove();
     addBubble(t.group_ask, "me");
     const helpers = helpersHere();
-    if (canSpeak && !sound.isMuted()) { stopSpeaking(); say(helpers.map(who => [t.group_clues[who], who])); }
+    if (canSpeak && !sound.isMuted()) { stopSpeaking(); say(helpers.map(who => [inGroup(t.group_clues[who]), who])); }
     for (const who of helpers) {
       showTyping();
       await wait(1100);
       if (talking !== card) return;   // the conversation was closed meanwhile
-      addHelper(who, t.group_clues[who]);
+      addHelper(who, inGroup(t.group_clues[who]));
       sound.talk();
     }
     if (helpers.length < 3) addSaid(t.group_alone);
@@ -1074,7 +1208,8 @@
         return;
       }
       if (!talking || current.scene !== scene) return;
-      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", actions: [], options: [] });
+      showLine({ npc: line.npc, name: line.name, text: current.message, trust: null, note: "", options: [],
+                 actions: current.actions.filter(action => action.person === line.npc) });   // what is left: the backup (specs/computer-lab-backup.md)
     });
     $("talk-options").replaceChildren(form);
     $("talk-options").hidden = false;
@@ -1266,7 +1401,9 @@
       onClose: () => { if (!talking && !phone.open && !dialog.open) window.playing = true; },
     });
   };
-  async function talkStep(npc, node) {
+  // `rude` is true for an answer with a cost: the operation `rude` is a `talk` that the server remembers
+  // for the rest of the night (specs/trust-has-consequences.md, point 9). Nothing new is drawn.
+  async function talkStep(npc, node, rude = false) {
     if (window.campusBusy || !current) return;
     // During the hearing, the professor's card shows the hearing where it stopped (specs/evidence-and-hearing.md, point 9).
     // Anyone else cannot be talked to until the hearing ends: a note says so and the hearing card stays open.
@@ -1282,7 +1419,7 @@
     if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)
     setBusy(true);
     try {
-      const line = await request({ operation: "talk", player: current.player, language: window.lang || "pt", npc, node });
+      const line = await request({ operation: rude ? "rude" : "talk", player: current.player, language: window.lang || "pt", npc, node });
       screenLine = line;
       showLine(line);
     } catch (error) {
@@ -1292,23 +1429,53 @@
   }
   // ---------- walking up to a person: a note says which key starts the conversation ----------
   // The 3D scene sets window.campusNear (the id of the person close enough, or null).
+  // A thing of the room can be near too (specs/more-to-find.md, point 7): the note then says "look".
+  // A function declaration, not a const: updateLabels calls updateNear while the page is still starting.
+  function nearThing() {
+    return window.campusNear && (current?.finds || []).find(thing => thing.id === window.campusNear);
+  }
   function updateNear() {
     $("hud-bottom").classList.toggle("talking", Boolean(talking));
     const person = window.campusNear && (window.campusNear === "guard" ? { id: "guard", name: ui().security.guard_name } : current?.people.find(p => p.id === window.campusNear));
-    $("near-hint").hidden = !person || Boolean(talking);
-    if (!person) return;
+    const thing = nearThing();
+    $("near-hint").hidden = !(person || thing) || Boolean(talking);
+    if (!person && !thing) return;
+    const t = ui();
+    // A thing says "look" (specs/more-to-find.md, point 7). On a phone the note is tapped instead of K
+    // (specs/touch-card-qr.md): the click below does the same as K, for a thing and for a person.
+    const sentence = thing ? t.press_look.replace("{name}", thing.name)
+      : person.object ? t.press_use.replace("{name}", person.name.toLowerCase())
+      : t.press_talk.replace("{name}", person.name);
     const key = make("kbd", "K");
-    const sentence = person.object ? ui().press_use.replace("{name}", person.name.toLowerCase()) : ui().press_talk.replace("{name}", person.name);
     $("near-hint").replaceChildren(key, document.createTextNode(" " + sentence));
   }
+  // K (or a click on the note): the guard opens his desk (specs/security-desk.md), a thing is looked at,
+  // a person is talked to.
+  function useNear() {
+    const thing = nearThing();
+    if (window.campusNear === "guard") talkStep("guard", "start");   // José talks in the ordinary card
+    else if (thing) lookAt(thing.id);
+    else talkStep(window.campusNear, "start");
+  }
   window.addEventListener("campus-near", updateNear);
-  $("near-hint").addEventListener("click", () => { if (window.campusNear) talkStep(window.campusNear, "start"); });
+  $("near-hint").addEventListener("click", () => { if (window.campusNear) useNear(); });
   document.addEventListener("keydown", e => {
     if (e.key.toLowerCase() !== "k" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target.closest("input, textarea, dialog") || !window.campusNear || talking || !window.playing || window.campusBusy) return;
     e.preventDefault();
-    talkStep(window.campusNear, "start");
+    useNear();
   });
+  // ---------- looking at a thing of the room (specs/more-to-find.md, points 5 and 7) ----------
+  // The server says what it is and charges its minutes (only the order book costs any). The text is the
+  // note over the picture, with the usual "−2 min" when it cost time, and it is kept in the diary.
+  async function lookAt(thing) {
+    if (window.campusBusy || !current || current.ending) return;
+    if (!await send("examine", { thing })) return;
+    const seen = current.examine;
+    if (!seen) return;   // refused: render has already shown why
+    toast(current.night?.charged > 0 ? `${seen.text} (${chargedNote(current)})` : seen.text);
+    saveDiary(seen.name, seen.text);
+  }
   $("talk-close").addEventListener("click", closeTalk);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && talking && !phone.open && !dialog.open) closeTalk(); });
 
@@ -1334,8 +1501,10 @@
   }
   function shareText(ending) {
     const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
-    const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("") + (current?.flagged ? "🟨" : "⬛");
-    return [`${t.share_title} 🕵️`, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
+    const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("");
+    // The day of the case, never the case itself: no name, no code (specs/case-of-the-day.md, point 8).
+    const day = current?.day?.label ? [`📅 ${current.day.label}`] : [];
+    return [`${t.share_title} 🕵️`, ...day, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
             `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
   }
   $("share-copy").addEventListener("click", async () => {
@@ -1407,7 +1576,7 @@
     // A fresh game at minute 0, opened or restarted: the server is starting a new night, so the page starts
     // from 30 minutes too (after a restart of the host the browser would otherwise push its old time onto
     // the new night). Only then: the other replies of an untouched game must not give time back.
-    const opening = operation === "open" || operation === "restart";
+    const opening = operation === "open" || operation === "begin" || operation === "restart";
     if (opening && state.fresh && night.minute === 0) timeLeft = FULL_TIME;
     timeLeft = Math.max(0, timeLeft - night.charged * 60000);   // the countdown counts in ms: half a minute is 30 seconds
     timeLeft = Math.min(timeLeft, (COUNTDOWN_MINUTES - night.minute) * 60000);
@@ -1516,8 +1685,8 @@
     smsTimer = setTimeout(() => { banner.hidden = true; }, 9000);
   }
   $("sms").addEventListener("click", () => { $("sms").hidden = true; openPhone("msgs"); });
-  // One message for each clue found (the first three build up, the fourth says what the player found),
-  // and one when the first chat message is flagged. Only the newest pops up; all of them stay in the phone.
+  // One message for each clue found (the first three build up, the fourth says what the player found).
+  // Only the newest pops up; all of them stay in the phone.
   let restarting = false;   // true while a confirmed "New game" is on its way (set by the restart button)
   function checkNotices(state) {
     if (state.ending) { $("sms").hidden = true; return; }
@@ -1532,7 +1701,6 @@
       if (!store.sent.includes(whisper.id)) due.push([whisper.id, whisper.text]);
     }
     for (let i = 1; i <= Math.min(done, t.notices.length); i++) if (!store.sent.includes(`c${i}`)) due.push([`c${i}`, t.notices[i - 1]]);
-    if (state.flagged > 0 && !store.sent.includes("chat")) due.push(["chat", t.notice_chat]);
     // The unknown number also keeps the time: the warnings and the rounds the server says are due now,
     // each id only once (specs/night-schedule.md, point 7).
     for (const message of (state.night && state.night.messages) || []) {
@@ -1542,7 +1710,8 @@
     for (const [id, text] of due) { store.sent.push(id); store.list.push({ text, clock: campusTime() }); }
     saveMsgs(state.player, store);
     showSms(due[due.length - 1][1]);
-    sound.buzz();
+    // One buzz for each new message, 0.7 s apart, at most three; the banner shows only the newest (specs/sounds-that-tell.md, point 4).
+    for (let i = 0; i < Math.min(due.length, 3); i++) setTimeout(() => sound.buzz(), 700 * i);
   }
   function drawMsgs(screen, t) {
     const store = loadMsgs(current?.player || "");
@@ -1611,7 +1780,7 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && !$("menu-list").hidden) { setMenu(false); $("menu-toggle").focus(); }
   });
-  howto.addEventListener("close", () => { window.playing = !talking && $("chat-card").hidden && !phone.open; });
+  howto.addEventListener("close", () => { window.playing = !talking && !phone.open; });
 
   // ---------- the joystick (phones) ----------
   const stickBase = $("stick-base"), stickKnob = $("stick-knob");
@@ -1655,6 +1824,9 @@
       if (window.qrcode) { resolve(); return; }
       const script = document.createElement("script");
       script.src = QR_LIBRARY; script.onload = resolve; script.onerror = reject;
+      // The browser refuses the file if it is not exactly this version (specs/safe-dependencies.md).
+      script.integrity = "sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1";
+      script.crossOrigin = "anonymous";
       document.head.append(script);
     });
   }
@@ -1680,7 +1852,7 @@
   $("qr-open").addEventListener("click", openQr);
   qrIntroButton.addEventListener("click", openQr);
   $("qr-close").addEventListener("click", () => qrDialog.close());
-  qrDialog.addEventListener("close", () => { if (current) window.playing = !talking && $("chat-card").hidden && !phone.open; });
+  qrDialog.addEventListener("close", () => { if (current) window.playing = !talking && !phone.open; });
 
   // ---------- the detective card: a picture to keep, with the detective, the name, the ending and the time ----------
   const cardDialog = make("dialog", undefined, "card-dialog"); cardDialog.id = "card-dialog";
@@ -1688,7 +1860,7 @@
   cardDialog.innerHTML = '<h2 id="card-title"></h2><img id="card-image" alt=""><p id="card-hint" class="muted"></p>' +
     '<div class="dialog-actions"><a id="card-download" class="button-link"></a><button id="card-close" class="secondary"></button></div>';
   document.body.append(cardDialog);
-  const CARD_COLORS = { full_case: "#e8b45c", impostor: "#7fd6a0", stolen_credits: "#ff8c7a", fifth_element: "#b79cff" };
+  const CARD_COLORS = { full_case: "#e8b45c", impostor: "#7fd6a0", stolen_credits: "#ff8c7a" };
   function loadImage(src) {
     return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = src; });
   }
@@ -1760,7 +1932,7 @@
   function saveSecurity(state) { try { localStorage.setItem(securityKey(), JSON.stringify(state)); } catch (error) { /* no storage */ } }
   function syncSecurity() { window.campusDeskPower = loadSecurity().wired; }   // the monitors of the 3D desk light up when it is true
   const anyDialogOpen = () => Boolean(document.querySelector("dialog[open]"));
-  const backToPlay = () => { if (!talking && $("chat-card").hidden && !anyDialogOpen()) window.playing = true; };
+  const backToPlay = () => { if (!talking && !anyDialogOpen()) window.playing = true; };
 
   // ----- José, the guard: he talks in the same card as everybody else -----
   // His lines are made here (the server does not know him), but they are drawn by showLine like any other person's:
@@ -2281,9 +2453,27 @@
   window.addEventListener("campus-look", () => { if (!current) drawNight(); });   // and the coat follows the look
   drawNight();
 
+  // ---------- the day of the case on the case file (specs/case-of-the-day.md, point 6) ----------
+  // The browser's own day and month in Lisbon, written with the same words as the server, so both say
+  // exactly the same. It is only a label: the server decides the case when the game begins.
+  const caseDay = make("span", undefined, "case-day"); caseDay.id = "case-day";
+  $("caseNo")?.after(caseDay);
+  function todayLabel() {
+    const t = ui();
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Lisbon", day: "numeric", month: "numeric" }).formatToParts(new Date());
+    const part = type => Number(parts.find(p => p.type === type).value);
+    return t.case_of_day.replace("{d}", part("day")).replace("{month}", t.months[part("month") - 1]);
+  }
+  const drawCaseDay = () => { caseDay.textContent = todayLabel(); };
+  window.addEventListener("language", drawCaseDay);
+  drawCaseDay();
+
   window.campusStart = async () => {
     sound.start();
-    if (!await send("open")) return;
+    // `begin` is `open` plus the case of the day and the three names typed (specs/your-own-group.md, point 2).
+    if (!await send("begin", { names: typedGroup() })) return;
+    const note = groupNote(current);   // a name could not be used, or a continued game kept its group (point 8)
+    if (note) toast(note);
     try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
     try { localStorage.setItem(briefKey(current.player), "yes"); localStorage.setItem(briefKey(name.value), "yes"); } catch (error) { /* no storage */ }
     saveLook(current.player); saveLook(name.value);

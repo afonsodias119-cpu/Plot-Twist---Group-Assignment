@@ -1,5 +1,7 @@
 # Story — The Fifth Element (English texts)
 
+> **Update (specs/computer-lab-backup.md):** the group chat, its flags, the message cards and "The fifth element" are gone. Computer 12 saves a backup of the original conversations; Leonor's choice decides the three story endings; Duarte catches a player at computer 12 before the backup.
+
 English version of the player-facing texts of [historia.md](historia.md). The game offers a language choice at the start (Portuguese or English), so every text exists in both languages.
 
 **Status: proposal, to be reviewed by the team.**

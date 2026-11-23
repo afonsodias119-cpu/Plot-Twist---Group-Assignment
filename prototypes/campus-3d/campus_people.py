@@ -14,8 +14,13 @@ An answer can have "night": a campus-only key, the first night of this name on w
 The same ids, conditions and nights exist in "en" and "pt"; only the texts differ.
 
 Talking never changes the saved game. The server only reads it (to check the person is in the saved
-room and which answers are offered).
+room and which answers are offered). A rude answer (the operation `rude`) is remembered in the
+night's notes, not in the saved game, and changes how Leonor, Tomás and Duarte answer for the rest
+of the night: see `temper` (specs/trust-has-consequences.md).
 """
+
+import re
+import unicodedata
 
 import logic
 
@@ -26,15 +31,15 @@ ROOM_OF_PERSON = {
 }
 # Things that are used, not talked to (the panel says "Use", the screen says "press K to use").
 OBJECTS = {"computer12"}
-# The group chat is a scene of the story that has no room of its own: it happens in the computer lab.
-ROOM_OF_SCENE = {"group_chat": "computer_lab"}
+# A scene of the story with no room of its own would be listed here (the group chat was, until
+# specs/computer-lab-backup.md removed it). Every scene now has its own room.
+ROOM_OF_SCENE = {}
 
 
 # The story actions that are done by talking to a person: they appear as choices inside that conversation.
-# (The chat flags are done on the chat screen of computer 12, which the page draws over the picture.)
 ACTION_PERSON = {
     "open_drawer": "rita", "request_copy": "amelia", "ask_for_help": "leonor", "accuse": "leonor",
-    "view_files": "computer12", "open_chat": "computer12", "present_evidence": "professor",
+    "view_files": "computer12", "save_backup": "computer12", "present_evidence": "professor",
 }
 
 
@@ -89,7 +94,7 @@ PEOPLE = {
                        "note": "Rita doubts the fifth name too.", "options": [
                 _bye("Goodbye.")]},
             "chat": {"text": "\"Look at when the messages arrive. Some say three weeks ago, but my phone shows them as new, last night. That is not how old messages work.\"",
-                     "note": "Rita: an old message does not arrive as new. Compare the arrival times in the group chat.", "options": [
+                     "note": "Rita: an old message does not arrive as new. The messages about Duarte arrived last night.", "options": [
                 _bye("Goodbye.")]},
         }},
         "amelia": {"name": "Clerk", "nodes": {
@@ -159,7 +164,8 @@ PEOPLE = {
             "msg5": {"text": "\"'Duarte did the slides'? It is under my name, but I do not remember writing it. My phone buzzed with it last night, near midnight, as if it had been sent three weeks ago.\"", "trust": 3,
                      "note": "Tomás does not remember writing message 5; it reached his phone last night.", "options": [
                 _bye("Goodbye.")]},
-            # Tomás's claim line (point 7): broken only by `msg_5`, the flagged message with his name.
+            # Tomás's claim line (point 7): broken by `files`, the history that shows who made the slides
+            # (specs/computer-lab-backup.md: the flagged message 5 no longer exists).
             "slides": {"text": "Tomás keeps his eyes on the screen. \"The slides? I am finishing them. But the chat says Duarte did them, under my name. So maybe he did, and I only tidied up.\"", "trust": 2,
                        "note": "Tomás thinks Duarte may have made the slides, only because a chat message under his own name says so.", "options": [
                 _bye("Goodbye.")]},
@@ -170,7 +176,7 @@ PEOPLE = {
                 {"label": "Ask kindly what he is doing here", "next": "kind"}, _bye("Goodbye.")]},
             "photo": {"text": "Tomás stares at the photo. \"Four people... I never noticed.\" He swallows.", "trust": 2, "options": [
                 {"label": "Ask him to help you", "next": "help"}]},
-            "help": {"text": "\"All right. Check the group chat. Not everything in there is mine.\"", "trust": 3,
+            "help": {"text": "\"All right. Save the group's conversations before someone deletes them. Not everything on my phone is mine.\"", "trust": 3,
                      "note": "Tomás hints that some chat messages are not from the people they name.", "options": [
                 _bye("Goodbye.")]},
             "closed": {"text": "Tomás crosses his arms. \"We are done here.\"", "trust": 0, "options": [_bye("Leave.")]},
@@ -241,7 +247,7 @@ PEOPLE = {
                        "note": "A Rita também desconfia do quinto nome.", "options": [
                 _bye("Até já.")]},
             "chat": {"text": "\"Repara na hora a que as mensagens chegam. Algumas dizem há três semanas, mas no meu telemóvel aparecem como novas, de ontem à noite. Mensagens antigas não funcionam assim.\"",
-                     "note": "Rita: uma mensagem antiga não chega como nova. Compara as horas de chegada no chat do grupo.", "options": [
+                     "note": "Rita: uma mensagem antiga não chega como nova. As mensagens sobre o Duarte chegaram ontem à noite.", "options": [
                 _bye("Até já.")]},
         }},
         "amelia": {"name": "Funcionária", "nodes": {
@@ -314,7 +320,7 @@ PEOPLE = {
                 {"label": "Perguntar com calma o que está ali a fazer", "next": "kind"}, _bye("Até já.")]},
             "photo": {"text": "O Tomás fica a olhar para a fotografia. \"Quatro pessoas... nunca tinha reparado.\" Engole em seco.", "trust": 2, "options": [
                 {"label": "Pedir-lhe ajuda", "next": "help"}]},
-            "help": {"text": "\"Está bem. Vê o chat do grupo. Nem tudo o que lá está é meu.\"", "trust": 3,
+            "help": {"text": "\"Está bem. Guarda as conversas do grupo antes que alguém as apague. Nem tudo o que está no meu telemóvel é meu.\"", "trust": 3,
                      "note": "O Tomás sugere que algumas mensagens do chat não são de quem diz.", "options": [
                 _bye("Até já.")]},
             "closed": {"text": "O Tomás cruza os braços. \"Ficamos por aqui.\"", "trust": 0, "options": [_bye("Sair.")]},
@@ -359,6 +365,85 @@ PEOPLE = {
                 _bye("Até já.")]},
         }},
     },
+}
+
+
+# ---------- trust has consequences (specs/trust-has-consequences.md) ----------
+# The texts below are in their own tables, so PEOPLE (and the trust values the reviewed tests compare)
+# is never touched. They are used only while a person is wary or hostile: see `temper`.
+# None of them names the culprit, a date of the photo or a code.
+
+# The three people who have rude answers (the answers with a `cost`): only they have a temper (point 1).
+TEMPERS = ("leonor", "tomas", "duarte")
+
+# Curt lines, wary or hostile (point 4): a short text, the same note, so no clue in the diary is lost.
+COLD = {
+    "en": {
+        "tomas": {"start": 'Tomás does not look up from computer 11. "What now?"',
+                  "kind": '"Finishing the slides." He keeps typing. "Someone was at computer 12 last night. That is all I know."',
+                  "password": '"The day and month of the cover photo. Four digits." He does not look up.',
+                  "who": '"Someone in a hood, at computer 12." He keeps typing.'},
+        "leonor": {"start": 'Leonor does not close her book this time. "Yes?"',
+                   "messages": '"From a number I did not know. Last night."'},
+        "duarte": {"start": 'Duarte does not bother to smile. "Still here?"',
+                   "part": '"The slides. Ask anyone." He looks past you.'},
+    },
+    "pt": {
+        "tomas": {"start": 'O Tomás nem levanta os olhos do computador 11. "O que foi agora?"',
+                  "kind": '"A acabar os slides." Continua a escrever. "Esteve alguém no computador 12 ontem à noite. É tudo o que sei."',
+                  "password": '"O dia e o mês da fotografia da capa. Quatro algarismos." Nem levanta os olhos.',
+                  "who": '"Alguém de capuz, no computador 12." Continua a escrever.'},
+        "leonor": {"start": 'Desta vez a Leonor não fecha o livro. "Sim?"',
+                   "messages": '"De um número que eu não conhecia. Ontem à noite."'},
+        "duarte": {"start": 'O Duarte nem se dá ao trabalho de sorrir. "Ainda por aqui?"',
+                   "part": '"Os slides. Pergunta a qualquer um." Olha para além de ti.'},
+    },
+}
+
+# Withheld lines, wary or hostile (point 4): a short text and no note, the hint is not given. They are
+# hints only: every clue needed for an ending has another source.
+WITHHELD = {
+    "en": {
+        "tomas": {"help": 'Tomás looks at the photo a second too long. "Check what you like. I am busy."'},
+        "leonor": {"mine": '"Work it out yourself."'},
+        "duarte": {"slide": '"Why would I tell you?" Duarte glances at the door.'},
+    },
+    "pt": {
+        "tomas": {"help": 'O Tomás fica a olhar para a fotografia um segundo a mais. "Vê o que quiseres. Estou ocupado."'},
+        "leonor": {"mine": '"Descobre tu."'},
+        "duarte": {"slide": '"Porque é que te havia de dizer?" O Duarte olha para a porta.'},
+    },
+}
+
+# One lie each, hostile only (point 5). The player can check it: the backup of the original
+# conversations (specs/computer-lab-backup.md) and Rita's `chat` line say otherwise. A lie is not a claim: a card shown on it
+# gets the usual rebuff. Its note is what the player was told.
+LIES = {
+    "en": {
+        "tomas": {"msg5": {"text": '"The one with my name? I wrote it. Three weeks ago, like it says." He shrugs without looking at you.',
+                           "note": "Tomás says he wrote the message with his name himself, three weeks ago."}},
+        "leonor": {"messages": {"text": '"Nothing strange about them. They came on the dates they say, weeks ago." She turns the phone face down.',
+                                "note": "Leonor says the messages arrived on their dates, weeks ago."}},
+    },
+    "pt": {
+        "tomas": {"msg5": {"text": '"A que tem o meu nome? Fui eu que a escrevi. Há três semanas, como lá diz." Encolhe os ombros sem olhar para ti.',
+                           "note": "O Tomás diz que foi ele que escreveu a mensagem com o nome dele, há três semanas."}},
+        "leonor": {"messages": {"text": '"Não têm nada de estranho. Chegaram nas datas que lá dizem, há semanas." Vira o telemóvel ao contrário.',
+                                "note": "A Leonor diz que as mensagens chegaram nas datas delas, há semanas."}},
+    },
+}
+
+# Who warns whom while hostile (point 6): the chain is fixed.
+WARNS = {"tomas": "leonor", "leonor": "rita", "duarte": "professor"}
+
+# The first line (`start`) of the person who was warned, while the warner is hostile and not cracked.
+WARNED = {
+    "en": {"leonor": 'Leonor closes her book before you reach the table. "Tomás texted me. He says you are going round calling people liars."',
+           "rita": 'Rita looks up and does not smile. "Leonor says you shouted at her in the library. Is that true?"',
+           "professor": 'The professor looks up from the list and does not smile. "Duarte tells me you threatened him. I hope you bring evidence tomorrow, not that."'},
+    "pt": {"leonor": 'A Leonor fecha o livro antes de chegares à mesa. "O Tomás mandou-me mensagem. Diz que andas por aí a chamar mentirosos às pessoas."',
+           "rita": 'A Rita levanta os olhos e não sorri. "A Leonor diz que lhe gritaste na biblioteca. É verdade?"',
+           "professor": 'O professor levanta os olhos da lista e não sorri. "O Duarte diz-me que o ameaçou. Espero que amanhã me traga provas, e não isso."'},
 }
 
 
@@ -420,3 +505,77 @@ def talk(state, language, person, node, gone=(), night=1):
     options = [offered(o) for o in line["options"] if is_open(o, state, night)]
     return {"npc": person, "name": data["name"], "node": node, "text": line["text"],
             "trust": line.get("trust"), "note": line.get("note", ""), "options": options}
+
+
+def is_rude(language, person, node):
+    """True when `node` is where an answer with a `cost` leads in this person's tree: the only lines
+    the operation `rude` accepts (specs/trust-has-consequences.md, point 2)."""
+    if not isinstance(person, str) or person not in PEOPLE[language]:
+        return False
+    lines = PEOPLE[language][person]["nodes"].values()
+    return any(option["next"] == node and "cost" in option for line in lines for option in line["options"])
+
+
+def temper(reply, moods, language):
+    """A `talk` reply as a person with this temper says it (points 4 to 7). Writes nothing.
+
+    `moods` is campus_evidence.moods(night): "calm", "wary" or "hostile" for Leonor, Tomás and Duarte.
+    Only the text and the note change, never the answers or the actions, so the kept topics of
+    specs/continuous-conversations.md stay the same. Which text wins: on `start`, the warning of a
+    hostile warner, else the curt line; on any line, the lie when hostile, else the curt or the
+    withheld line when wary or hostile. A calm person says the story's own line.
+    """
+    person, node = reply["npc"], reply["node"]
+    mood = moods.get(person, "calm")   # Rita, the clerk and the professor are always calm
+    warners = [warner for warner, listener in WARNS.items() if listener == person and moods.get(warner) == "hostile"]
+    if node == "start" and warners:
+        return dict(reply, text=WARNED[language][person])
+    if mood == "hostile" and node in LIES[language].get(person, {}):
+        lie = LIES[language][person][node]
+        return dict(reply, text=lie["text"], note=lie["note"])
+    if mood == "calm":
+        return reply
+    if node in COLD[language].get(person, {}):
+        return dict(reply, text=COLD[language][person][node])   # the story's note stays
+    if node in WITHHELD[language].get(person, {}):
+        return dict(reply, text=WITHHELD[language][person][node], note="")
+    return reply
+
+
+# ---------- your own group (specs/your-own-group.md) ----------
+# Three friends' names can take the teammates' places. They are only names: the ids (leonor, rita,
+# tomas), the voices and the grammar of each place stay the story's (point 7).
+
+# The story's names of the three places, in the order of the three fields of the start screen.
+DEFAULT_GROUP = ["Leonor", "Rita", "Tomás"]
+# 1 to 14 characters: letters (accented ones too), spaces, apostrophes (' and the ’ of phone
+# keyboards) and hyphens. [^\W\d_] is "a letter": a word character that is not a digit or "_".
+FRIEND_NAME = re.compile(r"(?:[^\W\d_]|[ '’-]){1,14}")
+
+
+def clean_friend(text, story_name):
+    """One field of the start screen, cleaned (point 3): spaces trimmed and made single, the first
+    letter upper-cased ("ana" -> "Ana"). An empty or bad field gives the story's name of its place."""
+    if not isinstance(text, str):
+        return story_name
+    name = " ".join(unicodedata.normalize("NFC", text).split())   # NFC: "João" typed as J-o-a-~-o is one letter ã
+    if not FRIEND_NAME.fullmatch(name) or not any(letter.isalpha() for letter in name):
+        return story_name
+    first = next(place for place, letter in enumerate(name) if letter.isalpha())
+    return name[:first] + name[first].upper() + name[first + 1:]
+
+
+def clean_group(names):
+    """The group of a new game: three names in the order of DEFAULT_GROUP (point 3). Each field is
+    cleaned on its own; then, if two names are the same (ignoring case), one is Duarte, or one is the
+    story's name of another place ("Rita" in Leonor's place), all three are the story's again, so a
+    name can never stand for two people. It never raises: the fields are optional."""
+    if not isinstance(names, list) or len(names) != len(DEFAULT_GROUP):
+        return list(DEFAULT_GROUP)
+    group = [clean_friend(text, story_name) for text, story_name in zip(names, DEFAULT_GROUP)]
+    lower = [name.lower() for name in group]
+    another_place = any(name.lower() == other.lower() for place, name in enumerate(group)
+                        for other in DEFAULT_GROUP if other != DEFAULT_GROUP[place])
+    if len(set(lower)) < len(group) or "duarte" in lower or another_place:
+        return list(DEFAULT_GROUP)
+    return group

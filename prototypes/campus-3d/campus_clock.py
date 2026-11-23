@@ -8,7 +8,12 @@ Every other text of the schedule is in campus_text.py.
 The campus minute goes from 0 (22:15) to 30 (22:45). It is a whole number or a whole number and a
 half: only the copy costs half a minute (point 1). Every mark below is a whole minute, so a half
 never changes a rule.
+
+At the end, the day of the case (specs/case-of-the-day.md): which case a date gives.
 """
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # Campus minutes charged by the server (point 2): an accepted story action, a card, being caught.
 # The copy costs half a minute because the torn photo already takes its own real time (point 13).
@@ -60,3 +65,22 @@ def duarte_place(minute):
     """Where Duarte stands: at the lab door in the minute before a round and in its minute (point 10)."""
     whole = int(minute)
     return "lab_door" if any(whole in (mark - 1, mark) for mark in ROUNDS) else "auditorium"
+
+
+# ---------- the case of the day (specs/case-of-the-day.md, point 1) ----------
+# The day is Lisbon's, so the case changes at midnight in Portugal whatever the host's own time zone is.
+LISBON = ZoneInfo("Europe/Lisbon")
+# The cases in the order the days walk through them (the ids of campus_case.CASES). Only the classic
+# case is left (specs/computer-lab-backup.md): every day plays it, and the page still shows the date.
+CASE_ORDER = ("outsider",)
+
+
+def case_day():
+    """Today's date in Lisbon."""
+    return datetime.now(LISBON).date()
+
+
+def case_of_day(day):
+    """The case of a date: the same date always gives the same case, for every player, and
+    consecutive days take the cases of CASE_ORDER in turn."""
+    return CASE_ORDER[day.toordinal() % len(CASE_ORDER)]

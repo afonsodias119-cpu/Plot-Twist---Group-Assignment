@@ -5,6 +5,8 @@ progress (scene, inventory, flags, ending) and the language the game was started
 The story itself is not stored: it stays in story.py (see specs/base-game.md, section 4).
 The table `nights` keeps the 3D campus's notes for tonight (specs/evidence-and-hearing.md, point 1),
 and the table `runs` one row for every night a name has finished (specs/earlier-nights.md, point 1).
+The table `keys` keeps, for each name of the published game, the hash of the secret key of the browser
+that started it (specs/name-belongs-to-browser.md, point 2).
 """
 
 import json
@@ -17,7 +19,7 @@ DB_PATH = Path(__file__).resolve().parent / "data" / "plot_twist.db"
 
 
 def init_db() -> None:
-    """Create the data folder and the three tables, if they are missing.
+    """Create the data folder and the four tables, if they are missing.
 
     Every table is created here, in the same call, so no read ever creates a table on its own
     (specs/evidence-and-hearing.md, point 1). An older file gets the tables it lacks and keeps its rows.
@@ -55,6 +57,15 @@ def init_db() -> None:
                 id     INTEGER PRIMARY KEY AUTOINCREMENT,
                 player TEXT NOT NULL,
                 ending TEXT NOT NULL
+            )
+            """
+        )
+        # The SHA-256 hash of each name's browser key, never the key itself (specs/name-belongs-to-browser.md).
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS keys (
+                player   TEXT PRIMARY KEY,
+                key_hash TEXT NOT NULL
             )
             """
         )
@@ -159,3 +170,18 @@ def load_runs(player: str) -> list:
     with closing(sqlite3.connect(DB_PATH)) as connection:
         rows = connection.execute("SELECT ending FROM runs WHERE player = ? ORDER BY id", (player,)).fetchall()
     return [row[0] for row in rows]
+
+
+def load_key_hash(player: str) -> str | None:
+    """The stored hash of that name's browser key, or None if no browser has claimed the name."""
+    init_db()
+    with closing(sqlite3.connect(DB_PATH)) as connection:
+        row = connection.execute("SELECT key_hash FROM keys WHERE player = ?", (player,)).fetchone()
+    return None if row is None else row[0]
+
+
+def save_key_hash(player: str, key_hash: str) -> None:
+    """Remember the hash of the key of the browser that claimed that name."""
+    init_db()
+    with closing(sqlite3.connect(DB_PATH)) as connection, connection:
+        connection.execute("INSERT OR REPLACE INTO keys (player, key_hash) VALUES (?, ?)", (player, key_hash))

@@ -11,27 +11,24 @@ The same keys exist in "en" and "pt"; only the texts differ.
 """
 
 # The cards the save can give, in the order the hand shows them, and the story condition that holds
-# each one (checked with logic._condition_met). The label of a flagged chat message is not here: it is
-# the story's own text of that message (campus_evidence.card_label).
+# each one (checked with logic._condition_met). The flagged chat messages were cards too, until
+# specs/computer-lab-backup.md removed the chat.
+# The proofs for the professor (specs/computer-lab-backup.md): the USB stick's history, the photo and
+# the backup of the conversations. The security camera is the fourth, added by specs/security-desk.md.
 EVIDENCE = {
     "original_photo": {"has": ["original_photo"]},
     "files": {"flags": {"files_viewed": True}},
-    "leonor_messages": {"flags": {"colleague_choice": "help"}},
-    "msg_1": {"flags": {"flagged_1": True}},
-    "msg_2": {"flags": {"flagged_2": True}},
-    "msg_3": {"flags": {"flagged_3": True}},
-    "msg_4": {"flags": {"flagged_4": True}},
-    "msg_5": {"flags": {"flagged_5": True}},
+    "backup": {"flags": {"backup_saved": True}},
 }
 
-# The facts won by cracking a person: held through the night's notes, not through the save.
+# The facts won by cracking a person: kept in the night's notes. They are no longer cards for the
+# hearing (specs/computer-lab-backup.md); the true ending still needs both (specs/earlier-nights.md).
 FACTS = {"tomas": "tomas_word", "rita": "rita_word"}
 
 # Who can be cracked: their claim line and the cards that break it (point 7).
 CONFRONT = {
-    "tomas": {"node": "slides", "breaks": ["msg_5"]},
+    "tomas": {"node": "slides", "breaks": ["files"]},   # the history shows who made the slides
     "rita": {"node": "five", "breaks": ["files", "original_photo"]},
-    "leonor": {"node": "sure", "breaks": ["tomas_word"]},
 }
 
 # Duarte's three claims at the hearing, in order (point 10). `accepts` are the cards that break the
@@ -39,33 +36,26 @@ CONFRONT = {
 # a line of its own; every other wrong card gets the general wrong line of that claim (its id).
 HEARING = [
     {"id": "name", "accepts": ["files"], "wrong": {}},
-    {"id": "photo", "accepts": ["original_photo", "rita_word"], "wrong": {"files": "photo_files"}},
-    {"id": "messages", "accepts": ["leonor_messages", "tomas_word"],
-     "wrong": {"msg_1": "messages_flag", "msg_2": "messages_flag", "msg_3": "messages_flag",
-               "msg_4": "messages_flag", "msg_5": "messages_flag"}},
+    {"id": "photo", "accepts": ["original_photo"], "wrong": {"files": "photo_files"}},
+    {"id": "messages", "accepts": ["backup"], "wrong": {}},   # specs/computer-lab-backup.md
 ]
 
 CASE_TEXT = {
     "en": {
-        # The labels of the cards (the flagged messages use the story's own text instead).
+        # The labels of the cards.
         "labels": {
             "original_photo": "The original photo, taped back together: four people",
             "files": "The file history: four authors in every backup",
-            "leonor_messages": "Leonor's screenshots: every message arrived last night",
-            "tomas_word": "Tomás's word: he never wrote that message and made the slides himself",
-            "rita_word": "Rita's word: she counted four people on the day of the photo",
+            "backup": "The backup of the original conversations: four people, not one message from Duarte",
         },
         # The right card on the claim line. `trust` is the person's trust after it (None: Rita has no trust level).
         "reveals": {
-            "tomas": {"text": "Tomás reads the line under his name, then the small grey line beneath it. \"Arrived yesterday, 11:49 pm. At 11:49 I was sitting right here, one computer away from the one in the hood. I did not type a word.\" His voice drops. \"I never sent that. And the slides... I made the slides. All eleven. I was here until two on Tuesday.\" He turns his chair to face the glass wall. \"He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door.\"",
+            "tomas": {"text": "Tomás reads the history of the slides: every version saved under his name, the last one on Tuesday at two in the morning. \"So the message says Duarte did them. The files say I did.\" His voice drops. \"I never sent that message. And the slides... I made the slides. All eleven. I was here until two on Tuesday.\" He turns his chair to face the glass wall. \"He walks the corridor, you know. Go back to the computer. If he comes, I will be standing in the door.\"",
                       "note": "Tomás never wrote the message about the slides: he made them himself and will say so. He is watching the corridor for you.",
                       "trust": 3},
             "rita": {"text": "Rita looks from your proof to her screen and back. \"So the photo did change.\" She laughs once, without any joy. \"I counted four. I said it out loud. I even wrote it in the chat: four of us, finally. That one is mine, I remember typing it.\" She closes the laptop. \"Tell the professor I counted. I will say it to his face.\"",
                      "note": "Rita counted four people on the day of the photo. The chat message that says four of them is hers. She will tell the professor.",
                      "trust": None},
-            "leonor": {"text": "You tell her what Tomás said about the message with his name. Leonor stops with her thumb on the screen. \"He never wrote it?\" She scrolls back, slower this time. \"Then I do not know what I have been reading.\"",
-                       "note": "Leonor did not know that Tomás never wrote the message with his name. It shook her.",
-                       "trust": 3},
         },
         # Any other card, or any other line: one line per person. Duarte has one line for any card.
         "rebuffs": {
@@ -84,17 +74,14 @@ CASE_TEXT = {
         },
         "right": {
             "name": {"files": "\"Four authors in every backup, and a fifth name added last night at 11:47 pm. Go on.\""},
-            "photo": {"original_photo": "The professor holds the taped photo next to the cover. \"The print shop's own print, with its date stamp. Four people, before anyone added a fifth.\"",
-                      "rita_word": "\"A witness who counted. I will hear her tomorrow; tonight I believe her.\""},
-            "messages": {"leonor_messages": "\"Every one delivered on the same night, from a number nobody knew. A date can be typed. An arrival time cannot.\"",
-                         "tomas_word": "\"Then the person whose name is on it never sent it. That answers this one.\""},
+            "photo": {"original_photo": "The professor holds the taped photo next to the cover. \"The print shop's own print, with its date stamp. Four people, before anyone added a fifth.\""},
+            "messages": {"backup": "The professor scrolls through the backup. \"The group's own conversations, as they were before last night: four people, and not one message from him. A date can be typed. A backup of weeks cannot.\""},
         },
         "wrong": {
             "name": "\"That does not tell me who wrote a report.\" He makes a small mark on the list.",
             "photo": "\"That tells me nothing about who is in a photograph.\" He makes a mark on the list.",
             "messages": "\"That does not tell me who sent a message.\" He makes a mark on the list.",
             "photo_files": "\"The history says a photo was swapped. It does not show me the one that was there before.\"",
-            "messages_flag": "\"You flagged it. That is your opinion of it. Who will stand here and tell me they never wrote it?\"",
         },
         # Duarte's line when the player says nothing, on any claim.
         "concede": "The professor waits. Duarte smiles. \"Nothing?\"",
@@ -105,27 +92,21 @@ CASE_TEXT = {
             "three": "\"Three times tonight you gave me a reason to doubt you. I cannot cross out a name on a guess.\"",
             "three_help": "The professor closes the list before Leonor reaches the door. \"I have heard enough guesses for one night.\"",
             "two": "\"You are right about him, I think. But you made me doubt you twice tonight, and I write down only what I am sure of.\"",
-            "no_originals": "The professor looks at Duarte's phone for a long moment. \"One message is answered. He has a phone full of them, and nobody here kept the originals.\"",
         },
     },
     "pt": {
         "labels": {
             "original_photo": "A fotografia original, colada com fita-cola: quatro pessoas",
             "files": "O histórico dos ficheiros: quatro autores em todas as cópias",
-            "leonor_messages": "As capturas de ecrã da Leonor: chegaram todas ontem à noite",
-            "tomas_word": "A palavra do Tomás: nunca escreveu aquela mensagem e foi ele que fez os slides",
-            "rita_word": "A palavra da Rita: contou quatro pessoas no dia da fotografia",
+            "backup": "O backup das conversas originais: quatro pessoas, nem uma mensagem do Duarte",
         },
         "reveals": {
-            "tomas": {"text": "O Tomás lê a linha por baixo do nome dele e depois a linha cinzenta mais pequena. \"Chegou ontem às 23h49. Às 23h49 eu estava aqui sentado, no computador ao lado do rapaz de capuz. Não escrevi uma palavra.\" Baixa a voz. \"Eu nunca enviei isto. E os slides... fui eu que fiz os slides. Os onze. Fiquei aqui até às duas na terça-feira.\" Roda a cadeira para a parede de vidro. \"Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta.\"",
+            "tomas": {"text": "O Tomás lê o histórico dos slides: todas as versões guardadas com o nome dele, a última na terça-feira às duas da manhã. \"Então a mensagem diz que foi o Duarte. Os ficheiros dizem que fui eu.\" Baixa a voz. \"Eu nunca enviei aquela mensagem. E os slides... fui eu que fiz os slides. Os onze. Fiquei aqui até às duas na terça-feira.\" Roda a cadeira para a parede de vidro. \"Ele anda pelo corredor, sabes. Volta para o computador. Se ele vier, eu fico à porta.\"",
                       "note": "O Tomás nunca escreveu a mensagem sobre os slides: foi ele que os fez e vai dizê-lo. Fica a vigiar o corredor por ti.",
                       "trust": 3},
             "rita": {"text": "A Rita olha da tua prova para o ecrã e outra vez para a prova. \"Então a fotografia mudou mesmo.\" Ri-se uma vez, sem alegria nenhuma. \"Eu contei quatro. Disse-o em voz alta. Até o escrevi no chat: os quatro, finalmente. Essa é minha, lembro-me de a escrever.\" Fecha o portátil. \"Diz ao professor que eu contei. Eu digo-lho na cara.\"",
                      "note": "A Rita contou quatro pessoas no dia da fotografia. A mensagem do chat que fala nos quatro é dela. Vai dizê-lo ao professor.",
                      "trust": None},
-            "leonor": {"text": "Contas-lhe o que o Tomás disse sobre a mensagem com o nome dele. A Leonor fica com o polegar parado no ecrã. \"Ele nunca a escreveu?\" Volta atrás na conversa, mais devagar. \"Então já não sei o que é que andei a ler.\"",
-                       "note": "A Leonor não sabia que o Tomás nunca escreveu a mensagem com o nome dele. Ficou abalada.",
-                       "trust": 3},
         },
         "rebuffs": {
             "tomas": "O Tomás olha de relance e volta ao ecrã. \"E o que é que isso tem a ver com o que eu acabei de dizer?\"",
@@ -142,17 +123,14 @@ CASE_TEXT = {
         },
         "right": {
             "name": {"files": "\"Quatro autores em todas as cópias, e um quinto nome acrescentado ontem às 23h47. Continue.\""},
-            "photo": {"original_photo": "O professor põe a fotografia colada ao lado da capa. \"A impressão da própria reprografia, com o carimbo da data. Quatro pessoas, antes de alguém acrescentar um quinto.\"",
-                      "rita_word": "\"Uma testemunha que contou. Ouço-a amanhã; esta noite, acredito nela.\""},
-            "messages": {"leonor_messages": "\"Todas entregues na mesma noite, de um número que ninguém conhecia. Uma data escreve-se. A hora de chegada, não.\"",
-                         "tomas_word": "\"Então quem a assina nunca a enviou. Essa fica respondida.\""},
+            "photo": {"original_photo": "O professor põe a fotografia colada ao lado da capa. \"A impressão da própria reprografia, com o carimbo da data. Quatro pessoas, antes de alguém acrescentar um quinto.\""},
+            "messages": {"backup": "O professor percorre o backup. \"As conversas do próprio grupo, tal como estavam antes de ontem à noite: quatro pessoas, e nem uma mensagem dele. Uma data escreve-se. Um backup de semanas, não.\""},
         },
         "wrong": {
             "name": "\"Isso não me diz quem escreveu um relatório.\" Faz um pequeno sinal na lista.",
             "photo": "\"Isso não me diz nada sobre quem está numa fotografia.\" Faz um sinal na lista.",
             "messages": "\"Isso não me diz quem enviou uma mensagem.\" Faz um sinal na lista.",
             "photo_files": "\"O histórico diz que uma fotografia foi trocada. Não me mostra a que lá estava antes.\"",
-            "messages_flag": "\"Marcou-a. Essa é a sua opinião sobre ela. Quem me vem aqui dizer que nunca a escreveu?\"",
         },
         "concede": "O professor espera. O Duarte sorri. \"Nada?\"",
         "caught": "\"Antes de começarmos: o senhor Sequeira diz-me que você esteve esta noite a ler as mensagens do grupo às escondidas.\" O professor faz um sinal ao lado do teu nome.",
@@ -160,7 +138,6 @@ CASE_TEXT = {
             "three": "\"Três vezes esta noite me deu razões para duvidar de si. Não risco um nome por um palpite.\"",
             "three_help": "O professor fecha a lista antes de a Leonor chegar à porta. \"Já ouvi palpites que cheguem por uma noite.\"",
             "two": "\"Acho que tem razão sobre ele. Mas fez-me duvidar duas vezes esta noite, e eu só escrevo aquilo de que tenho a certeza.\"",
-            "no_originals": "O professor fica muito tempo a olhar para o telemóvel do Duarte. \"Uma mensagem está respondida. Ele tem um telemóvel cheio delas, e ninguém aqui guardou as originais.\"",
         },
     },
 }
@@ -174,7 +151,7 @@ CASE_TEXT = {
 TRUE_ENDING = "night_over"
 
 # The unknown number on earlier nights (point 4): the message as a night starts, the dare that takes
-# its place once the four story endings were seen, and the round warning from night 3 on. Then the
+# its place once every story ending was seen, and the round warning from night 3 on. Then the
 # true ending (point 8): its `voices` say who speaks each of the four spoken quotes of `text`, in order.
 NIGHT_TEXT = {
     "en": {
@@ -183,7 +160,7 @@ NIGHT_TEXT = {
                      "You again. Same coat, same scarf.",
                      "I have stopped counting the nights. You have not.",
                      "Look at the photo on your case file. Then tell me which of us is the fifth."],
-        "dare": "Four endings, and still here. You will never get all three of them to stand with you. Not in thirty minutes.",
+        "dare": "Three endings, and still here. You will never get all three of them to stand with you. Not in thirty minutes.",
         "round": "Close the computer. He is walking.",
         "ending": {
             "title": "22:46", "stamp": "THE NIGHT IS OVER", "emoji": "🌅",
@@ -196,7 +173,7 @@ NIGHT_TEXT = {
                      "Outra vez tu. O mesmo casaco, o mesmo cachecol.",
                      "Eu já deixei de contar as noites. Tu não.",
                      "Olha para a fotografia do teu caso. Depois diz-me qual de nós é o quinto."],
-        "dare": "Quatro finais, e continuas aqui. Nunca vais conseguir que os três fiquem do teu lado. Não em trinta minutos.",
+        "dare": "Três finais, e continuas aqui. Nunca vais conseguir que os três fiquem do teu lado. Não em trinta minutos.",
         "round": "Fecha o computador. Ele vem aí.",
         "ending": {
             "title": "22:46", "stamp": "A NOITE ACABOU", "emoji": "🌅",
@@ -204,4 +181,16 @@ NIGHT_TEXT = {
             "text": "Não esperas que o Duarte acabe as frases; já as ouviste antes. Três afirmações, três respostas, cada uma em cima da mesa antes de ele se calar, e o professor não tira os olhos de ti uma única vez. Depois a porta abre-se e já ninguém está sozinho. A Leonor entra com o telemóvel, o Tomás com os slides, a Rita a contar baixinho. «Quatro. Eu contei.» O Duarte olha para os quatro, juntos, e pela primeira vez o sorriso dele não tem para onde ir. «Outra vez tu.» Não é uma pergunta. «Só precisava que um de vocês duvidasse dos outros três.» Puxa o capuz para trás. Por baixo não há nenhum desconhecido: só um chapéu, um cachecol e um casaco comprido, e são os teus. O professor risca o quinto nome. Quando voltas a olhar para a primeira fila, a cadeira está vazia; em cima dela ficou um telemóvel com todas as mensagens que recebeste do número desconhecido, escritas e nunca enviadas. O teu telemóvel vibra uma última vez. O remetente já não é desconhecido: o nome no ecrã é o teu. O relógio da parede marca 22:46. Ninguém apagou as luzes. «Amanhã apresentam os quatro.» Na fotografia da capa estão quatro pessoas, e tu conheces todas.",
         },
     },
+}
+
+
+# ---------- the cases (specs/case-of-the-day.md) ----------
+# The date picks one of these cases (campus_clock.case_of_day); a saved game keeps its own. Server only.
+# - `accepts`: more cards that break a claim of the hearing, by claim id; `right`: the professor's
+#   line for each of those new pairs.
+# - `texts`: {exact classic text: what this case says instead}, in each language (campus_evidence.retell).
+# Only the classic case is left (specs/computer-lab-backup.md): the culprit is always Duarte. The cases
+# "tomas" and "rita" of specs/culprit-of-the-night.md changed the fake chat messages, and the chat is gone.
+CASES = {
+    "outsider": {"accepts": {}, "right": {"en": {}, "pt": {}}, "texts": {"en": {}, "pt": {}}},
 }
