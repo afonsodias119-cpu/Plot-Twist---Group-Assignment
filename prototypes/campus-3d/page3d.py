@@ -22,10 +22,8 @@ SCENES = ["print_shop", "study_room", "library", "computer_lab", "auditorium"]
 # Texts that only the prototype needs (in the real game they would go to story.py).
 EXTRA = {
     "pt": {
-        "case": "Caso #005",
         "stamp": "Confidencial",
         "case_label": "O caso",
-        "evidence": "PROVA 01 · Fotografia do grupo",
         "mission_label": "A tua missão",
         "mission": "Descobre a verdade sobre o quinto nome antes de a apresentação começar.",
         # who is really in the group (specs/chat-dialogues.md): shown in the mission box of the case file
@@ -41,10 +39,8 @@ EXTRA = {
         "outside_text": "É noite. Ouve-se o mar a bater na praia, mesmo ao lado do campus. Quase todas as luzes estão apagadas, mas a porta de vidro da entrada ainda abre. Alguém ficou a trabalhar até tarde.",
     },
     "en": {
-        "case": "Case #005",
         "stamp": "Confidential",
         "case_label": "The case",
-        "evidence": "EVIDENCE 01 · Group photo",
         "mission_label": "Your mission",
         "mission": "Uncover the truth about the fifth name before the presentation begins.",
         "group_label": "Your group",

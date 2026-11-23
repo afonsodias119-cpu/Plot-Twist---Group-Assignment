@@ -71,6 +71,10 @@ Alteração preparada em `hidden-object-table`: na sala de estudo só a mesa, ch
 
 Alteração preparada em `torn-photo` (depende de `hidden-object-table`): na reprografia, ao pedir a cópia, a funcionária descobre que alguém triturou a fotografia original. O jogador junta 9 pedaços rasgados numa moldura (arrastar para encaixar, tocar para rodar). Só o servidor sabe a solução (operação `assemble`); com a fotografia certa vê-se o grupo de quatro e o carimbo 14.11. Ver `specs/torn-photo.md`.
 
+### Ecrã inicial em passos e painel que diz onde estás — Maria (22/11/2026)
+
+Alteração preparada em `start-screen-steps`, só no jogo 3D: a ficha do caso perde a legenda "PROVA 01" e o "Caso #005" (fica o nome do jogo) e pede só o nome; "Seguinte" abre um passo novo, "O teu detetive", com o personalizador; no primeiro jogo de cada nome aparece ainda um aviso ("A faculdade fecha às 22:45", 30 minutos) com a missão e o grupo. Fora da sala guardada, o painel lateral diz onde a personagem está (Corredor, Exterior ou a porta de outra sala). Ver `specs/creator-after-name.md`.
+
 ### Fase A — passos
 
 1. ✅ Clonar o repositório com o GitHub Desktop.

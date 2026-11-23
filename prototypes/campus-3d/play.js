@@ -194,10 +194,55 @@
     }, 250);
   });
   window.addEventListener("campus-renderer-ready", showPreview);
-  nameBox.append(creator);
   paintCreator();
 
-  $("mission").after(nameBox);
+  // ---------- step 3 of the first screen: the detective, after the name (specs/creator-after-name.md) ----------
+  // Step 2 (the case file) asks for the name; its button opens this step, and only this step starts the game.
+  const stepLook = make("section", undefined, "step"); stepLook.id = "stepLook";
+  stepLook.innerHTML = `<div class="file"><div class="file-top"><span class="rec"></span><span id="look-case"></span></div>
+    <div class="look-body"></div>
+    <div class="file-foot"><button class="ghost" id="look-back"></button><p id="look-error" class="error" role="alert"></p><button id="look-start"></button></div></div>`;
+  stepLook.querySelector(".look-body").append(creator);
+  $("stepCase").after(stepLook);
+  const lookError = stepLook.querySelector("#look-error");
+  // ---------- step 4: the warning before the game (the faculty closes at 22:45), the mission and the group ----------
+  // The mission box of the case file moves here, so the case file only tells the story and asks for the name.
+  const stepBrief = make("section", undefined, "step"); stepBrief.id = "stepBrief";
+  stepBrief.innerHTML = `<div class="file"><div class="file-top"><span class="rec"></span><span id="brief-case"></span><span class="clock">22:15</span></div>
+    <div class="brief-body"><div class="brief-warning" role="note"><p class="stamp">⏳ 22:45</p><p id="brief-label" class="label"></p>
+      <h2 id="brief-title"></h2><p id="brief-text"></p></div></div>
+    <div class="file-foot"><button class="ghost" id="brief-back"></button><p id="brief-error" class="error" role="alert"></p><button id="brief-start"></button></div></div>`;
+  stepBrief.querySelector(".brief-body").append($("mission"));
+  stepLook.after(stepBrief);
+  const briefError = stepBrief.querySelector("#brief-error");
+  // Before the game starts, a message goes under the step on screen: the name, the detective or the warning.
+  const introBox = () => (stepBrief.classList.contains("on") ? briefError : stepLook.classList.contains("on") ? lookError : startError);
+  function goStep(from, to) {   // the same fade as the other steps of the first screen
+    from.classList.add("leaving");
+    setTimeout(() => {
+      from.classList.remove("on", "leaving"); to.classList.add("on");
+      const button = { stepLook: "look-start", stepBrief: "brief-start" }[to.id];
+      if (button) $(button).focus({ preventScroll: true });
+    }, 420);
+  }
+  window.campusNext = () => {
+    if (!name.value.trim()) { startError.textContent = ui().name_needed; name.focus(); return; }
+    startError.textContent = ""; lookError.textContent = "";
+    goStep($("stepCase"), stepLook);
+  };
+  $("look-back").addEventListener("click", () => goStep(stepLook, $("stepCase")));
+  // The warning is only for a first game: a name that already started a game in this browser skips it.
+  const briefKey = who => `plot-twist-briefed:${String(who).trim().toLowerCase()}`;
+  const briefSeen = who => { try { return localStorage.getItem(briefKey(who)) === "yes"; } catch (error) { return false; } };
+  $("look-start").addEventListener("click", () => {
+    lookError.textContent = ""; briefError.textContent = "";
+    if (briefSeen(name.value)) window.campusStart();
+    else goStep(stepLook, stepBrief);
+  });
+  $("brief-back").addEventListener("click", () => goStep(stepBrief, stepLook));
+  $("brief-start").addEventListener("click", () => window.campusStart());
+
+  $("premise").after(nameBox);   // the mission box went to step 4 (specs/creator-after-name.md)
   // Which night of this name it is, under the name box (specs/earlier-nights.md, point 6). Empty on night 1,
   // so a first player sees only the name field and its hint. It never counts endings. drawNight fills it.
   const nightLine = make("p", "", "night-line");
@@ -433,7 +478,16 @@
     document.documentElement.lang = window.lang || "pt";
     nameLabel.textContent = t.name_label;
     nameHint.textContent = t.continue_hint;
-    $("accept").textContent = t.start;
+    $("accept").textContent = t.next_step;
+    $("look-case").textContent = data[window.lang || "pt"].intro.title;   // the name of the game
+    $("look-back").textContent = t.look_back;
+    $("look-start").textContent = t.next_step;
+    $("brief-case").textContent = data[window.lang || "pt"].intro.title;
+    $("brief-label").textContent = t.brief_label;
+    $("brief-title").textContent = t.brief_title;
+    $("brief-text").textContent = t.brief_text;
+    $("brief-back").textContent = t.brief_back;
+    $("brief-start").textContent = t.start;
     $("case-eyebrow").textContent = t.case;
     $("game-title").textContent = t.title;
     $("scene-label").textContent = current?.ending ? t.the_end : t.scene;
@@ -466,7 +520,7 @@
     updateNear();
     $("renderer-status").textContent = window.campus3dReady ? t.render_ready : t.render_loading;
   }
-  window.addEventListener("language", () => { queueMicrotask(updateLabels); startError.textContent = ""; });
+  window.addEventListener("language", () => { queueMicrotask(updateLabels); startError.textContent = ""; lookError.textContent = ""; briefError.textContent = ""; });
   window.addEventListener("campus-renderer-ready", updateLabels);
   function fallback() {
     if (window.campus3dReady) return;
@@ -484,6 +538,14 @@
   function applyInside() {
     const outside = window.campusInside === false && !current?.ending;
     $("outside-hint").hidden = !outside;
+    // Outside the saved room the panel names the place where the character stands (the corridor, the
+    // entrance, another room's door) and hides the room's description (specs/creator-after-name.md).
+    if (current && !current.ending) {
+      const t = ui(), here = window.campusHere, scenes = data[window.lang || "pt"].scenes;
+      const place = here === "outside" ? t.map_outside : here && scenes[here] ? scenes[here].title : t.map_corridor;
+      $("scene-heading").textContent = outside ? place : current.title;
+      $("scene-paragraphs").hidden = outside;
+    }
     shell.querySelectorAll(".actions.investigate button").forEach(b => { b.disabled = outside || Boolean(window.campusBusy); });
     shell.querySelectorAll("#chat-messages li.flagged button").forEach(b => { b.disabled = true; });   // a flag cannot be undone
   }
@@ -494,6 +556,8 @@
     shell.querySelectorAll("button").forEach(b => b.disabled = busy);
     $("accept").disabled = busy;
     $("back").disabled = busy;
+    $("look-start").disabled = busy; $("look-back").disabled = busy;
+    $("brief-start").disabled = busy; $("brief-back").disabled = busy;
     dialog.querySelectorAll("button").forEach(b => b.disabled = busy);
     applyInside();
     $("save-status").textContent = busy ? ui().saving : (uncertain ? "" : ui().saved);
@@ -512,7 +576,8 @@
 
   async function send(operation, extra = {}) {
     if (window.campusBusy) return;
-    if (location.protocol === "file:") { startError.textContent = ui().local_only; return; }
+    const introError = introBox();   // where a message goes before the game starts
+    if (location.protocol === "file:") { introError.textContent = ui().local_only; return; }
     // Before a command the server hears the page's own minute (specs/night-schedule.md, point 4). The
     // command is for the person of the open card: it is not sent if the report shows that person gone.
     if (!["open", "restart", "time"].includes(operation) && !await catchUp(talking)) return false;
@@ -527,7 +592,7 @@
     } catch (error) {
       uncertain = true;
       const message = error.name === "Error" ? error.message : ui().network_error;
-      (current ? $("feedback") : startError).textContent = message;
+      (current ? $("feedback") : introError).textContent = message;
       if (current) { $("feedback").className = "error"; $("feedback").hidden = false; toast(message); }
       return false;
     } finally { setBusy(false); }
@@ -1873,6 +1938,7 @@
     sound.start();
     if (!await send("open")) return;
     try { localStorage.setItem(LAST_NAME_KEY, current.player); } catch (error) { /* no storage */ }
+    try { localStorage.setItem(briefKey(current.player), "yes"); localStorage.setItem(briefKey(name.value), "yes"); } catch (error) { /* no storage */ }
     saveLook(current.player); saveLook(name.value);
     if (deviceMode === "phone") setPanelHidden(true);
     if (window.campusPreview) window.campusPreview.stop();
@@ -1887,7 +1953,7 @@
   // The 3D scene calls this when the character walks through a door into another room.
   window.campusEnter = room => send("enter", { room });
   name.addEventListener("keydown", e => {
-    if (e.key === "Enter" && $("accept").classList.contains("ready")) window.campusStart();
+    if (e.key === "Enter" && $("accept").classList.contains("ready")) window.campusNext();
   });
   $("restart").addEventListener("click", () => {
     window.playing = false;
