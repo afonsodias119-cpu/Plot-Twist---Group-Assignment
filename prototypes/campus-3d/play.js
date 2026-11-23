@@ -1159,11 +1159,18 @@
   // along (the server's `followers`). Each remembers one thing; the Weather and Calendar apps of the phone
   // turn those memories into one day. The code is typed in the usual 4-digit field and checked by the server.
   const HELPER_NAMES = { tomas: "Tomás", rita: "Rita", leonor: "Leonor" };
+  // With your own group the names and the memories say tonight's names (specs/your-own-group.md, point 5):
+  // these lines are the page's own, so the server's retell never sees them. One pass over whole words,
+  // like retell, so "Leonor -> Rita, Rita -> Ana" can never chain.
+  function inGroup(text) {
+    const group = Array.isArray(current?.group) && current.group.length === 3 ? current.group : STORY_GROUP;
+    return text.replace(/(?<!\p{L})(Leonor|Rita|Tomás)(?!\p{L})/gu, story => group[STORY_GROUP.indexOf(story)]);
+  }
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   function addHelper(who, text) {   // a line of the group: a speech bubble with the name of who says it
     $("talk-log").querySelector(".typing")?.remove();
     const bubble = make("div", undefined, "bubble them helper");
-    bubble.append(make("b", HELPER_NAMES[who], "helper-name"), make("p", text), make("time", campusTime()));
+    bubble.append(make("b", inGroup(HELPER_NAMES[who]), "helper-name"), make("p", text), make("time", campusTime()));
     $("talk-log").append(bubble);
     $("talk-log").scrollTop = $("talk-log").scrollHeight;
   }
@@ -1180,12 +1187,12 @@
     button.remove();
     addBubble(t.group_ask, "me");
     const helpers = helpersHere();
-    if (canSpeak && !sound.isMuted()) { stopSpeaking(); say(helpers.map(who => [t.group_clues[who], who])); }
+    if (canSpeak && !sound.isMuted()) { stopSpeaking(); say(helpers.map(who => [inGroup(t.group_clues[who]), who])); }
     for (const who of helpers) {
       showTyping();
       await wait(1100);
       if (talking !== card) return;   // the conversation was closed meanwhile
-      addHelper(who, t.group_clues[who]);
+      addHelper(who, inGroup(t.group_clues[who]));
       sound.talk();
     }
     if (helpers.length < 3) addSaid(t.group_alone);

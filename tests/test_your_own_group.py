@@ -453,3 +453,28 @@ def test_the_start_screen_has_three_fields_and_the_page_renames_the_tags():
         slots = t["group_slots"]
         assert len(slots) == 3, language
         assert [name in slot for name, slot in zip(STORY_GROUP, slots)] == [True, True, True], language
+
+
+def test_the_names_box_is_in_the_detective_step_under_the_creator():
+    # After the merge with specs/creator-after-name.md the creator has its own step ("Your detective"):
+    # the group box goes there, under it, and no longer in the name box of the case file.
+    play_js = (FOLDER / "play.js").read_text(encoding="utf-8")
+    creator = play_js.index('stepLook.querySelector(".look-body").append(creator)')
+    group = play_js.index('stepLook.querySelector(".look-body").append(groupBox)')
+    assert creator < group
+    assert "nameBox.append(groupBox)" not in play_js
+
+
+def test_the_groups_memories_at_computer_12_say_the_friends_names():
+    # The memories and the speakers' names at computer 12 (specs/calendar-code.md) are the page's own
+    # texts: play.js renames them with the same one-pass rule as the server (`inGroup`).
+    play_js = (FOLDER / "play.js").read_text(encoding="utf-8")
+    assert r"(?<!\p{L})(Leonor|Rita|Tomás)(?!\p{L})" in play_js
+    for needle in ("inGroup(t.group_clues[who])", "inGroup(HELPER_NAMES[who])", "current.group"):
+        assert needle in play_js, needle
+    for language in ("en", "pt"):
+        clues = TEXT[language]["group_clues"]
+        renamed = as_group(clues, FRIENDS)
+        assert "Bea" in renamed["tomas"], language            # Tomás remembers Rita, who is Bea tonight
+        assert not any(STORY_NAME.search(text) for text in renamed.values()), language
+        assert as_group(clues, STORY_GROUP) == clues, language

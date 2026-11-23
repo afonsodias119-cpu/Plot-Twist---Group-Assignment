@@ -384,12 +384,20 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .group-box summary { cursor: pointer; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
 .group-box summary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .group-box[open] summary { margin-bottom: 6px; }
-.name-box .group-field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: center; font-size: 12px; color: var(--muted); }
-.name-box .group-field input { padding: 8px 10px; }
-@media (max-width: 640px) { .name-box .group-field { grid-template-columns: 1fr; gap: 4px; } }
+/* it sits in the "Your detective" step, under the creator (specs/creator-after-name.md), so it has its own field style */
+.group-box p { margin: 0 0 8px; font-size: 12px; line-height: 1.5; }
+.group-box .group-field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+.group-box .group-field input { width: 100%; padding: 8px 10px; border: 1px solid #b8c5d35c; border-radius: 7px; color: var(--ink); background: #071524; font: inherit; }
+@media (max-width: 640px) { .group-box .group-field { grid-template-columns: 1fr; gap: 4px; } }
 
-/* the day of the case on the case file, after the case number (specs/case-of-the-day.md, point 6) */
+/* the day of the case on the case file, after the game's name in its top bar (specs/case-of-the-day.md, point 6).
+   At phone width the "Confidential" pill and the clock give way, and the label may go to a second line. */
 .case-day { color: var(--gold); }
+#stepCase .file-top #caseNo, #stepCase .file-top .case-day { white-space: nowrap; }
+@media (max-width: 520px) {
+  #stepCase .file-top { flex-wrap: wrap; row-gap: 4px; }
+  #stepCase .file-top #stamp, #stepCase .file-top .clock { display: none; }
+}
 
 /* where the game is played: the choice on the first screen, the joystick, the QR code and the detective card */
 .device { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; gap: 8px; justify-items: start; }
