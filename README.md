@@ -62,7 +62,8 @@ The tests run on GitHub on every push and pull request (`.github/workflows/tests
 | Apps | `app_3d.py` (published), `app.py` (plain version) | Streamlit entry points. |
 
 The folder is called `prototypes/` for historical reasons: the 3D game started as a prototype and is now the published game.
-Every feature has a spec in `specs/` (why, what, limits, done when), written before its tests and code.
+Every feature has a spec in `specs/` (why, what, limits, done when), written before its tests and code; [specs/README.md](specs/README.md) groups them by topic and says which ones changed or replaced others.
+The story as it is today (characters, the four proofs, the endings) is in [docs/historia.md](docs/historia.md), and every line of dialogue in [docs/guiao-conversas.md](docs/guiao-conversas.md).
 
 ### Where the data is stored
 

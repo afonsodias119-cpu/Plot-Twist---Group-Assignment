@@ -1,6 +1,6 @@
 # Imagens — prompts para as ilustrações
 
-Prompts para gerar as 10 ilustrações do jogo com uma ferramenta de imagens por IA. A lista de ficheiros está na secção 10 de [historia.md](historia.md).
+Prompts para gerar as 10 ilustrações do jogo com uma ferramenta de imagens por IA. A lista de ficheiros está na secção 8 de [historia.md](historia.md).
 
 **Estado: proposta, ainda não testada.** Estes prompts ainda não foram experimentados numa ferramenta de imagens. Contem com duas a quatro tentativas por imagem e ajustem o que for preciso.
 
@@ -160,7 +160,7 @@ Se não resultar, gerem outra vez. Uma marca pequena num canto pode simplesmente
 - **Imagens largas** (capa, cenas e finais): recortar para 16:9 e redimensionar para **1280 × 720** píxeis.
 - **Ícones** (pen e fotografia original): recortar em quadrado e redimensionar para **512 × 512** píxeis.
 - Guardar em **JPG**, com qualidade à volta de 80. Cada ficheiro deve ficar abaixo de 300 KB. Se ficar maior, baixem a qualidade para 70.
-- Usar os nomes da secção 10 de [historia.md](historia.md) e guardar tudo na pasta `assets/`, na raiz do projeto (ao lado de `app.py`, não dentro de `docs/`). A pasta ainda não existe: criem-na quando guardarem a primeira imagem.
+- Usar os nomes da secção 8 de [historia.md](historia.md) e guardar tudo na pasta `assets/`, na raiz do projeto (ao lado de `app.py`, não dentro de `docs/`). A pasta ainda não existe: criem-na quando guardarem a primeira imagem.
 
 A app Fotografias do Windows 11 faz os três passos: recorta com proporções predefinidas, redimensiona em píxeis e guarda em JPG com a qualidade que escolherem. O Paint também recorta e redimensiona, mas não deixa escolher a qualidade do JPG: se o usarem, guardem em JPG e confirmem só que o ficheiro fica abaixo de 300 KB.
 
