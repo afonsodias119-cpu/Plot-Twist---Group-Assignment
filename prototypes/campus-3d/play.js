@@ -1035,6 +1035,15 @@
         line = { ...line, options: [...available.values()] };
       }
     }
+    // Leonor, while she has not decided (the server still offers her decisions): one right answer ("soft") and one
+    // wrong one ("harsh", 5 minutes; on its line "Apologise" or "Insist"). No decision buttons: after the right
+    // answer "Show evidence" appears, and the original photo shown to her is how she agrees to help (specs/leonor-two-answers.md).
+    const leonorDeciding = line.npc === "leonor" && (line.actions || []).some(action => action.id === "ask_for_help");
+    if (leonorDeciding) {
+      line = { ...line, help: line.actions.find(action => action.id === "ask_for_help"),
+               actions: line.actions.filter(action => !action.decision),
+               options: asked.has("soft") ? [] : line.options.filter(option => ["soft", "harsh", "closed"].includes(option.next)) };
+    }
     // No trust hearts on screen: the player reads the mood in what the person says (specs/cleaner-interface.md).
     // The server still sends `trust`, and a person with trust 0 still ends the conversation.
     // "Goodbye" (an answer that ends the talk) is not shown: the header has "End conversation".
@@ -1102,8 +1111,9 @@
     const showsEvidence = !NO_EVIDENCE.includes(line.npc) && line.node !== "closed" && !(current && current.hearing);
     const evidenceButton = make("button", t.evidence_show, "secondary evidence-show");
     evidenceButton.addEventListener("click", () => askEvidence(line));
-    $("talk-evidence").replaceChildren(...(showsEvidence ? [evidenceButton] : []));
-    $("talk-evidence").hidden = !showsEvidence;
+    const evidenceNow = showsEvidence && !(leonorDeciding && !asked.has("soft"));   // Leonor: only after the right answer
+    $("talk-evidence").replaceChildren(...(evidenceNow ? [evidenceButton] : []));
+    $("talk-evidence").hidden = !evidenceNow;
     if (doing.children.length && window.campusInside === false) doing.append(make("p", t.outside_hint, "muted"));
     $("talk-options").replaceChildren(...answers, ...(doing.children.length ? [doing] : []));
     $("talk-options").hidden = !doing.children.length && !answers.length;
@@ -1287,6 +1297,7 @@
   // already in the log as the player's message.
   async function confrontWith(line, card, said = false) {
     if (line.npc === "guard") { guardShown(card); return; }   // José answers on the screen
+    if (line.npc === "leonor" && line.help && card.id === "original_photo") { talkAction(line, line.help); return; }   // she agrees to help
     if (window.campusBusy || !current || !screenLine || screenLine.npc !== line.npc) return;
     const t = ui(), node = screenLine.node;
     if (!said) addBubble(`📁 ${card.label}`, "me");
