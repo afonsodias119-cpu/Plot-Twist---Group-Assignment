@@ -2320,6 +2320,7 @@
       list.append(item);
     }
     screen.append(bar, list, make("p", t.todo_hint, "muted todo-hint"));
+    screen.append(make("p", t.todo_kindness_hint, "todo-hint"));
     if ((current?.clues || []).some(c => c.lost)) screen.append(make("p", t.todo_hint_lost, "muted todo-hint"));
   }
 
