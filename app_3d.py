@@ -8,8 +8,9 @@ How it works (the 3D page lives in an iframe, a Streamlit "component"):
 1. The browser draws the 3D campus and the buttons (prototypes/campus-3d).
 2. When the player does something, the page sends a small JSON command to Python
    through the component (the same commands the local server accepts).
-3. campus_game.command() checks the command and calls game.py — all the rules and
-   all the saving stay in logic.py / db.py. The browser can never set state itself.
+3. campus_game.keyed_command() checks that the name belongs to this browser (its secret key,
+   specs/name-belongs-to-browser.md), then campus_game.command() checks the command and calls
+   game.py — all the rules and all the saving stay in logic.py / db.py. The browser can never set state itself.
 4. The answer goes back to the page the same way, and the page redraws.
 """
 
@@ -50,12 +51,36 @@ BRIDGE = """<script>
   const pending = new Map();
   let counter = Date.now();
   const post = message => window.parent.postMessage(Object.assign({ isStreamlitMessage: true }, message), "*");
+  // The secret key of every name started in this browser (specs/name-belongs-to-browser.md, point 5).
+  // Without storage (a blocked browser) the keys only last until the page is closed.
+  const KEYS = "plot-twist-keys";
+  let keys = {};
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEYS) || "{}");
+    if (saved && typeof saved === "object") keys = saved;
+  } catch (error) { /* no storage: keys stay in memory */ }
+  const nameOf = payload => String((payload && payload.player) || "").trim().toLowerCase();   // as game.clean_name
+  function keep(who, key) {
+    if (!who || !key || keys[who] === key) return;
+    keys[who] = key;
+    try { localStorage.setItem(KEYS, JSON.stringify(keys)); } catch (error) { /* kept in memory only */ }
+  }
+  // The key is made here, before the name's first request, so a reply lost on the way never locks the name.
+  function keyFor(who) {
+    if (who && !keys[who]) {
+      const bytes = new Uint8Array(24);
+      crypto.getRandomValues(bytes);
+      keep(who, Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join(""));
+    }
+    return keys[who];
+  }
   window.addEventListener("message", event => {
     if (!event.data || event.data.type !== "streamlit:render") return;
     const reply = (event.data.args || {}).reply;
     if (reply && pending.has(reply.id)) {
       const waiting = pending.get(reply.id);
       pending.delete(reply.id);
+      if (reply.key) keep(waiting.who, reply.key);
       reply.error ? waiting.reject(new Error(reply.error)) : waiting.resolve(reply.result);
     }
     fitHeight();
@@ -68,10 +93,12 @@ BRIDGE = """<script>
   window.campusBridge = {
     call(payload) {
       return new Promise((resolve, reject) => {
-        const id = ++counter;
-        pending.set(id, { resolve, reject });
+        const id = ++counter, who = nameOf(payload);
+        pending.set(id, { resolve, reject, who });
         setTimeout(() => { if (pending.delete(id)) reject(new TypeError("timeout")); }, 20000);
-        post({ type: "streamlit:setComponentValue", dataType: "json", value: { id, payload } });
+        const key = keyFor(who);
+        const sent = key ? Object.assign({}, payload, { key }) : payload;
+        post({ type: "streamlit:setComponentValue", dataType: "json", value: { id, payload: sent } });
       });
     },
   };
@@ -119,7 +146,10 @@ def answer(payload):
     """Run one command and return {"result": ...} or {"error": ...} (never a stack trace)."""
     try:
         with command_lock():
-            return {"result": campus_game.command(payload)}
+            # The name must come with this browser's key; the key goes back to the bridge
+            # (specs/name-belongs-to-browser.md, point 4).
+            result, key = campus_game.keyed_command(payload)
+            return {"result": result, "key": key}
     except (ValueError, UnicodeDecodeError) as error:
         return {"error": str(error)}
     except Exception:

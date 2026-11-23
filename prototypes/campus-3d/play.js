@@ -26,6 +26,9 @@
   // The last name used in this browser is filled in again: if the page reloads (for example after an
   // update of the app), continuing the game is one click (specs/chat-dialogues.md).
   const LAST_NAME_KEY = "plot-twist-last-name";
+  // The page's copy of game.NAME_PATTERN, so a name the server would refuse is caught under the field
+  // (specs/name-check-first-step.md). The server still checks every name.
+  const NAME_RULE = /^[\p{L}\p{N}_ -]{1,20}$/u;
   try { name.value = localStorage.getItem(LAST_NAME_KEY) || ""; } catch (error) { /* no storage */ }
   // ---------- the character creator: boy or girl, clothes, colours (kept in this browser, for each name) ----------
   // It only changes how the detective looks; the server never sees it (specs/rules-and-character.md).
@@ -227,6 +230,7 @@
   }
   window.campusNext = () => {
     if (!name.value.trim()) { startError.textContent = ui().name_needed; name.focus(); return; }
+    if (!NAME_RULE.test(name.value.trim())) { startError.textContent = ui().name_invalid; name.focus(); return; }
     startError.textContent = ""; lookError.textContent = "";
     goStep($("stepCase"), stepLook);
   };
@@ -592,7 +596,7 @@
     const t = ui();
     document.documentElement.lang = window.lang || "pt";
     nameLabel.textContent = t.name_label;
-    nameHint.textContent = t.continue_hint;
+    nameHint.textContent = t.continue_here;   // a name continues only in its own browser (specs/name-belongs-to-browser.md)
     $("accept").textContent = t.next_step;
     $("look-case").textContent = data[window.lang || "pt"].intro.title;   // the name of the game
     $("look-back").textContent = t.look_back;
@@ -710,6 +714,14 @@
       uncertain = true;
       const message = error.name === "Error" ? error.message : ui().network_error;
       (current ? $("feedback") : introError).textContent = message;
+      // Another browser holds this name's key: back to the name, with the message under the field
+      // (specs/name-belongs-to-browser.md, point 6).
+      if (!current && message === ui().name_taken) {
+        const from = [stepBrief, stepLook].find(step => step.classList.contains("on"));
+        if (from) goStep(from, $("stepCase"));
+        introError.textContent = ""; startError.textContent = message;
+        setTimeout(() => name.focus({ preventScroll: true }), 450);
+      }
       if (current) { $("feedback").className = "error"; $("feedback").hidden = false; toast(message); }
       return false;
     } finally { setBusy(false); }
@@ -1847,6 +1859,9 @@
       if (window.qrcode) { resolve(); return; }
       const script = document.createElement("script");
       script.src = QR_LIBRARY; script.onload = resolve; script.onerror = reject;
+      // The browser refuses the file if it is not exactly this version (specs/safe-dependencies.md).
+      script.integrity = "sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1";
+      script.crossOrigin = "anonymous";
       document.head.append(script);
     });
   }

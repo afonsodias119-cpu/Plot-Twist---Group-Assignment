@@ -1,7 +1,7 @@
 # Plano do projeto — Plot Twist (trabalho de grupo)
 
 Documento de referência da equipa. Resume o que foi decidido até agora e o que falta fazer.
-Última atualização: 23/11/2026 (as sete ideias novas do branch `more-ideas` juntas com a main: comandos no telemóvel, ecrã inicial em passos e computador 12 com o grupo).
+Última atualização: 23/11/2026 (correções para a grelha de avaliação no branch `grading-fixes`: o nome pertence ao browser, dependências sem vulnerabilidades, o nome verificado no primeiro passo e o README).
 
 ## 1. O que o curso pede
 
@@ -82,6 +82,17 @@ Alteração preparada em `computer-12-with-the-group` (depende de `start-screen-
 ### Junção das sete ideias com a main — 23/11/2026
 
 O branch `more-ideas` recebeu as três alterações novas da main (comandos no telemóvel, ecrã inicial em passos e computador 12 com o grupo). Decisões: fica o joystick do Afonso (o nosso saiu, com `specs/phone-joystick.md` e o seu teste); o enigma do computador 12 da Maria é igual em todos os casos do dia (17 de outubro, código `1710`), e cada caso só muda as mensagens falsas, a conta no histórico, quem mente, as confissões, a audiência e os finais; o "Caso de …" fica na barra de cima da ficha do caso e "O teu grupo (opcional)" no passo "O teu detetive"; as lembranças do grupo no computador 12 usam os nomes dos amigos. O post-it 2311 do computador 7 continua a ser um código errado (custa 2 minutos, como qualquer código errado). Mudaram só os nossos testes novos (`tests/test_culprit_of_the_night.py`, `tests/test_case_of_the_day.py`, `tests/test_more_to_find.py`, `tests/test_your_own_group.py`); nenhum teste revisto mudou.
+
+### Correções para a grelha de avaliação — 23/11/2026
+
+Branch `grading-fixes`, feito depois de comparar o projeto com a grelha da página do trabalho de grupo (funciona 20, interface 20, âmbito 20, verificação 10, segurança 10, explicação do repositório 20):
+
+- **Segurança — o nome pertence ao browser** (`specs/name-belongs-to-browser.md`): antes, quem escrevesse o nome de outra pessoa continuava, mudava ou recomeçava o jogo dela. Agora o browser cria uma chave secreta para cada nome antes do primeiro pedido; o servidor guarda só o hash dessa chave (tabela nova `keys` em `db.py`, regra em `game.claim_name`) e recusa o nome a quem não tiver a chave, com a mensagem por baixo do campo do nome. `campus_game.command` e os testes revistos não mudam (`keyed_command` tira a chave antes). Limite: o nome só continua no mesmo browser.
+- **Segurança — dependências** (`specs/safe-dependencies.md`): o `uv audit` encontrava 62 vulnerabilidades conhecidas no Pillow 12.3.0 (vem com o Streamlit). Passámos para Streamlit 1.67.0 e Pillow 13; o `uv audit` já não encontra nenhuma. O `pytest` passou para o grupo `dev`. O Three.js e a biblioteca do código QR têm agora hashes de integridade (o browser recusa um ficheiro alterado).
+- **Interface — o nome é verificado onde se escreve** (`specs/name-check-first-step.md`): um nome inválido já não passa dois passos à frente; o erro aparece logo por baixo do campo. E o fim do texto da ficha já não tira o foco do campo a meio de escrever o nome.
+- **Explicação do repositório:** o README explica como o projeto está construído, onde ficam os dados, a segurança, o que os testes cobrem e não cobrem, os limites e como podia mudar. O AGENTS.md ganhou as regras dos segredos e das dependências.
+
+Verificado: todos os testes a passar com o Streamlit 1.67, mais `tests/continuous-conversations.cjs`; o jogo jogado no browser (inglês e português, computador e telemóvel): nome inválido, nome de outro browser recusado, o dono continua, 3D e código QR carregados com os hashes. Nota: o primeiro pedido depois de o servidor arrancar demora 8 a 15 segundos (já acontecia na main) — abrir o jogo e começar uma vez antes da apresentação.
 
 ### Fase A — passos
 

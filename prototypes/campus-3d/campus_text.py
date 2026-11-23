@@ -75,6 +75,11 @@ TEXT = {
         "local_only": "Para jogar, inicia server3d.py e abre o endereço local indicado.",
         "start": "Começar / Continuar", "next_step": "Seguinte →", "look_back": "← O caso",
         "name_needed": "Escreve primeiro o nome do teu detetive.",
+        # the page's own check of the name, the same words as story.UI_TEXTS (specs/name-check-first-step.md)
+        "name_invalid": "Usa 1 a 20 caracteres: letras, algarismos, espaços, - ou _.",
+        # another browser holds this name's key (specs/name-belongs-to-browser.md, point 7)
+        "name_taken": "Alguém noutro dispositivo ou browser já está a jogar com este nome. Escolhe outro nome.",
+        "continue_here": "Para continuar um jogo gravado, escreve o mesmo nome que usaste antes, neste browser.",
         "brief_label": "Antes de começares", "brief_title": "A faculdade fecha às 22:45",
         "brief_text": "São 22:15. Tens 30 minutos para recolher as provas e mostrá-las ao professor, no auditório, antes de o segurança fechar as portas.",
         "brief_back": "← O teu detetive", "locked": "Bloqueado", "close": "Fechar", "player": "Detetive",
@@ -293,6 +298,9 @@ TEXT = {
         "local_only": "To play, start server3d.py and open the local address it prints.",
         "start": "Start / Continue", "next_step": "Next →", "look_back": "← The case",
         "name_needed": "Write your detective's name first.",
+        "name_invalid": "Use 1 to 20 characters: letters, digits, spaces, - or _.",
+        "name_taken": "Someone on another device or browser is already playing with this name. Choose another name.",
+        "continue_here": "To continue a saved game, type the same name you used before, in this browser.",
         "brief_label": "Before you start", "brief_title": "The faculty closes at 22:45",
         "brief_text": "It is 22:15. You have 30 minutes to gather the evidence and show it to the professor, in the auditorium, before the security guard locks the doors.",
         "brief_back": "← Your detective", "locked": "Locked", "close": "Close", "player": "Detective",

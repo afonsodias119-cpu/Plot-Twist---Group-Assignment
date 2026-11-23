@@ -822,3 +822,20 @@ def command(payload):
     if "scene" in told:
         told["group"] = list(night["names"])
     return told
+
+
+def keyed_command(payload):
+    """command() for the published app: a name answers only to the browser that started it.
+
+    The page's bridge adds `key` to every request (specs/name-belongs-to-browser.md, points 3 and 5).
+    The key is taken out first, so command() and its allowed fields stay exactly as before.
+    Returns (reply, key): the key goes back to the bridge, which keeps it for that name.
+    """
+    if not isinstance(payload, dict):
+        return command(payload), ""   # command() refuses it with the usual message
+    request = {field: value for field, value in payload.items() if field != "key"}
+    key = game.claim_name(request.get("player"), payload.get("key"))
+    if key is None:
+        language = request.get("language") if request.get("language") in LANGUAGES else "en"
+        raise ValueError(TEXT[language]["name_taken"])
+    return command(request), key
