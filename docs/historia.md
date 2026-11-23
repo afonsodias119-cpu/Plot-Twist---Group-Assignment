@@ -78,7 +78,7 @@ O jogo simples (`app.py`) não tem relógio.
 
 ## 8. Imagens
 
-Ilustrações em `assets/`, usadas pelo jogo simples (`app.py`); os prompts estão em [imagens.md](imagens.md).
+Ilustrações em `assets/`, usadas pelo jogo simples (`app.py`).
 
 | Imagem | Ficheiro |
 |---|---|

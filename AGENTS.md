@@ -21,7 +21,6 @@ Team project (4 people) for Introduction to Programming, Nova SBE 2026/27. The t
 - `tests/` — pytest tests. They are the acceptance checks.
 - `specs/` — one spec per feature, written before the code.
 - `docs/plot-twist-brd.md` — the product brief from the course.
-- `docs/plano-do-projeto.md` — the team plan (in Portuguese): course requirements, decisions, phases, current status and feature ideas. Read it first and keep its status table up to date.
 
 The team speaks Portuguese (PT-PT): explain in Portuguese, keep code and specs in English.
 

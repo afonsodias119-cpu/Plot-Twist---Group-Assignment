@@ -1,8 +1,6 @@
-# Guião das conversas — O quinto elemento (jogo 3D)
+# Guião das conversas 
 
 Tudo o que as pessoas dizem no jogo 3D, em português e em inglês, tal como está no código.
-
-> **Gerado em 21/11/2026 (atualizado à mão a 23/11/2026, com os três casos do dia mais abaixo; depois da junção com o computador 12 resolvido com o grupo, o código e a data da fotografia são os mesmos em todos os casos e os números de linha foram refeitos) a partir de `prototypes/campus-3d/campus_people.py`, `prototypes/campus-3d/campus_case.py` e `story.py`.** O código é que manda: se mudares uma fala no código, este guião fica desatualizado até ser gerado outra vez.
 
 ## Como alterar uma fala
 

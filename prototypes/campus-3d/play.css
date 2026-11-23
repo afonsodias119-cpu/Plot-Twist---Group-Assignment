@@ -145,6 +145,7 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 .todo-list li.lost small { color: #ff8c7a; }
 .todo-text small { color: var(--muted); font-size: 12px; }
 .todo-hint { font-size: 12px !important; }
+.todo-hint-label { color: var(--accent); }
 @media (max-width: 650px) {
   .playable.panel-hidden #wrap { height: 100%; }
   #toast { left: 50%; width: calc(100% - 32px); top: 70px; }

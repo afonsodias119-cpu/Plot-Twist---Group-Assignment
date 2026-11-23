@@ -76,10 +76,7 @@ working language; the game itself is in both.
 | [docs/historia.md](docs/historia.md) | The story as it is today: characters, map, the four proofs, the professor, the endings | Portuguese |
 | [docs/story-en.md](docs/story-en.md) | The same story, translated into English | English |
 | [docs/guiao-conversas.md](docs/guiao-conversas.md) | Every line of dialogue in the game, with its answers, in both languages | Portuguese (lines in PT and EN) |
-| [docs/plano-do-projeto.md](docs/plano-do-projeto.md) | The team plan: course requirements, decisions, phases and the history of every change | Portuguese |
 | [docs/plot-twist-brd.md](docs/plot-twist-brd.md) | The course brief we started from | English |
-| [docs/imagens.md](docs/imagens.md) | The prompts used to generate the pictures in `assets/` (historical) | Portuguese |
-| [docs/maria-campus-3d.md](docs/maria-campus-3d.md) | Maria's handover note of 19/11, when the 3D campus became playable (historical) | Portuguese |
 | [specs/README.md](specs/README.md) | The index of the specs | English |
 | [prototypes/campus-3d/README.md](prototypes/campus-3d/README.md) | The files of the 3D game | English |
 
