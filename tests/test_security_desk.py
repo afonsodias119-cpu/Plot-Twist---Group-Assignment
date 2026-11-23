@@ -59,7 +59,7 @@ def test_the_monitor_ports_are_placed_like_the_rooms_of_the_3d_building():
 def test_only_the_photo_or_the_old_files_convince_the_guard_and_a_wrong_card_costs_time():
     code = section()
     assert 'card.id === "original_photo" || card.id === "files"' in code
-    assert "penalize(1)" in code and "penalize(2)" in code
+    assert "penalize(1)" in code and "cost: 2" in code        # a wrong card 1 minute, a rude demand 2
 
 
 def test_the_guard_and_the_recordings_never_call_the_server():
@@ -75,8 +75,8 @@ def test_what_is_read_from_the_browser_must_be_exactly_true_and_a_new_game_forge
 
 
 def test_the_page_has_the_desk_the_cables_and_the_recordings():
-    for needle in ('id="guard-card"', "openGuard", "WIRE_PORTS", "drawWires", "drawCctvFrame", "campusFigure", "campusDeskPower",
-                   "plot-twist-security", "deskScreens", 'near = "guard"', '"Anselmo"'):
+    for needle in ("guardStep", "guardMenu", "WIRE_PORTS", "drawWires", "drawCctvFrame", "campusFigure", "campusDeskPower",
+                   "plot-twist-security", "deskScreens", 'near = "guard"', '"José"', "novaLetters"):
         assert needle in PAGE, needle
     assert ".wires-dialog.sparks" in CSS and ".cctv-dialog" in CSS
 
@@ -85,3 +85,23 @@ def test_the_hooded_figure_is_seen_from_behind_and_the_proof_goes_to_the_diary()
     code = section()
     assert "Math.PI" in code and "saveDiary(t.cctv_diary_title, t.cctv_proof)" in code
     assert "23 * 60 + 46, 23 * 60 + 49" in code        # the proof is in the minutes around 23:47
+
+
+def test_the_guard_talks_in_the_same_card_as_everybody_else():
+    """José is drawn by showLine like the other people: the same bubbles, the same "Show evidence" and the same answers."""
+    assert 'id="guard-card"' not in PAGE and "campusGuardOpen" not in PAGE and "openGuard" not in PAGE
+    code = section()
+    assert "showLine(guardLine(" in code and "addBubble(" in code and "showTyping()" in code
+    assert 'if (npc === "guard") { guardStep(node); return; }' in PAGE          # the ordinary talk hands him his own lines
+    assert 'if (line.npc === "guard") { guardShown(card); return; }' in PAGE   # "Show evidence" works on him
+    assert 'talking !== "guard" && !state.ending' in PAGE                       # the schedule never sends him home
+
+
+def test_the_guard_is_jose_in_both_languages_has_a_voice_and_the_uniform_and_counter_are_in_the_scene():
+    assert TEXT["pt"]["security"]["guard_name"] == "José" and TEXT["en"]["security"]["guard_name"] == "José"
+    assert "Anselmo" not in PAGE
+    assert 'guard: ["m"' in PAGE                                               # a voice of his own
+    for needle in ("cap: 0x14233a", "badge: 0xd4a650", "belt: true", "epaulettes: 0xd4a650", "if (o.cap)"):
+        assert needle in PAGE, needle
+    # the counter copies the letters of the big sign, small and black
+    assert "novaLetters(cx," in PAGE and "mat(0x15171b" in PAGE

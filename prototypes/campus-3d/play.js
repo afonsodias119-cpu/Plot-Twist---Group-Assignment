@@ -267,9 +267,6 @@
     <button id="sms" class="sms" hidden><span id="sms-from" class="sms-from"></span><span id="sms-text"></span></button>
     <div id="joystick" class="joystick" aria-hidden="true"><div id="stick-base" class="stick-base"><div id="stick-knob" class="stick-knob"></div></div></div>
     <div id="confetti" class="confetti" aria-hidden="true" hidden></div>
-    <section id="guard-card" class="talk-card guard-card" role="dialog" aria-labelledby="guard-name" aria-live="polite" hidden>
-      <header><h3 id="guard-name"></h3><button id="guard-close" class="secondary"></button></header>
-      <p id="guard-text"></p><div id="guard-options"></div></section>
     <section id="chat-card" class="chat-card" role="dialog" aria-labelledby="chat-title" hidden>
       <header><h3 id="chat-title"></h3><button id="chat-close" class="secondary"></button></header>
       <p id="chat-intro" class="muted"></p><ol id="chat-messages"></ol></section>
@@ -400,7 +397,7 @@
   // Who speaks: [gender, pitch, speed]. Computer 12 has no voice and stays silent.
   // Only what the people SAY is read aloud (the text between quotation marks), never the description of what they do.
   const VOICES = { rita: ["f", 1.08, 1.0], amelia: ["f", 0.95, 0.92], leonor: ["f", 1.0, 1.0],
-                   tomas: ["m", 1.06, 1.05], professor: ["m", 0.88, 0.9], duarte: ["m", 0.94, 0.95], narrator: ["f", 1, 0.95] };
+                   tomas: ["m", 1.06, 1.05], professor: ["m", 0.88, 0.9], duarte: ["m", 0.94, 0.95], guard: ["m", 0.82, 0.92], narrator: ["f", 1, 0.95] };
   const FEMALE = /raquel|fernanda|francisca|helia|heloisa|maria|joana|catarina|sonia|libby|maisie|hazel|susan|zira|emily|female|feminina/i;
   const MALE = /duarte|antonio|daniel|ricardo|hugo|ryan|thomas|george|mark|david|james|male|masculino/i;
   // The natural (neural, online) voices of the browser sound far more human than the old robotic ones.
@@ -698,7 +695,7 @@
     // conversation ends in place, with the reply's message or the room's notice (specs/night-schedule.md, point 5).
     // A catch changes the scene, so closeTalk above has already closed the card (point 8).
     // Once per conversation: the later snapshots, while that ended card stays open, add nothing.
-    goneLine = talking && !state.ending && talking !== endedTalk && !state.people.some(person => person.id === talking)
+    goneLine = talking && talking !== "guard" && !state.ending && talking !== endedTalk && !state.people.some(person => person.id === talking)
       ? state.message || (state.night ? state.night.notice : "") || null : null;   // an empty text is nothing to draw
     showNotice(state);
     showEnding(state.ending);
@@ -1140,6 +1137,7 @@
   // A card is shown on the line on the screen. The server answers with the reveal or the rebuff,
   // drawn as a line of that person with the answers that line had; a rebuff costs minutes, like a rude answer.
   async function confrontWith(line, card) {
+    if (line.npc === "guard") { guardShown(card); return; }   // José answers on the screen
     if (window.campusBusy || !current || !screenLine || screenLine.npc !== line.npc) return;
     const t = ui(), node = screenLine.node;
     addBubble(`📁 ${card.label}`, "me");
@@ -1279,6 +1277,7 @@
     }
     // A line asked for is a command: the page reports its minute first when it is ahead, and the line is
     // not asked for when that person has gone meanwhile (specs/night-schedule.md, point 4).
+    if (npc === "guard") { guardStep(node); return; }   // José: his lines are made on the screen, not by the server
     if (!await catchUp(npc)) return;
     if (talking === npc) showTyping();   // only inside an open conversation (not before the first line)
     setBusy(true);
@@ -1294,21 +1293,21 @@
   // ---------- walking up to a person: a note says which key starts the conversation ----------
   // The 3D scene sets window.campusNear (the id of the person close enough, or null).
   function updateNear() {
-    $("hud-bottom").classList.toggle("talking", Boolean(talking) || Boolean(window.campusGuardOpen));
+    $("hud-bottom").classList.toggle("talking", Boolean(talking));
     const person = window.campusNear && (window.campusNear === "guard" ? { id: "guard", name: ui().security.guard_name } : current?.people.find(p => p.id === window.campusNear));
-    $("near-hint").hidden = !person || Boolean(talking) || Boolean(window.campusGuardOpen);
+    $("near-hint").hidden = !person || Boolean(talking);
     if (!person) return;
     const key = make("kbd", "K");
     const sentence = person.object ? ui().press_use.replace("{name}", person.name.toLowerCase()) : ui().press_talk.replace("{name}", person.name);
     $("near-hint").replaceChildren(key, document.createTextNode(" " + sentence));
   }
   window.addEventListener("campus-near", updateNear);
-  $("near-hint").addEventListener("click", () => { if (window.campusNear === "guard") openGuard(); else if (window.campusNear) talkStep(window.campusNear, "start"); });
+  $("near-hint").addEventListener("click", () => { if (window.campusNear) talkStep(window.campusNear, "start"); });
   document.addEventListener("keydown", e => {
     if (e.key.toLowerCase() !== "k" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target.closest("input, textarea, dialog") || !window.campusNear || talking || !window.playing || window.campusBusy) return;
     e.preventDefault();
-    if (window.campusNear === "guard") openGuard(); else talkStep(window.campusNear, "start");
+    talkStep(window.campusNear, "start");
   });
   $("talk-close").addEventListener("click", closeTalk);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && talking && !phone.open && !dialog.open) closeTalk(); });
@@ -1761,59 +1760,55 @@
   function saveSecurity(state) { try { localStorage.setItem(securityKey(), JSON.stringify(state)); } catch (error) { /* no storage */ } }
   function syncSecurity() { window.campusDeskPower = loadSecurity().wired; }   // the monitors of the 3D desk light up when it is true
   const anyDialogOpen = () => Boolean(document.querySelector("dialog[open]"));
-  const backToPlay = () => { if (!talking && $("chat-card").hidden && !anyDialogOpen() && !window.campusGuardOpen) window.playing = true; };
+  const backToPlay = () => { if (!talking && $("chat-card").hidden && !anyDialogOpen()) window.playing = true; };
 
-  // ----- the guard -----
-  function guardSay(text, options) {
-    $("guard-text").textContent = text;
-    $("guard-options").replaceChildren(...options.map(([label, handler]) => {
-      const button = make("button", label, "answer");
-      button.addEventListener("click", handler);
-      return button;
-    }));
-    $("guard-options").querySelector("button")?.focus({ preventScroll: true });
+  // ----- José, the guard: he talks in the same card as everybody else -----
+  // His lines are made here (the server does not know him), but they are drawn by showLine like any other person's:
+  // the same bubbles, the same "Show evidence" and the same answers on the right.
+  const guardName = () => ui().security.guard_name;
+  function guardMenu() {   // the answers on his start line, by what has been done so far
+    const t = ui().security, state = loadSecurity();
+    if (state.footage) return [{ label: t.opt_rewatch, next: "watch" }];
+    if (state.wired) return [{ label: t.opt_watch, next: "watch" }];
+    if (state.convinced) return [{ label: t.opt_wire, next: "wire" }, { label: t.opt_who, next: "who" }];
+    return [{ label: t.opt_explain, next: "explain" }, { label: t.opt_broken, next: "broken" }];
   }
-  function openGuard() {
-    if (!current || current.ending || window.campusGuardOpen) return;
-    window.campusGuardOpen = true;
-    window.playing = false;
+  const guardLine = (node, text, options) => ({ npc: "guard", name: guardName(), node, text, trust: null, note: "", actions: [], options });
+  function guardStart() {
+    const t = ui().security, state = loadSecurity();
+    return guardLine("start", state.footage ? t.done : state.wired ? t.ready : state.convinced ? t.cables : t.hello, guardMenu());
+  }
+  // One step of the conversation. Like a real answer it takes a moment: three dots first.
+  function guardStep(node) {
     const t = ui().security;
-    $("guard-name").textContent = t.guard_name;
-    $("guard-close").textContent = ui().talk_close;
-    $("guard-card").hidden = false;
-    updateNear();
-    const state = loadSecurity();
-    guardNode(state.footage ? "done" : state.wired ? "ready" : state.convinced ? "cables" : "hello");
+    if (node === "start") { showLine(guardStart()); return; }
+    if (node === "wire") { asked.delete("wire"); openWires(); return; }       // the cables can be tried again
+    if (node === "watch") { asked.delete("watch"); openCctv(); return; }
+    showTyping();
+    setTimeout(() => {
+      $("talk-log").querySelector(".typing")?.remove();
+      if (talking !== "guard") return;
+      showLine(guardLine(node, t[node], node === "explain" ? [{ label: t.opt_rude, next: "rude", cost: 2 }] : []));   // demanding costs 2 minutes
+    }, 600);
   }
-  function closeGuard() {
-    window.campusGuardOpen = false;
-    $("guard-card").hidden = true;
-    updateNear();
-    backToPlay();
+  // What he says after something was done: it brings back his menu, as it is now.
+  function guardReply(text) {
+    $("talk-log").querySelector(".typing")?.remove();
+    if (talking !== "guard") return;
+    topics.clear();   // the old subjects are not offered any more
+    showLine(guardLine("result", text, guardMenu()));
   }
-  function guardNode(id) {
-    const t = ui().security, bye = [t.opt_bye, closeGuard], state = loadSecurity();
-    if (id === "hello") guardSay(t.hello, [[t.opt_explain, () => guardNode("explain")], [t.opt_broken, () => guardNode("broken")], bye]);
-    else if (id === "broken") guardSay(t.broken, [[t.opt_explain, () => guardNode("explain")], bye]);
-    else if (id === "explain") guardSay(t.explain, [[t.opt_show, () => guardNode("evidence")], [t.opt_rude, () => { penalize(2); guardNode("rude"); }], bye]);
-    else if (id === "rude") guardSay(t.rude, [[t.opt_back, () => guardNode("explain")], bye]);
-    else if (id === "evidence") {
-      const cards = current?.evidence || [];
-      if (!cards.length) { guardSay(t.evidence_none, [[t.opt_back, () => guardNode("explain")], bye]); return; }
-      // The photo with four people, or the old files with four authors, are what makes him doubt the report.
-      guardSay(t.evidence_title, [...cards.map(card => [card.label, () => {
-        if (card.id === "original_photo" || card.id === "files") { state.convinced = true; saveSecurity(state); guardNode("convinced"); }
-        else { penalize(1); guardNode("rebuff"); }
-      }]), [t.opt_back, () => guardNode("explain")]]);
-    }
-    else if (id === "rebuff") guardSay(t.rebuff, [[t.opt_show, () => guardNode("evidence")], bye]);
-    else if (id === "convinced") guardSay(t.convinced, [[t.opt_wire, openWires], [t.opt_who, () => guardNode("who")], bye]);
-    else if (id === "who") guardSay(t.who, [[t.opt_wire, openWires], bye]);
-    else if (id === "cables") guardSay(t.cables, [[t.opt_wire, openWires], [t.opt_who, () => guardNode("who")], bye]);
-    else if (id === "ready") guardSay(t.ready, [[t.opt_watch, openCctv], bye]);
-    else guardSay(t.done, [[t.opt_rewatch, openCctv], bye]);
+  // A card shown to him: the photo with four people, or the old files with four authors, make him doubt the report.
+  function guardShown(card) {
+    const t = ui().security, state = loadSecurity();
+    addBubble(`📁 ${card.label}`, "me");
+    showTyping();
+    setTimeout(() => {
+      if (state.convinced) { guardReply(state.footage ? t.done : state.wired ? t.ready : t.cables); return; }
+      if (card.id === "original_photo" || card.id === "files") { state.convinced = true; saveSecurity(state); guardReply(t.convinced); }
+      else { penalize(1); guardReply(t.rebuff); }
+    }, 700);
   }
-  $("guard-close").addEventListener("click", closeGuard);
 
   // ----- the five cables -----
   // The monitors are placed like the rooms are on the plan of the building (print shop, study room and library
@@ -1886,7 +1881,7 @@
       sound.chime();
       toast(t.wires_ok);
       wiresDialog.close();
-      guardNode("ready");
+      guardReply(t.ready);
     } else {
       wiresDialog.classList.remove("sparks"); void wiresDialog.offsetWidth; wiresDialog.classList.add("sparks");   // the sparks
       setWiresStatus(t.wires_wrong.replace("{n}", right));
@@ -1912,7 +1907,7 @@
     '<p id="cctv-hint" class="muted"></p><p id="cctv-saved" role="status" class="cctv-saved" hidden></p>' +
     '<div class="dialog-actions"><button id="cctv-save" hidden></button><button id="cctv-close" class="secondary"></button></div>';
   document.body.append(cctvDialog);
-  let cctvCamera = "computer_lab", cctvMinute = 23 * 60 + 20, cctvFigure = null, cctvTimer = null;
+  let cctvCamera = "computer_lab", cctvMinute = 23 * 60 + 20, cctvFigure = null, cctvTimer = null, cctvSavedNow = false;
   const hoodedFigure = { topColor: 0x15171b, pants: 0x1a1a1f, hood: true, hair: 0x0e0b09, skin: 0xd9a27e };
   function cctvEvent() {
     return (CCTV_EVENTS[cctvCamera] || []).find(([from, to]) => cctvMinute >= from && cctvMinute <= to) || null;
@@ -1986,7 +1981,7 @@
   $("cctv-plus").addEventListener("click", () => { cctvMinute = Math.min(CCTV_TO, cctvMinute + 1); $("cctv-slider").value = cctvMinute; drawCctvFrame(); });
   $("cctv-save").addEventListener("click", () => {
     const t = ui().security, state = loadSecurity();
-    state.footage = true; saveSecurity(state);
+    state.footage = true; saveSecurity(state); cctvSavedNow = true;
     saveDiary(t.cctv_diary_title, t.cctv_proof);   // the proof goes to the diary
     $("cctv-saved").textContent = t.cctv_saved; $("cctv-saved").hidden = false;
     $("cctv-save").hidden = true;
@@ -1994,7 +1989,10 @@
     toast(t.cctv_saved);
   });
   $("cctv-close").addEventListener("click", () => cctvDialog.close());
-  cctvDialog.addEventListener("close", () => { clearInterval(cctvTimer); backToPlay(); if (window.campusGuardOpen) guardNode(loadSecurity().footage ? "done" : "ready"); });
+  cctvDialog.addEventListener("close", () => {
+    clearInterval(cctvTimer); backToPlay();
+    if (cctvSavedNow) { cctvSavedNow = false; guardReply(ui().security.done); }   // he sees the proof was kept
+  });
 
   // ---------- the phone: a map, the to-do list of clues and the diary ----------
   const phone = make("dialog", undefined, "phone-dialog"); phone.id = "phone";
