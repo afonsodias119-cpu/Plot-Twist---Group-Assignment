@@ -185,6 +185,9 @@ dialog .app-icon:hover { background: linear-gradient(145deg, #335b7a, #1c374d); 
 #talk .chat-replies button.answer:hover, #talk .chat-replies button.answer:focus-visible { border-color: #00a884; background: #1f3a36; }
 .panel-hidden .talk-card { width: min(440px, calc(100% - 52px)); }
 .actions.people button { background: #e8b45c1f !important; color: var(--ink) !important; border-color: #e8b45c66 !important; }
+/* things to look at in the room (specs/more-to-find.md): quieter than the people, like the travel buttons */
+#investigation .actions.finds button { background: #ffffff06; border-color: var(--line); color: var(--ink); }
+#investigation .actions.finds button:hover { border-color: var(--gold); background: #e8b45c14; }
 .diary-heading { margin-top: 18px !important; }
 .diary-note { border-left: 2px solid #e8b45c66; padding-left: 10px; margin: 10px 0; }
 .diary-note h4 { margin: 0 0 4px; font-size: 12px; color: var(--gold); }
@@ -376,6 +379,25 @@ body:not(.text-mode) #scene-paragraphs { display: none; }
 .text-mode .creator-preview { display: none; }
 .text-mode .creator { grid-template-columns: 1fr; }
 @media (max-width: 640px) { .creator { grid-template-columns: 1fr; justify-items: center; } .creator-controls { justify-self: stretch; } }
+/* the three friends' names (specs/your-own-group.md): closed under the creator, one field for each place */
+.group-box { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.group-box summary { cursor: pointer; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.group-box summary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.group-box[open] summary { margin-bottom: 6px; }
+/* it sits in the "Your detective" step, under the creator (specs/creator-after-name.md), so it has its own field style */
+.group-box p { margin: 0 0 8px; font-size: 12px; line-height: 1.5; }
+.group-box .group-field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+.group-box .group-field input { width: 100%; padding: 8px 10px; border: 1px solid #b8c5d35c; border-radius: 7px; color: var(--ink); background: #071524; font: inherit; }
+@media (max-width: 640px) { .group-box .group-field { grid-template-columns: 1fr; gap: 4px; } }
+
+/* the day of the case on the case file, after the game's name in its top bar (specs/case-of-the-day.md, point 6).
+   At phone width the "Confidential" pill and the clock give way, and the label may go to a second line. */
+.case-day { color: var(--gold); }
+#stepCase .file-top #caseNo, #stepCase .file-top .case-day { white-space: nowrap; }
+@media (max-width: 520px) {
+  #stepCase .file-top { flex-wrap: wrap; row-gap: 4px; }
+  #stepCase .file-top #stamp, #stepCase .file-top .clock { display: none; }
+}
 
 /* where the game is played: the choice on the first screen, the joystick, the QR code and the detective card */
 .device { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; gap: 8px; justify-items: start; }

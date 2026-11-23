@@ -722,6 +722,10 @@ const shutterPanel = textPanel(512, 128, (g, w, h) => {
 });
 const shutter = picture(5, 1.15, -8.75, 1.62, -6.7, shutterPanel, 0.15);
 shutter.visible = false;
+// Things to look at (specs/more-to-find.md): a laminated price list and the order book, at the two ends of the counter.
+rbox(0.42, 0.012, 0.3, -11.0, 1.05, -6.1, mat(0xf4f6f2, { roughness: 0.15 }));
+rbox(0.5, 0.09, 0.36, -6.6, 1.05, -6.1, mat(0x7a1f24, { roughness: 0.7 }));
+rbox(0.46, 0.02, 0.33, -6.6, 1.14, -6.1, paper);
 
 // ---- Library (x 4.5..13)
 rug(5, 3.2, 8.75, -7.6, "#3d4a57", null);
@@ -756,6 +760,13 @@ add(new THREE.Mesh(new THREE.SphereGeometry(0.28, 32, 32), mat(0xffffff, { rough
   g.fillStyle = "#c8b07a"; for (let i = 0; i < 14; i++) { g.beginPath(); g.ellipse(rand(0, w), rand(20, h - 20), rand(10, 30), rand(6, 20), rand(0, 3), 0, Math.PI * 2); g.fill(); }
 }) })), 12.2, 0.9, -4.2);
 block(12.2, -4.2, 0.6, 0.6);
+// Things to look at (specs/more-to-find.md): a noticeboard on the west wall and a trolley of returned books.
+rbox(0.04, 0.9, 1.4, 4.66, 1.0, -8.0, mat(0xb08a5a, { roughness: 0.95 }));
+[0xfff7a8, 0xffd0d0, 0xd0f0ff, 0xffffff].forEach((colour, i) => rbox(0.01, 0.2, 0.24, 4.69, 1.1 + (i % 2) * 0.35, -8.45 + i * 0.3, mat(colour)));
+for (const y of [0.2, 0.7]) rbox(0.9, 0.05, 0.5, 6.0, y, -4.95, walnut);
+for (const sx of [-0.42, 0.42]) rbox(0.04, 0.75, 0.5, 6.0 + sx, 0, -4.95, metal);
+for (let i = 0; i < 6; i++) rbox(0.08, 0.3, 0.3, 5.7 + i * 0.11, 0.75, -4.95, mat([0x7a1f1f, 0x1f3f7a, 0x2f5a2f][i % 3], { roughness: 0.65 }));
+block(6.0, -4.95, 0.9, 0.5);
 
 // ---- Computer lab (x -13..0, z 3..12)
 const screenTexture = (special) => textPanel(256, 160, (g, w, h) => {
@@ -790,6 +801,12 @@ for (const z of [6, 9]) for (const x of [-10.5, -6.5, -2.5]) {
   pcNumber++;
 }
 plant(-12.4, 11.4, 0.9);
+// Things to look at (specs/more-to-find.md): a whiteboard on the west wall, and a sticky note on computer 7
+// (desk 4, left-hand screen).
+rbox(0.04, 1.0, 1.8, -12.84, 0.9, 4.9, mat(0xf7f7f4, { roughness: 0.2 }));
+rbox(0.01, 0.04, 1.2, -12.815, 1.15, 4.9, mat(0x2251a8));                                   // the axis
+for (const tilt of [0.5, -0.5]) rbox(0.01, 0.7, 0.03, -12.815, 1.05, 4.9, mat(tilt > 0 ? 0x2251a8 : 0xc0392b)).rotation.x = tilt;   // supply and demand
+rbox(0.12, 0.1, 0.01, -10.95, 1.3, 8.765, mat(0xffe066, { emissive: 0xffe066, emissiveIntensity: 0.3 }));
 
 // ---- Auditorium (x 0..13, z 3..12)
 const stageWood = mat(0xffffff, { map: wood("#c9a274", 3, 1), roughness: 0.4 });
@@ -1099,6 +1116,14 @@ placeNpc({ topColor: 0x6a7a3a, hair: 0x2a1a0a, skin: 0xd9a27e }, -6.5, 7.6, Math
 lamp(0xffd9a0, 8, 6.5, 3.2, 10.6, 9); lampList[lampList.length - 1].zone = "stage";   // the stage light
 placeNpc({ topColor: 0x1f3a5f, pants: 0x1a2230, hair: 0x9a9a9a, skin: 0xd9a27e, shirt: 0xf2f0e8, tie: 0x111111 }, -11.3, -2.15, 0, "Anselmo", 0, "guard");   // the security guard
 const USABLE = [{ id: "computer12", x: -1.8, z: 9.0 }];   // see the computer lab: desk 6, right-hand screen
+// Things to look at (specs/more-to-find.md, point 7): where the character stands to read each one, beside
+// its furniture and at least 1.2 m from every person. Their names and texts come from the server.
+const FIND_SPOTS = [
+  { id: "price_list", x: -11.0, z: -5.4 }, { id: "order_book", x: -6.0, z: -5.4 },     // the print shop counter, its two ends
+  { id: "noticeboard", x: 5.3, z: -8.0 }, { id: "returns_trolley", x: 6.0, z: -4.4 },  // the library: the west wall, the trolley
+  { id: "lab_whiteboard", x: -12.3, z: 4.6 }, { id: "computer7", x: -11.2, z: 9.0 },   // the lab: the whiteboard, desk 4 left-hand screen
+  { id: "podium", x: 6.5, z: 9.3 },                                                     // in front of the podium
+];
 let player = makePerson({ topColor: 0xb3895a, long: true, hat: 0x3a2a1e, scarf: 0x8a1f24 });
 scene.add(player);
 // The detective's torch: a warm cone in the direction the character faces (it has no shadow: that would be too slow).
@@ -1269,6 +1294,18 @@ function showSchedule(state) {
   duarte.userData.sign.position.set(spot.x, 2.35, spot.z);
 }
 
+// The name tags of the three teammates show tonight's group (specs/your-own-group.md, point 6): the
+// server sends `group` in the order Leonor, Rita, Tomás. Only the text changes (textContent, never HTML);
+// the people, their ids and their voices stay the same.
+const GROUP_IDS = ["leonor", "rita", "tomas"];
+function showGroup(state) {
+  if (!Array.isArray(state.group) || state.group.length !== GROUP_IDS.length) return;
+  GROUP_IDS.forEach((id, i) => {
+    const teammate = npcs.find(n => n.userData.id === id);
+    if (teammate && typeof state.group[i] === "string") teammate.userData.sign.element.textContent = state.group[i];
+  });
+}
+
 // ---- the people who come with you (specs/calendar-code.md) ----
 // Rita (once the USB stick is found) and Leonor (once she helps) walk along the path the character took,
 // a few steps behind, so they never cut through a wall. Once the saved room is the computer lab (or the files
@@ -1359,6 +1396,7 @@ function syncCampus() {
   npcs[1].visible = !["impostor", "fifth_element"].includes(state.ending?.id) && !state.ending?.stamp;
   npcs[1].userData.sign.visible = npcs[1].visible;
   showSchedule(state);
+  showGroup(state);
   where.textContent = state.title;
 }
 window.addEventListener("campus-state", syncCampus);
@@ -1529,6 +1567,13 @@ function loop() {
     // things that are used: computer 12 is the right-hand screen of the sixth desk of the lab
     for (const o of USABLE) {
       if (!here.some(p => p.id === o.id)) continue;
+      const d = Math.hypot(player.position.x - o.x, player.position.z - o.z);
+      if (d < nearDistance) { nearDistance = d; near = o.id; }
+    }
+    // things to look at: only the ones of the saved room, as the snapshot lists them (`finds`)
+    const finds = window.campusState.finds || [];
+    for (const o of FIND_SPOTS) {
+      if (!finds.some(f => f.id === o.id)) continue;
       const d = Math.hypot(player.position.x - o.x, player.position.z - o.z);
       if (d < nearDistance) { nearDistance = d; near = o.id; }
     }
