@@ -21,8 +21,9 @@ def test_the_clue_texts_exist_in_both_languages():
 
 
 def test_the_cameras_come_after_the_photo_and_are_done_with_the_footage():
-    assert 'const after = clues.findIndex(clue => clue.id === "original_photo");' in PLAY
-    assert "return [...clues.slice(0, after + 1), cameras, ...clues.slice(after + 1)];" in PLAY
+    # Changed by specs/clue-order.md ("Reviewed tests that change"): the team's order is the photo, the USB
+    # stick, Leonor, the cameras, the files. Was: the cameras right after the photo, in the server's order.
+    assert 'return [...server("original_photo"), ...server("usb_stick"), leonor, cameras, ...server("files_viewed")];' in PLAY
     assert "done: loadSecurity().footage" in PLAY
 
 

@@ -2006,10 +2006,14 @@
   function phoneClues() {
     const clues = current?.clues || [];
     if (!clues.length) return clues;
-    const t = ui().security;
-    const cameras = { id: "cameras", label: t.clue_label, room: t.clue_room, done: loadSecurity().footage, lost: false, until: "" };
-    const after = clues.findIndex(clue => clue.id === "original_photo");
-    return [...clues.slice(0, after + 1), cameras, ...clues.slice(after + 1)];
+    const t = ui();
+    const cameras = { id: "cameras", label: t.security.clue_label, room: t.security.clue_room, done: loadSecurity().footage, lost: false, until: "" };
+    // Leonor is not a proof (specs/three-proofs.md), but the list tells the player to ask for her help:
+    // it is done once she follows the player (the server's `followers`) (specs/clue-order.md).
+    const leonor = { id: "leonor", label: t.clue_leonor, room: "", done: (current.followers?.ids || []).includes("leonor"), lost: false, until: "" };
+    // The order the team chose (specs/clue-order.md): the photo, the USB stick, Leonor, the cameras, the files.
+    const server = id => clues.filter(clue => clue.id === id);
+    return [...server("original_photo"), ...server("usb_stick"), leonor, cameras, ...server("files_viewed")];
   }   // the monitors of the 3D desk light up when it is true
   const anyDialogOpen = () => Boolean(document.querySelector("dialog[open]"));
   const backToPlay = () => { if (!talking && !anyDialogOpen()) window.playing = true; };
