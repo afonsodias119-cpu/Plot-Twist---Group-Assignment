@@ -1507,6 +1507,11 @@
     const t = ui();
     // A thing says "look" (specs/more-to-find.md, point 7). On a phone the note is tapped instead of K
     // (specs/touch-card-qr.md): the click below does the same as K, for a thing and for a person.
+    if (deviceMode === "phone") {   // the note is tapped, so it names no key
+      const label = table ? t.tap_table : thing ? t.tap_look : person.object ? t.tap_use : t.tap_talk;
+      $("near-hint").textContent = table ? label : label.replace("{name}", thing?.name ?? person.name);
+      return;
+    }
     const sentence = table ? t.press_table   // specs/table-hint-and-guard-check.md
       : thing ? t.press_look.replace("{name}", thing.name)
       : person.object ? t.press_use.replace("{name}", person.name.toLowerCase())
