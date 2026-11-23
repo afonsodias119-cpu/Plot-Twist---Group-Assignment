@@ -163,6 +163,9 @@ TEXT = {
             "cctv_computer_lab": "Sala de informática", "cctv_auditorium": "Auditório",
             "cctv_diary_title": "Câmaras de segurança",
             "cctv_proof": "Imagem das 23:47 da sala de informática: um vulto de capuz, sem cartão ao pescoço, ao computador 12 no momento em que a pasta do grupo foi alterada. Depois, alguém desligou os cabos das câmaras para esconder isto.",
+            # the clue of the phone and of the start card (specs/camera-clue.md)
+            "clue_label": "Pedir ao segurança as imagens das 23:47 da sala de informática",
+            "clue_room": "Entrada (segurança)",
         },
         "leonor_follow": "Ela fecha o livro e levanta-se. \"Vou contigo à sala de informática. Se o computador 12 pedir um código, eu lembro-me de coisas desse dia.\"",
         "creator_title": "O teu detetive", "creator_body": "Personagem", "body_m": "Rapaz", "body_f": "Rapariga",
@@ -382,6 +385,9 @@ TEXT = {
             "cctv_computer_lab": "Computer lab", "cctv_auditorium": "Auditorium",
             "cctv_diary_title": "Security cameras",
             "cctv_proof": "Picture from 23:47 in the computer lab: a hooded figure, with no badge around the neck, at computer 12 at the moment the group folder was changed. Afterwards, somebody unplugged the cameras' cables to hide this.",
+            # the clue of the phone and of the start card (specs/camera-clue.md)
+            "clue_label": "Ask the guard for the 23:47 footage of the computer lab",
+            "clue_room": "Entrance (security)",
         },
         "leonor_follow": "She closes her book and stands up. \"I am coming with you to the computer lab. If computer 12 asks for a code, I remember things about that day.\"",
         "creator_title": "Your detective", "creator_body": "Character", "body_m": "Boy", "body_f": "Girl",

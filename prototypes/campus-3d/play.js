@@ -1535,7 +1535,7 @@
     return `${collectionCount()}   ${all.map(e => found.includes(e.id) ? ENDING_EMOJI[e.id] || "✔" : "🔒").join(" ")}`;
   }
   function shareText(ending) {
-    const t = ui(), clues = current?.clues || [], done = clues.filter(c => c.done).length;
+    const t = ui(), clues = phoneClues(), done = clues.filter(c => c.done).length;
     const squares = clues.map(c => (c.done ? "🟩" : "⬛")).join("");
     return [`${t.share_title} 🕵️`, `${ending.emoji || ENDING_EMOJI[ending.id] || "🕵️"} ${ending.title}`,
             `${squares} · ${done}/${clues.length} ${t.share_clues}`, `⏳ ${minutesSeconds(msLeft())} · ${collectionCount()}`].join("\n");
@@ -1925,7 +1925,7 @@
     c.font = '800 26px Inter, system-ui, sans-serif'; c.fillStyle = accent; c.strokeStyle = accent; c.lineWidth = 4;
     const stamp = (t.stamps || {})[ending.id] || ending.title, width = c.measureText(stamp).width + 44;
     roundedRect(c, -width / 2, -32, width, 52, 8); c.stroke(); c.fillText(stamp, 0, 4); c.restore();
-    const clues = current?.clues || [], done = clues.filter(x => x.done).length;
+    const clues = phoneClues(), done = clues.filter(x => x.done).length;
     c.fillStyle = "#e9e4d6"; c.font = '500 24px Inter, system-ui, sans-serif';
     c.fillText(ending.title, W / 2, 905);
     c.fillStyle = "#b7bdc5"; c.font = '500 21px Inter, system-ui, sans-serif';
@@ -1963,7 +1963,19 @@
     } catch (error) { return { convinced: false, wired: false, footage: false }; }
   }
   function saveSecurity(state) { try { localStorage.setItem(securityKey(), JSON.stringify(state)); } catch (error) { /* no storage */ } }
-  function syncSecurity() { window.campusDeskPower = loadSecurity().wired; }   // the monitors of the 3D desk light up when it is true
+  function syncSecurity() { window.campusDeskPower = loadSecurity().wired; }
+  // The clues the player reads (the phone's list, the start card, the share card): the server's clues,
+  // with the security cameras after the photo, because the photo is what convinces José
+  // (specs/camera-clue.md). The cameras live on the screen only, so the server does not know this clue
+  // and the auditorium door does not wait for it.
+  function phoneClues() {
+    const clues = current?.clues || [];
+    if (!clues.length) return clues;
+    const t = ui().security;
+    const cameras = { id: "cameras", label: t.clue_label, room: t.clue_room, done: loadSecurity().footage, lost: false, until: "" };
+    const after = clues.findIndex(clue => clue.id === "original_photo");
+    return [...clues.slice(0, after + 1), cameras, ...clues.slice(after + 1)];
+  }   // the monitors of the 3D desk light up when it is true
   const anyDialogOpen = () => Boolean(document.querySelector("dialog[open]"));
   const backToPlay = () => { if (!talking && !anyDialogOpen()) window.playing = true; };
 
@@ -2215,7 +2227,7 @@
     return el;
   }
   const clueCount = () => {
-    const clues = current?.clues || [];
+    const clues = phoneClues();   // with the security cameras (specs/camera-clue.md)
     return { done: clues.filter(c => c.done).length, total: clues.length };
   };
   const titleLines = text => {   // a long room name goes on two lines
@@ -2232,7 +2244,7 @@
     fill.style.width = `${total ? (100 * done) / total : 0}%`;
     bar.append(fill);
     const list = make("ul", undefined, "todo-list");
-    for (const clue of current?.clues || []) {
+    for (const clue of phoneClues()) {
       const item = make("li", undefined, clue.done ? "done" : clue.lost ? "lost" : "");
       const box = make("span", clue.done ? "✔" : clue.lost ? "✕" : "○", "todo-box");
       box.setAttribute("aria-label", clue.done ? t.todo_done : clue.lost ? t.todo_lost : t.todo_open);
@@ -2497,7 +2509,7 @@
     const t = ui();
     $("clues-title").textContent = t.clues_notice_title;
     $("clues-intro").textContent = t.clues_notice_intro;
-    $("clues-order").replaceChildren(...(current.clues || []).map(clue => {
+    $("clues-order").replaceChildren(...phoneClues().map(clue => {
       const row = make("li", `${clue.label} · ${clue.room}`);
       if (clue.done) row.classList.add("done");   // a continued game: what is done is crossed out
       return row;
